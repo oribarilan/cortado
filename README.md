@@ -1,19 +1,23 @@
 # Cortado
 
-Cortado is a cross-platform, extensible watcher app.
+Cortado is a cross-platform extensible watcher that lives in the macOS menubar.
 
-Users add **Beans** (items they care about), and each Bean can have one or more **Watches**.
+Users configure **feeds** (data sources like "GitHub PRs for repo X"), and each feed automatically discovers and tracks **activities** (e.g., individual PRs). Each activity has structured **fields** showing its current state.
 
 Phase 1 focuses on:
 
 - macOS menubar + panel experience
-- developer-focused workflows
-- `status` watch type first (for example, GitHub PR status)
+- Developer-focused workflows
+- GitHub PR feed (first curated feed type)
+- Shell feed (user-defined commands as an escape hatch)
 
 ## Core terms
 
-- **Bean**: a user-defined watch item (for example, a repo or PR stream)
-- **Watch**: behavior attached to a Bean (starting with status)
+- **Feed**: a configured data source that discovers and tracks related items
+- **Activity**: one tracked item within a feed (e.g., PR #42)
+- **Field**: a typed data point on an activity (e.g., `review: awaiting`)
+
+See `specs/main.md` for the full spec.
 
 ## Development
 
@@ -31,12 +35,6 @@ just install  # install JS deps
 just dev      # run app locally
 just check    # format + lint
 ```
-
-## Recommended IDE setup
-
-- [VS Code](https://code.visualstudio.com/)
-- [Tauri extension](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode)
-- [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
 ## License
 
