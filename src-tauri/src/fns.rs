@@ -1,0 +1,134 @@
+#![allow(deprecated)]
+
+use system_notification::WorkspaceListener;
+use tauri::{Emitter, Listener, LogicalPosition, LogicalSize, Manager};
+use tauri_nspanel::{
+    cocoa::{
+        appkit::{NSMainMenuWindowLevel, NSWindowCollectionBehavior},
+        base::id,
+        foundation::NSRect,
+    },
+    objc::{class, msg_send, runtime::NO, sel, sel_impl},
+    panel_delegate, ManagerExt, WebviewWindowExt,
+};
+
+#[allow(non_upper_case_globals)]
+const NSWindowStyleMaskNonActivatingPanel: i32 = 1 << 7;
+
+pub fn swizzle_to_menubar_panel(app_handle: &tauri::AppHandle) {
+    let window = app_handle.get_webview_window("main").unwrap();
+
+    let panel_delegate = panel_delegate!(SpotlightPanelDelegate {
+        window_did_resign_key
+    });
+
+    let handle = window.app_handle().clone();
+
+    panel_delegate.set_listener(Box::new(move |delegate_name: String| {
+        if delegate_name.as_str() == "window_did_resign_key" {
+            let _ = handle.emit("menubar_panel_did_resign_key", ());
+        }
+    }));
+
+    let panel = window.to_panel().unwrap();
+
+    panel.set_level(NSMainMenuWindowLevel + 1);
+
+    panel.set_collection_behaviour(
+        NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary,
+    );
+
+    panel.set_style_mask(NSWindowStyleMaskNonActivatingPanel);
+
+    panel.set_delegate(panel_delegate);
+}
+
+pub fn setup_menubar_panel_listeners(app_handle: &tauri::AppHandle) {
+    fn hide_menubar_panel(app_handle: tauri::AppHandle) {
+        if check_menubar_frontmost() {
+            return;
+        }
+
+        let panel = app_handle.get_webview_panel("main").unwrap();
+
+        panel.order_out(None);
+    }
+
+    let handle = app_handle.clone();
+
+    app_handle.listen("menubar_panel_did_resign_key", move |_| {
+        hide_menubar_panel(handle.clone());
+    });
+
+    app_handle.listen_workspace(
+        "NSWorkspaceDidActivateApplicationNotification",
+        hide_menubar_panel,
+    );
+
+    app_handle.listen_workspace(
+        "NSWorkspaceActiveSpaceDidChangeNotification",
+        hide_menubar_panel,
+    );
+}
+
+pub fn update_menubar_appearance(app_handle: &tauri::AppHandle) {
+    let window = app_handle.get_webview_window("main").unwrap();
+
+    popover::add_view(&window, None);
+}
+
+pub fn position_panel_at_menubar_icon(
+    app_handle: &tauri::AppHandle,
+    icon_position: LogicalPosition<f64>,
+    icon_size: LogicalSize<f64>,
+    padding_top: f64,
+) {
+    let window = app_handle.get_webview_window("main").unwrap();
+
+    let monitor = monitor::get_monitor_with_cursor().unwrap();
+
+    let scale_factor = monitor.scale_factor();
+
+    let monitor_pos = monitor.position().to_logical::<f64>(scale_factor);
+
+    let monitor_size = monitor.size().to_logical::<f64>(scale_factor);
+
+    let menubar_height = menubar::get_menubar().height();
+
+    let handle: id = window.ns_window().unwrap() as _;
+
+    let mut win_frame: NSRect = unsafe { msg_send![handle, frame] };
+
+    win_frame.origin.y =
+        (monitor_pos.y + monitor_size.height) - menubar_height - win_frame.size.height;
+
+    win_frame.origin.y -= padding_top * scale_factor;
+
+    win_frame.origin.x = icon_position.x + icon_size.width / 2.0 - win_frame.size.width / 2.0;
+
+    let _: () = unsafe { msg_send![handle, setFrame: win_frame display: NO] };
+}
+
+fn app_pid() -> i32 {
+    let process_info: id = unsafe { msg_send![class!(NSProcessInfo), processInfo] };
+
+    let pid: i32 = unsafe { msg_send![process_info, processIdentifier] };
+
+    pid
+}
+
+fn get_frontmost_app_pid() -> i32 {
+    let workspace: id = unsafe { msg_send![class!(NSWorkspace), sharedWorkspace] };
+
+    let frontmost_application: id = unsafe { msg_send![workspace, frontmostApplication] };
+
+    let pid: i32 = unsafe { msg_send![frontmost_application, processIdentifier] };
+
+    pid
+}
+
+pub fn check_menubar_frontmost() -> bool {
+    get_frontmost_app_pid() == app_pid()
+}
