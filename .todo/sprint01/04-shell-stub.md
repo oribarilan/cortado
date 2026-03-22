@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Shell feed stub

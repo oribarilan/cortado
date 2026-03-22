@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Registry and Tauri wiring

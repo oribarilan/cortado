@@ -1,90 +1,174 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 
-type WatchKind = "status";
+type StatusKind = "success" | "warning" | "error" | "pending" | "neutral";
 
-type Watch = {
-  id: string;
-  kind: WatchKind;
-  label: string;
-  value: string;
-  updatedAt: string;
-};
+type FieldValue =
+  | {
+      type: "text";
+      value: string;
+    }
+  | {
+      type: "status";
+      value: string;
+      severity: StatusKind;
+    }
+  | {
+      type: "number";
+      value: number;
+    }
+  | {
+      type: "url";
+      value: string;
+    };
 
-type Bean = {
-  id: string;
+type Field = {
   name: string;
-  description: string;
-  watches: Watch[];
+  label: string;
+  value: FieldValue;
 };
 
-const starterBeans: Bean[] = [
-  {
-    id: "bean-github-prs",
-    name: "GitHub PRs",
-    description: "Status watch for open pull requests in personal/cortado.",
-    watches: [
-      {
-        id: "watch-github-pr-status",
-        kind: "status",
-        label: "review",
-        value: "1 awaiting review",
-        updatedAt: "just now",
-      },
-    ],
-  },
-];
+type Activity = {
+  id: string;
+  title: string;
+  fields: Field[];
+};
+
+type FieldDefinition = {
+  name: string;
+  label: string;
+  field_type: "text" | "status" | "number" | "url";
+  description: string;
+};
+
+type FeedSnapshot = {
+  name: string;
+  feed_type: string;
+  activities: Activity[];
+  provided_fields: FieldDefinition[];
+  error: string | null;
+};
+
+const FEEDS_CONFIG_PATH = "~/.config/cortado/feeds.toml";
 
 function App() {
+  const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     void invoke("init");
+
+    const loadFeeds = async () => {
+      try {
+        const snapshots = await invoke<FeedSnapshot[]>("list_feeds");
+
+        setFeeds(snapshots);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadFeeds();
   }, []);
 
   return (
     <div className="container">
       <h1>Cortado</h1>
-      <p className="subtitle">Cross-platform extensible watcher</p>
+      <p className="subtitle">Developer feed panel</p>
 
       <section className="section">
-        <h2>Phase 1</h2>
-        <ul>
-          <li>macOS menubar + panel</li>
-          <li>Developer-focused workflows</li>
-          <li>Status watches (e.g. GitHub PR status)</li>
-        </ul>
-      </section>
+        <h2>Feeds</h2>
 
-      <section className="section">
-        <h2>Bean model</h2>
-        <p>
-          A <strong>Bean</strong> is a user-defined item with one or more
-          <strong> watch</strong> behaviors.
-        </p>
-      </section>
+        {loadError ? (
+          <p className="app-error">Failed to load feeds: {loadError}</p>
+        ) : null}
 
-      <section className="section">
-        <h2>Starter beans</h2>
-        <ul className="bean-list">
-          {starterBeans.map((bean) => (
-            <li className="bean-card" key={bean.id}>
-              <p className="bean-name">{bean.name}</p>
-              <p className="bean-description">{bean.description}</p>
+        {loading ? <p>Loading feeds…</p> : null}
 
-              {bean.watches.map((watch) => (
-                <div className="watch-row" key={watch.id}>
-                  <span className="watch-kind">{watch.kind}</span>
-                  <span className="watch-label">{watch.label}</span>
-                  <span className="watch-value">{watch.value}</span>
-                  <span className="watch-meta">updated {watch.updatedAt}</span>
-                </div>
-              ))}
-            </li>
-          ))}
-        </ul>
+        {!loading && !loadError && feeds.length === 0 ? (
+          <p className="empty-state">
+            No feeds configured yet. Add one in <code>{FEEDS_CONFIG_PATH}</code> and restart
+            Cortado.
+          </p>
+        ) : null}
+
+        {!loading && !loadError && feeds.length > 0 ? (
+          <ul className="feed-list">
+            {feeds.map((feed) => {
+              const isConfigError =
+                Boolean(feed.error) &&
+                feed.provided_fields.length === 0 &&
+                feed.activities.length === 0;
+
+              return (
+                <li className="feed-card" key={`${feed.feed_type}-${feed.name}`}>
+                  <div className="feed-header">
+                    <p className="feed-name">{feed.name}</p>
+                    <span className="feed-type">{feed.feed_type}</span>
+                  </div>
+
+                  {feed.error ? (
+                    <p className={isConfigError ? "feed-error config-error" : "feed-error poll-error"}>
+                      <strong>{isConfigError ? "Config error:" : "Poll error:"}</strong>{" "}
+                      {feed.error}
+                    </p>
+                  ) : null}
+
+                  {!feed.error && feed.activities.length === 0 ? (
+                    <p className="feed-empty">No activities in this feed.</p>
+                  ) : null}
+
+                  {!feed.error ? (
+                    <div className="activity-list">
+                      {feed.activities.map((activity) => (
+                        <article className="activity-row" key={activity.id}>
+                          <p className="activity-title">{activity.title}</p>
+
+                          <div className="field-list">
+                            {activity.fields.map((field) => (
+                              <div className="field-row" key={field.name}>
+                                <span className="field-label">{field.label}</span>
+                                <span className="field-value">{renderFieldValue(field)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </section>
     </div>
   );
+}
+
+function renderFieldValue(field: Field) {
+  switch (field.value.type) {
+    case "text":
+      return field.value.value;
+    case "number":
+      return field.value.value.toString();
+    case "status":
+      return (
+        <span className={`field-status status-${field.value.severity}`}>{field.value.value}</span>
+      );
+    case "url":
+      return (
+        <a className="field-link" href={field.value.value} rel="noreferrer" target="_blank">
+          {field.value.value}
+        </a>
+      );
+    default:
+      return "";
+  }
 }
 
 export default App;
