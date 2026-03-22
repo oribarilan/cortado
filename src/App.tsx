@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 
@@ -50,12 +50,15 @@ type FeedSnapshot = {
   error: string | null;
 };
 
+type DotStatus = "green" | "yellow" | "red" | "blue" | "gray";
+
 const FEEDS_CONFIG_PATH = "~/.config/cortado/feeds.toml";
 
 function App() {
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null);
 
   useEffect(() => {
     void invoke("init");
@@ -75,87 +78,176 @@ function App() {
     void loadFeeds();
   }, []);
 
+  const availableActivityIds = useMemo(
+    () =>
+      feeds.flatMap((feed) => {
+        const hasConfigError =
+          Boolean(feed.error) &&
+          feed.provided_fields.length === 0 &&
+          feed.activities.length === 0;
+
+        if (hasConfigError) {
+          return [];
+        }
+
+        return feed.activities.map((activity) => activity.id);
+      }),
+    [feeds],
+  );
+
+  useEffect(() => {
+    if (expandedActivityId !== null && !availableActivityIds.includes(expandedActivityId)) {
+      setExpandedActivityId(null);
+    }
+  }, [availableActivityIds, expandedActivityId]);
+
   return (
-    <div className="container">
-      <h1>Cortado</h1>
-      <p className="subtitle">Developer feed panel</p>
+    <div className="panel">
+      {loadError ? <p className="load-error">{loadError}</p> : null}
 
-      <section className="section">
-        <h2>Feeds</h2>
+      {loading ? <p className="state-msg">Loading…</p> : null}
 
-        {loadError ? (
-          <p className="app-error">Failed to load feeds: {loadError}</p>
-        ) : null}
+      {!loading && !loadError && feeds.length === 0 ? (
+        <p className="state-msg">
+          No feeds configured. Edit <code>{FEEDS_CONFIG_PATH}</code> and restart.
+        </p>
+      ) : null}
 
-        {loading ? <p>Loading feeds…</p> : null}
+      {!loading && !loadError && feeds.length > 0 ? (
+        <div className="feed-list">
+          {feeds.map((feed) => {
+            const isConfigError =
+              Boolean(feed.error) &&
+              feed.provided_fields.length === 0 &&
+              feed.activities.length === 0;
 
-        {!loading && !loadError && feeds.length === 0 ? (
-          <p className="empty-state">
-            No feeds configured yet. Add one in <code>{FEEDS_CONFIG_PATH}</code> and restart
-            Cortado.
-          </p>
-        ) : null}
-
-        {!loading && !loadError && feeds.length > 0 ? (
-          <ul className="feed-list">
-            {feeds.map((feed) => {
-              const isConfigError =
-                Boolean(feed.error) &&
-                feed.provided_fields.length === 0 &&
-                feed.activities.length === 0;
-
-              return (
-                <li className="feed-card" key={`${feed.feed_type}-${feed.name}`}>
-                  <div className="feed-header">
-                    <p className="feed-name">{feed.name}</p>
+            return (
+              <section className="feed" key={`${feed.feed_type}-${feed.name}`}>
+                <header className="feed-header">
+                  <span className="feed-name">{feed.name}</span>
+                  <span className="feed-meta">
                     <span className="feed-type">{feed.feed_type}</span>
+                    {!feed.error && feed.activities.length > 0 ? (
+                      <span className="feed-count">{feed.activities.length}</span>
+                    ) : null}
+                  </span>
+                </header>
+
+                {feed.error ? (
+                  <p className={isConfigError ? "feed-error config-error" : "feed-error poll-error"}>
+                    {isConfigError ? "Config: " : "Poll: "}
+                    {feed.error}
+                  </p>
+                ) : null}
+
+                {!feed.error && feed.activities.length === 0 ? (
+                  <p className="state-msg">No activities.</p>
+                ) : null}
+
+                {(!isConfigError && feed.activities.length > 0) || (!feed.error && feed.activities.length > 0) ? (
+                  <div className="menu-list">
+                    {feed.activities.map((activity) => {
+                      const dotStatus = deriveDotStatus(activity.fields);
+                      const expanded = expandedActivityId === activity.id;
+
+                      return (
+                        <div className="menu-item-group" key={activity.id}>
+                          <button
+                            aria-expanded={expanded}
+                            className={`menu-item-btn ${expanded ? "active" : ""}`}
+                            onClick={() => {
+                              setExpandedActivityId((current) =>
+                                current === activity.id ? null : activity.id,
+                              );
+                            }}
+                            type="button"
+                          >
+                            <span
+                              aria-label={`activity status ${dotStatus}`}
+                              className={`activity-dot dot-${dotStatus}`}
+                            />
+                            <span className="menu-item-title">{activity.title}</span>
+                            <span className="submenu-arrow" aria-hidden="true">
+                              {expanded ? "▾" : "▸"}
+                            </span>
+                          </button>
+
+                          {expanded ? (
+                            <div className="submenu" role="group">
+                              {activity.fields.length === 0 ? (
+                                <p className="submenu-empty">No fields.</p>
+                              ) : (
+                                activity.fields.map((field) => (
+                                  <div className="submenu-row" key={field.name}>
+                                    <span className="submenu-key">{field.label}</span>
+                                    <span className="submenu-value">
+                                      {renderFieldValue(field)}
+                                    </span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  {feed.error ? (
-                    <p className={isConfigError ? "feed-error config-error" : "feed-error poll-error"}>
-                      <strong>{isConfigError ? "Config error:" : "Poll error:"}</strong>{" "}
-                      {feed.error}
-                    </p>
-                  ) : null}
-
-                  {!feed.error && feed.activities.length === 0 ? (
-                    <p className="feed-empty">No activities in this feed.</p>
-                  ) : null}
-
-                  {!feed.error ? (
-                    <div className="activity-list">
-                      {feed.activities.map((activity) => (
-                        <article className="activity-row" key={activity.id}>
-                          <p className="activity-title">{activity.title}</p>
-
-                          <div className="field-list">
-                            {activity.fields.map((field) => (
-                              <div className="field-row" key={field.name}>
-                                <span className="field-label">{field.label}</span>
-                                <span className="field-value">{renderFieldValue(field)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </section>
+                ) : null}
+              </section>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
 
+function deriveDotStatus(fields: Field[]): DotStatus {
+  let hasSuccess = false;
+  let hasPending = false;
+  let hasWarning = false;
+
+  for (const field of fields) {
+    if (field.value.type !== "status") {
+      continue;
+    }
+
+    if (field.value.severity === "error") {
+      return "red";
+    }
+
+    if (field.value.severity === "warning") {
+      hasWarning = true;
+      continue;
+    }
+
+    if (field.value.severity === "pending") {
+      hasPending = true;
+      continue;
+    }
+
+    if (field.value.severity === "success") {
+      hasSuccess = true;
+    }
+  }
+
+  if (hasWarning) {
+    return "yellow";
+  }
+
+  if (hasPending) {
+    return "blue";
+  }
+
+  if (hasSuccess) {
+    return "green";
+  }
+
+  return "gray";
+}
+
 function renderFieldValue(field: Field) {
   switch (field.value.type) {
-    case "text":
-      return field.value.value;
-    case "number":
-      return field.value.value.toString();
     case "status":
       return (
         <span className={`field-status status-${field.value.severity}`}>{field.value.value}</span>
@@ -166,8 +258,12 @@ function renderFieldValue(field: Field) {
           {field.value.value}
         </a>
       );
+    case "number":
+      return <span className="field-number">{field.value.value}</span>;
+    case "text":
+      return field.value.value;
     default:
-      return "";
+      return null;
   }
 }
 
