@@ -53,11 +53,24 @@ Feed names must be unique within the config file. The name is the feed's identit
 
 ### GitHub authentication
 
-The `github-pr` feed (and future GitHub feed types) depends on the [`gh` CLI](https://cli.github.com/) for authentication and API access. Cortado shells out to `gh api ...` instead of managing tokens directly. This means:
+The `github-pr` feed (and future GitHub feed types) depends on the [`gh` CLI](https://cli.github.com/) for authentication and API access. Cortado shells out to `gh` commands (for example, `gh pr list` and `gh api`) instead of managing tokens directly. This means:
 
 - No auth config in `feeds.toml`.
 - `gh` must be installed and authenticated (`gh auth login`).
 - If `gh` is not available, GitHub feeds fail with a clear error.
+
+### External CLI dependency contract
+
+Feeds that rely on external CLIs must use a consistent dependency/error model:
+
+- Dependency/auth failures are surfaced as **feed-level poll errors** (never app-global crashes).
+- Errors are concise and actionable (what is missing + exact command/action to fix).
+- Other valid feeds continue polling/rendering even if one feed has missing dependencies.
+
+Current + planned dependency requirements:
+
+- `github-pr`: requires `gh` installed and authenticated.
+- `ado-pr` (future): requires `az` CLI, `azure-devops` extension, and authenticated access (logged-in state and/or PAT/env-based auth as supported by the implementation).
 
 ### Default intervals
 
@@ -98,6 +111,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 ### Future feed types (not in Phase 1)
 
 - `github-actions` — CI workflow runs. Fields: status, duration, branch, trigger.
+- `ado-pr` — Azure DevOps pull requests. Fields: review (status), mergeable (status), labels (text). Initial implementation may defer checks/build policy details to avoid N+1 API calls.
 - `http-health` — endpoint monitoring. Fields: healthy (status), status_code (number), response_time (text).
 - `docker` — running containers. Fields: state (status), health (status), uptime (text), image (text).
 
@@ -151,7 +165,21 @@ interval = 30
 
 ## Platform
 
-Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tray icon that opens a panel below the menubar.
+Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tray icon that opens a native macOS menubar menu.
+
+### Menubar UX (native menu)
+
+- Top level groups by **Feed**.
+- Each **Activity** is a submenu item prefixed by a derived status dot.
+- Activity title rows are compact and do not include full field details inline.
+- Expanding an activity submenu reveals all **Field** entries (`label: value`).
+- Dot color/severity is derived from status fields using this precedence:
+  1. `error` → red
+  2. else `warning` → yellow
+  3. else `pending` → blue
+  4. else `success` → green
+  5. else neutral/no status → gray
+- Feed-level config and poll errors are shown at the feed submenu level.
 
 ## Non-goals (Phase 1)
 

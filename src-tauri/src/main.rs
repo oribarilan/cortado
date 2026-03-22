@@ -3,7 +3,6 @@
 
 mod command;
 mod feed;
-mod fns;
 mod tray;
 
 use std::sync::Arc;
@@ -25,14 +24,20 @@ fn main() {
 
     tauri::Builder::default()
         .manage(Arc::new(Mutex::new(feed_registry)))
-        .invoke_handler(tauri::generate_handler![command::init, command::list_feeds])
-        .plugin(tauri_nspanel::init())
+        .invoke_handler(tauri::generate_handler![command::list_feeds])
         .setup(|app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
             let app_handle = app.app_handle();
 
             tray::create(app_handle)?;
+
+            tauri::async_runtime::block_on(async {
+                let state = app_handle.state::<Arc<Mutex<FeedRegistry>>>();
+                let registry = state.lock().await;
+                let snapshots = registry.poll_all().await;
+                tray::refresh_menu(app_handle, &snapshots)
+            })?;
 
             Ok(())
         })
