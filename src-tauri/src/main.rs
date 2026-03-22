@@ -1,4 +1,4 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+// Prevent additional console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod command;
@@ -9,10 +9,7 @@ use tauri::Manager;
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            command::init,
-            command::show_menubar_panel
-        ])
+        .invoke_handler(tauri::generate_handler![command::init])
         .plugin(tauri_nspanel::init())
         .setup(|app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);

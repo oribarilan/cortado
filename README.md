@@ -1,53 +1,43 @@
-# Tauri macOS Menubar App Example (w/ Popover)
+# Cortado
 
-This is an example project that shows how to create a macOS Menubar app using Tauri.
+Cortado is a cross-platform, extensible watcher app.
 
-This template is based on Tauri + React + Typescript template. It should help get you started developing with Tauri, React and Typescript in Vite.
+Users add **Beans** (items they care about), and each Bean can have one or more **Watches**.
 
-## Prerequisites
+Phase 1 focuses on:
 
-- _[<ins>Node.js<ins>](https://nodejs.org)_
-- _[<ins>Tauri CLI<ins>](https://tauri.studio/docs/getting-started/installation)_
+- macOS menubar + panel experience
+- developer-focused workflows
+- `status` watch type first (for example, GitHub PR status)
 
-## Getting Started
+## Core terms
 
-1. Clone this repository:
+- **Bean**: a user-defined watch item (for example, a repo or PR stream)
+- **Watch**: behavior attached to a Bean (starting with status)
 
+## Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org)
+- [Rust toolchain](https://www.rust-lang.org/tools/install)
+- [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)
+
+### Commands
+
+```bash
+just          # list commands
+just install  # install JS deps
+just dev      # run app locally
+just check    # format + lint
 ```
-git clone https://github.com/ahkohd/tauri-macos-menubar-app-example.git
-```
 
-2. Navigate to the project directory:
+## Recommended IDE setup
 
-```
-cd tauri-macos-menubar-app-example
-```
+- [VS Code](https://code.visualstudio.com/)
+- [Tauri extension](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode)
+- [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
-3. Run the demo
+## License
 
-```
-pnpm install
-pnpm tauri dev
-```
-
-5. Go to your menubar, click the Tauri tray icon.
-
-## Demo
-
-See it in action:
-
-![Demo](./demo.gif)
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-
-# Related
-
-The following are related to this project:
-
-- [tauri-nspanel](https://github.com/ahkohd/tauri-nspanel/tree/main/examples/vanilla): Tauri plugin to convert a window to panel.
-
-# License
-
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE.md) file for details.
+MIT. See [LICENSE.md](./LICENSE.md).

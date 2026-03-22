@@ -16,16 +16,16 @@
       "icons/icon.ico"
     ]
   },
-  "productName": "tauri-macos-menubar-app-example",
+  "productName": "Cortado",
   "version": "0.0.0",
-  "identifier": "com.example.dev",
+  "identifier": "com.cortado.app",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": false,
-        "title": "menubar",
+        "title": "Cortado",
         "width": 350,
         "height": 400,
         "decorations": false,

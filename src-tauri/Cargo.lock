@@ -457,6 +457,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cortado"
+version = "0.2.0"
+dependencies = [
+ "menubar",
+ "monitor",
+ "popover",
+ "serde",
+ "serde_json",
+ "system-notification",
+ "tauri",
+ "tauri-build",
+ "tauri-nspanel",
+ "tauri-plugin-shell",
+ "tokio",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3457,23 +3474,6 @@ dependencies = [
  "url",
  "uuid",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-macos-menubar-app-example"
-version = "0.2.0"
-dependencies = [
- "menubar",
- "monitor",
- "popover",
- "serde",
- "serde_json",
- "system-notification",
- "tauri",
- "tauri-build",
- "tauri-nspanel",
- "tauri-plugin-shell",
- "tokio",
 ]
 
 [[package]]

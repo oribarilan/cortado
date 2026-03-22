@@ -1,8 +1,8 @@
 [package]
-name = "tauri-macos-menubar-app-example"
+name = "cortado"
 version = "0.2.0"
-description = "A Tauri App"
-authors = ["Victor Aremu <me@victorare.mu>"]
+description = "Cortado cross-platform extensible watcher"
+authors = ["Cortado contributors"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -29,8 +29,7 @@ tokio = { version = "1.37.0", features = ["time"] }
 tauri-plugin-shell = "2.0.0-beta.7"
 
 [features]
-# this feature is used for production builds or when `devPath` points to the filesystem
-# DO NOT REMOVE!!
+# Used for production builds and when `devPath` points to the filesystem.
 custom-protocol = ["tauri/custom-protocol"]
 # Old objc/sel_impl macros emitted by some transitive deps reference
 # `feature = "cargo-clippy"`; declaring it here keeps check-cfg quiet.

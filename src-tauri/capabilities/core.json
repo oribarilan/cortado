@@ -1,6 +1,6 @@
 {
-  "identifier": "migrated",
-  "description": "permissions that were migrated from v1",
+  "identifier": "core",
+  "description": "Core permissions for Cortado desktop windows",
   "local": true,
   "windows": [
     "main"

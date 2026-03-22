@@ -1,10 +1,10 @@
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
-  line-height: 24px;
+  line-height: 1.5;
   font-weight: 400;
 
-  color: black;
+  color: #0f172a;
   background-color: transparent;
 
   font-synthesis: none;
@@ -16,7 +16,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: white;
+    color: #e2e8f0;
   }
 }
 
@@ -30,14 +30,94 @@ body {
 }
 
 body {
-  padding: 16px 3px 3px 3px;
+  padding: 16px 8px 8px;
 }
 
 .container {
-  margin: 0;
-  padding-top: 10vh;
+  margin: 0 auto;
+  padding-top: 8px;
+  max-width: 340px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  gap: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.subtitle {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.section {
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  padding-top: 8px;
+}
+
+.section h2 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.section p {
+  margin: 0;
+}
+
+.section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.bean-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bean-card {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bean-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.bean-description {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+.watch-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.watch-kind,
+.watch-label {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.watch-value {
+  font-size: 0.9rem;
+}
+
+.watch-meta {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  opacity: 0.7;
 }
