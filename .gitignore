@@ -26,3 +26,4 @@ dist-ssr
 .direnv/*
 .agent/
 .agents/
+skills-lock.json
