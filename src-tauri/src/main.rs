@@ -23,13 +23,17 @@ fn main() {
         build_feed_registry().unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
     );
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
+    let poller = BackgroundPoller::new(feed_cache.clone());
 
     tauri::Builder::default()
         .manage(feed_cache.clone())
+        .manage(feed_registry.clone())
+        .manage(poller.clone())
         .invoke_handler(tauri::generate_handler![command::list_feeds])
         .setup({
             let feed_registry = feed_registry.clone();
             let feed_cache = feed_cache.clone();
+            let poller = poller.clone();
 
             move |app| {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -38,7 +42,6 @@ fn main() {
 
                 tray::create(&app_handle)?;
 
-                let poller = BackgroundPoller::new(feed_cache.clone());
                 let updates = poller.subscribe();
 
                 tray::start_refresh_loop(app_handle.clone(), feed_cache.clone(), updates);

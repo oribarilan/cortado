@@ -42,6 +42,7 @@ impl FeedSnapshotCache {
 }
 
 /// Background poller that seeds and continuously refreshes snapshots.
+#[derive(Clone)]
 pub struct BackgroundPoller {
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
@@ -64,6 +65,22 @@ impl BackgroundPoller {
     pub async fn seed_startup_best_effort(&self, registry: Arc<FeedRegistry>, budget: Duration) {
         let feeds: Vec<Arc<dyn Feed>> = registry.active_feeds().to_vec();
         seed_cache_best_effort(self.cache.clone(), self.update_tx.clone(), feeds, budget).await;
+    }
+
+    /// Runs an immediate one-shot refresh for all active feeds.
+    pub async fn refresh_now(&self, registry: Arc<FeedRegistry>) {
+        let feeds: Vec<Arc<dyn Feed>> = registry.active_feeds().to_vec();
+
+        if feeds.is_empty() {
+            return;
+        }
+
+        for feed in feeds {
+            let snapshot = build_snapshot_for_feed(&self.cache, feed.as_ref()).await;
+            self.cache.upsert(snapshot).await;
+        }
+
+        bump_update_counter(&self.update_tx);
     }
 
     /// Spawns recurring per-feed polling loops.
@@ -110,7 +127,7 @@ async fn seed_cache_best_effort(
     }
 
     if seeded {
-        let _ = update_tx.send(*update_tx.borrow() + 1);
+        bump_update_counter(&update_tx);
     }
 }
 
@@ -126,8 +143,13 @@ async fn poll_feed_loop(
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
         cache.upsert(snapshot).await;
 
-        let _ = update_tx.send(*update_tx.borrow() + 1);
+        bump_update_counter(&update_tx);
     }
+}
+
+fn bump_update_counter(update_tx: &watch::Sender<u64>) {
+    let next = (*update_tx.borrow()).wrapping_add(1);
+    let _ = update_tx.send(next);
 }
 
 async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> FeedSnapshot {
@@ -164,7 +186,7 @@ mod tests {
 
     use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot, FieldDefinition, FieldType};
 
-    use super::{build_snapshot_for_feed, FeedSnapshotCache};
+    use super::{build_snapshot_for_feed, BackgroundPoller, FeedSnapshotCache};
 
     struct SequencedFeed {
         name: String,
@@ -313,6 +335,42 @@ mod tests {
 
         assert_eq!(snapshot.activities.len(), 1);
         assert_eq!(snapshot.activities[0].title, "Fresh");
+        assert!(snapshot.error.is_none());
+    }
+
+    #[tokio::test]
+    async fn refresh_now_updates_cache_and_notifies() {
+        let feed = Arc::new(SequencedFeed {
+            name: "My feed".to_string(),
+            feed_type: "shell".to_string(),
+            interval: 30,
+            outcomes: Mutex::new(vec![Ok(vec![Activity {
+                id: "fresh-1".to_string(),
+                title: "Fresh activity".to_string(),
+                fields: Vec::new(),
+            }])]),
+        });
+
+        let mut registry = FeedRegistry::new();
+        registry.register(feed);
+        let registry = Arc::new(registry);
+
+        let cache = FeedSnapshotCache::from_registry(registry.as_ref());
+        let poller = BackgroundPoller::new(cache.clone());
+        let updates = poller.subscribe();
+
+        poller.refresh_now(registry.clone()).await;
+
+        assert!(*updates.borrow() > 0);
+
+        let snapshots = cache.list().await;
+        let snapshot = snapshots
+            .iter()
+            .find(|snapshot| snapshot.name == "My feed" && snapshot.feed_type == "shell")
+            .expect("snapshot should exist");
+
+        assert_eq!(snapshot.activities.len(), 1);
+        assert_eq!(snapshot.activities[0].title, "Fresh activity");
         assert!(snapshot.error.is_none());
     }
 }

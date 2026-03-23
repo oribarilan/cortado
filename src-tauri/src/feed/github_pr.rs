@@ -272,7 +272,7 @@ fn map_review_decision(review_decision: Option<&str>) -> FieldValue {
         "APPROVED" => status_field("approved", StatusKind::Success),
         "CHANGES_REQUESTED" => status_field("changes requested", StatusKind::Warning),
         "REVIEW_REQUIRED" => status_field("awaiting", StatusKind::Pending),
-        _ => status_field("unknown", StatusKind::Neutral),
+        _ => status_field("none", StatusKind::Neutral),
     }
 }
 
@@ -309,11 +309,11 @@ fn map_labels(labels: Option<&[GhLabel]>) -> FieldValue {
 
 fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue {
     let Some(entries) = status_check_rollup else {
-        return status_field("unknown", StatusKind::Neutral);
+        return status_field("none", StatusKind::Neutral);
     };
 
     if entries.is_empty() {
-        return status_field("unknown", StatusKind::Neutral);
+        return status_field("none", StatusKind::Neutral);
     }
 
     let mut has_pending = false;
@@ -390,7 +390,7 @@ fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue
         return status_field("passing", StatusKind::Success);
     }
 
-    status_field("unknown", StatusKind::Neutral)
+    status_field("none", StatusKind::Neutral)
 }
 
 fn status_field(value: &str, severity: StatusKind) -> FieldValue {
@@ -729,7 +729,7 @@ mod tests {
             "awaiting",
             StatusKind::Pending,
         );
-        assert_status(map_review_decision(None), "unknown", StatusKind::Neutral);
+        assert_status(map_review_decision(None), "none", StatusKind::Neutral);
     }
 
     #[test]
@@ -771,7 +771,7 @@ mod tests {
     }
 
     #[test]
-    fn checks_mapping_failing_pending_passing_and_unknown() {
+    fn checks_mapping_failing_pending_passing_and_none() {
         let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
             r#"[
                 {"__typename":"CheckRun","status":"COMPLETED","conclusion":"FAILURE"}
@@ -812,7 +812,7 @@ mod tests {
             StatusKind::Success,
         );
 
-        assert_status(map_checks_status(None), "unknown", StatusKind::Neutral);
+        assert_status(map_checks_status(None), "none", StatusKind::Neutral);
     }
 
     #[test]

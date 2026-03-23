@@ -7,9 +7,12 @@ use tauri::{
     AppHandle, Manager, Wry,
 };
 
-use crate::feed::{Activity, FeedSnapshot, FeedSnapshotCache, Field, FieldValue, StatusKind};
+use crate::feed::{
+    Activity, BackgroundPoller, FeedRegistry, FeedSnapshot, FeedSnapshotCache, Field, FieldValue,
+    StatusKind,
+};
 
-const MENU_ID_RELOAD: &str = "reload";
+const MENU_ID_REFRESH_FEEDS: &str = "refresh-feeds";
 const MENU_ID_QUIT: &str = "quit";
 const MENU_ID_EMPTY: &str = "empty";
 const MENU_ID_ERROR_PREFIX: &str = "feed-error:";
@@ -54,12 +57,12 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
         MENU_ID_QUIT => {
             app_handle.exit(0);
         }
-        MENU_ID_RELOAD => {
+        MENU_ID_REFRESH_FEEDS => {
             let app = app_handle.clone();
 
             tauri::async_runtime::spawn(async move {
-                if let Err(err) = refresh_from_cache(app).await {
-                    eprintln!("failed refreshing tray menu: {err}");
+                if let Err(err) = refresh_feeds_now(app).await {
+                    eprintln!("failed refreshing feeds from tray action: {err}");
                 }
             });
         }
@@ -110,6 +113,22 @@ async fn refresh_from_cache(app_handle: AppHandle) -> Result<(), String> {
     refresh_menu(&app_handle, &snapshots).map_err(|err| err.to_string())
 }
 
+async fn refresh_feeds_now(app_handle: AppHandle) -> Result<(), String> {
+    let poller = app_handle
+        .try_state::<BackgroundPoller>()
+        .ok_or_else(|| "background poller state is missing".to_string())?
+        .inner()
+        .clone();
+    let registry = app_handle
+        .try_state::<std::sync::Arc<FeedRegistry>>()
+        .ok_or_else(|| "feed registry state is missing".to_string())?
+        .inner()
+        .clone();
+
+    poller.refresh_now(registry).await;
+    refresh_from_cache(app_handle).await
+}
+
 fn build_tray_menu(
     app_handle: &AppHandle,
     snapshots: Vec<FeedSnapshot>,
@@ -149,8 +168,8 @@ fn build_tray_menu(
     top_level.push(Box::new(PredefinedMenuItem::separator(app_handle)?));
     top_level.push(Box::new(MenuItem::with_id(
         app_handle,
-        MENU_ID_RELOAD,
-        "Reload",
+        MENU_ID_REFRESH_FEEDS,
+        "Refresh feeds",
         true,
         None::<&str>,
     )?));
