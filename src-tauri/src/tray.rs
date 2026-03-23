@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use std::{fmt::Write, process::Command};
+use std::{fmt::Write, process::Command, sync::Arc, time::Duration};
 
 use tauri::{
     image::Image,
@@ -7,17 +6,23 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder},
     AppHandle, Manager, Wry,
 };
-use tokio::sync::Mutex;
 
-use crate::feed::{Activity, FeedRegistry, FeedSnapshot, Field, FieldValue, StatusKind};
+use crate::feed::{
+    config::ConfigChangeTracker, Activity, BackgroundPoller, FeedRegistry, FeedSnapshot,
+    FeedSnapshotCache, Field, FieldValue, StatusKind,
+};
 
-const MENU_ID_RELOAD: &str = "reload";
+const MENU_ID_REFRESH_FEEDS: &str = "refresh-feeds";
 const MENU_ID_QUIT: &str = "quit";
 const MENU_ID_EMPTY: &str = "empty";
 const MENU_ID_ERROR_PREFIX: &str = "feed-error:";
 const MENU_ID_FIELD_PREFIX: &str = "field:";
 const MENU_ID_HEADING_PREFIX: &str = "heading:";
 const MENU_ID_OPEN_PREFIX: &str = "open:";
+const CONFIG_WARNING_FEED_NAME: &str = "Configuration";
+const CONFIG_WARNING_FEED_TYPE: &str = "app";
+const CONFIG_WARNING_MESSAGE: &str = "Config file changed. Restart Cortado to apply updates.";
+const CONFIG_CHANGE_CHECK_INTERVAL: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Copy)]
 enum UiStatus {
@@ -56,12 +61,12 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
         MENU_ID_QUIT => {
             app_handle.exit(0);
         }
-        MENU_ID_RELOAD => {
+        MENU_ID_REFRESH_FEEDS => {
             let app = app_handle.clone();
 
             tauri::async_runtime::spawn(async move {
-                if let Err(err) = refresh_from_registry(app).await {
-                    eprintln!("failed refreshing tray menu: {err}");
+                if let Err(err) = refresh_feeds_now(app).await {
+                    eprintln!("failed refreshing feeds from tray action: {err}");
                 }
             });
         }
@@ -87,15 +92,120 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
     }
 }
 
-async fn refresh_from_registry(app_handle: AppHandle) -> Result<(), String> {
-    let registry_state = app_handle
-        .try_state::<Arc<Mutex<FeedRegistry>>>()
-        .ok_or_else(|| "feed registry state is missing".to_string())?;
+pub fn start_refresh_loop(
+    app_handle: AppHandle,
+    snapshots_cache: FeedSnapshotCache,
+    mut updates: tokio::sync::watch::Receiver<u64>,
+) {
+    tauri::async_runtime::spawn(async move {
+        let mut check_interval = tokio::time::interval(CONFIG_CHANGE_CHECK_INTERVAL);
+        let mut last_config_changed: Option<bool> = None;
 
-    let registry = registry_state.lock().await;
-    let snapshots = registry.poll_all().await;
+        loop {
+            tokio::select! {
+                changed = updates.changed() => {
+                    if changed.is_err() {
+                        break;
+                    }
+
+                    if let Err(err) = refresh_from_cache(app_handle.clone(), &snapshots_cache).await {
+                        eprintln!("failed refreshing tray menu from poller updates: {err}");
+                    }
+                }
+                _ = check_interval.tick() => {
+                    match refresh_config_change_state(&app_handle).await {
+                        Ok(config_changed) => {
+                            if last_config_changed != Some(config_changed) {
+                                last_config_changed = Some(config_changed);
+
+                                if let Err(err) = refresh_from_cache(app_handle.clone(), &snapshots_cache).await {
+                                    eprintln!("failed refreshing tray menu after config-change check: {err}");
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            eprintln!("failed checking config change state: {err}");
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async fn refresh_from_cache(
+    app_handle: AppHandle,
+    snapshots_cache: &FeedSnapshotCache,
+) -> Result<(), String> {
+    let mut snapshots = snapshots_cache.list().await;
+
+    inject_config_warning_snapshot(&app_handle, &mut snapshots).await;
 
     refresh_menu(&app_handle, &snapshots).map_err(|err| err.to_string())
+}
+
+async fn refresh_config_change_state(app_handle: &AppHandle) -> Result<bool, String> {
+    let tracker = app_handle
+        .try_state::<Arc<ConfigChangeTracker>>()
+        .ok_or_else(|| "config change tracker state is missing".to_string())?
+        .inner()
+        .clone();
+
+    tracker
+        .refresh()
+        .await
+        .map_err(|err| format!("config change refresh failed: {err}"))
+}
+
+async fn inject_config_warning_snapshot(app_handle: &AppHandle, snapshots: &mut Vec<FeedSnapshot>) {
+    snapshots.retain(|snapshot| {
+        !(snapshot.name == CONFIG_WARNING_FEED_NAME
+            && snapshot.feed_type == CONFIG_WARNING_FEED_TYPE)
+    });
+
+    let tracker = match app_handle.try_state::<Arc<ConfigChangeTracker>>() {
+        Some(state) => state.inner().clone(),
+        None => {
+            eprintln!("config change tracker state is missing");
+            return;
+        }
+    };
+
+    let has_changed = tracker.has_changed().await;
+
+    if has_changed {
+        snapshots.insert(
+            0,
+            FeedSnapshot {
+                name: CONFIG_WARNING_FEED_NAME.to_string(),
+                feed_type: CONFIG_WARNING_FEED_TYPE.to_string(),
+                activities: Vec::new(),
+                provided_fields: Vec::new(),
+                error: Some(CONFIG_WARNING_MESSAGE.to_string()),
+            },
+        );
+    }
+}
+
+async fn refresh_feeds_now(app_handle: AppHandle) -> Result<(), String> {
+    let poller = app_handle
+        .try_state::<BackgroundPoller>()
+        .ok_or_else(|| "background poller state is missing".to_string())?
+        .inner()
+        .clone();
+    let registry = app_handle
+        .try_state::<std::sync::Arc<FeedRegistry>>()
+        .ok_or_else(|| "feed registry state is missing".to_string())?
+        .inner()
+        .clone();
+    let cache = app_handle
+        .try_state::<FeedSnapshotCache>()
+        .ok_or_else(|| "feed snapshot cache state is missing".to_string())?
+        .inner()
+        .clone();
+
+    poller.refresh_now(registry).await;
+    refresh_from_cache(app_handle, &cache).await
 }
 
 fn build_tray_menu(
@@ -137,8 +247,8 @@ fn build_tray_menu(
     top_level.push(Box::new(PredefinedMenuItem::separator(app_handle)?));
     top_level.push(Box::new(MenuItem::with_id(
         app_handle,
-        MENU_ID_RELOAD,
-        "Reload",
+        MENU_ID_REFRESH_FEEDS,
+        "Refresh feeds",
         true,
         None::<&str>,
     )?));

@@ -4,9 +4,26 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Serialize;
 
+use self::{config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
+
 pub mod config;
+pub mod dependency;
+pub mod field_overrides;
 pub mod github_pr;
+pub mod process;
+pub mod runtime;
 pub mod shell;
+
+pub use runtime::{BackgroundPoller, FeedSnapshotCache};
+
+/// Controls how feed registry construction handles invalid feed entries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RegistryBuildMode {
+    /// Keep valid feeds and surface invalid ones as per-feed config-error snapshots.
+    Tolerant,
+    /// Fail the whole build on the first invalid feed entry.
+    Strict,
+}
 
 /// Supported field data kinds.
 #[derive(Debug, Clone, Serialize)]
@@ -79,6 +96,7 @@ pub struct FeedSnapshot {
 pub trait Feed: Send + Sync {
     fn name(&self) -> &str;
     fn feed_type(&self) -> &str;
+    fn interval_seconds(&self) -> u64;
     fn provided_fields(&self) -> Vec<FieldDefinition>;
     async fn poll(&self) -> Result<Vec<Activity>>;
 }
@@ -114,31 +132,71 @@ impl FeedRegistry {
         });
     }
 
-    /// Polls every active feed and returns snapshots for the frontend.
-    pub async fn poll_all(&self) -> Vec<FeedSnapshot> {
+    /// Returns active feed implementations in registration order.
+    pub fn active_feeds(&self) -> &[Arc<dyn Feed>] {
+        &self.feeds
+    }
+
+    /// Returns cache seed snapshots in registration order.
+    pub fn initial_snapshots(&self) -> Vec<FeedSnapshot> {
         let mut snapshots = Vec::with_capacity(self.feeds.len() + self.errored.len());
 
         for feed in &self.feeds {
-            match feed.poll().await {
-                Ok(activities) => snapshots.push(FeedSnapshot {
-                    name: feed.name().to_string(),
-                    feed_type: feed.feed_type().to_string(),
-                    activities,
-                    provided_fields: feed.provided_fields(),
-                    error: None,
-                }),
-                Err(err) => snapshots.push(FeedSnapshot {
-                    name: feed.name().to_string(),
-                    feed_type: feed.feed_type().to_string(),
-                    activities: Vec::new(),
-                    provided_fields: feed.provided_fields(),
-                    error: Some(err.to_string()),
-                }),
-            }
+            snapshots.push(FeedSnapshot {
+                name: feed.name().to_string(),
+                feed_type: feed.feed_type().to_string(),
+                activities: Vec::new(),
+                provided_fields: feed.provided_fields(),
+                error: None,
+            });
         }
 
         snapshots.extend(self.errored.iter().cloned());
         snapshots
+    }
+}
+
+/// Loads and builds the feed registry from `feeds.toml`.
+pub fn load_feed_registry(mode: RegistryBuildMode) -> Result<FeedRegistry> {
+    let configs = config::load_feeds_config()?;
+    build_feed_registry_from_configs(configs, mode)
+}
+
+/// Builds a feed registry from parsed configs.
+pub fn build_feed_registry_from_configs(
+    configs: Vec<FeedConfig>,
+    mode: RegistryBuildMode,
+) -> Result<FeedRegistry> {
+    let mut registry = FeedRegistry::new();
+
+    for config in configs {
+        let feed_name = config.name.clone();
+        let feed_type = config.feed_type.clone();
+
+        match instantiate_feed(&config) {
+            Ok(feed) => registry.register(feed),
+            Err(error) => {
+                if mode == RegistryBuildMode::Strict {
+                    return Err(anyhow::anyhow!(
+                        "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                    ));
+                }
+
+                registry.register_error(feed_name, feed_type, error.to_string());
+            }
+        }
+    }
+
+    Ok(registry)
+}
+
+fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
+    match config.feed_type.as_str() {
+        "github-pr" => {
+            GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
+        "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }
 }
 
