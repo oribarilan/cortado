@@ -216,6 +216,14 @@ Use `pnpm`, not npm or yarn. The Tauri CLI is a local devDependency — run it v
 
 - [awesome-tauri](https://github.com/tauri-apps/awesome-tauri) — curated list of Tauri examples, plugins, and apps. Refer to this when stuck on Tauri-specific issues or looking for implementation patterns.
 
+## Gotchas
+
+### No `block_on` inside Tauri `setup()`
+
+Never use `tauri::async_runtime::block_on()` inside the `setup()` closure. Tauri's setup runs on the main thread within an active tokio runtime. Calling `block_on` from inside a tokio context will deadlock or panic — especially when the awaited future spawns its own tokio tasks (process I/O, timers, etc.). The app will compile fine but silently hang at launch with no tray icon and no visible error.
+
+**Instead**, use `tauri::async_runtime::spawn()` for any async work in setup. If the UI depends on the result (e.g., populating the tray), set up a watch channel or callback so the spawned task can notify the UI when data is ready, rather than blocking the main thread to wait for it.
+
 ## Known Quirks
 
 - `src-tauri/gen/schemas/` files contain "template" and "example" in Tauri's own doc strings — don't try to rename them.

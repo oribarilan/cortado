@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Real shell feed execution
@@ -10,9 +10,9 @@ Replace the shell feed stub with real command execution so shell feeds produce l
 
 ## Acceptance criteria
 
-- [ ] `ShellFeed::poll()` executes the configured command via shell (`sh -c`) and captures output.
-- [ ] Command execution runs via async process APIs (no blocking process calls on async runtime threads).
-- [ ] Command success maps stdout to the configured field type:
+- [x] `ShellFeed::poll()` executes the configured command via shell (`sh -c`) and captures output.
+- [x] Command execution runs via async process APIs (no blocking process calls on async runtime threads).
+- [x] Command success maps stdout to the configured field type:
   - `text` → raw trimmed stdout
   - `number` → parsed numeric value (error if parse fails)
   - `url` → raw trimmed stdout as URL value
@@ -23,11 +23,11 @@ Replace the shell feed stub with real command execution so shell feeds produce l
     - `pending|running|in_progress` → `pending`
     - any other value → `neutral`
     - matching is case-insensitive; emitted status `value` is the trimmed stdout
-- [ ] Non-zero exits return an error containing exit context and stderr when available.
-- [ ] Command spawn failures (e.g., shell unavailable) return meaningful poll errors.
-- [ ] Poll path enforces a per-poll command timeout of 10s; timeout surfaces as a feed poll error.
-- [ ] Existing feed identity, provided field metadata, and single-activity shape remain unchanged.
-- [ ] `just check` passes.
+- [x] Non-zero exits return an error containing exit context and stderr when available.
+- [x] Command spawn failures (e.g., shell unavailable) return meaningful poll errors.
+- [x] Poll path enforces a per-poll command timeout of 10s; timeout surfaces as a feed poll error.
+- [x] Existing feed identity, provided field metadata, and single-activity shape remain unchanged.
+- [x] `just check` passes.
 
 ## Notes
 

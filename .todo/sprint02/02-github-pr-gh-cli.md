@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Real GitHub PR polling via gh CLI
@@ -10,19 +10,19 @@ Replace the GitHub PR stub with live polling through `gh` CLI so activities refl
 
 ## Acceptance criteria
 
-- [ ] `GithubPrFeed::poll()` calls `gh pr list` with explicit repo and JSON fields.
-- [ ] Command invocation is deterministic and single-shot per poll:
+- [x] `GithubPrFeed::poll()` calls `gh pr list` with explicit repo and JSON fields.
+- [x] Command invocation is deterministic and single-shot per poll:
   - `gh pr list --repo <owner/repo> --state open --limit 100 --json number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup`
-- [ ] Command shape uses one request per poll, including at least:
+- [x] Command shape uses one request per poll, including at least:
   - `number`, `title`, `url`, `isDraft`, `labels`, `mergeable`, `reviewDecision`, `statusCheckRollup`
-- [ ] JSON output is parsed into typed Rust structures and mapped into `Activity` rows.
-- [ ] Feed fields are populated from real data:
+- [x] JSON output is parsed into typed Rust structures and mapped into `Activity` rows.
+- [x] Feed fields are populated from real data:
   - `review` (status)
   - `checks` (status)
   - `mergeable` (status)
   - `draft` (status)
   - `labels` (text)
-- [ ] Mapping rules are deterministic:
+- [x] Mapping rules are deterministic:
   - `reviewDecision`: `APPROVED`→success `approved`; `CHANGES_REQUESTED`→warning `changes requested`; `REVIEW_REQUIRED`→pending `awaiting`; unknown/null→neutral `unknown`
   - `mergeable`: `MERGEABLE`→success `yes`; `CONFLICTING`→error `no`; `UNKNOWN`→pending `unknown`; `null`→neutral `unknown`
   - `draft`: `isDraft=true`→pending `yes`; `isDraft=false`→neutral `no`
@@ -32,11 +32,12 @@ Replace the GitHub PR stub with live polling through `gh` CLI so activities refl
     - else any pending/in_progress/queued/waiting state present → pending `pending`
     - else at least one successful/skipped/neutral conclusion and no pending/error → success `passing`
     - else (no check data) → neutral `unknown`
-- [ ] Checks status is derived from available CLI output in the same poll request (no per-PR N+1 calls in this sprint).
-- [ ] Missing `gh` binary yields a clear actionable error message.
-- [ ] Auth/API failures surface stderr/context in feed error output.
-- [ ] Empty PR set returns success with zero activities (not an error).
-- [ ] `just check` passes.
+- [x] Checks status is derived from available CLI output in the same poll request (no per-PR N+1 calls in this sprint).
+- [x] Missing `gh` binary yields this exact error message: `GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`.`
+- [x] Unauthenticated `gh` state yields this exact error message: `GitHub feed requires `gh` authentication. Run `gh auth login` and retry.`
+- [x] Non-auth API failures surface stderr/context in feed error output.
+- [x] Empty PR set returns success with zero activities (not an error).
+- [x] `just check` passes.
 
 ## Notes
 

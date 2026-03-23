@@ -5,8 +5,14 @@ use async_trait::async_trait;
 use serde::Serialize;
 
 pub mod config;
+pub mod dependency;
+pub mod field_overrides;
 pub mod github_pr;
+pub mod process;
+pub mod runtime;
 pub mod shell;
+
+pub use runtime::{BackgroundPoller, FeedSnapshotCache};
 
 /// Supported field data kinds.
 #[derive(Debug, Clone, Serialize)]
@@ -79,6 +85,7 @@ pub struct FeedSnapshot {
 pub trait Feed: Send + Sync {
     fn name(&self) -> &str;
     fn feed_type(&self) -> &str;
+    fn interval_seconds(&self) -> u64;
     fn provided_fields(&self) -> Vec<FieldDefinition>;
     async fn poll(&self) -> Result<Vec<Activity>>;
 }
@@ -114,27 +121,23 @@ impl FeedRegistry {
         });
     }
 
-    /// Polls every active feed and returns snapshots for the frontend.
-    pub async fn poll_all(&self) -> Vec<FeedSnapshot> {
+    /// Returns active feed implementations in registration order.
+    pub fn active_feeds(&self) -> &[Arc<dyn Feed>] {
+        &self.feeds
+    }
+
+    /// Returns cache seed snapshots in registration order.
+    pub fn initial_snapshots(&self) -> Vec<FeedSnapshot> {
         let mut snapshots = Vec::with_capacity(self.feeds.len() + self.errored.len());
 
         for feed in &self.feeds {
-            match feed.poll().await {
-                Ok(activities) => snapshots.push(FeedSnapshot {
-                    name: feed.name().to_string(),
-                    feed_type: feed.feed_type().to_string(),
-                    activities,
-                    provided_fields: feed.provided_fields(),
-                    error: None,
-                }),
-                Err(err) => snapshots.push(FeedSnapshot {
-                    name: feed.name().to_string(),
-                    feed_type: feed.feed_type().to_string(),
-                    activities: Vec::new(),
-                    provided_fields: feed.provided_fields(),
-                    error: Some(err.to_string()),
-                }),
-            }
+            snapshots.push(FeedSnapshot {
+                name: feed.name().to_string(),
+                feed_type: feed.feed_type().to_string(),
+                activities: Vec::new(),
+                provided_fields: feed.provided_fields(),
+                error: None,
+            });
         }
 
         snapshots.extend(self.errored.iter().cloned());

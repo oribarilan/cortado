@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::{fmt::Write, process::Command};
 
 use tauri::{
@@ -7,9 +6,8 @@ use tauri::{
     tray::{TrayIcon, TrayIconBuilder},
     AppHandle, Manager, Wry,
 };
-use tokio::sync::Mutex;
 
-use crate::feed::{Activity, FeedRegistry, FeedSnapshot, Field, FieldValue, StatusKind};
+use crate::feed::{Activity, FeedSnapshot, FeedSnapshotCache, Field, FieldValue, StatusKind};
 
 const MENU_ID_RELOAD: &str = "reload";
 const MENU_ID_QUIT: &str = "quit";
@@ -60,7 +58,7 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
             let app = app_handle.clone();
 
             tauri::async_runtime::spawn(async move {
-                if let Err(err) = refresh_from_registry(app).await {
+                if let Err(err) = refresh_from_cache(app).await {
                     eprintln!("failed refreshing tray menu: {err}");
                 }
             });
@@ -87,13 +85,27 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
     }
 }
 
-async fn refresh_from_registry(app_handle: AppHandle) -> Result<(), String> {
-    let registry_state = app_handle
-        .try_state::<Arc<Mutex<FeedRegistry>>>()
-        .ok_or_else(|| "feed registry state is missing".to_string())?;
+pub fn start_refresh_loop(
+    app_handle: AppHandle,
+    cache: FeedSnapshotCache,
+    mut updates: tokio::sync::watch::Receiver<u64>,
+) {
+    tauri::async_runtime::spawn(async move {
+        while updates.changed().await.is_ok() {
+            let snapshots = cache.list().await;
 
-    let registry = registry_state.lock().await;
-    let snapshots = registry.poll_all().await;
+            if let Err(err) = refresh_menu(&app_handle, &snapshots) {
+                eprintln!("failed refreshing tray menu from poller updates: {err}");
+            }
+        }
+    });
+}
+
+async fn refresh_from_cache(app_handle: AppHandle) -> Result<(), String> {
+    let cache = app_handle
+        .try_state::<FeedSnapshotCache>()
+        .ok_or_else(|| "feed snapshot cache state is missing".to_string())?;
+    let snapshots = cache.list().await;
 
     refresh_menu(&app_handle, &snapshots).map_err(|err| err.to_string())
 }

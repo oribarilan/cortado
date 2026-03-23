@@ -57,7 +57,8 @@ The `github-pr` feed (and future GitHub feed types) depends on the [`gh` CLI](ht
 
 - No auth config in `feeds.toml`.
 - `gh` must be installed and authenticated (`gh auth login`).
-- If `gh` is not available, GitHub feeds fail with a clear error.
+- If `gh` is not available, GitHub feeds fail with this message: "GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`."
+- If `gh` is available but not authenticated, GitHub feeds fail with this message: "GitHub feed requires `gh` authentication. Run `gh auth login` and retry."
 
 ### External CLI dependency contract
 
@@ -66,11 +67,22 @@ Feeds that rely on external CLIs must use a consistent dependency/error model:
 - Dependency/auth failures are surfaced as **feed-level poll errors** (never app-global crashes).
 - Errors are concise and actionable (what is missing + exact command/action to fix).
 - Other valid feeds continue polling/rendering even if one feed has missing dependencies.
+- Where canonical error copy is defined (as above for `github-pr`), implementations should use it verbatim.
 
 Current + planned dependency requirements:
 
 - `github-pr`: requires `gh` installed and authenticated.
 - `ado-pr` (future): requires `az` CLI, `azure-devops` extension, and authenticated access (logged-in state and/or PAT/env-based auth as supported by the implementation).
+
+#### Future `ado-pr` dependency checks (contract)
+
+Any future `ado-pr` feed implementation should follow this dependency preflight order and normalize failures to concise feed-level poll errors:
+
+1. Verify `az` CLI is installed/invocable.
+2. Verify `azure-devops` extension is installed (`az extension show --name azure-devops` or equivalent).
+3. Verify authentication is available (logged-in state and/or PAT/env strategy used by the implementation).
+
+Failures in any step should not crash the app globally; they should surface on that feed while other feeds continue polling/rendering.
 
 ### Default intervals
 

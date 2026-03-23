@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Tray menu refresh from background poller
@@ -10,12 +10,12 @@ Keep the native tray menu in sync with background-polled feed snapshots so users
 
 ## Acceptance criteria
 
-- [ ] Tray menu refresh path consumes poller cache snapshots instead of triggering full synchronous `poll_all()`.
-- [ ] Tray UI reflects new snapshots after background polls (automatic refresh loop or equivalent update trigger).
-- [ ] Manual `Reload` action remains available and refreshes menu from current cache/state (no direct synchronous repoll in tray event handler).
-- [ ] Reload does not regress error rendering, empty states, or feed submenu structure.
-- [ ] Startup tray render uses seeded snapshot data when available.
-- [ ] `just check` passes.
+- [x] Tray menu refresh path consumes poller cache snapshots instead of triggering full synchronous `poll_all()`.
+- [x] Tray UI reflects new snapshots after background polls (automatic refresh loop or equivalent update trigger).
+- [x] Manual `Reload` action remains available and refreshes menu from current cache/state (no direct synchronous repoll in tray event handler).
+- [x] Reload does not regress error rendering, empty states, or feed submenu structure.
+- [x] Startup tray render uses seeded snapshot data when available.
+- [x] `just check` passes.
 
 ## Notes
 

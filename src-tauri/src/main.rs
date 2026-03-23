@@ -6,40 +6,54 @@ mod feed;
 mod tray;
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use tauri::Manager;
-use tokio::sync::Mutex;
 
 use crate::feed::{
     config::{load_feeds_config, FeedConfig},
     github_pr::GithubPrFeed,
     shell::ShellFeed,
-    FeedRegistry,
+    BackgroundPoller, FeedRegistry, FeedSnapshotCache,
 };
 
 fn main() {
-    let feed_registry =
-        build_feed_registry().unwrap_or_else(|err| panic!("failed to initialize feeds: {err}"));
+    let feed_registry = Arc::new(
+        build_feed_registry().unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
+    );
+    let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
 
     tauri::Builder::default()
-        .manage(Arc::new(Mutex::new(feed_registry)))
+        .manage(feed_cache.clone())
         .invoke_handler(tauri::generate_handler![command::list_feeds])
-        .setup(|app| {
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+        .setup({
+            let feed_registry = feed_registry.clone();
+            let feed_cache = feed_cache.clone();
 
-            let app_handle = app.app_handle();
+            move |app| {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            tray::create(app_handle)?;
+                let app_handle = app.app_handle().clone();
 
-            tauri::async_runtime::block_on(async {
-                let state = app_handle.state::<Arc<Mutex<FeedRegistry>>>();
-                let registry = state.lock().await;
-                let snapshots = registry.poll_all().await;
-                tray::refresh_menu(app_handle, &snapshots)
-            })?;
+                tray::create(&app_handle)?;
 
-            Ok(())
+                let poller = BackgroundPoller::new(feed_cache.clone());
+                let updates = poller.subscribe();
+
+                tray::start_refresh_loop(app_handle.clone(), feed_cache.clone(), updates);
+
+                // Seed feeds and start polling in the background.
+                // The refresh loop will update the tray once the seed completes.
+                tauri::async_runtime::spawn(async move {
+                    poller
+                        .seed_startup_best_effort(feed_registry.clone(), Duration::from_secs(15))
+                        .await;
+                    poller.start(feed_registry);
+                });
+
+                Ok(())
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

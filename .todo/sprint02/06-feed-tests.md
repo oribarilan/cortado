@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Feed system unit tests
@@ -10,14 +10,14 @@ Add focused Rust unit tests for feed parsing/mapping/override behavior and cache
 
 ## Acceptance criteria
 
-- [ ] Config parser tests cover: valid config, missing required keys, invalid interval, duplicate names, missing file behavior.
-- [ ] Shell feed tests cover: required `command`, supported `field_type` parsing, output mapping edge cases.
-- [ ] GitHub feed tests cover: required `repo`, JSON mapping for review/checks/mergeable/draft/labels.
-- [ ] Field override tests verify hide + relabel behavior and unknown override tolerance.
-- [ ] Background cache behavior tests verify stale activities are retained when a subsequent poll fails.
-- [ ] Dependency-check tests verify stable errors for missing `gh` and unauthenticated `gh` states (using mocked command outputs).
-- [ ] Tests avoid external side effects (no real `gh` calls, network, or shell commands in unit tests).
-- [ ] `just check` passes.
+- [x] Config parser tests cover: valid config, missing required keys, invalid interval, duplicate names, missing file behavior.
+- [x] Shell feed tests cover: required `command`, supported `field_type` parsing, output mapping edge cases.
+- [x] GitHub feed tests cover: required `repo`, JSON mapping for review/checks/mergeable/draft/labels.
+- [x] Field override tests verify hide + relabel behavior and unknown override tolerance.
+- [x] Background cache behavior tests verify stale activities are retained when a subsequent poll fails.
+- [x] Dependency-check tests verify stable errors for missing `gh` and unauthenticated `gh` states (using mocked command outputs).
+- [x] Tests avoid external side effects (no real `gh` calls, network, or shell commands in unit tests).
+- [x] `just check` passes.
 
 ## Notes
 

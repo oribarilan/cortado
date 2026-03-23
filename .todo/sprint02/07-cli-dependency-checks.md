@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # CLI dependency detection and error UX
@@ -10,26 +10,26 @@ Define and implement a consistent dependency-check pattern for feed runtimes tha
 
 ## Acceptance criteria
 
-- [ ] A shared helper exists for command dependency checks (binary existence and basic invocability).
-- [ ] Shared helper contract is explicit:
+- [x] A shared helper exists for command dependency checks (binary existence and basic invocability).
+- [x] Shared helper contract is explicit:
   - binary missing
   - binary present but returns invocation/auth/setup error
   - binary healthy
-- [ ] GitHub PR feed surfaces a deterministic error when `gh` is missing, including a concrete install/action hint.
-- [ ] GitHub PR feed surfaces a deterministic error when `gh` is present but not authenticated.
-- [ ] Dependency errors are represented as feed-level poll errors (not app-global failures) and shown in tray output.
-- [ ] Error wording is concise, actionable, and consistent across feeds.
-- [ ] GitHub auth-check strategy is deterministic and documented in this task:
+- [x] GitHub PR feed surfaces a deterministic error when `gh` is missing, including a concrete install/action hint.
+- [x] GitHub PR feed surfaces a deterministic error when `gh` is present but not authenticated.
+- [x] Dependency errors are represented as feed-level poll errors (not app-global failures) and shown in tray output.
+- [x] Error wording is concise, actionable, and consistent across feeds.
+- [x] GitHub auth-check strategy is deterministic and documented in this task:
   - preferred preflight: `gh auth status`
   - fallback (if preflight omitted): infer unauthenticated state from `gh pr list` stderr/exit and normalize to the same user-facing error
-- [ ] User-facing error copy is pinned for current GitHub feed checks:
+- [x] User-facing error copy is pinned for current GitHub feed checks:
   - missing binary: ``GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`.``
   - unauthenticated: ``GitHub feed requires `gh` authentication. Run `gh auth login` and retry.``
-- [ ] Future-facing rules are documented for `ado-pr` dependency checks:
+- [x] Future-facing rules are documented for `ado-pr` dependency checks:
   - `az` CLI availability
   - `azure-devops` extension availability
   - authentication expectation (PAT/env or logged-in state)
-- [ ] `just check` passes.
+- [x] `just check` passes.
 
 ## Notes
 

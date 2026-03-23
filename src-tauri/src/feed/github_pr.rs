@@ -1,22 +1,45 @@
-use anyhow::{anyhow, Result};
+use std::{collections::HashMap, sync::Arc, time::Duration};
+
+use anyhow::{anyhow, bail, Result};
+use serde::Deserialize;
 use toml::Value;
 
 use crate::feed::{
-    config::FeedConfig, Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
+    config::{FeedConfig, FieldOverride},
+    dependency::{classify_dependency_result, DependencyCheck},
+    field_overrides::{apply_activity_overrides, apply_definition_overrides},
+    process::{CommandInvocation, ProcessRunner, TokioProcessRunner},
+    Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
 };
 
 const DEFAULT_INTERVAL_SECONDS: u64 = 120;
+const GH_COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Stub feed that returns hardcoded GitHub pull request activities.
+const GH_MISSING_MESSAGE: &str =
+    "GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`.";
+const GH_UNAUTHENTICATED_MESSAGE: &str =
+    "GitHub feed requires `gh` authentication. Run `gh auth login` and retry.";
+
+/// Feed that polls GitHub pull requests via `gh pr list`.
 pub struct GithubPrFeed {
     name: String,
     repo: String,
     interval: u64,
+    config_overrides: HashMap<String, FieldOverride>,
+    process_runner: Arc<dyn ProcessRunner>,
 }
 
 impl GithubPrFeed {
-    /// Builds a GitHub PR feed from a parsed feed config.
+    /// Builds a GitHub PR feed from parsed config.
     pub fn from_config(config: &FeedConfig) -> Result<Self> {
+        Self::from_config_with_runner(config, Arc::new(TokioProcessRunner))
+    }
+
+    /// Builds a GitHub PR feed with an injected process runner (used by tests).
+    pub fn from_config_with_runner(
+        config: &FeedConfig,
+        process_runner: Arc<dyn ProcessRunner>,
+    ) -> Result<Self> {
         let repo = config
             .type_specific
             .get("repo")
@@ -26,13 +49,62 @@ impl GithubPrFeed {
                     "feed `{}` (type github-pr) is missing required `repo` string",
                     config.name
                 )
-            })?;
+            })?
+            .trim()
+            .to_string();
+
+        if repo.is_empty() {
+            bail!(
+                "feed `{}` (type github-pr) requires non-empty `repo`",
+                config.name
+            );
+        }
 
         Ok(Self {
             name: config.name.clone(),
-            repo: repo.to_string(),
+            repo,
             interval: config.interval.unwrap_or(DEFAULT_INTERVAL_SECONDS),
+            config_overrides: config.field_overrides.clone(),
+            process_runner,
         })
+    }
+
+    async fn ensure_gh_available(&self) -> Result<()> {
+        let version_invocation = CommandInvocation::new("gh", ["--version"], GH_COMMAND_TIMEOUT);
+        let version_display = version_invocation.display();
+        let version_check = classify_dependency_result(
+            &version_display,
+            self.process_runner.run(version_invocation).await,
+        );
+
+        match version_check {
+            DependencyCheck::MissingBinary => {
+                bail!(GH_MISSING_MESSAGE);
+            }
+            DependencyCheck::InvocationError(error) => {
+                bail!("{error}");
+            }
+            DependencyCheck::Healthy(_) => {}
+        }
+
+        let auth_invocation = CommandInvocation::new("gh", ["auth", "status"], GH_COMMAND_TIMEOUT);
+        let auth_display = auth_invocation.display();
+        let auth_check = classify_dependency_result(
+            &auth_display,
+            self.process_runner.run(auth_invocation).await,
+        );
+
+        match auth_check {
+            DependencyCheck::MissingBinary => bail!(GH_MISSING_MESSAGE),
+            DependencyCheck::Healthy(_) => Ok(()),
+            DependencyCheck::InvocationError(error) => {
+                if looks_like_gh_auth_error(&error.stdout, &error.stderr) {
+                    bail!(GH_UNAUTHENTICATED_MESSAGE);
+                }
+
+                bail!("{error}");
+            }
+        }
     }
 }
 
@@ -46,180 +118,778 @@ impl Feed for GithubPrFeed {
         "github-pr"
     }
 
+    fn interval_seconds(&self) -> u64 {
+        self.interval
+    }
+
     fn provided_fields(&self) -> Vec<FieldDefinition> {
-        vec![
-            FieldDefinition {
-                name: "review".to_string(),
-                label: "Review".to_string(),
-                field_type: FieldType::Status,
-                description: "Current review decision".to_string(),
-            },
-            FieldDefinition {
-                name: "checks".to_string(),
-                label: "Checks".to_string(),
-                field_type: FieldType::Status,
-                description: "CI checks state".to_string(),
-            },
-            FieldDefinition {
-                name: "mergeable".to_string(),
-                label: "Mergeable".to_string(),
-                field_type: FieldType::Status,
-                description: "Whether the PR can be merged".to_string(),
-            },
-            FieldDefinition {
-                name: "draft".to_string(),
-                label: "Draft".to_string(),
-                field_type: FieldType::Status,
-                description: "Draft status".to_string(),
-            },
-            FieldDefinition {
-                name: "labels".to_string(),
-                label: "Labels".to_string(),
-                field_type: FieldType::Text,
-                description: "Applied PR labels".to_string(),
-            },
-        ]
+        apply_definition_overrides(
+            base_field_definitions(),
+            &HashMap::new(),
+            &self.config_overrides,
+        )
     }
 
     async fn poll(&self) -> Result<Vec<Activity>> {
-        let interval_note = format!("stub interval {}s", self.interval);
+        self.ensure_gh_available().await?;
 
-        Ok(vec![
-            Activity {
-                id: format!("{}/pull/42", self.repo),
-                title: format!("#42 Add feed scaffold ({interval_note})"),
-                fields: vec![
-                    Field {
-                        name: "review".to_string(),
-                        label: "Review".to_string(),
-                        value: FieldValue::Status {
-                            value: "awaiting".to_string(),
-                            severity: StatusKind::Pending,
-                        },
-                    },
-                    Field {
-                        name: "checks".to_string(),
-                        label: "Checks".to_string(),
-                        value: FieldValue::Status {
-                            value: "passing".to_string(),
-                            severity: StatusKind::Success,
-                        },
-                    },
-                    Field {
-                        name: "mergeable".to_string(),
-                        label: "Mergeable".to_string(),
-                        value: FieldValue::Status {
-                            value: "yes".to_string(),
-                            severity: StatusKind::Success,
-                        },
-                    },
-                    Field {
-                        name: "draft".to_string(),
-                        label: "Draft".to_string(),
-                        value: FieldValue::Status {
-                            value: "no".to_string(),
-                            severity: StatusKind::Neutral,
-                        },
-                    },
-                    Field {
-                        name: "labels".to_string(),
-                        label: "Labels".to_string(),
-                        value: FieldValue::Text {
-                            value: "feed, phase-1".to_string(),
-                        },
-                    },
-                ],
+        let invocation = CommandInvocation::new(
+            "gh",
+            [
+                "pr",
+                "list",
+                "--repo",
+                &self.repo,
+                "--state",
+                "open",
+                "--limit",
+                "100",
+                "--json",
+                "number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup",
+            ],
+            GH_COMMAND_TIMEOUT,
+        );
+
+        let command_display = invocation.display();
+        let output = self
+            .process_runner
+            .run(invocation)
+            .await
+            .map_err(|error| anyhow!("failed invoking `{command_display}`: {error}"))?;
+
+        if !output.succeeded() {
+            if looks_like_gh_auth_error(&output.stdout, &output.stderr) {
+                bail!(GH_UNAUTHENTICATED_MESSAGE);
+            }
+
+            bail!(
+                "`{command_display}` failed with {}",
+                non_zero_exit_context(output.exit_code, &output.stdout, &output.stderr)
+            );
+        }
+
+        let prs = serde_json::from_str::<Vec<GhPullRequest>>(&output.stdout)
+            .map_err(|error| anyhow!("failed parsing `gh pr list` JSON output: {error}"))?;
+
+        let activities = prs
+            .into_iter()
+            .map(|pr| map_pr_to_activity(pr, &self.config_overrides))
+            .collect();
+
+        Ok(activities)
+    }
+}
+
+fn base_field_definitions() -> Vec<FieldDefinition> {
+    vec![
+        FieldDefinition {
+            name: "review".to_string(),
+            label: "Review".to_string(),
+            field_type: FieldType::Status,
+            description: "Current review decision".to_string(),
+        },
+        FieldDefinition {
+            name: "checks".to_string(),
+            label: "Checks".to_string(),
+            field_type: FieldType::Status,
+            description: "CI checks state".to_string(),
+        },
+        FieldDefinition {
+            name: "mergeable".to_string(),
+            label: "Mergeable".to_string(),
+            field_type: FieldType::Status,
+            description: "Whether the PR can be merged".to_string(),
+        },
+        FieldDefinition {
+            name: "draft".to_string(),
+            label: "Draft".to_string(),
+            field_type: FieldType::Status,
+            description: "Draft status".to_string(),
+        },
+        FieldDefinition {
+            name: "labels".to_string(),
+            label: "Labels".to_string(),
+            field_type: FieldType::Text,
+            description: "Applied PR labels".to_string(),
+        },
+    ]
+}
+
+fn map_pr_to_activity(
+    pr: GhPullRequest,
+    config_overrides: &HashMap<String, FieldOverride>,
+) -> Activity {
+    let review = map_review_decision(pr.review_decision.as_deref());
+    let mergeable = map_mergeable_state(pr.mergeable.as_deref());
+    let draft = map_draft(pr.is_draft);
+    let checks = map_checks_status(pr.status_check_rollup.as_deref());
+    let labels = map_labels(pr.labels.as_deref());
+
+    let fields = apply_activity_overrides(
+        vec![
+            Field {
+                name: "review".to_string(),
+                label: "Review".to_string(),
+                value: review,
             },
-            Activity {
-                id: format!("{}/pull/38", self.repo),
-                title: "#38 Fix tray icon alignment".to_string(),
-                fields: vec![
-                    Field {
-                        name: "review".to_string(),
-                        label: "Review".to_string(),
-                        value: FieldValue::Status {
-                            value: "approved".to_string(),
-                            severity: StatusKind::Success,
-                        },
-                    },
-                    Field {
-                        name: "checks".to_string(),
-                        label: "Checks".to_string(),
-                        value: FieldValue::Status {
-                            value: "passing".to_string(),
-                            severity: StatusKind::Success,
-                        },
-                    },
-                    Field {
-                        name: "mergeable".to_string(),
-                        label: "Mergeable".to_string(),
-                        value: FieldValue::Status {
-                            value: "yes".to_string(),
-                            severity: StatusKind::Success,
-                        },
-                    },
-                    Field {
-                        name: "draft".to_string(),
-                        label: "Draft".to_string(),
-                        value: FieldValue::Status {
-                            value: "no".to_string(),
-                            severity: StatusKind::Neutral,
-                        },
-                    },
-                    Field {
-                        name: "labels".to_string(),
-                        label: "Labels".to_string(),
-                        value: FieldValue::Text {
-                            value: "ui".to_string(),
-                        },
-                    },
-                ],
+            Field {
+                name: "checks".to_string(),
+                label: "Checks".to_string(),
+                value: checks,
             },
-            Activity {
-                id: format!("{}/pull/35", self.repo),
-                title: "#35 Improve shell feed docs".to_string(),
-                fields: vec![
-                    Field {
-                        name: "review".to_string(),
-                        label: "Review".to_string(),
-                        value: FieldValue::Status {
-                            value: "changes requested".to_string(),
-                            severity: StatusKind::Warning,
-                        },
-                    },
-                    Field {
-                        name: "checks".to_string(),
-                        label: "Checks".to_string(),
-                        value: FieldValue::Status {
-                            value: "failing".to_string(),
-                            severity: StatusKind::Error,
-                        },
-                    },
-                    Field {
-                        name: "mergeable".to_string(),
-                        label: "Mergeable".to_string(),
-                        value: FieldValue::Status {
-                            value: "no".to_string(),
-                            severity: StatusKind::Error,
-                        },
-                    },
-                    Field {
-                        name: "draft".to_string(),
-                        label: "Draft".to_string(),
-                        value: FieldValue::Status {
-                            value: "yes".to_string(),
-                            severity: StatusKind::Pending,
-                        },
-                    },
-                    Field {
-                        name: "labels".to_string(),
-                        label: "Labels".to_string(),
-                        value: FieldValue::Text {
-                            value: "documentation, needs-work".to_string(),
-                        },
-                    },
-                ],
+            Field {
+                name: "mergeable".to_string(),
+                label: "Mergeable".to_string(),
+                value: mergeable,
             },
-        ])
+            Field {
+                name: "draft".to_string(),
+                label: "Draft".to_string(),
+                value: draft,
+            },
+            Field {
+                name: "labels".to_string(),
+                label: "Labels".to_string(),
+                value: labels,
+            },
+        ],
+        &HashMap::new(),
+        config_overrides,
+    );
+
+    Activity {
+        id: pr
+            .url
+            .clone()
+            .unwrap_or_else(|| format!("{}/pull/{}", pr.repo_hint(), pr.number)),
+        title: format!("#{} {}", pr.number, pr.title),
+        fields,
+    }
+}
+
+fn map_review_decision(review_decision: Option<&str>) -> FieldValue {
+    match review_decision.unwrap_or_default() {
+        "APPROVED" => status_field("approved", StatusKind::Success),
+        "CHANGES_REQUESTED" => status_field("changes requested", StatusKind::Warning),
+        "REVIEW_REQUIRED" => status_field("awaiting", StatusKind::Pending),
+        _ => status_field("unknown", StatusKind::Neutral),
+    }
+}
+
+fn map_mergeable_state(mergeable: Option<&str>) -> FieldValue {
+    match mergeable.unwrap_or_default() {
+        "MERGEABLE" => status_field("yes", StatusKind::Success),
+        "CONFLICTING" => status_field("no", StatusKind::Error),
+        "UNKNOWN" => status_field("unknown", StatusKind::Pending),
+        _ => status_field("unknown", StatusKind::Neutral),
+    }
+}
+
+fn map_draft(is_draft: bool) -> FieldValue {
+    if is_draft {
+        status_field("yes", StatusKind::Pending)
+    } else {
+        status_field("no", StatusKind::Neutral)
+    }
+}
+
+fn map_labels(labels: Option<&[GhLabel]>) -> FieldValue {
+    let mut names: Vec<String> = labels
+        .unwrap_or_default()
+        .iter()
+        .map(|label| label.name.clone())
+        .collect();
+
+    names.sort();
+
+    FieldValue::Text {
+        value: names.join(", "),
+    }
+}
+
+fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue {
+    let Some(entries) = status_check_rollup else {
+        return status_field("unknown", StatusKind::Neutral);
+    };
+
+    if entries.is_empty() {
+        return status_field("unknown", StatusKind::Neutral);
+    }
+
+    let mut has_pending = false;
+    let mut has_success = false;
+
+    for entry in entries {
+        match entry {
+            GhCheckEntry::CheckRun {
+                status, conclusion, ..
+            } => {
+                let status = status.to_ascii_uppercase();
+                let conclusion = conclusion
+                    .as_deref()
+                    .unwrap_or_default()
+                    .to_ascii_uppercase();
+
+                if status != "COMPLETED" {
+                    if matches!(
+                        status.as_str(),
+                        "PENDING" | "IN_PROGRESS" | "QUEUED" | "WAITING" | "REQUESTED"
+                    ) {
+                        has_pending = true;
+                        continue;
+                    }
+
+                    has_pending = true;
+                    continue;
+                }
+
+                if matches!(
+                    conclusion.as_str(),
+                    "FAILURE" | "ERROR" | "CANCELLED" | "TIMED_OUT" | "ACTION_REQUIRED"
+                ) {
+                    return status_field("failing", StatusKind::Error);
+                }
+
+                if matches!(conclusion.as_str(), "SUCCESS" | "SKIPPED" | "NEUTRAL") {
+                    has_success = true;
+                    continue;
+                }
+
+                if matches!(conclusion.as_str(), "STALE" | "STARTUP_FAILURE") {
+                    has_pending = true;
+                    continue;
+                }
+            }
+            GhCheckEntry::StatusContext { state, .. } => {
+                let state = state.to_ascii_uppercase();
+
+                if matches!(state.as_str(), "FAILURE" | "ERROR") {
+                    return status_field("failing", StatusKind::Error);
+                }
+
+                if matches!(state.as_str(), "PENDING" | "EXPECTED") {
+                    has_pending = true;
+                    continue;
+                }
+
+                if state == "SUCCESS" {
+                    has_success = true;
+                }
+            }
+            GhCheckEntry::Unknown => {
+                has_pending = true;
+            }
+        }
+    }
+
+    if has_pending {
+        return status_field("pending", StatusKind::Pending);
+    }
+
+    if has_success {
+        return status_field("passing", StatusKind::Success);
+    }
+
+    status_field("unknown", StatusKind::Neutral)
+}
+
+fn status_field(value: &str, severity: StatusKind) -> FieldValue {
+    FieldValue::Status {
+        value: value.to_string(),
+        severity,
+    }
+}
+
+fn looks_like_gh_auth_error(stdout: &str, stderr: &str) -> bool {
+    let combined = format!("{}\n{}", stdout, stderr).to_ascii_lowercase();
+
+    combined.contains("gh auth login")
+        || combined.contains("not logged into")
+        || combined.contains("authentication") && combined.contains("required")
+        || combined.contains("log in to github")
+}
+
+fn non_zero_exit_context(exit_code: Option<i32>, stdout: &str, stderr: &str) -> String {
+    let exit = match exit_code {
+        Some(code) => format!("exit code {code}"),
+        None => "unknown exit status".to_string(),
+    };
+
+    let stderr = stderr.trim();
+    if !stderr.is_empty() {
+        return format!("{exit}: {stderr}");
+    }
+
+    let stdout = stdout.trim();
+    if !stdout.is_empty() {
+        return format!("{exit}: {stdout}");
+    }
+
+    exit
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GhPullRequest {
+    number: u64,
+    title: String,
+    url: Option<String>,
+    #[serde(default)]
+    is_draft: bool,
+    #[serde(default)]
+    labels: Option<Vec<GhLabel>>,
+    #[serde(default)]
+    mergeable: Option<String>,
+    #[serde(default)]
+    review_decision: Option<String>,
+    #[serde(default)]
+    status_check_rollup: Option<Vec<GhCheckEntry>>,
+    #[serde(default)]
+    head_repository_owner: Option<GhOwner>,
+    #[serde(default)]
+    head_repository: Option<GhRepo>,
+}
+
+impl GhPullRequest {
+    fn repo_hint(&self) -> String {
+        match (&self.head_repository_owner, &self.head_repository) {
+            (Some(owner), Some(repo)) => format!("{}/{}", owner.login, repo.name),
+            _ => "unknown/unknown".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct GhOwner {
+    login: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GhRepo {
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GhLabel {
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "__typename")]
+enum GhCheckEntry {
+    CheckRun {
+        status: String,
+        #[serde(default)]
+        conclusion: Option<String>,
+    },
+    StatusContext {
+        state: String,
+    },
+    #[serde(other)]
+    Unknown,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashMap, sync::Arc};
+
+    use async_trait::async_trait;
+    use tokio::sync::Mutex;
+    use toml::{Table, Value};
+
+    use crate::feed::{
+        config::{FeedConfig, FieldOverride},
+        process::{CommandError, CommandInvocation, CommandOutput, ProcessRunner},
+        Feed, FieldValue, StatusKind,
+    };
+
+    use super::{
+        map_checks_status, map_labels, map_mergeable_state, map_review_decision, GithubPrFeed,
+        GH_MISSING_MESSAGE, GH_UNAUTHENTICATED_MESSAGE,
+    };
+
+    #[derive(Clone)]
+    struct StubRunner {
+        responses: Arc<Mutex<Vec<std::result::Result<CommandOutput, CommandError>>>>,
+        invocations: Arc<Mutex<Vec<CommandInvocation>>>,
+    }
+
+    impl StubRunner {
+        fn new(responses: Vec<std::result::Result<CommandOutput, CommandError>>) -> Self {
+            Self {
+                responses: Arc::new(Mutex::new(responses)),
+                invocations: Arc::new(Mutex::new(Vec::new())),
+            }
+        }
+
+        async fn commands(&self) -> Vec<String> {
+            self.invocations
+                .lock()
+                .await
+                .iter()
+                .map(CommandInvocation::display)
+                .collect()
+        }
+    }
+
+    #[async_trait]
+    impl ProcessRunner for StubRunner {
+        async fn run(
+            &self,
+            invocation: CommandInvocation,
+        ) -> std::result::Result<CommandOutput, CommandError> {
+            self.invocations.lock().await.push(invocation);
+            self.responses.lock().await.remove(0)
+        }
+    }
+
+    #[tokio::test]
+    async fn poll_invokes_single_pr_list_request_after_preflight() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: gh_list_json_fixture(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config(), runner.clone())
+            .expect("feed should build");
+
+        let activities = feed.poll().await.expect("poll should succeed");
+        assert_eq!(activities.len(), 2);
+        assert_eq!(activities[0].title, "#42 Add feed scaffold");
+        assert_eq!(
+            activities[0].id,
+            "https://github.com/personal/cortado/pull/42"
+        );
+
+        let commands = runner.commands().await;
+        assert_eq!(commands.len(), 3);
+        assert_eq!(commands[0], "gh --version");
+        assert_eq!(commands[1], "gh auth status");
+        assert_eq!(
+            commands[2],
+            "gh pr list --repo personal/cortado --state open --limit 100 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
+        );
+    }
+
+    #[tokio::test]
+    async fn poll_missing_gh_binary_returns_exact_error() {
+        let runner = Arc::new(StubRunner::new(vec![Err(CommandError::NotFound {
+            program: "gh".to_string(),
+        })]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let error = feed.poll().await.expect_err("should fail");
+        assert_eq!(error.to_string(), GH_MISSING_MESSAGE);
+    }
+
+    #[tokio::test]
+    async fn poll_unauthenticated_returns_exact_error() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(1),
+                stdout: String::new(),
+                stderr: "Run `gh auth login`".to_string(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let error = feed.poll().await.expect_err("should fail");
+        assert_eq!(error.to_string(), GH_UNAUTHENTICATED_MESSAGE);
+    }
+
+    #[tokio::test]
+    async fn poll_non_auth_api_failure_includes_context() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(1),
+                stdout: String::new(),
+                stderr: "GraphQL error: resource not accessible".to_string(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let error = feed.poll().await.expect_err("should fail");
+
+        assert!(error
+            .to_string()
+            .contains("GraphQL error: resource not accessible"));
+    }
+
+    #[tokio::test]
+    async fn empty_pr_set_returns_empty_success() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let activities = feed.poll().await.expect("should succeed");
+        assert!(activities.is_empty());
+    }
+
+    #[tokio::test]
+    async fn provided_fields_and_activity_fields_apply_overrides() {
+        let mut config = base_config();
+        config.field_overrides.insert(
+            "labels".to_string(),
+            FieldOverride {
+                visible: Some(false),
+                label: Some("Tag list".to_string()),
+            },
+        );
+
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: gh_list_json_fixture(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&config, runner).expect("builds");
+
+        let fields = feed.provided_fields();
+        let labels_meta = fields
+            .iter()
+            .find(|definition| definition.name == "labels")
+            .expect("labels metadata exists");
+        assert_eq!(labels_meta.label, "Tag list");
+
+        let activities = feed.poll().await.expect("polls");
+        for activity in activities {
+            assert!(activity.fields.iter().all(|field| field.name != "labels"));
+        }
+    }
+
+    #[test]
+    fn review_mapping_is_deterministic() {
+        assert_status(
+            map_review_decision(Some("APPROVED")),
+            "approved",
+            StatusKind::Success,
+        );
+        assert_status(
+            map_review_decision(Some("CHANGES_REQUESTED")),
+            "changes requested",
+            StatusKind::Warning,
+        );
+        assert_status(
+            map_review_decision(Some("REVIEW_REQUIRED")),
+            "awaiting",
+            StatusKind::Pending,
+        );
+        assert_status(map_review_decision(None), "unknown", StatusKind::Neutral);
+    }
+
+    #[test]
+    fn mergeable_mapping_is_deterministic() {
+        assert_status(
+            map_mergeable_state(Some("MERGEABLE")),
+            "yes",
+            StatusKind::Success,
+        );
+        assert_status(
+            map_mergeable_state(Some("CONFLICTING")),
+            "no",
+            StatusKind::Error,
+        );
+        assert_status(
+            map_mergeable_state(Some("UNKNOWN")),
+            "unknown",
+            StatusKind::Pending,
+        );
+        assert_status(map_mergeable_state(None), "unknown", StatusKind::Neutral);
+    }
+
+    #[test]
+    fn labels_are_sorted_lexicographically() {
+        #[derive(serde::Deserialize)]
+        struct Wrapper {
+            labels: Vec<super::GhLabel>,
+        }
+
+        let parsed: Wrapper =
+            serde_json::from_str(r#"{"labels":[{"name":"z"},{"name":"a"},{"name":"m"}]}"#)
+                .expect("json");
+
+        let FieldValue::Text { value } = map_labels(Some(&parsed.labels)) else {
+            panic!("expected text");
+        };
+
+        assert_eq!(value, "a, m, z");
+    }
+
+    #[test]
+    fn checks_mapping_failing_pending_passing_and_unknown() {
+        let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
+            r#"[
+                {"__typename":"CheckRun","status":"COMPLETED","conclusion":"FAILURE"}
+            ]"#,
+        )
+        .expect("json");
+
+        assert_status(
+            map_checks_status(Some(&parsed)),
+            "failing",
+            StatusKind::Error,
+        );
+
+        let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
+            r#"[
+                {"__typename":"CheckRun","status":"IN_PROGRESS","conclusion":null}
+            ]"#,
+        )
+        .expect("json");
+
+        assert_status(
+            map_checks_status(Some(&parsed)),
+            "pending",
+            StatusKind::Pending,
+        );
+
+        let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
+            r#"[
+                {"__typename":"CheckRun","status":"COMPLETED","conclusion":"SUCCESS"},
+                {"__typename":"StatusContext","state":"SUCCESS"}
+            ]"#,
+        )
+        .expect("json");
+
+        assert_status(
+            map_checks_status(Some(&parsed)),
+            "passing",
+            StatusKind::Success,
+        );
+
+        assert_status(map_checks_status(None), "unknown", StatusKind::Neutral);
+    }
+
+    #[test]
+    fn from_config_requires_repo() {
+        let mut config = base_config();
+        config.type_specific.remove("repo");
+
+        let error = match GithubPrFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        ) {
+            Ok(_) => panic!("repo should be required"),
+            Err(error) => error,
+        };
+
+        assert!(error.to_string().contains("missing required `repo`"));
+    }
+
+    fn assert_status(value: FieldValue, expected_value: &str, expected_severity: StatusKind) {
+        let FieldValue::Status { value, severity } = value else {
+            panic!("expected status field");
+        };
+
+        assert_eq!(value, expected_value);
+        assert!(matches!(
+            (severity, expected_severity),
+            (StatusKind::Success, StatusKind::Success)
+                | (StatusKind::Warning, StatusKind::Warning)
+                | (StatusKind::Error, StatusKind::Error)
+                | (StatusKind::Pending, StatusKind::Pending)
+                | (StatusKind::Neutral, StatusKind::Neutral)
+        ));
+    }
+
+    fn base_config() -> FeedConfig {
+        let mut type_specific = Table::new();
+        type_specific.insert(
+            "repo".to_string(),
+            Value::String("personal/cortado".to_string()),
+        );
+
+        FeedConfig {
+            name: "My PRs".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Some(60),
+            type_specific,
+            field_overrides: HashMap::new(),
+        }
+    }
+
+    fn gh_list_json_fixture() -> String {
+        r#"[
+            {
+                "number": 42,
+                "title": "Add feed scaffold",
+                "url": "https://github.com/personal/cortado/pull/42",
+                "isDraft": false,
+                "labels": [{"name": "phase-1"}, {"name": "feed"}],
+                "mergeable": "MERGEABLE",
+                "reviewDecision": "REVIEW_REQUIRED",
+                "statusCheckRollup": [
+                    {"__typename": "CheckRun", "status": "COMPLETED", "conclusion": "SUCCESS"}
+                ]
+            },
+            {
+                "number": 35,
+                "title": "Improve shell feed docs",
+                "url": "https://github.com/personal/cortado/pull/35",
+                "isDraft": true,
+                "labels": [{"name": "documentation"}, {"name": "needs-work"}],
+                "mergeable": "CONFLICTING",
+                "reviewDecision": "CHANGES_REQUESTED",
+                "statusCheckRollup": [
+                    {"__typename": "CheckRun", "status": "COMPLETED", "conclusion": "FAILURE"}
+                ]
+            }
+        ]"#
+        .to_string()
     }
 }

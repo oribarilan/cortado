@@ -1,7 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -40,19 +40,24 @@ pub fn feeds_config_path() -> Result<PathBuf> {
 pub fn load_feeds_config() -> Result<Vec<FeedConfig>> {
     let config_path = feeds_config_path()?;
 
+    load_feeds_config_from_path(&config_path)
+}
+
+fn load_feeds_config_from_path(config_path: &Path) -> Result<Vec<FeedConfig>> {
     if !config_path.exists() {
         return Ok(Vec::new());
     }
 
-    let raw = fs::read_to_string(&config_path)
+    let raw = fs::read_to_string(config_path)
         .with_context(|| format!("failed reading {}", config_path.display()))?;
 
-    let parsed = raw.parse::<Value>().with_context(|| {
-        format!(
-            "invalid TOML in {}. expected [[feed]] entries",
-            config_path.display()
-        )
-    })?;
+    parse_feeds_config_toml(&raw)
+}
+
+fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
+    let parsed = raw
+        .parse::<Value>()
+        .context("invalid TOML in feeds config. expected [[feed]] entries")?;
 
     let root = parsed
         .as_table()
@@ -169,4 +174,169 @@ fn optional_positive_integer(table: &Table, key: &str, feed_index: usize) -> Res
     }
 
     Ok(Some(parsed as u64))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs,
+        path::PathBuf,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    use super::{load_feeds_config_from_path, parse_feeds_config_toml};
+
+    #[test]
+    fn parse_valid_config_with_overrides() {
+        let raw = r#"
+[[feed]]
+name = "My PRs"
+type = "github-pr"
+repo = "personal/cortado"
+interval = 60
+
+[feed.fields.labels]
+visible = false
+label = "Tags"
+
+[[feed]]
+name = "Disk usage"
+type = "shell"
+command = "df -h /"
+"#;
+
+        let configs = parse_feeds_config_toml(raw).expect("valid config should parse");
+        assert_eq!(configs.len(), 2);
+
+        let github = &configs[0];
+        assert_eq!(github.name, "My PRs");
+        assert_eq!(github.feed_type, "github-pr");
+        assert_eq!(github.interval, Some(60));
+        assert_eq!(
+            github
+                .type_specific
+                .get("repo")
+                .and_then(|value| value.as_str()),
+            Some("personal/cortado")
+        );
+
+        let labels_override = github
+            .field_overrides
+            .get("labels")
+            .expect("labels override should exist");
+        assert_eq!(labels_override.visible, Some(false));
+        assert_eq!(labels_override.label.as_deref(), Some("Tags"));
+
+        let shell = &configs[1];
+        assert_eq!(shell.name, "Disk usage");
+        assert_eq!(shell.feed_type, "shell");
+        assert_eq!(shell.interval, None);
+    }
+
+    #[test]
+    fn parse_errors_on_missing_required_keys() {
+        let missing_name = r#"
+[[feed]]
+type = "shell"
+command = "echo hi"
+"#;
+
+        let error = match parse_feeds_config_toml(missing_name) {
+            Ok(_) => panic!("missing name should fail"),
+            Err(error) => error,
+        };
+        assert!(error
+            .to_string()
+            .contains("missing required string field `name`"));
+
+        let missing_type = r#"
+[[feed]]
+name = "No type"
+command = "echo hi"
+"#;
+
+        let error = match parse_feeds_config_toml(missing_type) {
+            Ok(_) => panic!("missing type should fail"),
+            Err(error) => error,
+        };
+        assert!(error
+            .to_string()
+            .contains("missing required string field `type`"));
+    }
+
+    #[test]
+    fn parse_errors_on_invalid_interval() {
+        let non_integer_interval = r#"
+[[feed]]
+name = "Bad interval"
+type = "shell"
+command = "echo hi"
+interval = "fast"
+"#;
+
+        let error = match parse_feeds_config_toml(non_integer_interval) {
+            Ok(_) => panic!("non-integer interval should fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("interval must be an integer"));
+
+        let non_positive_interval = r#"
+[[feed]]
+name = "Zero interval"
+type = "shell"
+command = "echo hi"
+interval = 0
+"#;
+
+        let error = match parse_feeds_config_toml(non_positive_interval) {
+            Ok(_) => panic!("non-positive interval should fail"),
+            Err(error) => error,
+        };
+        assert!(error
+            .to_string()
+            .contains("interval must be greater than zero"));
+    }
+
+    #[test]
+    fn parse_errors_on_duplicate_feed_names() {
+        let raw = r#"
+[[feed]]
+name = "Dup"
+type = "shell"
+command = "echo hi"
+
+[[feed]]
+name = "Dup"
+type = "github-pr"
+repo = "personal/cortado"
+"#;
+
+        let error = match parse_feeds_config_toml(raw) {
+            Ok(_) => panic!("duplicate names should fail"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("duplicate feed name `Dup`"));
+    }
+
+    #[test]
+    fn load_from_missing_file_returns_empty_list() {
+        let mut path = std::env::temp_dir();
+        path.push(unique_missing_filename());
+
+        if path.exists() {
+            let _ = fs::remove_file(&path);
+        }
+
+        let configs = load_feeds_config_from_path(&path).expect("missing file should be ok");
+        assert!(configs.is_empty());
+    }
+
+    fn unique_missing_filename() -> PathBuf {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be monotonic")
+            .as_nanos();
+
+        PathBuf::from(format!("cortado-missing-{now}.toml"))
+    }
 }
