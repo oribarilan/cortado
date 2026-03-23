@@ -60,7 +60,7 @@ type = "github-pr" # or "shell"
 | Key | Required | Type | Notes |
 |---|---|---|---|
 | `name` | Yes | string | Feed display name; must be unique across all feeds |
-| `type` | Yes | string | Supported: `"github-pr"`, `"shell"` |
+| `type` | Yes | string | Supported: `"github-pr"`, `"ado-pr"`, `"shell"` |
 | `interval` | No | duration string | Poll interval parsed by `jiff` (examples: `"30s"`, `"5m"`, `"1.5m"`); must be > 0 |
 | `retain` | No | duration string | Retain disappeared activities for this long; omitted = no retention |
 
@@ -69,6 +69,7 @@ Duration strings must be strings (not integers). Example: use `"60s"`, not `60`.
 Default `interval` values when omitted:
 
 - `github-pr`: `"120s"`
+- `ado-pr`: `"120s"`
 - `shell`: `"30s"`
 
 Retention is currently in-memory only (retained activities are cleared on app restart).
@@ -81,7 +82,7 @@ Required keys:
 
 Optional type-specific keys:
 
-- none (beyond shared keys)
+- `user` (string, default `"@me"`): GitHub author filter (login like `"octocat"` or `"@me"`)
 
 Example:
 
@@ -90,6 +91,7 @@ Example:
 name = "My PRs"
 type = "github-pr"
 repo = "oribarilan/cortado"
+user = "@me"
 interval = "30s"
 retain = "2h"
 ```
@@ -118,6 +120,56 @@ field_name = "output"
 field_type = "text"
 label = "Output"
 ```
+
+### `ado-pr` feed
+
+Required keys:
+
+- `org` (string): full Azure DevOps org URL (example: `"https://dev.azure.com/my-org"`)
+- `project` (string): Azure DevOps project name
+- `repo` (string): repository name
+
+Optional type-specific keys:
+
+- `user` (string, default `"me"`): PR creator filter; prefer email/UPN, supports `"me"`
+
+Behavior:
+
+- Polls active PRs via `az repos pr list`.
+- Requires:
+  - `az` CLI installed
+  - `azure-devops` extension installed
+  - authenticated `az login` session
+
+Example:
+
+```toml
+[[feed]]
+name = "ADO PRs"
+type = "ado-pr"
+org = "https://dev.azure.com/my-org"
+project = "my-project"
+repo = "my-repo"
+user = "me"
+interval = "120s"
+retain = "2h"
+```
+
+### Current custom-feed primitive
+
+Today, Cortado's custom-feed escape hatch is the `shell` feed.
+
+What it gives you:
+
+- run any shell command on an interval
+- map command output into one typed field (`text`, `status`, `number`, `url`)
+- apply shared retention and field overrides
+
+Current limits:
+
+- one activity per shell feed poll
+- single primary output field model
+- no built-in JSON/object extraction pipeline yet (use command-line tools to shape output)
 
 ### Field overrides (optional)
 

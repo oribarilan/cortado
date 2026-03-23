@@ -410,14 +410,20 @@ fn build_activity_submenu(
 }
 
 fn fields_for_activity_menu(feed_type: &str, fields: &[Field]) -> Vec<Field> {
-    if feed_type != "github-pr" {
+    if feed_type != "github-pr" && feed_type != "ado-pr" {
         return fields.to_vec();
     }
 
     let mut selected = Vec::new();
 
-    for key in ["review", "checks", "mergeable"] {
-        if let Some(field) = fields.iter().find(|field| field.name == key) {
+    let preferred: &[&str] = if feed_type == "ado-pr" {
+        &["review", "mergeable", "draft"]
+    } else {
+        &["review", "checks", "mergeable"]
+    };
+
+    for key in preferred {
+        if let Some(field) = fields.iter().find(|field| field.name == *key) {
             selected.push(field.clone());
         }
     }
@@ -426,7 +432,7 @@ fn fields_for_activity_menu(feed_type: &str, fields: &[Field]) -> Vec<Field> {
 }
 
 fn open_target_for_activity(feed_type: &str, activity: &Activity) -> Option<String> {
-    if feed_type == "github-pr" {
+    if feed_type == "github-pr" || feed_type == "ado-pr" {
         return github_pr_url_for_id(&activity.id);
     }
 

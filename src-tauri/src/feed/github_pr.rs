@@ -24,6 +24,7 @@ const GH_UNAUTHENTICATED_MESSAGE: &str =
 pub struct GithubPrFeed {
     name: String,
     repo: String,
+    user: String,
     interval: Duration,
     retain_for: Option<Duration>,
     config_overrides: HashMap<String, FieldOverride>,
@@ -61,9 +62,26 @@ impl GithubPrFeed {
             );
         }
 
+        let user = config
+            .type_specific
+            .get("user")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| "@me".to_string());
+
+        if user.trim().is_empty() {
+            bail!(
+                "feed `{}` (type github-pr) requires non-empty `user`",
+                config.name
+            );
+        }
+
         Ok(Self {
             name: config.name.clone(),
             repo,
+            user,
             interval: config
                 .interval
                 .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
@@ -148,6 +166,8 @@ impl Feed for GithubPrFeed {
                 "list",
                 "--repo",
                 &self.repo,
+                "--author",
+                &self.user,
                 "--state",
                 "open",
                 "--limit",
@@ -590,7 +610,7 @@ mod tests {
         assert_eq!(commands[1], "gh auth status");
         assert_eq!(
             commands[2],
-            "gh pr list --repo personal/cortado --state open --limit 100 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
+            "gh pr list --repo personal/cortado --author @me --state open --limit 100 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
         );
     }
 
@@ -839,6 +859,22 @@ mod tests {
         };
 
         assert!(error.to_string().contains("missing required `repo`"));
+
+        let mut config = base_config();
+        config.type_specific.remove("user");
+        let feed =
+            GithubPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
+                .expect("user should default to @me");
+        assert_eq!(feed.user, "@me");
+
+        let mut config = base_config();
+        config
+            .type_specific
+            .insert("user".to_string(), Value::String("   ".to_string()));
+        let feed =
+            GithubPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
+                .expect("blank user should default to @me");
+        assert_eq!(feed.user, "@me");
     }
 
     fn assert_status(value: FieldValue, expected_value: &str, expected_severity: StatusKind) {
@@ -863,6 +899,7 @@ mod tests {
             "repo".to_string(),
             Value::String("personal/cortado".to_string()),
         );
+        type_specific.insert("user".to_string(), Value::String("@me".to_string()));
 
         FeedConfig {
             name: "My PRs".to_string(),

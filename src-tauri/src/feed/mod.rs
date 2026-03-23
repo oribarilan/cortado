@@ -5,8 +5,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Serialize;
 
-use self::{config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
+use self::{ado_pr::AdoPrFeed, config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
 
+pub mod ado_pr;
 pub mod config;
 pub mod dependency;
 pub mod field_overrides;
@@ -201,6 +202,7 @@ fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
         "github-pr" => {
             GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
+        "ado-pr" => AdoPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
         "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
         unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }

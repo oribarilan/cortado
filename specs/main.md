@@ -70,20 +70,26 @@ Feeds that rely on external CLIs must use a consistent dependency/error model:
 - Other valid feeds continue polling/rendering even if one feed has missing dependencies.
 - Where canonical error copy is defined (as above for `github-pr`), implementations should use it verbatim.
 
-Current + planned dependency requirements:
+Current dependency requirements:
 
 - `github-pr`: requires `gh` installed and authenticated.
-- `ado-pr` (future): requires `az` CLI, `azure-devops` extension, and authenticated access (logged-in state and/or PAT/env-based auth as supported by the implementation).
+- `ado-pr`: requires `az` CLI, `azure-devops` extension, and authenticated access via `az login`.
 
-#### Future `ado-pr` dependency checks (contract)
+#### `ado-pr` dependency checks (contract)
 
-Any future `ado-pr` feed implementation should follow this dependency preflight order and normalize failures to concise feed-level poll errors:
+`ado-pr` implementations should follow this dependency preflight order and normalize failures to concise feed-level poll errors:
 
 1. Verify `az` CLI is installed/invocable.
 2. Verify `azure-devops` extension is installed (`az extension show --name azure-devops` or equivalent).
-3. Verify authentication is available (logged-in state and/or PAT/env strategy used by the implementation).
+3. Verify authentication is available via `az login` state (`az account show` or equivalent).
 
 Failures in any step should not crash the app globally; they should surface on that feed while other feeds continue polling/rendering.
+
+Canonical `ado-pr` dependency/auth error copy:
+
+- Missing `az` CLI: "Azure DevOps feed requires `az` CLI. Install it from https://aka.ms/install-azure-cli and run `az login`."
+- Missing extension: "Azure DevOps feed requires `azure-devops` extension. Run `az extension add --name azure-devops`."
+- Unauthenticated: "Azure DevOps feed requires `az` authentication. Run `az login` and retry."
 
 ### Default intervals
 
@@ -92,6 +98,7 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | Feed type | Default interval |
 |-----------|-----------------|
 | `github-pr` | `"120s"` |
+| `ado-pr` | `"120s"` |
 | `shell` | `"30s"` |
 
 Intervals use duration strings parsed by `jiff` (for example: `"30s"`, `"5m"`, `"1.5m"`, `"2h"`). Integer seconds are not supported.
@@ -137,12 +144,12 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | Feed type | Activities | Key fields |
 |-----------|-----------|------------|
 | `github-pr` | Open PRs per user/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
+| `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), mergeable (status), draft (status), labels (text) |
 | `shell` | Single activity (the command output) | User-defined |
 
 ### Future feed types (not in Phase 1)
 
 - `github-actions` — CI workflow runs. Fields: status, duration, branch, trigger.
-- `ado-pr` — Azure DevOps pull requests. Fields: review (status), mergeable (status), labels (text). Initial implementation may defer checks/build policy details to avoid N+1 API calls.
 - `http-health` — endpoint monitoring. Fields: healthy (status), status_code (number), response_time (text).
 - `docker` — running containers. Fields: state (status), health (status), uptime (text), image (text).
 
@@ -164,6 +171,14 @@ repo = "personal/cortado"
 interval = "60s"
 retain = "2h"
 
+[[feed]]
+name = "ADO PRs"
+type = "ado-pr"
+org = "https://dev.azure.com/your-org"
+project = "your-project"
+repo = "your-repo"
+interval = "120s"
+
 # Optional: override field display
 [feed.fields.labels]
 visible = false
@@ -178,11 +193,37 @@ interval = "30s"
 ### Config rules
 
 - `name` and `type` are required on every feed.
-- Type-specific fields (e.g., `repo`, `command`) are flat, not nested.
+- Type-specific fields (e.g., `repo`, `org`, `project`, `command`) are flat, not nested.
+- PR feed types support optional `user` author filter values:
+  - `github-pr`: default `@me` when omitted; accepts GitHub login or `@me`
+  - `ado-pr`: default `me` when omitted; accepts creator identity (prefer email/UPN) or `me`
 - `interval` is a duration string (for example `"30s"`, `"5m"`, `"1.5m"`).
 - `retain` is an optional duration string. When omitted, activities are not retained after they disappear from poll results.
 - `[feed.fields.<name>]` allows overriding visibility, label, etc.
 - The base feed entity defines the field override contract; curated types (like `github-pr`) provide defaults.
+
+### `ado-pr` field mapping contract (initial)
+
+`ado-pr` should map Azure DevOps CLI/REST states deterministically to Cortado status fields.
+
+Review aggregation from reviewer votes (`10`, `5`, `0`, `-5`, `-10`):
+
+- Any `-10` → `rejected` (warning)
+- Else any `-5` → `changes requested` (warning)
+- Else if all required reviewers have vote `>= 5` → `approved` (success)
+- Else → `awaiting` (pending)
+
+Mergeable mapping from `mergeStatus`:
+
+- `succeeded` → `yes` (success)
+- `conflicts` → `no` (error)
+- `rejectedByPolicy` → `blocked` (warning)
+- `queued` → `checking` (pending)
+- `failure` → `failed` (error)
+- `notSet` → `notSet (unknown)` (neutral)
+- Any unrecognized state `X` → `X (unknown)` (neutral)
+
+`ado-pr` polling scope for initial implementation is active PRs only (`--status active`). Checks/build-policy breakdown is deferred.
 
 ## Tech stack
 
