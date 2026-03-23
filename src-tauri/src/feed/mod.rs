@@ -4,6 +4,12 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Serialize;
 
+use self::{
+    config::FeedConfig,
+    github_pr::GithubPrFeed,
+    shell::ShellFeed,
+};
+
 pub mod config;
 pub mod dependency;
 pub mod field_overrides;
@@ -12,7 +18,16 @@ pub mod process;
 pub mod runtime;
 pub mod shell;
 
-pub use runtime::{BackgroundPoller, FeedSnapshotCache};
+pub use runtime::{BackgroundPoller, FeedRuntimeManager, FeedSnapshotCache};
+
+/// Controls how feed registry construction handles invalid feed entries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RegistryBuildMode {
+    /// Keep valid feeds and surface invalid ones as per-feed config-error snapshots.
+    Tolerant,
+    /// Fail the whole build on the first invalid feed entry.
+    Strict,
+}
 
 /// Supported field data kinds.
 #[derive(Debug, Clone, Serialize)]
@@ -142,6 +157,48 @@ impl FeedRegistry {
 
         snapshots.extend(self.errored.iter().cloned());
         snapshots
+    }
+}
+
+/// Loads and builds the feed registry from `feeds.toml`.
+pub fn load_feed_registry(mode: RegistryBuildMode) -> Result<FeedRegistry> {
+    let configs = config::load_feeds_config()?;
+    build_feed_registry_from_configs(configs, mode)
+}
+
+/// Builds a feed registry from parsed configs.
+pub fn build_feed_registry_from_configs(
+    configs: Vec<FeedConfig>,
+    mode: RegistryBuildMode,
+) -> Result<FeedRegistry> {
+    let mut registry = FeedRegistry::new();
+
+    for config in configs {
+        let feed_name = config.name.clone();
+        let feed_type = config.feed_type.clone();
+
+        match instantiate_feed(&config) {
+            Ok(feed) => registry.register(feed),
+            Err(error) => {
+                if mode == RegistryBuildMode::Strict {
+                    return Err(anyhow::anyhow!(
+                        "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                    ));
+                }
+
+                registry.register_error(feed_name, feed_type, error.to_string());
+            }
+        }
+    }
+
+    Ok(registry)
+}
+
+fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
+    match config.feed_type.as_str() {
+        "github-pr" => GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }
 }
 

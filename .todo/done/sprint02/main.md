@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Sprint 02 — Real polling engine (non-UI)
@@ -51,7 +51,7 @@ By the end of this sprint, Cortado should continuously refresh tray data from re
 | 01 | `01-shell-execution.md` | Replace shell stub with real command execution and typed output mapping |
 | 02 | `02-github-pr-gh-cli.md` | Replace GitHub stub with real `gh pr list --json ...` polling |
 | 03 | `03-background-poller-cache.md` | Add per-feed background polling, startup seed, and cached snapshots |
-| 04 | `04-tray-refresh-loop.md` | Refresh tray menu from poller updates and keep manual reload path |
+| 04 | `04-tray-refresh-loop.md` | Refresh tray menu from poller updates and keep manual refresh path |
 | 05 | `05-field-overrides.md` | Enforce field overrides (`visible`, `label`) consistently |
 | 07 | `07-cli-dependency-checks.md` | Standardize external dependency detection and user-facing errors |
 | 06 | `06-feed-tests.md` | Add unit tests for parsing, mapping, overrides, and stale-on-error behavior |

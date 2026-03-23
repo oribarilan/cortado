@@ -20,7 +20,9 @@ The old codebase used "Bean" and "Watch" — these terms are deprecated. Use Fee
 
 ## Task Management
 
-Work is organized in **sprints**. Each sprint lives in `.todo/sprintNN/`.
+Work is organized in **sprints**. Active sprint work lives in `.todo/sprintNN/`.
+
+Completed sprint work lives in `.todo/done/sprintNN/`.
 
 ### Sprint structure
 
@@ -28,6 +30,11 @@ Work is organized in **sprints**. Each sprint lives in `.todo/sprintNN/`.
 .todo/
   backlog/
     optional-some-idea.md  # Ideas and optional work, not tied to a sprint
+  done/
+    sprint01/
+      main.md
+      01-feed-trait.md
+      ...
   sprint01/
     main.md              # Sprint overview: theme, sequencing, cross-task notes
     01-feed-trait.md      # Individual task
@@ -47,7 +54,7 @@ Work is organized in **sprints**. Each sprint lives in `.todo/sprintNN/`.
 1. Before starting a sprint, read `.todo/sprintNN/main.md` to understand the theme and sequencing.
 2. Tasks within a sprint are numbered for suggested ordering but may be parallelizable — `main.md` clarifies.
 3. Each task file describes the goal, acceptance criteria, and relevant files.
-4. Mark tasks done by adding `status: done` to the task frontmatter.
+4. Mark tasks done by adding `status: done` to the task frontmatter, then move completed sprint files to `.todo/done/sprintNN/`.
 5. Do not skip ahead to the next sprint without completing (or explicitly deferring) the current one.
 
 ### Task file format
@@ -158,6 +165,10 @@ specs/                   # App specification
   main.md                # Main spec (terminology, architecture, config format)
 
 .todo/                   # Sprint-based task management
+  done/
+    sprintNN/
+      main.md            # Completed sprint overview
+      NN-task-name.md    # Completed task
   sprintNN/
     main.md              # Sprint overview
     NN-task-name.md      # Individual tasks
