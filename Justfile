@@ -16,6 +16,10 @@ lint:
 format:
 	cargo fmt --manifest-path src-tauri/Cargo.toml --all
 
+test:
+	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features
+
 check:
 	just format
 	just lint
+	just test

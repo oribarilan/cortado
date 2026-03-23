@@ -33,7 +33,8 @@ See `specs/main.md` for the full spec.
 just          # list commands
 just install  # install JS deps
 just dev      # run app locally
-just check    # format + lint
+just test     # run Rust tests
+just check    # format + lint + test
 ```
 
 ## License
