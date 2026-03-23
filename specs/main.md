@@ -144,8 +144,10 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | Feed type | Activities | Key fields |
 |-----------|-----------|------------|
 | `github-pr` | Open PRs per user/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
-| `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), mergeable (status), draft (status), labels (text) |
+| `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
 | `shell` | Single activity (the command output) | User-defined |
+
+Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.
 
 ### Future feed types (not in Phase 1)
 
@@ -223,7 +225,19 @@ Mergeable mapping from `mergeStatus`:
 - `notSet` → `notSet (unknown)` (neutral)
 - Any unrecognized state `X` → `X (unknown)` (neutral)
 
-`ado-pr` polling scope for initial implementation is active PRs only (`--status active`). Checks/build-policy breakdown is deferred.
+`ado-pr` polling scope for initial implementation is active PRs only (`--status active`).
+
+Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — Build and Status types; reviewer/approval policies are excluded since the `review` field covers that):
+
+- any `rejected` or `broken` → `failed` (error)
+- any `queued` or `running` with expired build context (`isExpired: true`) → `failed` (error); ADO auto-requeues builds that may never run (e.g., file-pattern scoped), leaving them as `queued` indefinitely
+- else any `queued` or `running` → `running` (pending)
+- `notApplicable` is ignored in rollup
+- else → `succeeded` (success)
+- zero policies or all `notApplicable` → `succeeded` (success)
+- unknown/unexpected states are ignored in rollup; if all non-`notApplicable` policies are unknown, the result is `<state> (unknown)` (neutral)
+- per-PR policy-call failures produce `unknown` (neutral) without failing the whole feed poll
+- policy calls use bounded concurrency (max 5 in flight) with the same per-call timeout as the main poll (30s)
 
 ## Tech stack
 

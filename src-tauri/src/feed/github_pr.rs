@@ -14,6 +14,7 @@ use crate::feed::{
 
 const DEFAULT_INTERVAL_SECONDS: u64 = 120;
 const GH_COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_ACTIVITIES_PER_FEED: usize = 20;
 
 const GH_MISSING_MESSAGE: &str =
     "GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`.";
@@ -171,7 +172,7 @@ impl Feed for GithubPrFeed {
                 "--state",
                 "open",
                 "--limit",
-                "100",
+                "20",
                 "--json",
                 "number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup",
             ],
@@ -202,6 +203,7 @@ impl Feed for GithubPrFeed {
         let activities = prs
             .into_iter()
             .map(|pr| map_pr_to_activity(pr, &self.config_overrides))
+            .take(MAX_ACTIVITIES_PER_FEED)
             .collect();
 
         Ok(activities)
@@ -610,7 +612,7 @@ mod tests {
         assert_eq!(commands[1], "gh auth status");
         assert_eq!(
             commands[2],
-            "gh pr list --repo personal/cortado --author @me --state open --limit 100 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
+            "gh pr list --repo personal/cortado --author @me --state open --limit 20 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
         );
     }
 

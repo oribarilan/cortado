@@ -417,7 +417,7 @@ fn fields_for_activity_menu(feed_type: &str, fields: &[Field]) -> Vec<Field> {
     let mut selected = Vec::new();
 
     let preferred: &[&str] = if feed_type == "ado-pr" {
-        &["review", "mergeable", "draft"]
+        &["review", "checks", "mergeable", "draft"]
     } else {
         &["review", "checks", "mergeable"]
     };

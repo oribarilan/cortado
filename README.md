@@ -74,6 +74,8 @@ Default `interval` values when omitted:
 
 Retention is currently in-memory only (retained activities are cleared on app restart).
 
+Each feed is capped to at most **20 activities** after retention and ordering are applied.
+
 ### `github-pr` feed
 
 Required keys:

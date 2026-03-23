@@ -8,6 +8,8 @@ use tokio::sync::{watch, RwLock};
 
 use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot};
 
+const MAX_ACTIVITIES_PER_FEED: usize = 20;
+
 /// In-memory cache of feed snapshots used by commands and tray rendering.
 #[derive(Clone, Default)]
 pub struct FeedSnapshotCache {
@@ -171,6 +173,8 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
                 feed.retain_for(),
             );
             activities.extend(retained);
+            activities.sort_by_key(|activity| activity.retained);
+            activities.truncate(MAX_ACTIVITIES_PER_FEED);
 
             FeedSnapshot {
                 name: feed.name().to_string(),
@@ -537,5 +541,45 @@ mod tests {
 
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
         assert!(snapshot.activities.is_empty());
+    }
+
+    #[tokio::test]
+    async fn activity_list_is_capped_to_twenty_with_active_first() {
+        let active: Vec<Activity> = (0..20)
+            .map(|index| activity(&format!("active-{index}"), &format!("Active {index}")))
+            .collect();
+
+        let feed = Arc::new(SequencedFeed {
+            name: "Cap feed".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Duration::from_secs(30),
+            retain_for: Some(Duration::from_secs(3600)),
+            outcomes: Mutex::new(vec![Ok(active.clone())]),
+        });
+
+        let mut baseline = active;
+        baseline.push(activity("retained-a", "Retained A"));
+        baseline.push(activity("retained-b", "Retained B"));
+
+        let mut registry = FeedRegistry::new();
+        registry.register(feed.clone());
+
+        let cache = FeedSnapshotCache::from_registry(&registry);
+        cache
+            .upsert(FeedSnapshot {
+                name: "Cap feed".to_string(),
+                feed_type: "github-pr".to_string(),
+                activities: baseline,
+                provided_fields: Vec::new(),
+                error: None,
+            })
+            .await;
+
+        let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+        assert_eq!(snapshot.activities.len(), 20);
+        assert!(snapshot
+            .activities
+            .iter()
+            .all(|activity| !activity.retained));
     }
 }

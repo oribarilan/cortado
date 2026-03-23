@@ -5,6 +5,7 @@ use serde::Deserialize;
 use toml::Value;
 
 use crate::feed::{
+    concurrent,
     config::{FeedConfig, FieldOverride},
     dependency::{classify_dependency_result, DependencyCheck},
     field_overrides::{apply_activity_overrides, apply_definition_overrides},
@@ -15,6 +16,8 @@ use crate::feed::{
 const DEFAULT_INTERVAL_SECONDS: u64 = 120;
 const AZ_PREFLIGHT_TIMEOUT: Duration = Duration::from_secs(15);
 const AZ_POLL_TIMEOUT: Duration = Duration::from_secs(30);
+const MAX_ACTIVITIES_PER_FEED: usize = 20;
+const MAX_POLICY_CONCURRENCY: usize = 5;
 
 const AZ_MISSING_MESSAGE: &str =
     "Azure DevOps feed requires `az` CLI. Install it from https://aka.ms/install-azure-cli and run `az login`.";
@@ -182,6 +185,12 @@ impl Feed for AdoPrFeed {
                     description: "Current reviewer decision state".to_string(),
                 },
                 FieldDefinition {
+                    name: "checks".to_string(),
+                    label: "Checks".to_string(),
+                    field_type: FieldType::Status,
+                    description: "Policy evaluation rollup from Azure DevOps".to_string(),
+                },
+                FieldDefinition {
                     name: "mergeable".to_string(),
                     label: "Mergeable".to_string(),
                     field_type: FieldType::Status,
@@ -225,7 +234,7 @@ impl Feed for AdoPrFeed {
                 "--status",
                 "active",
                 "--top",
-                "100",
+                "20",
                 "--output",
                 "json",
                 "--detect",
@@ -263,15 +272,42 @@ impl Feed for AdoPrFeed {
         let prs = serde_json::from_str::<Vec<AdoPullRequest>>(&output.stdout)
             .map_err(|error| anyhow!("failed parsing `az repos pr list` JSON output: {error}"))?;
 
+        let prs: Vec<AdoPullRequest> = prs.into_iter().take(MAX_ACTIVITIES_PER_FEED).collect();
+
+        let runner = self.process_runner.clone();
+        let org_url = self.org_url.clone();
+
+        let policy_results = concurrent::map_concurrent(
+            prs.iter().map(|pr| pr.pull_request_id).collect(),
+            MAX_POLICY_CONCURRENCY,
+            move |pr_id: Option<u64>| {
+                let runner = runner.clone();
+                let org_url = org_url.clone();
+                async move {
+                    match pr_id {
+                        Some(id) => fetch_policy_status(&*runner, &org_url, id).await,
+                        None => Ok(Vec::new()),
+                    }
+                }
+            },
+        )
+        .await;
+
         let activities = prs
             .into_iter()
-            .map(|pr| {
+            .zip(policy_results)
+            .map(|(pr, policy_result)| {
+                let checks = match policy_result {
+                    Ok(policies) => map_checks_rollup(&policies),
+                    Err(_) => status_field("unknown", StatusKind::Neutral),
+                };
                 map_pr_to_activity(
                     pr,
                     &self.org_url,
                     &self.project,
                     &self.repo,
                     &self.config_overrides,
+                    checks,
                 )
             })
             .collect();
@@ -310,6 +346,7 @@ fn map_pr_to_activity(
     project: &str,
     repo: &str,
     config_overrides: &HashMap<String, FieldOverride>,
+    checks: FieldValue,
 ) -> Activity {
     let review = map_review(pr.reviewers.as_deref().unwrap_or_default());
     let mergeable = map_merge_status(pr.merge_status.as_deref());
@@ -322,6 +359,11 @@ fn map_pr_to_activity(
                 name: "review".to_string(),
                 label: "Review".to_string(),
                 value: review,
+            },
+            Field {
+                name: "checks".to_string(),
+                label: "Checks".to_string(),
+                value: checks,
             },
             Field {
                 name: "mergeable".to_string(),
@@ -438,6 +480,132 @@ fn status_field(value: &str, severity: StatusKind) -> FieldValue {
     }
 }
 
+/// Fetches policy evaluation states for a single PR via `az repos pr policy list`.
+///
+/// Note: `az repos pr policy list` does not accept `--project` — the PR ID
+/// is unique within an organization, so only `--organization` is needed.
+async fn fetch_policy_status(
+    runner: &dyn ProcessRunner,
+    org_url: &str,
+    pr_id: u64,
+) -> Result<Vec<AdoPolicyEvaluation>> {
+    let invocation = CommandInvocation::new(
+        "az",
+        [
+            "repos",
+            "pr",
+            "policy",
+            "list",
+            "--id",
+            &pr_id.to_string(),
+            "--organization",
+            org_url,
+            "--detect",
+            "false",
+            "--output",
+            "json",
+        ],
+        AZ_POLL_TIMEOUT,
+    );
+
+    let command_display = invocation.display();
+    let output = runner
+        .run(invocation)
+        .await
+        .map_err(|error| anyhow!("failed invoking `{command_display}`: {error}"))?;
+
+    if !output.succeeded() {
+        bail!(
+            "`{command_display}` failed with {}",
+            non_zero_exit_context(output.exit_code, &output.stdout, &output.stderr)
+        );
+    }
+
+    serde_json::from_str::<Vec<AdoPolicyEvaluation>>(&output.stdout)
+        .map_err(|error| anyhow!("failed parsing policy list JSON: {error}"))
+}
+
+/// Returns `true` if this policy evaluation is a CI/build check (Build or Status type).
+/// Policies without a recognized type ID are excluded from the rollup.
+fn is_ci_check(policy: &AdoPolicyEvaluation) -> bool {
+    policy
+        .configuration
+        .as_ref()
+        .and_then(|c| c.policy_type.as_ref())
+        .and_then(|t| t.id.as_deref())
+        .is_some_and(|id| id == BUILD_POLICY_TYPE_ID || id == STATUS_POLICY_TYPE_ID)
+}
+
+/// Returns `true` if a Build policy's context indicates an expired evaluation.
+///
+/// ADO auto-requeues build evaluations when the source changes, but the build
+/// may never actually run (e.g., file-pattern scoped policies where the PR
+/// doesn't touch those paths). These show up as `queued` with `isExpired: true`
+/// indefinitely. We treat these as failed since they block completion.
+fn is_expired_build(policy: &AdoPolicyEvaluation) -> bool {
+    policy
+        .context
+        .as_ref()
+        .and_then(|ctx| ctx.get("isExpired"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Rolls up policy evaluation states into a single checks status field.
+///
+/// Only Build and Status (external check) policies are considered — reviewer,
+/// work-item-linking, and other policy types are excluded. The `review` field
+/// already covers reviewer status.
+///
+/// Rollup precedence:
+/// 1. any `rejected` or `broken` → `failed` (error)
+/// 2. any `queued`/`running` with expired build context → `failed` (error)
+/// 3. else any `queued` or `running` → `running` (pending)
+/// 4. `notApplicable` is ignored
+/// 5. else → `succeeded` (success)
+///
+/// Unknown states are ignored for rollup. If every non-`notApplicable` policy
+/// has an unknown state, the result is `"<state> (unknown)"` (neutral).
+fn map_checks_rollup(policies: &[AdoPolicyEvaluation]) -> FieldValue {
+    let mut has_running = false;
+    let mut has_approved = false;
+    let mut first_unknown_state: Option<&str> = None;
+
+    for policy in policies.iter().filter(|p| is_ci_check(p)) {
+        match policy.status.as_deref().unwrap_or("") {
+            "rejected" | "broken" => return status_field("failed", StatusKind::Error),
+            "queued" | "running" => {
+                if is_expired_build(policy) {
+                    return status_field("failed", StatusKind::Error);
+                }
+                has_running = true;
+            }
+            "approved" => has_approved = true,
+            "notApplicable" | "" => {}
+            other => {
+                if first_unknown_state.is_none() {
+                    first_unknown_state = Some(other);
+                }
+            }
+        }
+    }
+
+    if has_running {
+        return status_field("running", StatusKind::Pending);
+    }
+
+    if has_approved {
+        return status_field("succeeded", StatusKind::Success);
+    }
+
+    if let Some(state) = first_unknown_state {
+        return status_field(&format!("{state} (unknown)"), StatusKind::Neutral);
+    }
+
+    // All notApplicable, empty statuses, or no CI policies at all.
+    status_field("succeeded", StatusKind::Success)
+}
+
 fn looks_like_missing_extension(stdout: &str, stderr: &str) -> bool {
     let combined = format!("{stdout}\n{stderr}").to_ascii_lowercase();
     combined.contains("azure-devops") && combined.contains("extension") && combined.contains("not")
@@ -504,6 +672,38 @@ struct AdoLabel {
     name: Option<String>,
 }
 
+/// Well-known Azure DevOps policy type GUIDs for build / CI checks.
+/// Only policies matching these types are included in the `checks` rollup.
+/// Reviewer policies (min-reviewers, required-reviewers) are excluded because
+/// the `review` field already covers that, and their `running` status while
+/// waiting for human approval would pollute the CI-focused rollup.
+const BUILD_POLICY_TYPE_ID: &str = "0609b952-1397-4640-95ec-e00a01b2c241";
+const STATUS_POLICY_TYPE_ID: &str = "cbdc66da-9728-4af8-aada-9a5a32e4a226";
+
+/// A single policy evaluation entry from `az repos pr policy list`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdoPolicyEvaluation {
+    status: Option<String>,
+    configuration: Option<AdoPolicyConfiguration>,
+    /// Polymorphic context — shape varies by policy type. For Build policies
+    /// this contains `isExpired` and `buildIsNotCurrent` among other fields.
+    context: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdoPolicyConfiguration {
+    #[serde(rename = "type")]
+    policy_type: Option<AdoPolicyType>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdoPolicyType {
+    id: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, sync::Arc, time::Duration};
@@ -519,8 +719,10 @@ mod tests {
     };
 
     use super::{
-        map_merge_status, map_review, AdoPrFeed, AZ_CREATOR_IDENTITY_MESSAGE,
+        map_checks_rollup, map_merge_status, map_review, AdoPolicyConfiguration,
+        AdoPolicyEvaluation, AdoPolicyType, AdoPrFeed, AZ_CREATOR_IDENTITY_MESSAGE,
         AZ_EXTENSION_MISSING_MESSAGE, AZ_MISSING_MESSAGE, AZ_UNAUTHENTICATED_MESSAGE,
+        BUILD_POLICY_TYPE_ID, STATUS_POLICY_TYPE_ID,
     };
 
     #[derive(Clone)]
@@ -553,7 +755,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn poll_invokes_az_with_expected_flags() {
         let runner = Arc::new(StubRunner::new(vec![
             Ok(CommandOutput {
@@ -576,6 +778,17 @@ mod tests {
                 stdout: ado_list_json_fixture(),
                 stderr: String::new(),
             }),
+            // Policy responses for PR 42 and PR 43 (order may vary under concurrency).
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
         ]));
 
         let feed = AdoPrFeed::from_config_with_runner(&base_config(), runner.clone())
@@ -585,7 +798,7 @@ mod tests {
         assert_eq!(activities.len(), 2);
 
         let invocations = runner.invocations().await;
-        assert_eq!(invocations.len(), 4);
+        assert_eq!(invocations.len(), 6);
         assert_eq!(invocations[0].program, "az");
         assert_eq!(
             invocations[1].args,
@@ -606,6 +819,21 @@ mod tests {
         assert!(invocations[3].args.contains(&"me".to_string()));
         assert!(invocations[3].args.contains(&"--detect".to_string()));
         assert!(invocations[3].args.contains(&"false".to_string()));
+        assert!(invocations[3].args.contains(&"--top".to_string()));
+        assert!(invocations[3].args.contains(&"20".to_string()));
+
+        // Verify policy list calls were made.
+        let policy_invocations: Vec<_> = invocations[4..]
+            .iter()
+            .filter(|inv| inv.args.contains(&"policy".to_string()))
+            .collect();
+        assert_eq!(policy_invocations.len(), 2);
+        for inv in &policy_invocations {
+            assert!(inv.args.contains(&"--detect".to_string()));
+            assert!(inv.args.contains(&"false".to_string()));
+            assert!(inv.args.contains(&"--output".to_string()));
+            assert!(inv.args.contains(&"json".to_string()));
+        }
     }
 
     #[tokio::test]
@@ -817,5 +1045,363 @@ mod tests {
             }
         ]"#
         .to_string()
+    }
+
+    fn policy(status: &str) -> AdoPolicyEvaluation {
+        build_policy(status)
+    }
+
+    fn build_policy(status: &str) -> AdoPolicyEvaluation {
+        AdoPolicyEvaluation {
+            status: Some(status.to_string()),
+            configuration: Some(AdoPolicyConfiguration {
+                policy_type: Some(AdoPolicyType {
+                    id: Some(BUILD_POLICY_TYPE_ID.to_string()),
+                }),
+            }),
+            context: None,
+        }
+    }
+
+    fn expired_build_policy(status: &str) -> AdoPolicyEvaluation {
+        AdoPolicyEvaluation {
+            status: Some(status.to_string()),
+            configuration: Some(AdoPolicyConfiguration {
+                policy_type: Some(AdoPolicyType {
+                    id: Some(BUILD_POLICY_TYPE_ID.to_string()),
+                }),
+            }),
+            context: Some(serde_json::json!({
+                "isExpired": true,
+                "buildIsNotCurrent": true,
+            })),
+        }
+    }
+
+    fn status_check_policy(status: &str) -> AdoPolicyEvaluation {
+        AdoPolicyEvaluation {
+            status: Some(status.to_string()),
+            configuration: Some(AdoPolicyConfiguration {
+                policy_type: Some(AdoPolicyType {
+                    id: Some(STATUS_POLICY_TYPE_ID.to_string()),
+                }),
+            }),
+            context: None,
+        }
+    }
+
+    fn reviewer_policy(status: &str) -> AdoPolicyEvaluation {
+        AdoPolicyEvaluation {
+            status: Some(status.to_string()),
+            configuration: Some(AdoPolicyConfiguration {
+                policy_type: Some(AdoPolicyType {
+                    id: Some("fa4e907d-c16b-4a4c-9dfa-4906e5d171dd".to_string()),
+                }),
+            }),
+            context: None,
+        }
+    }
+
+    fn untyped_policy(status: &str) -> AdoPolicyEvaluation {
+        AdoPolicyEvaluation {
+            status: Some(status.to_string()),
+            configuration: None,
+            context: None,
+        }
+    }
+
+    // --- checks rollup tests ---
+
+    #[test]
+    fn checks_rollup_rejected_returns_failed() {
+        let policies = vec![policy("approved"), policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_broken_returns_failed() {
+        let policies = vec![policy("approved"), policy("broken")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_queued_returns_running() {
+        let policies = vec![policy("approved"), policy("queued")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "running");
+        assert!(matches!(severity, StatusKind::Pending));
+    }
+
+    #[test]
+    fn checks_rollup_running_returns_running() {
+        let policies = vec![policy("running"), policy("approved")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "running");
+        assert!(matches!(severity, StatusKind::Pending));
+    }
+
+    #[test]
+    fn checks_rollup_all_approved_returns_succeeded() {
+        let policies = vec![policy("approved"), policy("approved")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_empty_returns_succeeded() {
+        let FieldValue::Status { value, severity } = map_checks_rollup(&[]) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_all_not_applicable_returns_succeeded() {
+        let policies = vec![policy("notApplicable"), policy("notApplicable")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_unknown_state_only_returns_neutral() {
+        let policies = vec![policy("mystery")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "mystery (unknown)");
+        assert!(matches!(severity, StatusKind::Neutral));
+    }
+
+    #[test]
+    fn checks_rollup_unknown_with_approved_returns_succeeded() {
+        let policies = vec![policy("approved"), policy("mystery")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_rejected_beats_running() {
+        let policies = vec![policy("running"), policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_not_applicable_plus_unknown_returns_neutral() {
+        let policies = vec![policy("notApplicable"), policy("newstatus")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "newstatus (unknown)");
+        assert!(matches!(severity, StatusKind::Neutral));
+    }
+
+    #[test]
+    fn checks_rollup_missing_status_field_ignored() {
+        let policies = vec![AdoPolicyEvaluation {
+            status: None,
+            configuration: Some(AdoPolicyConfiguration {
+                policy_type: Some(AdoPolicyType {
+                    id: Some(BUILD_POLICY_TYPE_ID.to_string()),
+                }),
+            }),
+            context: None,
+        }];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    // --- policy type filtering tests ---
+
+    #[test]
+    fn checks_rollup_ignores_reviewer_running_policy() {
+        // Reviewer policy is "running" (waiting for approval), build is "approved".
+        // Without filtering this would return "running"; with filtering it returns "succeeded".
+        let policies = vec![build_policy("approved"), reviewer_policy("running")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_ignores_reviewer_rejected_policy() {
+        // Reviewer policy is "rejected" but it's not a CI check — should not affect rollup.
+        let policies = vec![build_policy("approved"), reviewer_policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_includes_status_check_policy() {
+        // Status (external check) policies should be included alongside build policies.
+        let policies = vec![build_policy("approved"), status_check_policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_ignores_untyped_policy() {
+        // Policies without configuration type info are excluded from the rollup.
+        let policies = vec![build_policy("approved"), untyped_policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_only_reviewer_policies_returns_succeeded() {
+        // If the only policies are reviewer types, no CI checks exist → succeeded.
+        let policies = vec![reviewer_policy("running"), reviewer_policy("rejected")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "succeeded");
+        assert!(matches!(severity, StatusKind::Success));
+    }
+
+    #[test]
+    fn checks_rollup_build_rejected_with_reviewer_running() {
+        // The exact bug scenario: build rejected + reviewer running.
+        // Should return "failed" from the build, not "running" from the reviewer.
+        let policies = vec![
+            build_policy("approved"),
+            build_policy("approved"),
+            build_policy("approved"),
+            build_policy("rejected"),
+            reviewer_policy("running"),
+            reviewer_policy("approved"),
+        ];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    // --- expired build tests ---
+
+    #[test]
+    fn checks_rollup_expired_queued_build_returns_failed() {
+        // ADO auto-requeues builds but they may never run (e.g., file-pattern
+        // scoped). These show up as queued + isExpired indefinitely.
+        let policies = vec![
+            build_policy("approved"),
+            expired_build_policy("queued"),
+            status_check_policy("approved"),
+        ];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_expired_running_build_returns_failed() {
+        let policies = vec![expired_build_policy("running")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "failed");
+        assert!(matches!(severity, StatusKind::Error));
+    }
+
+    #[test]
+    fn checks_rollup_non_expired_queued_build_returns_running() {
+        // A fresh queued build (no expired context) is genuinely pending.
+        let policies = vec![build_policy("queued")];
+        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "running");
+        assert!(matches!(severity, StatusKind::Pending));
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn poll_policy_failure_produces_neutral_unknown() {
+        let runner = Arc::new(StubRunner::new(vec![
+            // Preflight (3 calls).
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "azure-cli".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "{}".to_string(),
+                stderr: String::new(),
+            }),
+            // PR list with 1 PR.
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: r#"[{"pullRequestId": 99, "title": "Solo PR"}]"#.to_string(),
+                stderr: String::new(),
+            }),
+            // Policy call fails.
+            Ok(CommandOutput {
+                exit_code: Some(1),
+                stdout: String::new(),
+                stderr: "service unavailable".to_string(),
+            }),
+        ]));
+
+        let feed = AdoPrFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let activities = feed.poll().await.expect("poll should still succeed");
+        assert_eq!(activities.len(), 1);
+
+        let checks_field = activities[0]
+            .fields
+            .iter()
+            .find(|f| f.name == "checks")
+            .expect("checks field should exist");
+
+        let FieldValue::Status { value, severity } = &checks_field.value else {
+            panic!("expected status");
+        };
+        assert_eq!(value, "unknown");
+        assert!(matches!(severity, StatusKind::Neutral));
     }
 }

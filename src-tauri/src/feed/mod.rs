@@ -8,6 +8,7 @@ use serde::Serialize;
 use self::{ado_pr::AdoPrFeed, config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
 
 pub mod ado_pr;
+pub mod concurrent;
 pub mod config;
 pub mod dependency;
 pub mod field_overrides;
