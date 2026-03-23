@@ -1,5 +1,5 @@
 ---
-status: pending
+status: deferred
 ---
 
 # Per-feed notification config parsing

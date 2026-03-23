@@ -8,27 +8,30 @@ mod tray;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Result;
 use tauri::Manager;
 
 use crate::feed::{
-    config::{load_feeds_config, FeedConfig},
-    github_pr::GithubPrFeed,
-    shell::ShellFeed,
-    BackgroundPoller, FeedRegistry, FeedSnapshotCache,
+    config::ConfigChangeTracker, load_feed_registry, BackgroundPoller, FeedSnapshotCache,
+    RegistryBuildMode,
 };
 
 fn main() {
     let feed_registry = Arc::new(
-        build_feed_registry().unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
+        load_feed_registry(RegistryBuildMode::Tolerant)
+            .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
     );
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
     let poller = BackgroundPoller::new(feed_cache.clone());
+    let config_tracker = Arc::new(
+        ConfigChangeTracker::initialize()
+            .unwrap_or_else(|err| panic!("failed to initialize config change tracker: {err}")),
+    );
 
     tauri::Builder::default()
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
+        .manage(config_tracker)
         .invoke_handler(tauri::generate_handler![command::list_feeds])
         .setup({
             let feed_registry = feed_registry.clone();
@@ -60,34 +63,4 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-fn build_feed_registry() -> Result<FeedRegistry> {
-    let configs = load_feeds_config()?;
-    let mut registry = FeedRegistry::new();
-
-    for config in configs {
-        register_configured_feed(&mut registry, config);
-    }
-
-    Ok(registry)
-}
-
-fn register_configured_feed(registry: &mut FeedRegistry, config: FeedConfig) {
-    let feed_name = config.name.clone();
-    let feed_type = config.feed_type.clone();
-
-    let maybe_feed = match config.feed_type.as_str() {
-        "github-pr" => GithubPrFeed::from_config(&config)
-            .map(|feed| Arc::new(feed) as Arc<dyn crate::feed::Feed>),
-        "shell" => {
-            ShellFeed::from_config(&config).map(|feed| Arc::new(feed) as Arc<dyn crate::feed::Feed>)
-        }
-        unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
-    };
-
-    match maybe_feed {
-        Ok(feed) => registry.register(feed),
-        Err(err) => registry.register_error(feed_name, feed_type, err.to_string()),
-    }
 }

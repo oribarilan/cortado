@@ -2,9 +2,11 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
+    time::UNIX_EPOCH,
 };
 
 use anyhow::{anyhow, bail, Context, Result};
+use tokio::sync::RwLock;
 use toml::{Table, Value};
 
 const CONFIG_DIR: &str = ".config/cortado";
@@ -25,6 +27,84 @@ pub struct FeedConfig {
     pub interval: Option<u64>,
     pub type_specific: Table,
     pub field_overrides: HashMap<String, FieldOverride>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ConfigFingerprint {
+    exists: bool,
+    modified_unix_secs: Option<u64>,
+    file_len: Option<u64>,
+}
+
+/// Tracks whether `feeds.toml` changed since app startup.
+#[derive(Debug)]
+pub struct ConfigChangeTracker {
+    baseline: ConfigFingerprint,
+    changed: RwLock<bool>,
+}
+
+impl ConfigChangeTracker {
+    /// Creates a tracker from the current config-file fingerprint.
+    pub fn initialize() -> Result<Self> {
+        let path = feeds_config_path()?;
+        Self::from_path(&path)
+    }
+
+    /// Refreshes internal change state by comparing current file fingerprint to baseline.
+    pub async fn refresh(&self) -> Result<bool> {
+        let path = feeds_config_path()?;
+        self.refresh_with_path(&path).await
+    }
+
+    async fn refresh_with_path(&self, path: &Path) -> Result<bool> {
+        let current = fingerprint_for_path(path)?;
+        let is_changed = current != self.baseline;
+
+        *self.changed.write().await = is_changed;
+
+        Ok(is_changed)
+    }
+
+    /// Returns whether config is currently considered changed.
+    pub async fn has_changed(&self) -> bool {
+        *self.changed.read().await
+    }
+
+    fn from_path(path: &Path) -> Result<Self> {
+        let baseline = fingerprint_for_path(path)?;
+
+        Ok(Self {
+            baseline,
+            changed: RwLock::new(false),
+        })
+    }
+}
+
+fn fingerprint_for_path(path: &Path) -> Result<ConfigFingerprint> {
+    match fs::metadata(path) {
+        Ok(metadata) => {
+            let modified_unix_secs = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+                .map(|duration| duration.as_secs());
+
+            Ok(ConfigFingerprint {
+                exists: true,
+                modified_unix_secs,
+                file_len: Some(metadata.len()),
+            })
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(ConfigFingerprint {
+            exists: false,
+            modified_unix_secs: None,
+            file_len: None,
+        }),
+        Err(error) => Err(anyhow!(
+            "failed reading config metadata for {}: {error}",
+            path.display()
+        )),
+    }
 }
 
 /// Returns the canonical config file path (`~/.config/cortado/feeds.toml`).
@@ -184,7 +264,7 @@ mod tests {
         time::{SystemTime, UNIX_EPOCH},
     };
 
-    use super::{load_feeds_config_from_path, parse_feeds_config_toml};
+    use super::{load_feeds_config_from_path, parse_feeds_config_toml, ConfigChangeTracker};
 
     #[test]
     fn parse_valid_config_with_overrides() {
@@ -338,5 +418,78 @@ repo = "personal/cortado"
             .as_nanos();
 
         PathBuf::from(format!("cortado-missing-{now}.toml"))
+    }
+
+    #[tokio::test]
+    async fn change_tracker_detects_modified_file() {
+        let mut path = std::env::temp_dir();
+        path.push(unique_missing_filename());
+
+        fs::write(
+            &path,
+            r#"[[feed]]
+name = "X"
+type = "shell"
+command = "echo hi"
+"#,
+        )
+        .expect("write baseline config");
+
+        let tracker = ConfigChangeTracker::from_path(&path).expect("create tracker");
+        let changed = tracker
+            .refresh_with_path(&path)
+            .await
+            .expect("refresh should work");
+        assert!(!changed);
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        fs::write(
+            &path,
+            r#"[[feed]]
+name = "X"
+type = "shell"
+command = "echo changed"
+"#,
+        )
+        .expect("write modified config");
+
+        let changed = tracker
+            .refresh_with_path(&path)
+            .await
+            .expect("refresh should work");
+        assert!(changed);
+        assert!(tracker.has_changed().await);
+
+        let _ = fs::remove_file(&path);
+    }
+
+    #[tokio::test]
+    async fn change_tracker_detects_missing_to_created_transition() {
+        let mut path = std::env::temp_dir();
+        path.push(unique_missing_filename());
+
+        if path.exists() {
+            let _ = fs::remove_file(&path);
+        }
+
+        let tracker = ConfigChangeTracker::from_path(&path).expect("create tracker");
+
+        fs::write(
+            &path,
+            r#"[[feed]]
+name = "Y"
+type = "shell"
+command = "echo hi"
+"#,
+        )
+        .expect("create config file");
+
+        let changed = tracker
+            .refresh_with_path(&path)
+            .await
+            .expect("refresh should work");
+        assert!(changed);
+
+        let _ = fs::remove_file(&path);
     }
 }

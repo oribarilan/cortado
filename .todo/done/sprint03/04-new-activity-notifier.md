@@ -1,5 +1,5 @@
 ---
-status: pending
+status: deferred
 ---
 
 # Notify on newly discovered activities

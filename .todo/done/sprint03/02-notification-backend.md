@@ -1,5 +1,5 @@
 ---
-status: pending
+status: deferred
 ---
 
 # Desktop notification backend wiring

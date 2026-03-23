@@ -4,11 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Serialize;
 
-use self::{
-    config::FeedConfig,
-    github_pr::GithubPrFeed,
-    shell::ShellFeed,
-};
+use self::{config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
 
 pub mod config;
 pub mod dependency;
@@ -18,7 +14,7 @@ pub mod process;
 pub mod runtime;
 pub mod shell;
 
-pub use runtime::{BackgroundPoller, FeedRuntimeManager, FeedSnapshotCache};
+pub use runtime::{BackgroundPoller, FeedSnapshotCache};
 
 /// Controls how feed registry construction handles invalid feed entries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -196,7 +192,9 @@ pub fn build_feed_registry_from_configs(
 
 fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
     match config.feed_type.as_str() {
-        "github-pr" => GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        "github-pr" => {
+            GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
         "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
         unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }

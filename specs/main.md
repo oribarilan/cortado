@@ -97,6 +97,8 @@ Each feed type defines a default poll interval (in seconds) used when `interval`
 
 Config is loaded once at app launch. Changes to `feeds.toml` require restarting the app to take effect. (Hot-reload may be added later.)
 
+If Cortado detects that `feeds.toml` changed while the app is running, it should surface a persistent tray-level warning instructing the user to restart the app to apply updates.
+
 ### Error handling
 
 Errors are surfaced per-feed in the UI, never silently swallowed.
@@ -197,5 +199,5 @@ Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tra
 
 - External plugin system (WASM, JS, or otherwise).
 - Windows/Linux support.
-- Push notifications (polling only).
+- Advanced notification policies (digesting, scheduling, status-change alerts, channels/actions).
 - Persistent storage beyond the config file.

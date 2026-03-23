@@ -1,8 +1,8 @@
 ---
-status: pending
+status: deferred
 ---
 
-# Spec contract update for notifications and reload
+# Spec contract update for notifications and config-change warning
 
 ## Goal
 
@@ -11,11 +11,11 @@ Align `specs/main.md` with sprint03 scope so implementation and spec do not dive
 ## Acceptance criteria
 
 - [ ] `specs/main.md` defines per-feed notification configuration in the feed config format.
-- [ ] `specs/main.md` states that config is loaded at startup and also on explicit tray `Reload`.
-- [ ] `specs/main.md` clarifies that sprint03 adds manual reload (not file-watcher/hot reload).
-- [ ] `specs/main.md` updates/removes the non-goal that currently excludes notifications.
+- [x] `specs/main.md` states that config is loaded at startup and requires restart to apply changes.
+- [x] `specs/main.md` documents runtime detection of config changes with a persistent restart-required tray warning.
+- [x] `specs/main.md` updates/removes the non-goal that currently excludes notifications.
 - [ ] Notification scope is explicitly documented as MVP: new-activity notifications only.
-- [ ] Error-handling contract for reload failures is documented (last-known-good state remains active).
+- [x] Error-handling contract for config-change detection failures is documented (detection logs errors; runtime continues).
 - [ ] Terminology remains Feed/Activity/Field throughout.
 
 ## Notes
