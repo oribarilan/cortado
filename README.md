@@ -37,6 +37,111 @@ just test     # run Rust tests
 just check    # format + lint + test
 ```
 
+## Feed configuration (`~/.config/cortado/feeds.toml`)
+
+Cortado reads feed config from:
+
+- `~/.config/cortado/feeds.toml`
+
+Config is loaded at startup. If the file changes while Cortado is running, the tray shows a restart-required warning.
+
+### Top-level format
+
+Use one `[[feed]]` table per feed.
+
+```toml
+[[feed]]
+name = "My feed"
+type = "github-pr" # or "shell"
+```
+
+### Shared feed keys (all types)
+
+| Key | Required | Type | Notes |
+|---|---|---|---|
+| `name` | Yes | string | Feed display name; must be unique across all feeds |
+| `type` | Yes | string | Supported: `"github-pr"`, `"shell"` |
+| `interval` | No | duration string | Poll interval parsed by `jiff` (examples: `"30s"`, `"5m"`, `"1.5m"`); must be > 0 |
+| `retain` | No | duration string | Retain disappeared activities for this long; omitted = no retention |
+
+Duration strings must be strings (not integers). Example: use `"60s"`, not `60`.
+
+Default `interval` values when omitted:
+
+- `github-pr`: `"120s"`
+- `shell`: `"30s"`
+
+Retention is currently in-memory only (retained activities are cleared on app restart).
+
+### `github-pr` feed
+
+Required keys:
+
+- `repo` (string): target repo in `owner/repo` form (example: `"oribarilan/cortado"`)
+
+Optional type-specific keys:
+
+- none (beyond shared keys)
+
+Example:
+
+```toml
+[[feed]]
+name = "My PRs"
+type = "github-pr"
+repo = "oribarilan/cortado"
+interval = "30s"
+retain = "2h"
+```
+
+### `shell` feed
+
+Required keys:
+
+- `command` (string): shell command executed via `sh -c`
+
+Optional type-specific keys:
+
+- `field_name` (string, default `"output"`): output field key
+- `field_type` (string, default `"text"`): one of `text`, `status`, `number`, `url`
+- `label` (string): custom display label for the shell output field
+
+Example:
+
+```toml
+[[feed]]
+name = "Disk usage"
+type = "shell"
+command = "df -h /"
+interval = "15s"
+field_name = "output"
+field_type = "text"
+label = "Output"
+```
+
+### Field overrides (optional)
+
+Override visibility/label for any provided field using:
+
+```toml
+[feed.fields.<field_name>]
+visible = false # optional boolean
+label = "Custom label" # optional string
+```
+
+Example:
+
+```toml
+[[feed]]
+name = "My PRs"
+type = "github-pr"
+repo = "oribarilan/cortado"
+
+[feed.fields.labels]
+visible = false
+label = "Tags"
+```
+
 ## License
 
 MIT. See [LICENSE.md](./LICENSE.md).

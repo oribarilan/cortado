@@ -33,6 +33,7 @@ type Activity = {
   id: string;
   title: string;
   fields: Field[];
+  retained: boolean;
 };
 
 type FieldDefinition = {

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -79,6 +80,10 @@ pub struct Activity {
     pub id: String,
     pub title: String,
     pub fields: Vec<Field>,
+    #[serde(default)]
+    pub retained: bool,
+    #[serde(skip)]
+    pub retained_at_unix_ms: Option<u64>,
 }
 
 /// Poll result for one feed, including optional feed-level error.
@@ -96,7 +101,8 @@ pub struct FeedSnapshot {
 pub trait Feed: Send + Sync {
     fn name(&self) -> &str;
     fn feed_type(&self) -> &str;
-    fn interval_seconds(&self) -> u64;
+    fn interval(&self) -> Duration;
+    fn retain_for(&self) -> Option<Duration>;
     fn provided_fields(&self) -> Vec<FieldDefinition>;
     async fn poll(&self) -> Result<Vec<Activity>>;
 }

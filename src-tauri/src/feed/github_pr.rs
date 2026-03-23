@@ -24,7 +24,8 @@ const GH_UNAUTHENTICATED_MESSAGE: &str =
 pub struct GithubPrFeed {
     name: String,
     repo: String,
-    interval: u64,
+    interval: Duration,
+    retain_for: Option<Duration>,
     config_overrides: HashMap<String, FieldOverride>,
     process_runner: Arc<dyn ProcessRunner>,
 }
@@ -63,7 +64,10 @@ impl GithubPrFeed {
         Ok(Self {
             name: config.name.clone(),
             repo,
-            interval: config.interval.unwrap_or(DEFAULT_INTERVAL_SECONDS),
+            interval: config
+                .interval
+                .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
+            retain_for: config.retain,
             config_overrides: config.field_overrides.clone(),
             process_runner,
         })
@@ -118,8 +122,12 @@ impl Feed for GithubPrFeed {
         "github-pr"
     }
 
-    fn interval_seconds(&self) -> u64 {
+    fn interval(&self) -> Duration {
         self.interval
+    }
+
+    fn retain_for(&self) -> Option<Duration> {
+        self.retain_for
     }
 
     fn provided_fields(&self) -> Vec<FieldDefinition> {
@@ -264,6 +272,8 @@ fn map_pr_to_activity(
             .unwrap_or_else(|| format!("{}/pull/{}", pr.repo_hint(), pr.number)),
         title: format!("#{} {}", pr.number, pr.title),
         fields,
+        retained: false,
+        retained_at_unix_ms: None,
     }
 }
 
@@ -491,7 +501,7 @@ enum GhCheckEntry {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc};
+    use std::{collections::HashMap, sync::Arc, time::Duration};
 
     use async_trait::async_trait;
     use tokio::sync::Mutex;
@@ -857,7 +867,8 @@ mod tests {
         FeedConfig {
             name: "My PRs".to_string(),
             feed_type: "github-pr".to_string(),
-            interval: Some(60),
+            interval: Some(Duration::from_secs(60)),
+            retain: None,
             type_specific,
             field_overrides: HashMap::new(),
         }

@@ -1,11 +1,12 @@
 use std::{
+    collections::HashSet,
     sync::Arc,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use tokio::sync::{watch, RwLock};
 
-use crate::feed::{Feed, FeedRegistry, FeedSnapshot};
+use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot};
 
 /// In-memory cache of feed snapshots used by commands and tray rendering.
 #[derive(Clone, Default)]
@@ -137,7 +138,7 @@ async fn poll_feed_loop(
     feed: Arc<dyn Feed>,
 ) {
     loop {
-        let interval = Duration::from_secs(feed.interval_seconds().max(1));
+        let interval = feed.interval().max(Duration::from_secs(1));
         tokio::time::sleep(interval).await;
 
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
@@ -159,13 +160,26 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
         });
 
     match feed.poll().await {
-        Ok(activities) => FeedSnapshot {
-            name: feed.name().to_string(),
-            feed_type: feed.feed_type().to_string(),
-            activities,
-            provided_fields: feed.provided_fields(),
-            error: None,
-        },
+        Ok(mut activities) => {
+            for activity in &mut activities {
+                activity.retained = false;
+            }
+
+            let retained = retained_activities_from_baseline(
+                baseline.as_ref(),
+                &activities,
+                feed.retain_for(),
+            );
+            activities.extend(retained);
+
+            FeedSnapshot {
+                name: feed.name().to_string(),
+                feed_type: feed.feed_type().to_string(),
+                activities,
+                provided_fields: feed.provided_fields(),
+                error: None,
+            }
+        }
         Err(error) => FeedSnapshot {
             name: feed.name().to_string(),
             feed_type: feed.feed_type().to_string(),
@@ -176,9 +190,58 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
     }
 }
 
+fn retained_activities_from_baseline(
+    baseline: Option<&FeedSnapshot>,
+    active_activities: &[Activity],
+    retain_for: Option<Duration>,
+) -> Vec<Activity> {
+    let Some(retain_for) = retain_for else {
+        return Vec::new();
+    };
+
+    let Some(baseline) = baseline else {
+        return Vec::new();
+    };
+
+    let active_ids: HashSet<&str> = active_activities
+        .iter()
+        .map(|activity| activity.id.as_str())
+        .collect();
+
+    let now_unix_ms = unix_epoch_millis_now();
+    let mut retained = Vec::new();
+
+    for activity in &baseline.activities {
+        if active_ids.contains(activity.id.as_str()) {
+            continue;
+        }
+
+        let mut retained_activity = activity.clone();
+        let first_retained_at = retained_activity.retained_at_unix_ms.unwrap_or(now_unix_ms);
+
+        let retained_age_ms = now_unix_ms.saturating_sub(first_retained_at);
+        if Duration::from_millis(retained_age_ms) >= retain_for {
+            continue;
+        }
+
+        retained_activity.retained_at_unix_ms = Some(first_retained_at);
+        retained_activity.retained = true;
+        retained.push(retained_activity);
+    }
+
+    retained
+}
+
+fn unix_epoch_millis_now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::{sync::Arc, time::Duration};
 
     use anyhow::{anyhow, Result};
     use async_trait::async_trait;
@@ -191,8 +254,19 @@ mod tests {
     struct SequencedFeed {
         name: String,
         feed_type: String,
-        interval: u64,
+        interval: Duration,
+        retain_for: Option<Duration>,
         outcomes: Mutex<Vec<Result<Vec<Activity>>>>,
+    }
+
+    fn activity(id: &str, title: &str) -> Activity {
+        Activity {
+            id: id.to_string(),
+            title: title.to_string(),
+            fields: Vec::new(),
+            retained: false,
+            retained_at_unix_ms: None,
+        }
     }
 
     #[async_trait]
@@ -205,8 +279,12 @@ mod tests {
             &self.feed_type
         }
 
-        fn interval_seconds(&self) -> u64 {
+        fn interval(&self) -> Duration {
             self.interval
+        }
+
+        fn retain_for(&self) -> Option<Duration> {
+            self.retain_for
         }
 
         fn provided_fields(&self) -> Vec<FieldDefinition> {
@@ -234,7 +312,8 @@ mod tests {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
             feed_type: "shell".to_string(),
-            interval: 30,
+            interval: Duration::from_secs(30),
+            retain_for: None,
             outcomes: Mutex::new(vec![Err(anyhow!("poll failed"))]),
         });
 
@@ -246,11 +325,7 @@ mod tests {
             .upsert(FeedSnapshot {
                 name: "My feed".to_string(),
                 feed_type: "shell".to_string(),
-                activities: vec![Activity {
-                    id: "1".to_string(),
-                    title: "Old activity".to_string(),
-                    fields: Vec::new(),
-                }],
+                activities: vec![activity("1", "Old activity")],
                 provided_fields: Vec::new(),
                 error: None,
             })
@@ -281,11 +356,7 @@ mod tests {
             .upsert(FeedSnapshot {
                 name: "A".to_string(),
                 feed_type: "shell".to_string(),
-                activities: vec![Activity {
-                    id: "2".to_string(),
-                    title: "Updated".to_string(),
-                    fields: Vec::new(),
-                }],
+                activities: vec![activity("2", "Updated")],
                 provided_fields: Vec::new(),
                 error: None,
             })
@@ -319,12 +390,9 @@ mod tests {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
             feed_type: "shell".to_string(),
-            interval: 30,
-            outcomes: Mutex::new(vec![Ok(vec![Activity {
-                id: "new".to_string(),
-                title: "Fresh".to_string(),
-                fields: Vec::new(),
-            }])]),
+            interval: Duration::from_secs(30),
+            retain_for: None,
+            outcomes: Mutex::new(vec![Ok(vec![activity("new", "Fresh")])]),
         });
 
         let mut registry = FeedRegistry::new();
@@ -343,12 +411,9 @@ mod tests {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
             feed_type: "shell".to_string(),
-            interval: 30,
-            outcomes: Mutex::new(vec![Ok(vec![Activity {
-                id: "fresh-1".to_string(),
-                title: "Fresh activity".to_string(),
-                fields: Vec::new(),
-            }])]),
+            interval: Duration::from_secs(30),
+            retain_for: None,
+            outcomes: Mutex::new(vec![Ok(vec![activity("fresh-1", "Fresh activity")])]),
         });
 
         let mut registry = FeedRegistry::new();
@@ -372,5 +437,105 @@ mod tests {
         assert_eq!(snapshot.activities.len(), 1);
         assert_eq!(snapshot.activities[0].title, "Fresh activity");
         assert!(snapshot.error.is_none());
+    }
+
+    #[tokio::test]
+    async fn retention_marks_disappeared_activity_as_retained() {
+        let feed = Arc::new(SequencedFeed {
+            name: "Retain feed".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Duration::from_secs(30),
+            retain_for: Some(Duration::from_secs(3600)),
+            outcomes: Mutex::new(vec![Ok(vec![activity("A", "Still open")])]),
+        });
+
+        let mut registry = FeedRegistry::new();
+        registry.register(feed.clone());
+
+        let cache = FeedSnapshotCache::from_registry(&registry);
+        cache
+            .upsert(FeedSnapshot {
+                name: "Retain feed".to_string(),
+                feed_type: "github-pr".to_string(),
+                activities: vec![activity("A", "Still open"), activity("B", "Just merged")],
+                provided_fields: Vec::new(),
+                error: None,
+            })
+            .await;
+
+        let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+
+        assert_eq!(snapshot.activities.len(), 2);
+        assert_eq!(snapshot.activities[0].id, "A");
+        assert!(!snapshot.activities[0].retained);
+
+        assert_eq!(snapshot.activities[1].id, "B");
+        assert!(snapshot.activities[1].retained);
+        assert!(snapshot.activities[1].retained_at_unix_ms.is_some());
+    }
+
+    #[tokio::test]
+    async fn retention_none_drops_disappeared_activity() {
+        let feed = Arc::new(SequencedFeed {
+            name: "No retain feed".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Duration::from_secs(30),
+            retain_for: None,
+            outcomes: Mutex::new(vec![Ok(vec![activity("A", "Still open")])]),
+        });
+
+        let mut registry = FeedRegistry::new();
+        registry.register(feed.clone());
+
+        let cache = FeedSnapshotCache::from_registry(&registry);
+        cache
+            .upsert(FeedSnapshot {
+                name: "No retain feed".to_string(),
+                feed_type: "github-pr".to_string(),
+                activities: vec![activity("A", "Still open"), activity("B", "Closed")],
+                provided_fields: Vec::new(),
+                error: None,
+            })
+            .await;
+
+        let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+
+        assert_eq!(snapshot.activities.len(), 1);
+        assert_eq!(snapshot.activities[0].id, "A");
+    }
+
+    #[tokio::test]
+    async fn retention_expires_old_retained_activity() {
+        let now_ms = super::unix_epoch_millis_now();
+        let old_ms = now_ms.saturating_sub(Duration::from_secs(600).as_millis() as u64);
+
+        let feed = Arc::new(SequencedFeed {
+            name: "Expire feed".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Duration::from_secs(30),
+            retain_for: Some(Duration::from_secs(300)),
+            outcomes: Mutex::new(vec![Ok(vec![])]),
+        });
+
+        let mut registry = FeedRegistry::new();
+        registry.register(feed.clone());
+
+        let cache = FeedSnapshotCache::from_registry(&registry);
+        cache
+            .upsert(FeedSnapshot {
+                name: "Expire feed".to_string(),
+                feed_type: "github-pr".to_string(),
+                activities: vec![Activity {
+                    retained: true,
+                    retained_at_unix_ms: Some(old_ms),
+                    ..activity("gone", "Gone")
+                }],
+                provided_fields: Vec::new(),
+                error: None,
+            })
+            .await;
+
+        let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+        assert!(snapshot.activities.is_empty());
     }
 }

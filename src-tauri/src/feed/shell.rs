@@ -19,7 +19,8 @@ pub struct ShellFeed {
     command: String,
     field_name: String,
     field_type: FieldType,
-    interval: u64,
+    interval: Duration,
+    retain_for: Option<Duration>,
     explicit_overrides: HashMap<String, FieldOverride>,
     config_overrides: HashMap<String, FieldOverride>,
     process_runner: Arc<dyn ProcessRunner>,
@@ -93,7 +94,10 @@ impl ShellFeed {
             command,
             field_name,
             field_type,
-            interval: config.interval.unwrap_or(DEFAULT_INTERVAL_SECONDS),
+            interval: config
+                .interval
+                .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
+            retain_for: config.retain,
             explicit_overrides,
             config_overrides: config.field_overrides.clone(),
             process_runner,
@@ -120,8 +124,12 @@ impl Feed for ShellFeed {
         "shell"
     }
 
-    fn interval_seconds(&self) -> u64 {
+    fn interval(&self) -> Duration {
         self.interval
+    }
+
+    fn retain_for(&self) -> Option<Duration> {
+        self.retain_for
     }
 
     fn provided_fields(&self) -> Vec<FieldDefinition> {
@@ -165,6 +173,8 @@ impl Feed for ShellFeed {
             id: format!("shell:{}", self.name),
             title: self.command.clone(),
             fields,
+            retained: false,
+            retained_at_unix_ms: None,
         }])
     }
 }
@@ -581,7 +591,8 @@ mod tests {
         FeedConfig {
             name: "Disk usage".to_string(),
             feed_type: "shell".to_string(),
-            interval: Some(5),
+            interval: Some(Duration::from_secs(5)),
+            retain: None,
             type_specific,
             field_overrides: HashMap::new(),
         }

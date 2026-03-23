@@ -2,10 +2,11 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
-    time::UNIX_EPOCH,
+    time::{Duration, UNIX_EPOCH},
 };
 
 use anyhow::{anyhow, bail, Context, Result};
+use jiff::SignedDuration;
 use tokio::sync::RwLock;
 use toml::{Table, Value};
 
@@ -24,7 +25,8 @@ pub struct FieldOverride {
 pub struct FeedConfig {
     pub name: String,
     pub feed_type: String,
-    pub interval: Option<u64>,
+    pub interval: Option<Duration>,
+    pub retain: Option<Duration>,
     pub type_specific: Table,
     pub field_overrides: HashMap<String, FieldOverride>,
 }
@@ -166,19 +168,22 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
             bail!("duplicate feed name `{name}` in config");
         }
 
-        let interval = optional_positive_integer(feed_table, "interval", index)?;
+        let interval = optional_duration_string(feed_table, "interval", index)?;
+        let retain = optional_duration_string(feed_table, "retain", index)?;
         let field_overrides = parse_field_overrides(feed_table, index)?;
 
         let mut type_specific = feed_table.clone();
         type_specific.remove("name");
         type_specific.remove("type");
         type_specific.remove("interval");
+        type_specific.remove("retain");
         type_specific.remove("fields");
 
         configs.push(FeedConfig {
             name: name.to_string(),
             feed_type: feed_type.to_string(),
             interval,
+            retain,
             type_specific,
             field_overrides,
         });
@@ -240,20 +245,28 @@ fn required_string<'a>(table: &'a Table, key: &str, feed_index: usize) -> Result
         .ok_or_else(|| anyhow!("feed[{feed_index}] missing required string field `{key}`"))
 }
 
-fn optional_positive_integer(table: &Table, key: &str, feed_index: usize) -> Result<Option<u64>> {
+fn optional_duration_string(
+    table: &Table,
+    key: &str,
+    feed_index: usize,
+) -> Result<Option<Duration>> {
     let Some(value) = table.get(key) else {
         return Ok(None);
     };
 
-    let parsed = value
-        .as_integer()
-        .ok_or_else(|| anyhow!("feed[{feed_index}].{key} must be an integer"))?;
+    let raw = value
+        .as_str()
+        .ok_or_else(|| anyhow!("feed[{feed_index}].{key} must be a duration string"))?;
 
-    if parsed <= 0 {
+    let parsed = raw.trim().parse::<SignedDuration>().map_err(|error| {
+        anyhow!("feed[{feed_index}].{key} has invalid duration `{raw}`: {error}")
+    })?;
+
+    if parsed.is_zero() || parsed.is_negative() {
         bail!("feed[{feed_index}].{key} must be greater than zero");
     }
 
-    Ok(Some(parsed as u64))
+    Ok(Some(parsed.unsigned_abs()))
 }
 
 #[cfg(test)]
@@ -261,6 +274,7 @@ mod tests {
     use std::{
         fs,
         path::PathBuf,
+        time::Duration,
         time::{SystemTime, UNIX_EPOCH},
     };
 
@@ -273,7 +287,8 @@ mod tests {
 name = "My PRs"
 type = "github-pr"
 repo = "personal/cortado"
-interval = 60
+interval = "60s"
+retain = "2h"
 
 [feed.fields.labels]
 visible = false
@@ -291,7 +306,8 @@ command = "df -h /"
         let github = &configs[0];
         assert_eq!(github.name, "My PRs");
         assert_eq!(github.feed_type, "github-pr");
-        assert_eq!(github.interval, Some(60));
+        assert_eq!(github.interval, Some(Duration::from_secs(60)));
+        assert_eq!(github.retain, Some(Duration::from_secs(7200)));
         assert_eq!(
             github
                 .type_specific
@@ -311,6 +327,7 @@ command = "df -h /"
         assert_eq!(shell.name, "Disk usage");
         assert_eq!(shell.feed_type, "shell");
         assert_eq!(shell.interval, None);
+        assert_eq!(shell.retain, None);
     }
 
     #[test]
@@ -346,26 +363,44 @@ command = "echo hi"
 
     #[test]
     fn parse_errors_on_invalid_interval() {
-        let non_integer_interval = r#"
+        let non_string_interval = r#"
 [[feed]]
 name = "Bad interval"
+type = "shell"
+command = "echo hi"
+interval = 60
+"#;
+
+        let error = match parse_feeds_config_toml(non_string_interval) {
+            Ok(_) => panic!("non-string interval should fail"),
+            Err(error) => error,
+        };
+        assert!(error
+            .to_string()
+            .contains("interval must be a duration string"));
+
+        let invalid_interval = r#"
+[[feed]]
+name = "Invalid interval"
 type = "shell"
 command = "echo hi"
 interval = "fast"
 "#;
 
-        let error = match parse_feeds_config_toml(non_integer_interval) {
-            Ok(_) => panic!("non-integer interval should fail"),
+        let error = match parse_feeds_config_toml(invalid_interval) {
+            Ok(_) => panic!("invalid interval should fail"),
             Err(error) => error,
         };
-        assert!(error.to_string().contains("interval must be an integer"));
+        assert!(error
+            .to_string()
+            .contains("interval has invalid duration `fast`"));
 
         let non_positive_interval = r#"
 [[feed]]
 name = "Zero interval"
 type = "shell"
 command = "echo hi"
-interval = 0
+interval = "0s"
 "#;
 
         let error = match parse_feeds_config_toml(non_positive_interval) {
@@ -375,6 +410,23 @@ interval = 0
         assert!(error
             .to_string()
             .contains("interval must be greater than zero"));
+
+        let invalid_retain = r#"
+[[feed]]
+name = "Bad retain"
+type = "shell"
+command = "echo hi"
+interval = "30s"
+retain = "-1s"
+"#;
+
+        let error = match parse_feeds_config_toml(invalid_retain) {
+            Ok(_) => panic!("negative retain should fail"),
+            Err(error) => error,
+        };
+        assert!(error
+            .to_string()
+            .contains("retain must be greater than zero"));
     }
 
     #[test]

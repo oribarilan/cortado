@@ -31,6 +31,7 @@ system-notification = { git = "https://github.com/ahkohd/tauri-toolkit", branch 
 
 tokio = { version = "1.37.0", features = ["time", "process", "sync", "rt", "macros"] }
 tauri-plugin-shell = "2.0.0-beta.7"
+jiff = "0.2"
 
 [features]
 # Used for production builds and when `devPath` points to the filesystem.

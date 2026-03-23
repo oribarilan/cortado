@@ -268,7 +268,7 @@ fn build_tray_menu(
 
 fn build_feed_section_items(
     app_handle: &AppHandle,
-    feed: FeedSnapshot,
+    mut feed: FeedSnapshot,
 ) -> tauri::Result<Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>>> {
     let feed_name = feed.name.clone();
     let feed_type = feed.feed_type.clone();
@@ -308,6 +308,8 @@ fn build_feed_section_items(
         return Ok(items);
     }
 
+    feed.activities.sort_by_key(|activity| activity.retained);
+
     for activity in feed.activities {
         let activity_submenu =
             build_activity_submenu(app_handle, &feed_name, &feed_type, activity)?;
@@ -324,7 +326,11 @@ fn build_activity_submenu(
     activity: Activity,
 ) -> tauri::Result<Submenu<Wry>> {
     let fields_for_menu = fields_for_activity_menu(feed_type, &activity.fields);
-    let symbol = status_symbol_for_activity(&fields_for_menu);
+    let symbol = if activity.retained {
+        "◦"
+    } else {
+        status_symbol_for_activity(&fields_for_menu)
+    };
     let title = format!("{symbol} {}", activity.title);
     let open_target = open_target_for_activity(feed_type, &activity);
 

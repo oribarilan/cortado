@@ -10,6 +10,7 @@ It gives developers a persistent, glanceable view of things they care about.
 | **Feed** | A configured data source that discovers and tracks related items. Example: "GitHub PRs for personal/cortado". |
 | **Activity** | An individual tracked item within a feed, discovered and managed by the feed's lifecycle. Example: PR #42 "Add feed scaffold". |
 | **Field** | A typed, structured piece of data on an activity. Fields have a name, label, value, and type. Example: `review: awaiting` (status field). |
+| **Retained Activity** | An activity no longer returned by a feed's latest poll, kept visible for a configured retention duration. |
 | **Status** | The overall state of an activity, derived from its fields. |
 
 ### Hierarchy
@@ -86,12 +87,28 @@ Failures in any step should not crash the app globally; they should surface on t
 
 ### Default intervals
 
-Each feed type defines a default poll interval (in seconds) used when `interval` is omitted from config:
+Each feed type defines a default poll interval used when `interval` is omitted from config:
 
 | Feed type | Default interval |
 |-----------|-----------------|
-| `github-pr` | 120 |
-| `shell` | 30 |
+| `github-pr` | `"120s"` |
+| `shell` | `"30s"` |
+
+Intervals use duration strings parsed by `jiff` (for example: `"30s"`, `"5m"`, `"1.5m"`, `"2h"`). Integer seconds are not supported.
+
+### Activity retention
+
+Feeds may opt into retention via `retain`, a duration string on each feed config.
+
+- `retain` omitted ⇒ no retention (default)
+- `retain = "2h"` ⇒ keep disappeared activities for up to 2 hours
+
+Retention is a runtime lifecycle primitive:
+
+- On successful poll, activities missing from the new poll result may be retained for the configured window.
+- Retained activities are shown in tray with a hollow dot (`◦`) prefix.
+- Retained activities render after active activities within each feed section.
+- Retention is currently in-memory only; retained activities are cleared on app restart.
 
 ### Config loading
 
@@ -144,7 +161,8 @@ The GUI can also create/edit this file. If the file doesn't exist, Cortado start
 name = "My PRs"
 type = "github-pr"
 repo = "personal/cortado"
-interval = 60
+interval = "60s"
+retain = "2h"
 
 # Optional: override field display
 [feed.fields.labels]
@@ -154,14 +172,15 @@ visible = false
 name = "Disk usage"
 type = "shell"
 command = "df -h / | tail -1 | awk '{print $5}'"
-interval = 30
+interval = "30s"
 ```
 
 ### Config rules
 
 - `name` and `type` are required on every feed.
 - Type-specific fields (e.g., `repo`, `command`) are flat, not nested.
-- `interval` is an integer (seconds). Defaults to a sane value per feed type if omitted.
+- `interval` is a duration string (for example `"30s"`, `"5m"`, `"1.5m"`).
+- `retain` is an optional duration string. When omitted, activities are not retained after they disappear from poll results.
 - `[feed.fields.<name>]` allows overriding visibility, label, etc.
 - The base feed entity defines the field override contract; curated types (like `github-pr`) provide defaults.
 
@@ -185,6 +204,8 @@ Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tra
 
 - Top level groups by **Feed**.
 - Each **Activity** is a submenu item prefixed by a derived status dot.
+- **Retained Activities** use a hollow dot (`◦`) prefix.
+- Retained activities are listed after active activities within each feed.
 - Activity title rows are compact and do not include full field details inline.
 - Expanding an activity submenu reveals all **Field** entries (`label: value`).
 - Dot color/severity is derived from status fields using this precedence:
