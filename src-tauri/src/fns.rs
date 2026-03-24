@@ -145,40 +145,6 @@ pub fn toggle_menubar_panel(
     panel.show();
 }
 
-pub fn set_panel_height(
-    app_handle: &tauri::AppHandle,
-    requested_height: f64,
-) -> Result<(), String> {
-    const PANEL_MIN_HEIGHT: f64 = 160.0;
-    const PANEL_MAX_HEIGHT: f64 = 560.0;
-
-    let window = app_handle
-        .get_webview_window("main")
-        .ok_or_else(|| "main webview window not found".to_string())?;
-
-    let target_height = requested_height.clamp(PANEL_MIN_HEIGHT, PANEL_MAX_HEIGHT);
-
-    let handle: id = window
-        .ns_window()
-        .map_err(|err| format!("failed to access ns_window: {err}"))? as _;
-
-    let mut frame: NSRect = unsafe { msg_send![handle, frame] };
-
-    if (frame.size.height - target_height).abs() < 0.5 {
-        return Ok(());
-    }
-
-    let delta = target_height - frame.size.height;
-
-    // Keep panel top edge anchored near menubar while resizing.
-    frame.origin.y -= delta;
-    frame.size.height = target_height;
-
-    let _: () = unsafe { msg_send![handle, setFrame: frame display: NO] };
-
-    Ok(())
-}
-
 fn app_pid() -> i32 {
     let process_info: id = unsafe { msg_send![class!(NSProcessInfo), processInfo] };
 

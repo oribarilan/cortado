@@ -60,8 +60,3 @@ pub fn open_activity(url: String) -> Result<(), String> {
 pub fn quit_app(app_handle: AppHandle) {
     app_handle.exit(0);
 }
-
-#[tauri::command]
-pub fn set_panel_height(app_handle: AppHandle, height: f64) -> Result<(), String> {
-    fns::set_panel_height(&app_handle, height)
-}

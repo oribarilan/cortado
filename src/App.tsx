@@ -125,16 +125,11 @@ function activityKey(feed: FeedSnapshot, activity: Activity): string {
 }
 
 function App() {
-  const DETAIL_TOGGLE_ANIMATION_MS = 220;
-
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
-  const panelResizeRafRef = useRef<number | null>(null);
-  const panelResizeTimeoutRef = useRef<number | null>(null);
-  const lastRequestedPanelHeightRef = useRef<number | null>(null);
 
   const sortedFeeds = useMemo(() => {
     return feeds.map((feed) => ({
@@ -168,49 +163,6 @@ function App() {
 
   const quitApp = useCallback(async () => {
     await invoke("quit_app");
-  }, []);
-
-  const schedulePanelHeightUpdate = useCallback((delayMs: number) => {
-    if (panelResizeTimeoutRef.current !== null) {
-      clearTimeout(panelResizeTimeoutRef.current);
-      panelResizeTimeoutRef.current = null;
-    }
-
-    if (panelResizeRafRef.current !== null) {
-      cancelAnimationFrame(panelResizeRafRef.current);
-      panelResizeRafRef.current = null;
-    }
-
-    const runResize = () => {
-      panelResizeRafRef.current = requestAnimationFrame(() => {
-        const panelContent = panelContentRef.current;
-        if (!panelContent) {
-          panelResizeRafRef.current = null;
-          return;
-        }
-
-        const targetHeight = Math.ceil(panelContent.scrollHeight + 2);
-        const lastRequested = lastRequestedPanelHeightRef.current;
-        if (lastRequested !== null && Math.abs(lastRequested - targetHeight) < 1) {
-          panelResizeRafRef.current = null;
-          return;
-        }
-
-        lastRequestedPanelHeightRef.current = targetHeight;
-        void invoke("set_panel_height", { height: targetHeight });
-        panelResizeRafRef.current = null;
-      });
-    };
-
-    if (delayMs > 0) {
-      panelResizeTimeoutRef.current = window.setTimeout(() => {
-        panelResizeTimeoutRef.current = null;
-        runResize();
-      }, delayMs);
-      return;
-    }
-
-    runResize();
   }, []);
 
   useEffect(() => {
@@ -263,15 +215,12 @@ function App() {
 
       const unlistenPanelWillShow = await listen("menubar_panel_will_show", () => {
         setExpandedActivityKey(null);
-        lastRequestedPanelHeightRef.current = null;
 
         requestAnimationFrame(() => {
           const panelContent = panelContentRef.current;
           if (panelContent) {
             panelContent.scrollTop = 0;
           }
-
-          schedulePanelHeightUpdate(0);
         });
       });
 
@@ -284,32 +233,6 @@ function App() {
       isMounted = false;
       for (const unlisten of unlistenFns) {
         void unlisten();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    schedulePanelHeightUpdate(0);
-  }, [sortedFeeds, loadError, loading, schedulePanelHeightUpdate]);
-
-  useEffect(() => {
-    if (loading) {
-      return;
-    }
-
-    schedulePanelHeightUpdate(DETAIL_TOGGLE_ANIMATION_MS);
-  }, [expandedActivityKey, loading, schedulePanelHeightUpdate, DETAIL_TOGGLE_ANIMATION_MS]);
-
-  useEffect(() => {
-    return () => {
-      if (panelResizeTimeoutRef.current !== null) {
-        clearTimeout(panelResizeTimeoutRef.current);
-        panelResizeTimeoutRef.current = null;
-      }
-
-      if (panelResizeRafRef.current !== null) {
-        cancelAnimationFrame(panelResizeRafRef.current);
-        panelResizeRafRef.current = null;
       }
     };
   }, []);

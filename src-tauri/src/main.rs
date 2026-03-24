@@ -40,8 +40,7 @@ fn main() {
             command::list_feeds,
             command::refresh_feeds,
             command::open_activity,
-            command::quit_app,
-            command::set_panel_height
+            command::quit_app
         ])
         .setup({
             let feed_registry = feed_registry.clone();
