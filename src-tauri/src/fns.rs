@@ -111,6 +111,74 @@ pub fn position_panel_at_menubar_icon(
     let _: () = unsafe { msg_send![handle, setFrame: win_frame display: NO] };
 }
 
+pub fn toggle_menubar_panel(
+    app_handle: &tauri::AppHandle,
+    icon_position: LogicalPosition<f64>,
+    icon_size: LogicalSize<f64>,
+    padding_top: f64,
+) {
+    let panel = app_handle.get_webview_panel("main").unwrap();
+
+    if panel.is_visible() {
+        panel.order_out(None);
+        return;
+    }
+
+    position_panel_at_menubar_icon(app_handle, icon_position, icon_size, padding_top);
+
+    let window = app_handle.get_webview_window("main").unwrap();
+    let monitor_with_cursor = monitor::get_monitor_with_cursor().unwrap();
+
+    if let Ok(Some(window_monitor)) = window.current_monitor() {
+        let is_window_in_monitor_with_cursor =
+            window_monitor.position().x as f64 == monitor_with_cursor.position().x;
+
+        if is_window_in_monitor_with_cursor {
+            let _ = app_handle.emit("menubar_panel_will_show", ());
+            panel.show();
+        }
+
+        return;
+    }
+
+    let _ = app_handle.emit("menubar_panel_will_show", ());
+    panel.show();
+}
+
+pub fn set_panel_height(
+    app_handle: &tauri::AppHandle,
+    requested_height: f64,
+) -> Result<(), String> {
+    const PANEL_MIN_HEIGHT: f64 = 160.0;
+    const PANEL_MAX_HEIGHT: f64 = 560.0;
+
+    let window = app_handle
+        .get_webview_window("main")
+        .ok_or_else(|| "main webview window not found".to_string())?;
+
+    let target_height = requested_height.clamp(PANEL_MIN_HEIGHT, PANEL_MAX_HEIGHT);
+
+    let handle: id = window
+        .ns_window()
+        .map_err(|err| format!("failed to access ns_window: {err}"))? as _;
+
+    let mut frame: NSRect = unsafe { msg_send![handle, frame] };
+
+    if (frame.size.height - target_height).abs() < 0.5 {
+        return Ok(());
+    }
+
+    let delta = target_height - frame.size.height;
+
+    // Keep panel top edge anchored near menubar while resizing.
+    frame.origin.y -= delta;
+    frame.size.height = target_height;
+
+    let _: () = unsafe { msg_send![handle, setFrame: frame display: NO] };
+
+    Ok(())
+}
+
 fn app_pid() -> i32 {
     let process_info: id = unsafe { msg_send![class!(NSProcessInfo), processInfo] };
 

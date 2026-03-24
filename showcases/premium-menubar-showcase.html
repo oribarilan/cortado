@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Premium Menubar Dropdown Showcase</title>
+<style>
+/* ============================================================
+   SHOWCASE CHROME
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light dark;
+  --chrome-bg: #f0f0f0;
+  --chrome-fg: #1a1a1a;
+  --chrome-muted: #666;
+  --chrome-border: #d0d0d0;
+  --chrome-controls-bg: #eaeaea;
+  --chrome-btn-bg: #fff;
+  --chrome-btn-border: #c0c0c0;
+  --chrome-btn-fg: #333;
+  --chrome-btn-hover: #f2f2f2;
+  --chrome-btn-active-bg: #1d1d1f;
+  --chrome-btn-active-fg: #fff;
+  --chrome-btn-active-border: #1d1d1f;
+  --note-bg: #fffcf0;
+  --note-border: #e6d88a;
+  --note-fg: #5a4e1a;
+  --brief-bg: #f5f3ff;
+  --brief-border: #d4ccf0;
+  --brief-fg: #3b2f6e;
+}
+
+html.dark {
+  --chrome-bg: #161616;
+  --chrome-fg: #e0e0e0;
+  --chrome-muted: #888;
+  --chrome-border: #2e2e2e;
+  --chrome-controls-bg: #1e1e1e;
+  --chrome-btn-bg: #2a2a2a;
+  --chrome-btn-border: #444;
+  --chrome-btn-fg: #ccc;
+  --chrome-btn-hover: #363636;
+  --chrome-btn-active-bg: #e0e0e0;
+  --chrome-btn-active-fg: #111;
+  --chrome-btn-active-border: #e0e0e0;
+  --note-bg: #1e1c14;
+  --note-border: #3a3520;
+  --note-fg: #c8bc7a;
+  --brief-bg: #1c1928;
+  --brief-border: #2e2750;
+  --brief-fg: #a89ae0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Design brief --- */
+.design-brief {
+  max-width: 780px;
+  margin: 28px auto 0;
+  padding: 14px 18px;
+  background: var(--brief-bg);
+  border: 1px solid var(--brief-border);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--brief-fg);
+}
+.design-brief strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.design-brief p { margin-bottom: 6px; }
+.design-brief p:last-child { margin-bottom: 0; }
+.design-brief code {
+  font-size: 0.9em;
+  background: color-mix(in oklch, var(--brief-border), transparent 50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* --- Fidelity notes --- */
+.fidelity-notes {
+  max-width: 780px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--note-fg);
+}
+.fidelity-notes strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fidelity-notes ul { padding-left: 16px; margin: 0; }
+.fidelity-notes li { margin-bottom: 1px; }
+
+/* --- Controls --- */
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--chrome-controls-bg);
+  border-bottom: 1px solid var(--chrome-border);
+  padding: 10px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.control-group label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chrome-muted);
+  margin-right: 5px;
+}
+.control-group button, .control-group select {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--chrome-btn-border);
+  border-radius: 4px;
+  background: var(--chrome-btn-bg);
+  color: var(--chrome-btn-fg);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.control-group button:hover { background: var(--chrome-btn-hover); }
+.control-group button:focus-visible {
+  outline: 2px solid oklch(60% 0.15 260);
+  outline-offset: 1px;
+}
+.control-group button.active,
+.control-group button[aria-pressed="true"] {
+  background: var(--chrome-btn-active-bg);
+  color: var(--chrome-btn-active-fg);
+  border-color: var(--chrome-btn-active-border);
+}
+
+/* --- Grid --- */
+.showcase-grid {
+  max-width: 1380px;
+  margin: 24px auto;
+  padding: 0 20px 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.variant-card {
+  background: var(--chrome-btn-bg);
+  border: 1px solid var(--chrome-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.variant-header {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--chrome-border);
+}
+.variant-header h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  letter-spacing: -0.01em;
+}
+.variant-header .thesis {
+  font-size: 11px;
+  font-weight: 500;
+  color: oklch(50% 0.12 260);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+html.dark .variant-header .thesis {
+  color: oklch(72% 0.12 260);
+}
+.variant-header .desc {
+  font-size: 11px;
+  color: var(--chrome-muted);
+  line-height: 1.5;
+}
+.variant-header .desc b { color: var(--chrome-fg); font-weight: 600; }
+.variant-body {
+  padding: 16px 12px;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* ============================================================
+   PANEL — macOS NSPanel simulation
+   Shared across all variants. This IS the dropdown.
+   ============================================================ */
+
+.panel {
+  --p-bg: rgba(246, 246, 246, 0.96);
+  --p-fg: #1d1d1f;
+  --p-muted: #86868b;
+  --p-tertiary: #aeaeb2;
+  --p-separator: rgba(0, 0, 0, 0.10);
+  --p-hover: rgba(0, 0, 0, 0.04);
+  --p-active: #0063e1;
+  --p-active-fg: #fff;
+  --p-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --p-radius: 10px;
+  --p-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 12px 40px rgba(0, 0, 0, 0.08);
+  --p-row-h: 26px;
+  --p-fs: 13px;
+  --p-fs-sm: 11px;
+  --p-fs-xs: 10px;
+  --p-pad-x: 12px;
+
+  /* Severity palette — tuned for clarity on both themes */
+  --sv-error: #ff3b30;
+  --sv-error-bg: rgba(255, 59, 48, 0.08);
+  --sv-warning: #ff9500;
+  --sv-warning-bg: rgba(255, 149, 0, 0.08);
+  --sv-pending: #007aff;
+  --sv-pending-bg: rgba(0, 122, 255, 0.08);
+  --sv-success: #34c759;
+  --sv-success-bg: rgba(52, 199, 89, 0.08);
+  --sv-neutral: #8e8e93;
+  --sv-neutral-bg: rgba(142, 142, 147, 0.06);
+
+  font-family: var(--p-font);
+  font-size: var(--p-fs);
+  color: var(--p-fg);
+  background: var(--p-bg);
+  backdrop-filter: blur(50px) saturate(190%);
+  -webkit-backdrop-filter: blur(50px) saturate(190%);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+  padding: 6px 0;
+  width: 280px;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  overflow: visible;
+}
+
+html.dark .panel {
+  --p-bg: rgba(36, 36, 38, 0.94);
+  --p-fg: #f5f5f7;
+  --p-muted: #98989d;
+  --p-tertiary: #636366;
+  --p-separator: rgba(255, 255, 255, 0.10);
+  --p-hover: rgba(255, 255, 255, 0.06);
+  --p-active: #0a84ff;
+  --p-active-fg: #fff;
+  --p-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.05),
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 12px 40px rgba(0, 0, 0, 0.25);
+
+  --sv-error: #ff453a;
+  --sv-error-bg: rgba(255, 69, 58, 0.12);
+  --sv-warning: #ff9f0a;
+  --sv-warning-bg: rgba(255, 159, 10, 0.12);
+  --sv-pending: #0a84ff;
+  --sv-pending-bg: rgba(10, 132, 255, 0.12);
+  --sv-success: #30d158;
+  --sv-success-bg: rgba(48, 209, 88, 0.12);
+  --sv-neutral: #98989d;
+  --sv-neutral-bg: rgba(152, 152, 157, 0.10);
+}
+
+/* --- Shared row primitives --- */
+
+.p-sep {
+  height: 1px;
+  background: var(--p-separator);
+  margin: 4px 12px;
+}
+
+.p-section-label {
+  font-size: var(--p-fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--p-muted);
+  padding: 4px var(--p-pad-x) 2px;
+  cursor: default;
+  line-height: 1.4;
+}
+
+.p-row {
+  display: flex;
+  align-items: center;
+  min-height: var(--p-row-h);
+  padding: 0 var(--p-pad-x);
+  gap: 8px;
+  cursor: default;
+  border-radius: 5px;
+  margin: 0 5px;
+  transition: background 0.08s ease;
+}
+.p-row.interactive { cursor: pointer; }
+.p-row.interactive:hover { background: var(--p-hover); }
+
+.p-row-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.p-row-secondary {
+  font-size: var(--p-fs-sm);
+  color: var(--p-muted);
+  flex-shrink: 0;
+}
+
+.p-row.disabled { color: var(--p-muted); }
+.p-row.disabled .p-row-label { color: var(--p-muted); }
+
+.p-error-text {
+  font-size: var(--p-fs-sm);
+  color: var(--sv-error);
+  padding: 2px var(--p-pad-x);
+  line-height: 1.45;
+  cursor: default;
+  margin: 0 5px;
+}
+
+/* Status dot */
+.sv-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sv-dot.error { background: var(--sv-error); }
+.sv-dot.warning { background: var(--sv-warning); }
+.sv-dot.pending { background: var(--sv-pending); }
+.sv-dot.success { background: var(--sv-success); }
+.sv-dot.neutral { background: var(--sv-neutral); }
+
+/* Status dot — hollow (retained) */
+.sv-dot.retained {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--sv-neutral);
+}
+.sv-dot.retained.error { box-shadow: inset 0 0 0 1.5px var(--sv-error); }
+.sv-dot.retained.warning { box-shadow: inset 0 0 0 1.5px var(--sv-warning); }
+.sv-dot.retained.pending { box-shadow: inset 0 0 0 1.5px var(--sv-pending); }
+.sv-dot.retained.success { box-shadow: inset 0 0 0 1.5px var(--sv-success); }
+
+/* Severity-tinted tag */
+.sv-tag {
+  font-size: var(--p-fs-xs);
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.sv-tag.error { color: var(--sv-error); background: var(--sv-error-bg); }
+.sv-tag.warning { color: var(--sv-warning); background: var(--sv-warning-bg); }
+.sv-tag.pending { color: var(--sv-pending); background: var(--sv-pending-bg); }
+.sv-tag.success { color: var(--sv-success); background: var(--sv-success-bg); }
+.sv-tag.neutral { color: var(--p-muted); background: var(--sv-neutral-bg); }
+
+/* Severity-colored value text */
+.sv-val { font-weight: 500; }
+.sv-val.error { color: var(--sv-error); }
+.sv-val.warning { color: var(--sv-warning); }
+.sv-val.pending { color: var(--sv-pending); }
+.sv-val.success { color: var(--sv-success); }
+.sv-val.neutral { color: var(--p-muted); }
+
+/* Severity edge — left border accent */
+.sv-edge {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin: 3px 0;
+}
+.sv-edge.error { background: var(--sv-error); }
+.sv-edge.warning { background: var(--sv-warning); }
+.sv-edge.pending { background: var(--sv-pending); }
+.sv-edge.success { background: var(--sv-success); }
+.sv-edge.neutral { background: var(--sv-neutral); opacity: 0.35; }
+.sv-edge.retained { opacity: 0.35; }
+
+/* Submenu arrow */
+.p-arrow {
+  color: var(--p-tertiary);
+  font-size: 12px;
+  font-weight: 300;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Feed count badge */
+.p-count {
+  font-size: var(--p-fs-xs);
+  color: var(--p-muted);
+  background: var(--sv-neutral-bg);
+  padding: 0 5px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+/* Chevron for expandable */
+.p-chevron {
+  font-size: var(--p-fs-sm);
+  color: var(--p-tertiary);
+  flex-shrink: 0;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.p-chevron.open { transform: rotate(90deg); }
+
+/* Field detail panel (inline expansion) */
+.p-detail {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: 0 5px;
+}
+.p-detail.open { grid-template-rows: 1fr; }
+.p-detail-inner { overflow: hidden; }
+
+.p-fields {
+  padding: 2px 12px 6px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.p-field-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: var(--p-fs-sm);
+}
+.p-field-key {
+  color: var(--p-muted);
+  white-space: nowrap;
+  font-weight: 400;
+}
+.p-field-val {
+  color: var(--p-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Open action row */
+.p-action-row {
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 12px 0 32px;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 5px 2px;
+  font-size: var(--p-fs-sm);
+  color: var(--p-active);
+}
+.p-action-row:hover {
+  background: var(--p-hover);
+}
+
+/* Loading spinner */
+@keyframes p-spin {
+  to { transform: rotate(360deg); }
+}
+.p-spinner {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--p-muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: p-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Skeleton loading */
+@keyframes p-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+.p-skeleton {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--sv-neutral-bg) 25%, rgba(0,0,0,0.04) 50%, var(--sv-neutral-bg) 75%);
+  background-size: 400px 100%;
+  animation: p-shimmer 1.3s ease infinite;
+  margin: 6px 12px;
+}
+html.dark .p-skeleton {
+  background: linear-gradient(90deg, var(--sv-neutral-bg) 25%, rgba(255,255,255,0.05) 50%, var(--sv-neutral-bg) 75%);
+  background-size: 400px 100%;
+}
+.p-skeleton.w-60 { width: 60%; }
+.p-skeleton.w-75 { width: 75%; }
+.p-skeleton.w-45 { width: 45%; }
+.p-skeleton.w-85 { width: 85%; }
+
+/* --- Variant-specific: inline chips row --- */
+.p-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0 12px 4px 32px;
+}
+
+/* --- Variant-specific: tinted row background --- */
+.p-row.tinted-bg {
+  transition: background 0.08s ease;
+}
+.p-row.tinted-bg.sev-error { background: var(--sv-error-bg); }
+.p-row.tinted-bg.sev-warning { background: var(--sv-warning-bg); }
+.p-row.tinted-bg.sev-pending { background: var(--sv-pending-bg); }
+.p-row.tinted-bg.sev-success { background: transparent; }
+.p-row.tinted-bg.sev-neutral { background: transparent; }
+.p-row.tinted-bg.interactive:hover {
+  background: var(--p-hover);
+}
+
+/* Submenu panel */
+.p-submenu-wrap {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: -6px;
+  z-index: 10;
+  display: none;
+}
+.p-row.has-submenu:hover > .p-submenu-wrap {
+  display: block;
+}
+
+/* ============================================================
+   UTILITY
+   ============================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-spinner { animation: none; }
+  .p-skeleton { animation: none; }
+  .p-detail { transition: none; }
+  .p-chevron { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     DESIGN BRIEF
+     ============================================================ -->
+<div class="design-brief">
+  <strong>Design Brief — Premium Menubar Dropdown</strong>
+  <p>
+    <b>Problem 1:</b> Feed headings rendered as disabled <code>MenuItem</code> in NSMenu look grayed-out and "broken" — users think they're supposed to be clickable.
+    <b>Problem 2:</b> Activity items are flat submenus with text-only status symbols — no color coding is visible at the top-level menu, making it impossible to glance and know what needs attention.
+  </p>
+  <p>
+    These 4 variants explore how a <b>custom panel</b> (NSPanel via Tauri webview, replacing the native NSMenu) solves both problems while feeling like a premium macOS dropdown — inspired by Control Center, Wi-Fi, and Bluetooth menus.
+  </p>
+</div>
+
+<!-- ============================================================
+     FIDELITY NOTES
+     ============================================================ -->
+<div class="fidelity-notes">
+  <strong>Fidelity Gaps vs Native</strong>
+  <ul>
+    <li><b>Vibrancy:</b> NSVisualEffectView material cannot be replicated — <code>backdrop-filter</code> approximates.</li>
+    <li><b>Font rendering:</b> SF Pro optical weight/subpixel hinting differs between native and browser.</li>
+    <li><b>Scroll feel:</b> NSScrollView rubber-banding differs from browser <code>overflow</code> scroll.</li>
+    <li><b>Shadow + border:</b> System menu shadow has adaptive ambient occlusion; CSS box-shadow is static.</li>
+  </ul>
+</div>
+
+<!-- ============================================================
+     CONTROLS
+     ============================================================ -->
+<div class="controls" role="toolbar" aria-label="Showcase controls">
+  <div class="control-group">
+    <label>State</label>
+    <button data-control="state" data-value="normal" class="active" aria-pressed="true">Normal</button>
+    <button data-control="state" data-value="loading" aria-pressed="false">Loading</button>
+    <button data-control="state" data-value="empty" aria-pressed="false">Empty</button>
+    <button data-control="state" data-value="config-error" aria-pressed="false">Config Err</button>
+    <button data-control="state" data-value="poll-error" aria-pressed="false">Poll Err</button>
+  </div>
+  <div class="control-group">
+    <label>Theme</label>
+    <button data-control="theme" data-value="light" class="active" aria-pressed="true">Light</button>
+    <button data-control="theme" data-value="dark" aria-pressed="false">Dark</button>
+    <button data-control="theme" data-value="system" aria-pressed="false">System</button>
+  </div>
+  <div class="control-group">
+    <label>Retained</label>
+    <button data-control="retained" id="retained-toggle" role="switch" aria-pressed="true" class="active">Show</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     VARIANT GRID
+     ============================================================ -->
+<div class="showcase-grid" id="showcase-grid"></div>
+
+<!-- ============================================================
+     DATA + RENDER
+     ============================================================ -->
+<script>
+// ============================================================
+// MOCK DATA
+// ============================================================
+
+const MOCK_NORMAL = [
+  {
+    name: "My PRs",
+    feed_type: "github-pr",
+    error: null,
+    activities: [
+      {
+        id: "pr-42",
+        title: "Add feed scaffold",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+        ],
+      },
+      {
+        id: "pr-51",
+        title: "TOML config hot-reload",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "changes requested", severity: "error" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "failing", severity: "error" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "conflict", severity: "warning" } },
+          { name: "labels", label: "Labels", value: { type: "text", value: "draft" } },
+        ],
+      },
+      {
+        id: "pr-38",
+        title: "Fix tray icon alignment on Sonoma",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+        ],
+      },
+      {
+        id: "pr-29",
+        title: "Add activity retention lifecycle",
+        retained: true,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "ADO PRs",
+    feed_type: "ado-pr",
+    error: null,
+    activities: [
+      {
+        id: "ado-1234",
+        title: "Pipeline auth refactor",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "running", severity: "pending" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "blocked", severity: "warning" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Disk Usage",
+    feed_type: "shell",
+    error: null,
+    activities: [
+      {
+        id: "disk-root",
+        title: "/ (root)",
+        retained: false,
+        fields: [
+          { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+          { name: "available", label: "Available", value: { type: "text", value: "148 GB" } },
+        ],
+      },
+    ],
+  },
+];
+
+const MOCK_LOADING = [
+  { name: "My PRs", feed_type: "github-pr", error: null, activities: [], _loading: true },
+  { name: "ADO PRs", feed_type: "ado-pr", error: null, activities: [], _loading: true },
+  { name: "Disk Usage", feed_type: "shell", error: null, activities: [], _loading: true },
+];
+
+const MOCK_EMPTY = [];
+
+const MOCK_CONFIG_ERROR = [
+  {
+    name: "Broken Feed",
+    feed_type: "github-pr",
+    error: "Missing required field: 'repo'",
+    activities: [],
+  },
+  {
+    name: "My PRs",
+    feed_type: "github-pr",
+    error: null,
+    activities: [
+      {
+        id: "pr-42",
+        title: "Add feed scaffold",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+        ],
+      },
+    ],
+  },
+];
+
+const MOCK_POLL_ERROR = [
+  {
+    name: "My PRs",
+    feed_type: "github-pr",
+    error: "gh: not found. Install GitHub CLI and run 'gh auth login'.",
+    activities: [
+      {
+        id: "pr-42",
+        title: "Add feed scaffold",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Disk Usage",
+    feed_type: "shell",
+    error: "Command exited with code 127",
+    activities: [],
+  },
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+function getFeeds(state) {
+  switch (state) {
+    case "normal": return MOCK_NORMAL;
+    case "loading": return MOCK_LOADING;
+    case "empty": return MOCK_EMPTY;
+    case "config-error": return MOCK_CONFIG_ERROR;
+    case "poll-error": return MOCK_POLL_ERROR;
+    default: return MOCK_NORMAL;
+  }
+}
+
+function filterRetained(feeds, show) {
+  if (show) return feeds;
+  return feeds.map(f => ({
+    ...f,
+    activities: (f.activities || []).filter(a => !a.retained),
+  }));
+}
+
+function deriveSeverity(fields) {
+  let hasWarning = false, hasPending = false, hasSuccess = false;
+  for (const f of fields || []) {
+    if (f.value?.type !== "status") continue;
+    const s = f.value.severity;
+    if (s === "error") return "error";
+    if (s === "warning") hasWarning = true;
+    if (s === "pending") hasPending = true;
+    if (s === "success") hasSuccess = true;
+  }
+  if (hasWarning) return "warning";
+  if (hasPending) return "pending";
+  if (hasSuccess) return "success";
+  return "neutral";
+}
+
+function firstStatusField(activity) {
+  for (const f of activity.fields || []) {
+    if (f.value?.type === "status") return f;
+  }
+  return null;
+}
+
+function formatFieldValue(field) {
+  const v = field.value;
+  if (!v) return "";
+  if (v.type === "number") return Number.isInteger(v.value) ? String(v.value) : String(v.value);
+  return String(v.value);
+}
+
+function dot(severity, retained) {
+  const retClass = retained ? " retained" : "";
+  return `<span class="sv-dot ${severity}${retClass}" aria-label="${severity}"></span>`;
+}
+
+function tag(severity, text) {
+  return `<span class="sv-tag ${severity}">${esc(text)}</span>`;
+}
+
+function edge(severity, retained) {
+  const retClass = retained ? " retained" : "";
+  return `<span class="sv-edge ${severity}${retClass}"></span>`;
+}
+
+function renderLoading() {
+  return `
+    <div class="p-skeleton w-60"></div>
+    <div class="p-skeleton w-85"></div>
+    <div class="p-skeleton w-45"></div>
+    <div class="p-skeleton w-75"></div>
+    <div class="p-skeleton w-60"></div>
+  `;
+}
+
+function renderEmpty() {
+  return `<div class="p-row disabled"><span class="p-row-label">No feeds configured</span></div>`;
+}
+
+function renderFooter() {
+  return `
+    <div class="p-sep"></div>
+    <div class="p-row interactive"><span class="p-row-label">Refresh feeds</span></div>
+    <div class="p-row interactive"><span class="p-row-label">Quit Cortado</span></div>
+  `;
+}
+
+function renderFeedError(feed) {
+  return `<div class="p-error-text">⚠ ${esc(feed.error)}</div>`;
+}
+
+function renderFeedLoading(feed) {
+  return `<div class="p-row disabled"><span class="p-spinner"></span><span class="p-row-label" style="margin-left:2px">Polling…</span></div>`;
+}
+
+// ============================================================
+// VARIANT 1: Edge-Banded Sections
+// Feed name as a full-opacity bold row. Activities have a left
+// severity edge + dot + title + submenu arrow.
+// ============================================================
+
+function renderV1(feeds) {
+  if (!feeds.length) return renderEmpty() + renderFooter();
+  let h = "";
+
+  for (let i = 0; i < feeds.length; i++) {
+    const feed = feeds[i];
+    if (i > 0) h += '<div class="p-sep"></div>';
+
+    // Feed header — full opacity, bold, looks active (not disabled)
+    h += `<div class="p-row" style="padding-top:2px;padding-bottom:2px;">
+      <span class="p-row-label" style="font-weight:600;font-size:12px;">${esc(feed.name)}</span>
+      ${!feed.error && !feed._loading && feed.activities.length > 0
+        ? `<span class="p-count">${feed.activities.length}</span>`
+        : ""}
+    </div>`;
+
+    if (feed._loading) { h += renderFeedLoading(feed); continue; }
+    if (feed.error) {
+      h += renderFeedError(feed);
+      if (!feed.activities.length) continue;
+    }
+    if (!feed.activities.length && !feed.error) {
+      h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:12px;">No activities</span></div>';
+      continue;
+    }
+
+    for (const act of feed.activities) {
+      const sev = deriveSeverity(act.fields);
+      const sub = renderV1Submenu(act, sev);
+      h += `<div class="p-row interactive has-submenu">
+        ${edge(sev, act.retained)}
+        ${dot(sev, act.retained)}
+        <span class="p-row-label" style="font-size:12px;">${esc(act.title)}</span>
+        <span class="p-arrow">›</span>
+        <div class="p-submenu-wrap">${sub}</div>
+      </div>`;
+    }
+  }
+
+  h += renderFooter();
+  return h;
+}
+
+function renderV1Submenu(act, sev) {
+  let h = `<div class="panel" style="width:220px;padding:4px 0;">`;
+  h += `<div class="p-row" style="padding-bottom:2px;">
+    ${dot(sev, act.retained)}
+    <span class="p-row-label" style="font-weight:600;font-size:12px;">${esc(act.title)}</span>
+  </div>`;
+  h += '<div class="p-sep"></div>';
+  h += `<div class="p-action-row">↗ Open</div>`;
+  h += '<div class="p-sep"></div>';
+
+  if (!act.fields.length) {
+    h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:11px;">No fields</span></div>';
+  } else {
+    h += '<div class="p-fields" style="padding-left:12px;">';
+    for (const f of act.fields) {
+      const val = formatFieldValue(f);
+      const svClass = f.value?.type === "status" ? ` sv-val ${f.value.severity || "neutral"}` : "";
+      h += `<div class="p-field-row">
+        <span class="p-field-key">${esc(f.label)}</span>
+        <span class="p-field-val${svClass}">${esc(val)}</span>
+      </div>`;
+    }
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+
+// ============================================================
+// VARIANT 2: Tinted Rows + Inline Tag
+// Feed header bold + full-opacity. Activities get a subtle
+// severity-tinted background + trailing severity tag.
+// ============================================================
+
+function renderV2(feeds) {
+  if (!feeds.length) return renderEmpty() + renderFooter();
+  let h = "";
+
+  for (let i = 0; i < feeds.length; i++) {
+    const feed = feeds[i];
+    if (i > 0) h += '<div class="p-sep"></div>';
+
+    h += `<div class="p-row" style="padding-top:2px;padding-bottom:2px;">
+      <span class="p-row-label" style="font-weight:600;font-size:12px;">${esc(feed.name)}</span>
+      <span class="p-row-secondary">${esc(feed.feed_type)}</span>
+    </div>`;
+
+    if (feed._loading) { h += renderFeedLoading(feed); continue; }
+    if (feed.error) {
+      h += renderFeedError(feed);
+      if (!feed.activities.length) continue;
+    }
+    if (!feed.activities.length && !feed.error) {
+      h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:12px;">No activities</span></div>';
+      continue;
+    }
+
+    for (const act of feed.activities) {
+      const sev = deriveSeverity(act.fields);
+      const ps = firstStatusField(act);
+      const sub = renderV2Submenu(act, sev);
+      h += `<div class="p-row interactive tinted-bg sev-${sev} has-submenu">
+        ${dot(sev, act.retained)}
+        <span class="p-row-label" style="font-size:12px;">${esc(act.title)}</span>
+        ${ps ? tag(ps.value.severity || "neutral", ps.value.value) : ""}
+        <span class="p-arrow">›</span>
+        <div class="p-submenu-wrap">${sub}</div>
+      </div>`;
+    }
+  }
+
+  h += renderFooter();
+  return h;
+}
+
+function renderV2Submenu(act, sev) {
+  let h = `<div class="panel" style="width:220px;padding:4px 0;">`;
+  h += `<div class="p-action-row">↗ Open</div>`;
+  h += '<div class="p-sep"></div>';
+
+  if (!act.fields.length) {
+    h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:11px;">No fields</span></div>';
+  } else {
+    h += '<div class="p-fields" style="padding-left:12px;">';
+    for (const f of act.fields) {
+      const val = formatFieldValue(f);
+      const svClass = f.value?.type === "status" ? ` sv-val ${f.value.severity || "neutral"}` : "";
+      h += `<div class="p-field-row">
+        <span class="p-field-key">${esc(f.label)}</span>
+        <span class="p-field-val${svClass}">${esc(val)}</span>
+      </div>`;
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+
+// ============================================================
+// VARIANT 3: Expandable Disclosure
+// No submenus — activities expand inline (like Wi-Fi menu
+// expanding network details). Feed headers bold, activities
+// have dot + chevron. Expand reveals fields below.
+// ============================================================
+
+const expandedV3 = new Set();
+
+function renderV3(feeds) {
+  if (!feeds.length) return renderEmpty() + renderFooter();
+  let h = "";
+
+  for (let i = 0; i < feeds.length; i++) {
+    const feed = feeds[i];
+    if (i > 0) h += '<div class="p-sep"></div>';
+
+    h += `<div class="p-row" style="padding-top:2px;padding-bottom:2px;">
+      <span class="p-row-label" style="font-weight:600;font-size:12px;">${esc(feed.name)}</span>
+      ${!feed.error && !feed._loading && feed.activities.length > 0
+        ? `<span class="p-count">${feed.activities.length}</span>`
+        : ""}
+    </div>`;
+
+    if (feed._loading) { h += renderFeedLoading(feed); continue; }
+    if (feed.error) {
+      h += renderFeedError(feed);
+      if (!feed.activities.length) continue;
+    }
+    if (!feed.activities.length && !feed.error) {
+      h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:12px;">No activities</span></div>';
+      continue;
+    }
+
+    for (const act of feed.activities) {
+      const sev = deriveSeverity(act.fields);
+      const isOpen = expandedV3.has(act.id);
+      const ps = firstStatusField(act);
+
+      h += `<div class="p-row interactive" data-v3-toggle="${esc(act.id)}">
+        ${dot(sev, act.retained)}
+        <span class="p-row-label" style="font-size:12px;">${esc(act.title)}</span>
+        ${ps ? tag(ps.value.severity || "neutral", ps.value.value) : ""}
+        <span class="p-chevron${isOpen ? " open" : ""}" aria-hidden="true">▸</span>
+      </div>`;
+
+      h += `<div class="p-detail${isOpen ? " open" : ""}"><div class="p-detail-inner">`;
+      h += `<div class="p-action-row" style="padding-left:32px;">↗ Open</div>`;
+      h += '<div class="p-fields">';
+      if (!act.fields.length) {
+        h += '<div class="p-field-row"><span class="p-field-key">Info</span><span class="p-field-val">No fields</span></div>';
+      }
+      for (const f of act.fields) {
+        const val = formatFieldValue(f);
+        const svClass = f.value?.type === "status" ? ` sv-val ${f.value.severity || "neutral"}` : "";
+        h += `<div class="p-field-row">
+          <span class="p-field-key">${esc(f.label)}</span>
+          <span class="p-field-val${svClass}">${esc(val)}</span>
+        </div>`;
+      }
+      h += '</div>';
+      h += '</div></div>';
+    }
+  }
+
+  h += renderFooter();
+  return h;
+}
+
+
+// ============================================================
+// VARIANT 4: Control Center Cards
+// Feed sections with card-style activity rows. Each card has
+// edge accent + dot + title + inline field chips. No submenu.
+// Fields always visible — highest density of info per row.
+// ============================================================
+
+function renderV4(feeds) {
+  if (!feeds.length) return renderEmpty() + renderFooter();
+  let h = "";
+
+  for (let i = 0; i < feeds.length; i++) {
+    const feed = feeds[i];
+    if (i > 0) h += '<div class="p-sep"></div>';
+
+    h += `<div class="p-section-label">${esc(feed.name)}</div>`;
+
+    if (feed._loading) { h += renderFeedLoading(feed); continue; }
+    if (feed.error) {
+      h += renderFeedError(feed);
+      if (!feed.activities.length) continue;
+    }
+    if (!feed.activities.length && !feed.error) {
+      h += '<div class="p-row disabled"><span class="p-row-label" style="font-size:12px;">No activities</span></div>';
+      continue;
+    }
+
+    for (const act of feed.activities) {
+      const sev = deriveSeverity(act.fields);
+
+      h += `<div class="p-row interactive" style="padding-top:3px;padding-bottom:1px;">
+        ${edge(sev, act.retained)}
+        ${dot(sev, act.retained)}
+        <span class="p-row-label" style="font-size:12px;">${esc(act.title)}</span>
+      </div>`;
+
+      // Inline chips for all status fields
+      const statusFields = act.fields.filter(f => f.value?.type === "status");
+      const otherFields = act.fields.filter(f => f.value?.type !== "status");
+      if (statusFields.length || otherFields.length) {
+        h += '<div class="p-chips">';
+        for (const f of statusFields) {
+          h += tag(f.value.severity || "neutral", f.value.value);
+        }
+        for (const f of otherFields) {
+          const val = formatFieldValue(f);
+          h += `<span class="sv-tag neutral">${esc(val)}</span>`;
+        }
+        h += '</div>';
+      }
+    }
+  }
+
+  h += renderFooter();
+  return h;
+}
+
+
+// ============================================================
+// VARIANT DEFINITIONS
+// ============================================================
+
+const VARIANTS = [
+  {
+    id: "V1",
+    title: "Variant 1 — Edge-Banded Sections",
+    thesis: "Severity lives in the edge; everything else stays neutral.",
+    desc: `
+      <b>Visual:</b> Feed names render as bold, full-opacity rows (never disabled). Activities show a 3px severity-colored
+      left edge + dot. Hovering expands a submenu with field details and "Open" action.<br>
+      <b>Interaction:</b> Hover activity → submenu slides right (native-style). Arrow keys navigate rows. Feed header is non-interactive but fully legible.<br>
+      <b>Native feel:</b> Vibrancy backdrop, 26px row height, 5px corner radius on hover, separator rhythm — all match system menu conventions.<br>
+      <b>Modern:</b> The colored edge-band is a new visual layer. It communicates severity <em>before</em> the user reads any text. Retained activities get a dimmed band.
+    `,
+    render: renderV1,
+  },
+  {
+    id: "V2",
+    title: "Variant 2 — Tinted Rows + Tag",
+    thesis: "Let severity color the entire row — urgency becomes impossible to miss.",
+    desc: `
+      <b>Visual:</b> Activities have a subtle severity-tinted background (error = faint red, pending = faint blue) + a trailing status tag chip.
+      Feed headers use feed_type as secondary label. Dot is still present for consistency.<br>
+      <b>Interaction:</b> Hover → submenu reveals all fields. Tint lifts on hover (replaced by standard highlight) so the row never feels "stuck".<br>
+      <b>Native feel:</b> Tinted rows mirror how Control Center tiles use colored backgrounds (e.g., active Wi-Fi blue, AirDrop blue). Row spacing is native.<br>
+      <b>Modern:</b> Background tinting is an ambient signal — users don't need to read dots or text to sense the health of their feeds. The tag chip adds precision.
+    `,
+    render: renderV2,
+  },
+  {
+    id: "V3",
+    title: "Variant 3 — Expandable Disclosure",
+    thesis: "Click to expand, like Wi-Fi details — no submenus, no navigation away.",
+    desc: `
+      <b>Visual:</b> Feed headers bold + full-opacity with count badge. Activities show dot + title + first-status tag + disclosure chevron.
+      Clicking expands inline to reveal all fields and an "Open" action — content pushes down.<br>
+      <b>Interaction:</b> Click row → smooth expand/collapse. Chevron rotates 90°. Only one activity expanded at a time per feed (optional).
+      Keyboard: Enter to toggle, arrow keys to navigate.<br>
+      <b>Native feel:</b> This is exactly how Wi-Fi and Bluetooth menus work: click a network → details expand inline. No separate submenu panel, no navigation away.<br>
+      <b>Modern:</b> Inline disclosure is more touch-friendly, more direct, and avoids the NSMenu triangular-delay problem entirely. Animated expand feels fluid.
+    `,
+    render: renderV3,
+  },
+  {
+    id: "V4",
+    title: "Variant 4 — Control Center Cards",
+    thesis: "All info visible at once — zero interaction required for a full status read.",
+    desc: `
+      <b>Visual:</b> Feed names use uppercase section labels (like Control Center headers). Each activity is a compact row with
+      edge accent + dot + title, followed by a chips row showing all field values as severity-colored tags. No submenus, no expand — everything inline.<br>
+      <b>Interaction:</b> Click activity → opens in browser directly. No expand step. The menu is a pure read surface — glance and go.<br>
+      <b>Native feel:</b> Section labels match the uppercase muted pattern used in Control Center, Focus, and Sound menus. Chips echo Finder tags.<br>
+      <b>Modern:</b> Highest information density. Power users see everything at once. The tradeoff is vertical space — more fields = taller panel.
+    `,
+    render: renderV4,
+  },
+];
+
+
+// ============================================================
+// STATE + RENDER
+// ============================================================
+
+let currentState = "normal";
+let currentTheme = "light";
+let showRetained = true;
+
+function renderAll() {
+  const grid = document.getElementById("showcase-grid");
+  const rawFeeds = getFeeds(currentState);
+  const feeds = filterRetained(rawFeeds, showRetained);
+
+  grid.innerHTML = VARIANTS.map(v => {
+    let panelContent;
+    if (currentState === "loading") {
+      panelContent = renderLoading();
+    } else {
+      panelContent = v.render(feeds);
+    }
+
+    return `
+      <div class="variant-card">
+        <div class="variant-header">
+          <h3>${v.title}</h3>
+          <div class="thesis">${v.thesis}</div>
+          <div class="desc">${v.desc}</div>
+        </div>
+        <div class="variant-body">
+          <div class="panel">${panelContent}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  bindV3Interactions();
+}
+
+function bindV3Interactions() {
+  document.querySelectorAll("[data-v3-toggle]").forEach(row => {
+    row.addEventListener("click", () => {
+      const id = row.dataset.v3Toggle;
+      if (expandedV3.has(id)) {
+        expandedV3.delete(id);
+      } else {
+        expandedV3.add(id);
+      }
+      renderAll();
+    });
+  });
+}
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  if (theme === "system") {
+    const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.classList.toggle("dark", dark);
+  } else {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }
+}
+
+// --- Control wiring ---
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-control]");
+  if (!btn) return;
+  const control = btn.dataset.control;
+  const value = btn.dataset.value;
+
+  if (control === "state") {
+    currentState = value;
+    expandedV3.clear();
+    btn.closest(".control-group").querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b === btn);
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    renderAll();
+  }
+
+  if (control === "theme") {
+    btn.closest(".control-group").querySelectorAll("button").forEach(b => {
+      b.classList.toggle("active", b === btn);
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    applyTheme(value);
+    renderAll();
+  }
+
+  if (control === "retained") {
+    showRetained = !showRetained;
+    btn.textContent = showRetained ? "Show" : "Hide";
+    btn.classList.toggle("active", showRetained);
+    btn.setAttribute("aria-pressed", showRetained ? "true" : "false");
+    renderAll();
+  }
+});
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (currentTheme === "system") {
+    applyTheme("system");
+    renderAll();
+  }
+});
+
+// --- Initial render ---
+applyTheme("light");
+renderAll();
+</script>
+</body>
+</html>

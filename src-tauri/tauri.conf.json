@@ -23,6 +23,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "fullscreen": false,
         "resizable": false,
         "title": "Cortado",

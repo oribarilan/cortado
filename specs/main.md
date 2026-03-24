@@ -113,7 +113,7 @@ Feeds may opt into retention via `retain`, a duration string on each feed config
 Retention is a runtime lifecycle primitive:
 
 - On successful poll, activities missing from the new poll result may be retained for the configured window.
-- Retained activities are shown in tray with a hollow dot (`◦`) prefix.
+- Retained activities are shown in menubar UI with a hollow dot (`◦`) marker.
 - Retained activities render after active activities within each feed section.
 - Retention is currently in-memory only; retained activities are cleared on app restart.
 
@@ -121,7 +121,7 @@ Retention is a runtime lifecycle primitive:
 
 Config is loaded once at app launch. Changes to `feeds.toml` require restarting the app to take effect. (Hot-reload may be added later.)
 
-If Cortado detects that `feeds.toml` changed while the app is running, it should surface a persistent tray-level warning instructing the user to restart the app to apply updates.
+If Cortado detects that `feeds.toml` changed while the app is running, it should surface a persistent menubar-level warning instructing the user to restart the app to apply updates.
 
 ### Error handling
 
@@ -253,23 +253,24 @@ Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — 
 
 ## Platform
 
-Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tray icon that opens a native macOS menubar menu.
+Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tray icon that opens a menubar-attached panel.
 
-### Menubar UX (native menu)
+### Menubar UX (panel disclosure, Strict System)
 
 - Top level groups by **Feed**.
-- Each **Activity** is a submenu item prefixed by a derived status dot.
+- Feed headers are non-interactive and visually normal (not disabled-looking).
+- Each **Activity** is a compact row prefixed by a derived status dot.
 - **Retained Activities** use a hollow dot (`◦`) prefix.
 - Retained activities are listed after active activities within each feed.
-- Activity title rows are compact and do not include full field details inline.
-- Expanding an activity submenu reveals all **Field** entries (`label: value`).
+- Activity rows support inline disclosure.
+- Expanding an activity row reveals all **Field** entries (`label: value`) inline.
 - Dot color/severity is derived from status fields using this precedence:
   1. `error` → red
   2. else `warning` → yellow
   3. else `pending` → blue
   4. else `success` → green
   5. else neutral/no status → gray
-- Feed-level config and poll errors are shown at the feed submenu level.
+- Feed-level config and poll errors are shown inline within the feed section.
 
 ## Non-goals (Phase 1)
 

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 type StatusKind = "success" | "warning" | "error" | "pending" | "neutral";
 
@@ -36,59 +37,411 @@ type Activity = {
   retained: boolean;
 };
 
-type FieldDefinition = {
-  name: string;
-  label: string;
-  field_type: "text" | "status" | "number" | "url";
-  description: string;
-};
-
 type FeedSnapshot = {
   name: string;
   feed_type: string;
   activities: Activity[];
-  provided_fields: FieldDefinition[];
   error: string | null;
 };
 
+const FEED_TYPE_PRIORITIES: Record<string, string[]> = {
+  "github-pr": ["review", "checks", "mergeable"],
+  "ado-pr": ["review", "checks", "mergeable", "draft"],
+};
+
+function severityPriority(kind: StatusKind): number {
+  switch (kind) {
+    case "error":
+      return 5;
+    case "warning":
+      return 4;
+    case "pending":
+      return 3;
+    case "success":
+      return 2;
+    case "neutral":
+      return 1;
+  }
+}
+
+function deriveActivitySeverity(activity: Activity): StatusKind {
+  let best: StatusKind = "neutral";
+
+  for (const field of activity.fields) {
+    if (field.value.type !== "status") {
+      continue;
+    }
+
+    if (severityPriority(field.value.severity) > severityPriority(best)) {
+      best = field.value.severity;
+    }
+  }
+
+  return best;
+}
+
+function firstStatusField(feedType: string, activity: Activity): Field | null {
+  const priorities = FEED_TYPE_PRIORITIES[feedType] ?? [];
+
+  for (const name of priorities) {
+    const match = activity.fields.find(
+      (field) => field.name === name && field.value.type === "status"
+    );
+    if (match) {
+      return match;
+    }
+  }
+
+  return activity.fields.find((field) => field.value.type === "status") ?? null;
+}
+
+function supportsOpen(activity: Activity): string | null {
+  if (activity.id.startsWith("https://") || activity.id.startsWith("http://")) {
+    return activity.id;
+  }
+
+  const fieldUrl = activity.fields.find(
+    (field) => field.value.type === "url" && (field.value.value.startsWith("https://") || field.value.value.startsWith("http://"))
+  );
+  if (fieldUrl && fieldUrl.value.type === "url") {
+    return fieldUrl.value.value;
+  }
+
+  return null;
+}
+
+function formatFieldValue(field: Field): string {
+  if (field.value.type === "number") {
+    return Number.isInteger(field.value.value)
+      ? String(field.value.value)
+      : field.value.value.toFixed(2);
+  }
+
+  return field.value.value;
+}
+
+function activityKey(feed: FeedSnapshot, activity: Activity): string {
+  return `${feed.name}::${feed.feed_type}::${activity.id}`;
+}
+
 function App() {
+  const DETAIL_TOGGLE_ANIMATION_MS = 220;
+
+  const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
+  const panelContentRef = useRef<HTMLDivElement | null>(null);
+  const panelResizeRafRef = useRef<number | null>(null);
+  const panelResizeTimeoutRef = useRef<number | null>(null);
+  const lastRequestedPanelHeightRef = useRef<number | null>(null);
+
+  const sortedFeeds = useMemo(() => {
+    return feeds.map((feed) => ({
+      ...feed,
+      activities: [...feed.activities].sort((a, b) => Number(a.retained) - Number(b.retained)),
+    }));
+  }, [feeds]);
+
+  const refreshNow = useCallback(async () => {
+    try {
+      await invoke("refresh_feeds");
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
+    }
+  }, []);
+
+  const openActivity = useCallback(async (activity: Activity) => {
+    const url = supportsOpen(activity);
+    if (!url) {
+      return;
+    }
+
+    try {
+      await invoke("open_activity", { url });
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
+    }
+  }, []);
+
+  const quitApp = useCallback(async () => {
+    await invoke("quit_app");
+  }, []);
+
+  const schedulePanelHeightUpdate = useCallback((delayMs: number) => {
+    if (panelResizeTimeoutRef.current !== null) {
+      clearTimeout(panelResizeTimeoutRef.current);
+      panelResizeTimeoutRef.current = null;
+    }
+
+    if (panelResizeRafRef.current !== null) {
+      cancelAnimationFrame(panelResizeRafRef.current);
+      panelResizeRafRef.current = null;
+    }
+
+    const runResize = () => {
+      panelResizeRafRef.current = requestAnimationFrame(() => {
+        const panelContent = panelContentRef.current;
+        if (!panelContent) {
+          panelResizeRafRef.current = null;
+          return;
+        }
+
+        const targetHeight = Math.ceil(panelContent.scrollHeight + 2);
+        const lastRequested = lastRequestedPanelHeightRef.current;
+        if (lastRequested !== null && Math.abs(lastRequested - targetHeight) < 1) {
+          panelResizeRafRef.current = null;
+          return;
+        }
+
+        lastRequestedPanelHeightRef.current = targetHeight;
+        void invoke("set_panel_height", { height: targetHeight });
+        panelResizeRafRef.current = null;
+      });
+    };
+
+    if (delayMs > 0) {
+      panelResizeTimeoutRef.current = window.setTimeout(() => {
+        panelResizeTimeoutRef.current = null;
+        runResize();
+      }, delayMs);
+      return;
+    }
+
+    runResize();
+  }, []);
 
   useEffect(() => {
-    void invoke<FeedSnapshot[]>("list_feeds")
-      .then(() => {
+    let isMounted = true;
+    const unlistenFns: UnlistenFn[] = [];
+
+    const bootstrap = async () => {
+      try {
+        await invoke("init_panel");
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      }
+
+      try {
+        const initialFeeds = await invoke<FeedSnapshot[]>("list_feeds");
+        if (isMounted) {
+          setFeeds(initialFeeds);
+          setLoadError(null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+
+      const unlisten = await listen<FeedSnapshot[]>("feeds-updated", (event) => {
+        setFeeds(event.payload);
         setLoadError(null);
-      })
-      .catch((error) => {
-        setLoadError(error instanceof Error ? error.message : String(error));
-      })
-      .finally(() => {
-        setLoading(false);
+
+        setExpandedActivityKey((current) => {
+          if (!current) {
+            return current;
+          }
+
+          const stillExists = event.payload.some((feed) =>
+            feed.activities.some((activity) => activityKey(feed, activity) === current)
+          );
+
+          return stillExists ? current : null;
+        });
       });
+
+      unlistenFns.push(unlisten);
+
+      const unlistenPanelWillShow = await listen("menubar_panel_will_show", () => {
+        setExpandedActivityKey(null);
+        lastRequestedPanelHeightRef.current = null;
+
+        requestAnimationFrame(() => {
+          const panelContent = panelContentRef.current;
+          if (panelContent) {
+            panelContent.scrollTop = 0;
+          }
+
+          schedulePanelHeightUpdate(0);
+        });
+      });
+
+      unlistenFns.push(unlistenPanelWillShow);
+    };
+
+    void bootstrap();
+
+    return () => {
+      isMounted = false;
+      for (const unlisten of unlistenFns) {
+        void unlisten();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    schedulePanelHeightUpdate(0);
+  }, [sortedFeeds, loadError, loading, schedulePanelHeightUpdate]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    schedulePanelHeightUpdate(DETAIL_TOGGLE_ANIMATION_MS);
+  }, [expandedActivityKey, loading, schedulePanelHeightUpdate, DETAIL_TOGGLE_ANIMATION_MS]);
+
+  useEffect(() => {
+    return () => {
+      if (panelResizeTimeoutRef.current !== null) {
+        clearTimeout(panelResizeTimeoutRef.current);
+        panelResizeTimeoutRef.current = null;
+      }
+
+      if (panelResizeRafRef.current !== null) {
+        cancelAnimationFrame(panelResizeRafRef.current);
+        panelResizeRafRef.current = null;
+      }
+    };
   }, []);
 
   return (
-    <div className="panel">
-      <h1 className="title">Cortado</h1>
+    <div className="panel-root" role="region" aria-label="Cortado menubar panel">
+      <div className="panel-content" ref={panelContentRef}>
+        {loading ? (
+          <div className="loading-state" aria-live="polite">
+            <div className="skeleton w-55" />
+            <div className="skeleton w-85" />
+            <div className="skeleton w-70" />
+            <div className="skeleton w-40" />
+          </div>
+        ) : null}
 
-      {loading ? <p className="state-msg">Loading native menu…</p> : null}
+        {!loading && sortedFeeds.length === 0 ? (
+          <p className="empty-state">No feeds configured. Add a Feed in <code>~/.config/cortado/feeds.toml</code>.</p>
+        ) : null}
 
-      {!loading && !loadError ? (
-        <p className="state-msg success">
-          Tray menu is active. Click the menubar icon to browse feeds and activities.
-        </p>
-      ) : null}
+        {!loading && sortedFeeds.length > 0
+          ? sortedFeeds.map((feed) => {
+              const hasError = Boolean(feed.error);
+              const isConfigWarning = feed.feed_type === "app";
 
-      {loadError ? (
-        <p className="state-msg error">
-          Could not load tray data: {loadError}
-        </p>
-      ) : null}
+              return (
+                <section className="feed-block" key={`${feed.name}::${feed.feed_type}`}>
+                  <header className="feed-header">
+                    <span className="feed-name">{feed.name}</span>
+                    {!hasError ? <span className="feed-count">{feed.activities.length}</span> : null}
+                  </header>
 
-      <p className="hint">
-        Panel UI is disabled in this mode. Use the native macOS menu only.
-      </p>
+                  {hasError ? (
+                    <p className={`feed-error ${isConfigWarning ? "config" : "poll"}`}>{feed.error}</p>
+                  ) : null}
+
+                  {!hasError && feed.activities.length === 0 ? (
+                    <p className="feed-empty">No activities</p>
+                  ) : null}
+
+                  {feed.activities.length > 0 ? (
+                    <div className="activity-list">
+                      {feed.activities.map((activity) => {
+                        const severity = deriveActivitySeverity(activity);
+                        const key = activityKey(feed, activity);
+                        const expanded = expandedActivityKey === key;
+                        const firstStatus = firstStatusField(feed.feed_type, activity);
+                        const openUrl = supportsOpen(activity);
+
+                        return (
+                          <div
+                            className={`activity-wrap severity-${severity} ${expanded ? "expanded" : ""}`}
+                            key={key}
+                          >
+                            <button
+                              className="activity-row"
+                              onClick={() => {
+                                setExpandedActivityKey((current) => (current === key ? null : key));
+                              }}
+                              aria-expanded={expanded}
+                            >
+                              <span className={`status-dot ${activity.retained ? "retained" : ""}`} aria-hidden="true" />
+                              <span className="activity-title">{activity.title}</span>
+                              {firstStatus && firstStatus.value.type === "status" ? (
+                                <span className={`status-chip severity-${firstStatus.value.severity}`}>
+                                  {firstStatus.value.value}
+                                </span>
+                              ) : null}
+                              <span className="chevron" aria-hidden="true">▸</span>
+                            </button>
+
+                            <div className="detail-region" role="region" aria-label={`${activity.title} details`}>
+                              <div className="detail-inner">
+                                <div className="detail-body">
+                                  {openUrl ? (
+                                    <button
+                                      className="open-activity"
+                                      onClick={() => {
+                                        void openActivity(activity);
+                                      }}
+                                    >
+                                      ↗ Open Activity
+                                    </button>
+                                  ) : null}
+
+                                  {activity.fields.map((field) => {
+                                    const statusClass =
+                                      field.value.type === "status"
+                                        ? `status severity-${field.value.severity}`
+                                        : "";
+
+                                    return (
+                                      <div className="field-row" key={`${activity.id}::${field.name}`}>
+                                        <span className="field-key">{field.label}</span>
+                                        <span className={`field-value ${statusClass}`}>{formatFieldValue(field)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })
+          : null}
+
+        {loadError ? <p className="panel-error">{loadError}</p> : null}
+
+        <footer className="panel-footer">
+          <button
+            className="footer-row"
+            onClick={() => {
+              void refreshNow();
+            }}
+          >
+            Refresh feeds
+          </button>
+          <button
+            className="footer-row"
+            onClick={() => {
+              void quitApp();
+            }}
+          >
+            Quit Cortado
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Enhanced Activity Menu Showcase</title>
+<style>
+/* ============================================================
+   SHOWCASE CHROME — controls, layout, notes
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #f0f0f0;
+  color: #1a1a1a;
+}
+
+body.dark-mode {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.fidelity-notes {
+  max-width: 760px;
+  margin: 24px auto 0;
+  padding: 10px 14px;
+  background: #fef9e7;
+  border: 1px solid #e6d88a;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #5a4e1a;
+}
+
+body.dark-mode .fidelity-notes {
+  background: #2a2714;
+  border-color: #4a4320;
+  color: #c8bc7a;
+}
+
+.fidelity-notes strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fidelity-notes ul { padding-left: 18px; }
+.fidelity-notes li { margin-bottom: 2px; }
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #e8e8e8;
+  border-bottom: 1px solid #ccc;
+  padding: 12px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-mode .controls {
+  background: #252525;
+  border-bottom-color: #333;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.control-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+  margin-right: 4px;
+}
+
+body.dark-mode .control-group label { color: #888; }
+
+.control-group button {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+body.dark-mode .control-group button {
+  background: #333;
+  border-color: #555;
+  color: #ccc;
+}
+
+.control-group button:hover { background: #eee; }
+body.dark-mode .control-group button:hover { background: #444; }
+
+.control-group button.active,
+.control-group button[aria-pressed="true"] {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+body.dark-mode .control-group button.active,
+body.dark-mode .control-group button[aria-pressed="true"] {
+  background: #e0e0e0;
+  color: #111;
+  border-color: #e0e0e0;
+}
+
+.control-group button:focus-visible {
+  outline: 2px solid #4a90d9;
+  outline-offset: 2px;
+}
+
+.stage {
+  display: flex;
+  justify-content: center;
+  padding: 32px 20px 40px;
+}
+
+.panel-frame {
+  width: 356px;
+  min-height: 120px;
+  max-height: 460px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.18),
+    0 1px 4px rgba(0,0,0,0.08);
+}
+
+body.dark-mode .panel-frame {
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.5),
+    0 1px 4px rgba(0,0,0,0.3);
+}
+
+.panel-frame::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 6px;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  z-index: 2;
+  background: var(--surface);
+}
+
+.panel-frame-inner {
+  overflow-y: auto;
+  max-height: 460px;
+}
+
+.notes-section {
+  max-width: 760px;
+  margin: 0 auto 52px;
+  padding: 0 20px;
+}
+
+.notes-section h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+body.dark-mode .notes-section h2 { border-bottom-color: #333; }
+
+.variant-note { margin-bottom: 14px; }
+
+.variant-note h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.variant-note p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.55;
+}
+
+body.dark-mode .variant-note p { color: #9a9a9a; }
+
+/* ============================================================
+   PANEL TOKENS — native-adjacent
+   ============================================================ */
+
+.panel-frame {
+  --font-stack: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --sp-xs: 2px;
+  --sp-sm: 4px;
+  --sp-md: 8px;
+  --sp-lg: 12px;
+  --sp-xl: 16px;
+
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-md: 12px;
+  --fs-base: 13px;
+
+  --r-sm: 3px;
+  --r-md: 6px;
+  --r-lg: 8px;
+
+  --dur-fast: 100ms;
+  --dur-normal: 150ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --text: oklch(20% 0.01 250);
+  --text-secondary: oklch(45% 0.01 250);
+  --text-tertiary: oklch(58% 0.01 250);
+  --border: oklch(88% 0.008 250);
+  --surface: oklch(97% 0.005 250);
+  --chip-bg: oklch(94% 0.005 250);
+
+  --s-success: oklch(48% 0.1 155);
+  --s-success-bg: oklch(94% 0.03 155);
+  --s-warning: oklch(55% 0.1 70);
+  --s-warning-bg: oklch(94% 0.03 70);
+  --s-error: oklch(48% 0.12 25);
+  --s-error-bg: oklch(94% 0.03 25);
+  --s-pending: oklch(50% 0.1 260);
+  --s-pending-bg: oklch(94% 0.03 260);
+  --s-neutral: oklch(55% 0.01 250);
+  --s-neutral-bg: oklch(94% 0.005 250);
+
+  font-family: var(--font-stack);
+  font-size: var(--fs-base);
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body.dark-mode .panel-frame {
+  --text: oklch(90% 0.01 250);
+  --text-secondary: oklch(65% 0.01 250);
+  --text-tertiary: oklch(50% 0.01 250);
+  --border: oklch(28% 0.01 250);
+  --surface: oklch(18% 0.008 250);
+  --chip-bg: oklch(24% 0.008 250);
+
+  --s-success: oklch(72% 0.1 155);
+  --s-success-bg: oklch(22% 0.03 155);
+  --s-warning: oklch(75% 0.1 70);
+  --s-warning-bg: oklch(22% 0.03 70);
+  --s-error: oklch(72% 0.12 25);
+  --s-error-bg: oklch(22% 0.03 25);
+  --s-pending: oklch(72% 0.1 260);
+  --s-pending-bg: oklch(22% 0.03 260);
+  --s-neutral: oklch(65% 0.01 250);
+  --s-neutral-bg: oklch(24% 0.008 250);
+}
+
+/* ============================================================
+   SHARED PANEL STRUCTURE
+   ============================================================ */
+
+.p-panel {
+  padding: 10px;
+}
+
+.feed-block + .feed-block {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.feed-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.feed-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.feed-subtitle {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.feed-count {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  background: var(--chip-bg);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.p-state-msg {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  padding: 2px 0;
+}
+
+.p-feed-error {
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  margin: 0 0 4px;
+}
+
+.p-feed-error.config {
+  color: var(--s-error);
+  background: var(--s-error-bg);
+}
+
+.p-feed-error.poll {
+  color: var(--s-warning);
+  background: var(--s-warning-bg);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.success { background: var(--s-success); }
+.status-dot.warning { background: var(--s-warning); }
+.status-dot.error   { background: var(--s-error); }
+.status-dot.pending { background: var(--s-pending); }
+.status-dot.neutral { background: var(--s-neutral); }
+
+.chip {
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+
+.chip.success { color: var(--s-success); background: var(--s-success-bg); }
+.chip.warning { color: var(--s-warning); background: var(--s-warning-bg); }
+.chip.error   { color: var(--s-error); background: var(--s-error-bg); }
+.chip.pending { color: var(--s-pending); background: var(--s-pending-bg); }
+.chip.neutral { color: var(--text-secondary); background: var(--chip-bg); }
+
+.sev-success { --sev-color: var(--s-success); }
+.sev-warning { --sev-color: var(--s-warning); }
+.sev-error { --sev-color: var(--s-error); }
+.sev-pending { --sev-color: var(--s-pending); }
+.sev-neutral { --sev-color: var(--s-neutral); }
+
+.retained-mark {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  margin-right: 2px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -220px 0; }
+  100% { background-position: 220px 0; }
+}
+
+.skeleton-line {
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--chip-bg) 25%, var(--border) 50%, var(--chip-bg) 75%);
+  background-size: 440px 100%;
+  animation: shimmer 1.4s ease infinite;
+  margin: 6px 0;
+}
+
+.skeleton-line.short { width: 55%; }
+.skeleton-line.medium { width: 78%; }
+.skeleton-line.long { width: 94%; }
+
+/* ============================================================
+   VARIANT A — Color-Banded Rows
+   ============================================================ */
+
+.va .activity-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-left: 4px solid var(--sev-color, var(--s-neutral));
+  border-radius: 4px;
+}
+
+.va .activity-row:hover {
+  background: color-mix(in oklch, var(--chip-bg), var(--border) 15%);
+}
+
+.va .activity-row[data-retained="true"] {
+  border-left-style: dashed;
+}
+
+.va .activity-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+
+.va .activity-end {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ============================================================
+   VARIANT B — Control-Center Cards
+   ============================================================ */
+
+.vb .feed-subtitle {
+  margin-bottom: 4px;
+}
+
+.vb .card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vb .activity-card {
+  border-radius: var(--r-lg);
+  padding: 8px 10px;
+  border: 1px solid color-mix(in oklch, var(--border), transparent 45%);
+  background: var(--chip-bg);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.vb .activity-card.sev-success { background: color-mix(in oklch, var(--s-success), var(--surface) 92%); }
+.vb .activity-card.sev-warning { background: color-mix(in oklch, var(--s-warning), var(--surface) 92%); }
+.vb .activity-card.sev-error { background: color-mix(in oklch, var(--s-error), var(--surface) 92%); }
+.vb .activity-card.sev-pending { background: color-mix(in oklch, var(--s-pending), var(--surface) 92%); }
+.vb .activity-card.sev-neutral { background: var(--chip-bg); }
+
+.vb .activity-card:hover {
+  border-color: color-mix(in oklch, var(--border), var(--text-tertiary) 20%);
+}
+
+.vb .activity-card[data-retained="true"] {
+  border-style: dashed;
+}
+
+.vb .card-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.vb .activity-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.vb .chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ============================================================
+   VARIANT C — Traffic-Light Sidebar
+   ============================================================ */
+
+.vc .feed-block {
+  border: 1px solid color-mix(in oklch, var(--border), transparent 20%);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.vc .feed-block + .feed-block {
+  margin-top: 8px;
+  border-top: 1px solid color-mix(in oklch, var(--border), transparent 20%);
+}
+
+.vc .feed-header-row,
+.vc .activity-row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.vc .feed-header-row {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklch, var(--chip-bg), var(--surface) 35%);
+}
+
+.vc .gutter-head {
+  display: flex;
+  justify-content: center;
+}
+
+.vc .gutter-head::before {
+  content: "";
+  width: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text-tertiary);
+}
+
+.vc .activity-row {
+  min-height: 30px;
+  padding: 3px 8px;
+}
+
+.vc .activity-row:hover {
+  background: color-mix(in oklch, var(--chip-bg), var(--border) 12%);
+}
+
+.vc .gutter {
+  display: flex;
+  justify-content: center;
+}
+
+.vc .gutter-segment {
+  width: 10px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--sev-color, var(--s-neutral));
+}
+
+.vc .activity-row[data-retained="true"] .gutter-segment {
+  background: transparent;
+  border: 1.5px dashed var(--sev-color, var(--s-neutral));
+}
+
+.vc .activity-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.vc .activity-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-md);
+}
+
+.vc .activity-end {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.vc .activity-end.success { color: var(--s-success); }
+.vc .activity-end.warning { color: var(--s-warning); }
+.vc .activity-end.error { color: var(--s-error); }
+.vc .activity-end.pending { color: var(--s-pending); }
+.vc .activity-end.neutral { color: var(--text-secondary); }
+
+/* ============================================================
+   VARIANT D — Inline Severity Stripe + Expandable Detail
+   ============================================================ */
+
+.vd .activity-wrap + .activity-wrap {
+  margin-top: 2px;
+}
+
+.vd .activity-button {
+  width: 100%;
+  border: 0;
+  border-bottom: 2px solid var(--sev-color, var(--s-neutral));
+  background: transparent;
+  color: inherit;
+  padding: 6px 8px;
+  border-radius: 4px 4px 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.vd .activity-button:hover {
+  background: color-mix(in oklch, var(--chip-bg), var(--border) 12%);
+}
+
+.vd .activity-button:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--s-pending), white 20%);
+  outline-offset: 1px;
+}
+
+.vd .activity-wrap[data-retained="true"] .activity-button {
+  border-bottom-style: dashed;
+}
+
+.vd .activity-title {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-md);
+}
+
+.vd .chevron {
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+  transition: transform var(--dur-normal) var(--ease-out);
+}
+
+.vd .activity-wrap.expanded .chevron {
+  transform: rotate(90deg);
+}
+
+.vd .detail-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-normal) var(--ease-out);
+}
+
+.vd .detail-wrap.open {
+  grid-template-rows: 1fr;
+}
+
+.vd .detail-inner {
+  overflow: hidden;
+}
+
+.vd .detail-panel {
+  margin: 4px 0 8px 22px;
+  padding: 4px 0 0 10px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vd .field-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: var(--fs-sm);
+}
+
+.vd .field-key {
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.vd .field-value {
+  color: var(--text-secondary);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vd .field-value.success { color: var(--s-success); }
+.vd .field-value.warning { color: var(--s-warning); }
+.vd .field-value.error { color: var(--s-error); }
+.vd .field-value.pending { color: var(--s-pending); }
+.vd .field-value.neutral { color: var(--text-secondary); }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line { animation: none; }
+  .vd .detail-wrap { transition: none; }
+  .vd .chevron { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     FIDELITY NOTES
+     ============================================================ -->
+<div class="fidelity-notes">
+  <strong>Fidelity Notes — HTML vs Native Menubar Components</strong>
+  <ul>
+    <li><b>Vibrancy:</b> real NSMenu/NSPanel vibrancy compositing cannot be exactly reproduced in HTML.</li>
+    <li><b>Font precision:</b> SF Pro optical weights vary by environment; browser fallback may shift weight/spacing.</li>
+    <li><b>Colored row accents:</b> per-item borders/backgrounds are not available in native NSMenu APIs (exact limitation being explored).</li>
+    <li><b>Submenu hit behavior:</b> NSMenu has system hover-delay triangles for submenus; this mock is direct hover/click.</li>
+    <li><b>Scroll feel:</b> NSScrollView rubber-banding and inertia differ from browser overflow scrolling.</li>
+    <li><b>Retained visuals:</b> dashed retained styles are design proposals; native menu equivalent today is the hollow-dot symbol.</li>
+  </ul>
+</div>
+
+<!-- ============================================================
+     CONTROLS
+     ============================================================ -->
+<div class="controls" role="toolbar" aria-label="Showcase controls">
+  <div class="control-group">
+    <label id="variant-label">Variant</label>
+    <button class="variant-btn active" data-variant="A" aria-pressed="true" aria-describedby="variant-label">A</button>
+    <button class="variant-btn" data-variant="B" aria-pressed="false" aria-describedby="variant-label">B</button>
+    <button class="variant-btn" data-variant="C" aria-pressed="false" aria-describedby="variant-label">C</button>
+    <button class="variant-btn" data-variant="D" aria-pressed="false" aria-describedby="variant-label">D</button>
+  </div>
+
+  <div class="control-group">
+    <label id="state-label">State</label>
+    <button class="state-btn active" data-state="normal" aria-pressed="true" aria-describedby="state-label">Normal</button>
+    <button class="state-btn" data-state="loading" aria-pressed="false" aria-describedby="state-label">Loading</button>
+    <button class="state-btn" data-state="empty" aria-pressed="false" aria-describedby="state-label">Empty</button>
+    <button class="state-btn" data-state="config-error" aria-pressed="false" aria-describedby="state-label">Config Err</button>
+    <button class="state-btn" data-state="poll-error" aria-pressed="false" aria-describedby="state-label">Poll Err</button>
+  </div>
+
+  <div class="control-group">
+    <label id="theme-label">Theme</label>
+    <button class="theme-btn active" data-theme="light" aria-pressed="true" aria-describedby="theme-label">Light</button>
+    <button class="theme-btn" data-theme="dark" aria-pressed="false" aria-describedby="theme-label">Dark</button>
+    <button class="theme-btn" data-theme="system" aria-pressed="false" aria-describedby="theme-label">System</button>
+  </div>
+
+  <div class="control-group">
+    <label id="retained-label">Retained</label>
+    <button id="retained-toggle" data-control="retained" role="switch" aria-describedby="retained-label" aria-pressed="true">Show</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     STAGE
+     ============================================================ -->
+<div class="stage">
+  <div class="panel-frame" role="region" aria-label="Enhanced activity menu preview">
+    <div class="panel-frame-inner" id="panel-root"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     VARIANT NOTES
+     ============================================================ -->
+<div class="notes-section">
+  <h2>Variant Notes &amp; Tradeoffs</h2>
+
+  <div class="variant-note">
+    <h3>A — Color-Banded Rows</h3>
+    <p>
+      Native-like list rows with a thin severity band on the left edge. Feed labels stay full-opacity and readable while Activity rows surface severity with minimal visual noise.
+    </p>
+  </div>
+
+  <div class="variant-note">
+    <h3>B — Control-Center Cards</h3>
+    <p>
+      Activity cards use subtle severity-tinted backgrounds and inline Field chips, inspired by Control Center and Wi-Fi module styling while keeping compact menubar density.
+    </p>
+  </div>
+
+  <div class="variant-note">
+    <h3>C — Traffic-Light Sidebar</h3>
+    <p>
+      A dedicated gutter carries severity color for each Activity. The content remains mostly neutral text, so color coding is strong without overwhelming typography.
+    </p>
+  </div>
+
+  <div class="variant-note">
+    <h3>D — Inline Severity Stripe + Expandable Detail</h3>
+    <p>
+      Closest to current submenu mental model: compact Activity rows with expand/collapse details that reveal all Fields inline, with color-coded status values.
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+     DATA + RENDER LOGIC
+     ============================================================ -->
+<script>
+// --- Mock data shape: Feed -> Activity -> Field ---
+
+const MOCK_FEEDS_NORMAL = [
+  {
+    name: "My PRs",
+    feed_type: "github-pr",
+    error: null,
+    activities: [
+      {
+        id: "pr-42",
+        title: "Add feed scaffold",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+        ],
+      },
+      {
+        id: "pr-51",
+        title: "TOML config hot-reload",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "changes requested", severity: "error" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "failing", severity: "error" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "conflict", severity: "warning" } },
+          { name: "labels", label: "Labels", value: { type: "text", value: "draft" } },
+        ],
+      },
+      {
+        id: "pr-38",
+        title: "Fix tray icon alignment on Sonoma",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+        ],
+      },
+      {
+        id: "pr-29",
+        title: "Add activity retention lifecycle",
+        retained: true,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "ADO PRs",
+    feed_type: "ado-pr",
+    error: null,
+    activities: [
+      {
+        id: "ado-1234",
+        title: "Pipeline auth refactor",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "running", severity: "pending" } },
+          { name: "mergeable", label: "Mergeable", value: { type: "status", value: "blocked", severity: "warning" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Disk Usage",
+    feed_type: "shell",
+    error: null,
+    activities: [
+      {
+        id: "disk-root",
+        title: "/ (root)",
+        retained: false,
+        fields: [
+          { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+          { name: "available", label: "Available", value: { type: "text", value: "148 GB" } },
+        ],
+      },
+    ],
+  },
+];
+
+const MOCK_FEEDS_LOADING = [
+  { name: "My PRs", feed_type: "github-pr", error: null, _loading: true, activities: [] },
+  { name: "ADO PRs", feed_type: "ado-pr", error: null, _loading: true, activities: [] },
+  { name: "Disk Usage", feed_type: "shell", error: null, _loading: true, activities: [] },
+];
+
+const MOCK_FEEDS_EMPTY = [];
+
+const MOCK_FEEDS_CONFIG_ERROR = [
+  {
+    name: "Broken Feed",
+    feed_type: "github-pr",
+    error_kind: "config",
+    error: "Missing required field: 'repo'.",
+    activities: [],
+  },
+  {
+    name: "Disk Usage",
+    feed_type: "shell",
+    error: null,
+    activities: [
+      {
+        id: "disk-root",
+        title: "/ (root)",
+        retained: false,
+        fields: [
+          { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+        ],
+      },
+    ],
+  },
+];
+
+const MOCK_FEEDS_POLL_ERROR = [
+  {
+    name: "My PRs",
+    feed_type: "github-pr",
+    error_kind: "poll",
+    error: "gh: not found. Install GitHub CLI and run 'gh auth login'.",
+    activities: [
+      {
+        id: "pr-42",
+        title: "Add feed scaffold",
+        retained: false,
+        fields: [
+          { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+          { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Disk Usage",
+    feed_type: "shell",
+    error: null,
+    activities: [
+      {
+        id: "disk-root",
+        title: "/ (root)",
+        retained: false,
+        fields: [
+          { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+        ],
+      },
+    ],
+  },
+];
+
+// --- Utilities ---
+
+function esc(str) {
+  const d = document.createElement("div");
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function getFeedsForState(state) {
+  switch (state) {
+    case "normal": return MOCK_FEEDS_NORMAL;
+    case "loading": return MOCK_FEEDS_LOADING;
+    case "empty": return MOCK_FEEDS_EMPTY;
+    case "config-error": return MOCK_FEEDS_CONFIG_ERROR;
+    case "poll-error": return MOCK_FEEDS_POLL_ERROR;
+    default: return MOCK_FEEDS_NORMAL;
+  }
+}
+
+function deriveActivitySeverity(activity) {
+  let hasWarning = false;
+  let hasPending = false;
+  let hasSuccess = false;
+
+  for (const field of activity.fields || []) {
+    const v = field.value;
+    if (!v || v.type !== "status") continue;
+    if (v.severity === "error") return "error";
+    if (v.severity === "warning") hasWarning = true;
+    if (v.severity === "pending") hasPending = true;
+    if (v.severity === "success") hasSuccess = true;
+  }
+
+  if (hasWarning) return "warning";
+  if (hasPending) return "pending";
+  if (hasSuccess) return "success";
+  return "neutral";
+}
+
+function firstStatusField(activity) {
+  for (const f of activity.fields || []) {
+    if (f.value?.type === "status") return f;
+  }
+  return null;
+}
+
+function formatFieldValue(field) {
+  const v = field.value;
+  if (!v) return "";
+  if (v.type === "number") return Number.isInteger(v.value) ? String(v.value) : String(v.value);
+  return String(v.value);
+}
+
+function chipForField(field) {
+  const v = field.value;
+  if (!v) return "";
+  if (v.type === "status") {
+    return `<span class="chip ${esc(v.severity || "neutral")}">${esc(v.value)}</span>`;
+  }
+  if (v.type === "number") {
+    return `<span class="chip neutral">${esc(field.label)} ${esc(v.value)}</span>`;
+  }
+  if (v.type === "text") {
+    return `<span class="chip neutral">${esc(v.value)}</span>`;
+  }
+  if (v.type === "url") {
+    return `<span class="chip neutral">${esc(field.label)}</span>`;
+  }
+  return "";
+}
+
+function renderFeedError(feed) {
+  const kind = feed.error_kind === "config" ? "config" : "poll";
+  const prefix = kind === "config" ? "Config" : "Poll";
+  return `<p class="p-feed-error ${kind}">${prefix}: ${esc(feed.error)}</p>`;
+}
+
+function renderLoadingSkeleton() {
+  return `<div class="p-panel">
+    <div class="skeleton-line medium"></div>
+    <div class="skeleton-line long"></div>
+    <div class="skeleton-line short"></div>
+    <div class="skeleton-line long"></div>
+    <div class="skeleton-line medium"></div>
+    <div class="skeleton-line short"></div>
+  </div>`;
+}
+
+function renderEmptyState() {
+  return `<div class="p-panel"><p class="p-state-msg">No feeds configured. Add a Feed in <code>~/.config/cortado/feeds.toml</code> and restart.</p></div>`;
+}
+
+function getVisibleFeeds(rawFeeds, includeRetained) {
+  return rawFeeds.map((feed) => ({
+    ...feed,
+    activities: includeRetained ? (feed.activities || []) : (feed.activities || []).filter((a) => !a.retained),
+  }));
+}
+
+// --- Variant A ---
+
+function renderVariantA(feeds) {
+  let html = '<div class="p-panel va">';
+
+  for (const feed of feeds) {
+    html += '<section class="feed-block">';
+    html += `<div class="feed-head"><span class="feed-title">${esc(feed.name)}</span>${!feed.error && !feed._loading ? `<span class="feed-count">${feed.activities.length}</span>` : ""}</div>`;
+
+    if (feed._loading) {
+      html += '<p class="p-state-msg">Loading activities…</p>';
+      html += '</section>';
+      continue;
+    }
+
+    if (feed.error) html += renderFeedError(feed);
+
+    if (!feed.activities.length && !feed.error) {
+      html += '<p class="p-state-msg">No activities.</p>';
+    }
+
+    for (const activity of feed.activities || []) {
+      const severity = deriveActivitySeverity(activity);
+      const firstStatus = firstStatusField(activity);
+
+      html += `<div class="activity-row sev-${severity}" data-retained="${activity.retained ? "true" : "false"}">`;
+      html += `<span class="status-dot ${severity}" aria-hidden="true"></span>`;
+      html += `<span class="activity-title">${activity.retained ? '<span class="retained-mark">◦</span>' : ""}${esc(activity.title)}</span>`;
+      if (firstStatus) {
+        html += `<span class="activity-end"><span class="chip ${esc(firstStatus.value.severity || "neutral")}">${esc(firstStatus.value.value)}</span></span>`;
+      }
+      html += '</div>';
+    }
+
+    html += '</section>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// --- Variant B ---
+
+function renderVariantB(feeds) {
+  let html = '<div class="p-panel vb">';
+
+  for (const feed of feeds) {
+    html += '<section class="feed-block">';
+    html += `<div class="feed-subtitle">${esc(feed.name)} · ${esc(feed.feed_type)}</div>`;
+
+    if (feed._loading) {
+      html += '<p class="p-state-msg">Loading activities…</p>';
+      html += '</section>';
+      continue;
+    }
+
+    if (feed.error) html += renderFeedError(feed);
+
+    if (!feed.activities.length && !feed.error) {
+      html += '<p class="p-state-msg">No activities.</p>';
+      html += '</section>';
+      continue;
+    }
+
+    html += '<div class="card-list">';
+    for (const activity of feed.activities || []) {
+      const severity = deriveActivitySeverity(activity);
+      const firstStatus = firstStatusField(activity);
+      html += `<article class="activity-card sev-${severity}" data-retained="${activity.retained ? "true" : "false"}">`;
+      html += '<div class="card-head">';
+      html += `<span class="status-dot ${severity}" aria-hidden="true"></span>`;
+      html += `<span class="activity-title">${activity.retained ? '<span class="retained-mark">◦</span>' : ""}${esc(activity.title)}</span>`;
+      if (firstStatus) {
+        html += `<span class="chip ${esc(firstStatus.value.severity || "neutral")}">${esc(firstStatus.value.value)}</span>`;
+      }
+      html += '</div>';
+
+      if ((activity.fields || []).length) {
+        html += `<div class="chips-row">${activity.fields.map(chipForField).join("")}</div>`;
+      }
+
+      html += '</article>';
+    }
+    html += '</div>';
+    html += '</section>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// --- Variant C ---
+
+function renderVariantC(feeds) {
+  let html = '<div class="p-panel vc">';
+
+  for (const feed of feeds) {
+    html += '<section class="feed-block">';
+    html += '<div class="feed-header-row">';
+    html += '<span class="gutter-head" aria-hidden="true"></span>';
+    html += `<span class="feed-title">${esc(feed.name)}</span>`;
+    html += `${!feed.error && !feed._loading ? `<span class="feed-count">${feed.activities.length}</span>` : ""}`;
+    html += '</div>';
+
+    if (feed._loading) {
+      html += '<div class="activity-row"><span></span><span class="p-state-msg">Loading activities…</span><span></span></div>';
+      html += '</section>';
+      continue;
+    }
+
+    if (feed.error) {
+      html += `<div style="padding:4px 8px 6px 24px">${renderFeedError(feed)}</div>`;
+    }
+
+    if (!feed.activities.length && !feed.error) {
+      html += '<div class="activity-row"><span></span><span class="p-state-msg">No activities.</span><span></span></div>';
+      html += '</section>';
+      continue;
+    }
+
+    for (const activity of feed.activities || []) {
+      const severity = deriveActivitySeverity(activity);
+      const firstStatus = firstStatusField(activity);
+      const endClass = firstStatus ? (firstStatus.value.severity || "neutral") : "neutral";
+      html += `<div class="activity-row sev-${severity}" data-retained="${activity.retained ? "true" : "false"}">`;
+      html += '<span class="gutter"><span class="gutter-segment"></span></span>';
+      html += `<span class="activity-main"><span class="status-dot ${severity}" aria-hidden="true"></span><span class="activity-title">${activity.retained ? '<span class="retained-mark">◦</span>' : ""}${esc(activity.title)}</span></span>`;
+      html += `<span class="activity-end ${esc(endClass)}">${firstStatus ? esc(firstStatus.value.value) : "—"}</span>`;
+      html += '</div>';
+    }
+
+    html += '</section>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// --- Variant D ---
+
+let expandedActivityId = null;
+
+function renderVariantD(feeds) {
+  let html = '<div class="p-panel vd">';
+
+  for (const feed of feeds) {
+    html += '<section class="feed-block">';
+    html += `<div class="feed-head"><span class="feed-title">${esc(feed.name)}</span>${!feed.error && !feed._loading ? `<span class="feed-count">${feed.activities.length}</span>` : ""}</div>`;
+
+    if (feed._loading) {
+      html += '<p class="p-state-msg">Loading activities…</p>';
+      html += '</section>';
+      continue;
+    }
+
+    if (feed.error) html += renderFeedError(feed);
+
+    if (!feed.activities.length && !feed.error) {
+      html += '<p class="p-state-msg">No activities.</p>';
+      html += '</section>';
+      continue;
+    }
+
+    for (const activity of feed.activities || []) {
+      const severity = deriveActivitySeverity(activity);
+      const expanded = expandedActivityId === activity.id;
+
+      html += `<div class="activity-wrap sev-${severity}${expanded ? " expanded" : ""}" data-retained="${activity.retained ? "true" : "false"}">`;
+      html += `<button class="activity-button" data-activity-id="${esc(activity.id)}" aria-expanded="${expanded ? "true" : "false"}">`;
+      html += `<span class="status-dot ${severity}" aria-hidden="true"></span>`;
+      html += `<span class="activity-title">${activity.retained ? '<span class="retained-mark">◦</span>' : ""}${esc(activity.title)}</span>`;
+      html += `<span class="chevron" aria-hidden="true">▸</span>`;
+      html += '</button>';
+
+      html += `<div class="detail-wrap${expanded ? " open" : ""}"><div class="detail-inner"><div class="detail-panel">`;
+      if (!(activity.fields || []).length) {
+        html += '<div class="field-row"><span class="field-key">Info</span><span class="field-value">No fields</span></div>';
+      }
+      for (const field of activity.fields || []) {
+        const v = field.value || {};
+        const valueClass = v.type === "status" ? `field-value ${esc(v.severity || "neutral")}` : "field-value";
+        html += `<div class="field-row"><span class="field-key">${esc(field.label)}</span><span class="${valueClass}">${esc(formatFieldValue(field))}</span></div>`;
+      }
+      html += '</div></div></div>';
+      html += '</div>';
+    }
+
+    html += '</section>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// --- State + render orchestration ---
+
+let currentVariant = "A";
+let currentState = "normal";
+let currentTheme = "light";
+let showRetained = true;
+
+function applyTheme() {
+  if (currentTheme === "dark") {
+    document.body.classList.add("dark-mode");
+    return;
+  }
+  if (currentTheme === "light") {
+    document.body.classList.remove("dark-mode");
+    return;
+  }
+
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.body.classList.toggle("dark-mode", systemDark);
+}
+
+function render() {
+  const root = document.getElementById("panel-root");
+  const feeds = getVisibleFeeds(getFeedsForState(currentState), showRetained);
+
+  if (currentState === "loading") {
+    root.innerHTML = renderLoadingSkeleton();
+    return;
+  }
+  if (currentState === "empty") {
+    root.innerHTML = renderEmptyState();
+    return;
+  }
+
+  switch (currentVariant) {
+    case "A":
+      root.innerHTML = renderVariantA(feeds);
+      break;
+    case "B":
+      root.innerHTML = renderVariantB(feeds);
+      break;
+    case "C":
+      root.innerHTML = renderVariantC(feeds);
+      break;
+    case "D":
+      root.innerHTML = renderVariantD(feeds);
+      bindVariantDInteractions();
+      break;
+    default:
+      root.innerHTML = renderVariantA(feeds);
+      break;
+  }
+}
+
+function bindVariantDInteractions() {
+  document.querySelectorAll(".vd .activity-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.activityId || null;
+      expandedActivityId = expandedActivityId === id ? null : id;
+      render();
+    });
+  });
+}
+
+function setActive(className, activeButton) {
+  document.querySelectorAll(`.${className}`).forEach((btn) => {
+    btn.classList.remove("active");
+    btn.setAttribute("aria-pressed", "false");
+  });
+  activeButton.classList.add("active");
+  activeButton.setAttribute("aria-pressed", "true");
+}
+
+document.querySelectorAll(".variant-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    currentVariant = button.dataset.variant;
+    expandedActivityId = null;
+    setActive("variant-btn", button);
+    render();
+  });
+});
+
+document.querySelectorAll(".state-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    currentState = button.dataset.state;
+    expandedActivityId = null;
+    setActive("state-btn", button);
+    render();
+  });
+});
+
+document.querySelectorAll(".theme-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    currentTheme = button.dataset.theme;
+    setActive("theme-btn", button);
+    applyTheme();
+    render();
+  });
+});
+
+document.getElementById("retained-toggle").addEventListener("click", (event) => {
+  showRetained = !showRetained;
+  const button = event.currentTarget;
+  button.textContent = showRetained ? "Show" : "Hide";
+  button.setAttribute("aria-pressed", showRetained ? "true" : "false");
+  expandedActivityId = null;
+  render();
+});
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (currentTheme === "system") {
+    applyTheme();
+    render();
+  }
+});
+
+// --- Initial render ---
+applyTheme();
+render();
+</script>
+</body>
+</html>

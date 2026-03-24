@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortado — Variant 3 Sub-Variants Showcase</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+
+    :root {
+      color-scheme: light dark;
+
+      --chrome-bg: oklch(94% 0.004 250);
+      --chrome-text: oklch(24% 0.01 250);
+      --chrome-muted: oklch(48% 0.01 250);
+      --chrome-border: oklch(84% 0.01 250);
+      --controls-bg: oklch(96% 0.004 250);
+      --btn-bg: oklch(100% 0 0);
+      --btn-border: oklch(80% 0.01 250);
+      --btn-hover: oklch(95% 0.006 250);
+      --btn-active-bg: oklch(26% 0.02 250);
+      --btn-active-text: oklch(98% 0.003 250);
+    }
+
+    html.dark {
+      --chrome-bg: oklch(16% 0.005 250);
+      --chrome-text: oklch(91% 0.01 250);
+      --chrome-muted: oklch(68% 0.01 250);
+      --chrome-border: oklch(28% 0.01 250);
+      --controls-bg: oklch(19% 0.005 250);
+      --btn-bg: oklch(24% 0.01 250);
+      --btn-border: oklch(36% 0.01 250);
+      --btn-hover: oklch(30% 0.01 250);
+      --btn-active-bg: oklch(91% 0.01 250);
+      --btn-active-text: oklch(15% 0.005 250);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      background: var(--chrome-bg);
+      color: var(--chrome-text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .intro {
+      max-width: 1040px;
+      margin: 20px auto 0;
+      padding: 0 20px;
+    }
+
+    .intro h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .intro p {
+      margin: 6px 0 0;
+      color: var(--chrome-muted);
+      font-size: 13px;
+      line-height: 1.55;
+      max-width: 80ch;
+    }
+
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--chrome-border);
+      border-bottom: 1px solid var(--chrome-border);
+      background: color-mix(in oklch, var(--controls-bg), transparent 6%);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .control-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .control-group label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--chrome-muted);
+      margin-right: 4px;
+    }
+
+    .control-group button {
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--chrome-text);
+      font: inherit;
+      font-size: 11px;
+      line-height: 1;
+      border-radius: 6px;
+      padding: 6px 9px;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+
+    .control-group button:hover {
+      background: var(--btn-hover);
+    }
+
+    .control-group button.active,
+    .control-group button[aria-pressed="true"] {
+      background: var(--btn-active-bg);
+      color: var(--btn-active-text);
+      border-color: var(--btn-active-bg);
+    }
+
+    .control-group button:focus-visible {
+      outline: 2px solid oklch(60% 0.17 255);
+      outline-offset: 1px;
+    }
+
+    .stage {
+      max-width: 1040px;
+      margin: 20px auto 48px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: minmax(360px, 420px) 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 920px) {
+      .stage {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .preview-card,
+    .meta-card {
+      border: 1px solid var(--chrome-border);
+      border-radius: 12px;
+      background: color-mix(in oklch, var(--btn-bg), transparent 3%);
+      overflow: hidden;
+    }
+
+    .preview-head,
+    .meta-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--chrome-border);
+    }
+
+    .preview-head h2,
+    .meta-head h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .preview-head p,
+    .meta-head p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--chrome-muted);
+      line-height: 1.45;
+    }
+
+    .panel-wrap {
+      padding: 16px;
+      display: grid;
+      place-items: center;
+    }
+
+    .panel-anchor {
+      width: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      padding-top: 8px;
+    }
+
+    .panel-anchor::before {
+      content: "";
+      position: absolute;
+      top: 1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 6px;
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+      background: var(--panel-surface, oklch(97% 0.004 250 / 0.94));
+      z-index: 2;
+    }
+
+    /* =========================================================
+       PANEL BASE (shared Variant-3 architecture)
+       ========================================================= */
+
+    #panel {
+      width: 360px;
+      max-height: 460px;
+      overflow: auto;
+      position: relative;
+
+      --panel-surface: oklch(97% 0.004 250 / 0.94);
+      --panel-text: oklch(20% 0.01 250);
+      --panel-text-secondary: oklch(44% 0.01 250);
+      --panel-text-tertiary: oklch(58% 0.01 250);
+      --panel-border: oklch(84% 0.01 250 / 0.7);
+      --panel-separator: oklch(82% 0.01 250 / 0.72);
+      --panel-hover: oklch(64% 0.01 250 / 0.08);
+      --panel-expanded-bg: oklch(62% 0.01 250 / 0.05);
+
+      --s-error: oklch(63% 0.23 27);
+      --s-warning: oklch(76% 0.18 75);
+      --s-pending: oklch(58% 0.2 258);
+      --s-success: oklch(73% 0.17 150);
+      --s-neutral: oklch(58% 0.01 250);
+
+      --pad-x: 12px;
+      --feed-gap: 10px;
+      --feed-header-h: 26px;
+      --activity-row-h: 36px;
+      --row-gap: 1px;
+      --row-radius: 6px;
+      --dot-size: 6px;
+      --field-indent: 24px;
+      --field-row-gap: 3px;
+
+      --fz-feed: 11px;
+      --fz-title: 13px;
+      --fz-field: 12px;
+      --fw-feed: 600;
+      --fw-title: 400;
+
+      --dur-expand: 200ms;
+      --dur-hover: 100ms;
+      --dur-chevron: 180ms;
+      --ease-expand: cubic-bezier(0.22, 0.61, 0.36, 1);
+      --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+      color: var(--panel-text);
+      background: var(--panel-surface);
+      border-radius: 11px;
+      border: 1px solid var(--panel-border);
+      box-shadow:
+        0 0 0 0.5px color-mix(in oklch, var(--panel-border), transparent 15%),
+        0 10px 34px oklch(0% 0 0 / 0.16),
+        0 2px 8px oklch(0% 0 0 / 0.08);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+
+      font-size: var(--fz-title);
+      line-height: 1.35;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    }
+
+    html.dark #panel {
+      --panel-surface: oklch(22% 0.008 250 / 0.93);
+      --panel-text: oklch(92% 0.01 250);
+      --panel-text-secondary: oklch(70% 0.01 250);
+      --panel-text-tertiary: oklch(56% 0.01 250);
+      --panel-border: oklch(33% 0.01 250 / 0.7);
+      --panel-separator: oklch(36% 0.01 250 / 0.75);
+      --panel-hover: oklch(100% 0 0 / 0.08);
+      --panel-expanded-bg: oklch(100% 0 0 / 0.04);
+
+      --s-error: oklch(70% 0.2 25);
+      --s-warning: oklch(80% 0.16 78);
+      --s-pending: oklch(72% 0.16 259);
+      --s-success: oklch(80% 0.14 150);
+      --s-neutral: oklch(67% 0.01 250);
+
+      box-shadow:
+        0 0 0 0.5px oklch(100% 0 0 / 0.07),
+        0 10px 34px oklch(0% 0 0 / 0.42),
+        0 2px 8px oklch(0% 0 0 / 0.28);
+    }
+
+    .panel-content {
+      padding: 8px 0 8px;
+    }
+
+    .feed-block + .feed-block {
+      margin-top: var(--feed-gap);
+    }
+
+    .feed-header {
+      min-height: var(--feed-header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--pad-x);
+      font-size: var(--fz-feed);
+      color: var(--panel-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: var(--fw-feed);
+      cursor: default;
+    }
+
+    .feed-header .feed-name {
+      color: var(--panel-text-secondary);
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .feed-header .feed-count {
+      font-size: 10px;
+      color: var(--panel-text-tertiary);
+      background: color-mix(in oklch, var(--panel-text-tertiary), transparent 86%);
+      border-radius: 999px;
+      padding: 2px 6px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .feed-error {
+      margin: 0 8px 4px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.35;
+      cursor: default;
+    }
+
+    .feed-error.config {
+      color: var(--s-error);
+      background: color-mix(in oklch, var(--s-error), transparent 92%);
+      border: 1px solid color-mix(in oklch, var(--s-error), transparent 82%);
+    }
+
+    .feed-error.poll {
+      color: var(--s-warning);
+      background: color-mix(in oklch, var(--s-warning), transparent 92%);
+      border: 1px solid color-mix(in oklch, var(--s-warning), transparent 82%);
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--row-gap);
+    }
+
+    .activity-wrap {
+      --activity-severity: var(--s-neutral);
+    }
+
+    .activity-wrap.sev-error { --activity-severity: var(--s-error); }
+    .activity-wrap.sev-warning { --activity-severity: var(--s-warning); }
+    .activity-wrap.sev-pending { --activity-severity: var(--s-pending); }
+    .activity-wrap.sev-success { --activity-severity: var(--s-success); }
+    .activity-wrap.sev-neutral { --activity-severity: var(--s-neutral); }
+
+    .activity-row {
+      width: calc(100% - 8px);
+      margin: 0 4px;
+      min-height: var(--activity-row-h);
+      border: 0;
+      border-radius: var(--row-radius);
+      padding: 0 var(--pad-x);
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 8px;
+      text-align: left;
+      transition: background var(--dur-hover) var(--ease-default);
+    }
+
+    .activity-row:hover {
+      background: var(--panel-hover);
+    }
+
+    .activity-row:focus-visible {
+      outline: 2px solid color-mix(in oklch, var(--s-pending), white 20%);
+      outline-offset: 1px;
+    }
+
+    .activity-main {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: var(--dot-size);
+      height: var(--dot-size);
+      border-radius: 999px;
+      background: var(--activity-severity);
+      flex-shrink: 0;
+    }
+
+    .status-dot.retained {
+      background: transparent;
+      border: 1.5px solid var(--activity-severity);
+    }
+
+    .activity-title {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: var(--fz-title);
+      font-weight: var(--fw-title);
+      line-height: 1.28;
+      color: var(--panel-text);
+    }
+
+    .activity-symbols {
+      display: none;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--panel-text-secondary);
+      white-space: nowrap;
+    }
+
+    .activity-pill {
+      display: none;
+      white-space: nowrap;
+      font-size: 10px;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: var(--panel-text-secondary);
+      background: color-mix(in oklch, var(--panel-text-secondary), transparent 89%);
+      border: 1px solid color-mix(in oklch, var(--panel-text-secondary), transparent 83%);
+      transition: opacity 150ms var(--ease-default), transform 150ms var(--ease-default);
+      max-width: 132px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .activity-wrap.expanded .activity-pill {
+      opacity: 0;
+      transform: translateY(-1px);
+    }
+
+    .chevron {
+      color: var(--panel-text-tertiary);
+      font-size: 11px;
+      line-height: 1;
+      transition: transform var(--dur-chevron) var(--ease-default);
+      flex-shrink: 0;
+    }
+
+    .activity-wrap.expanded .chevron {
+      transform: rotate(90deg);
+    }
+
+    .detail-region {
+      margin: 0 4px;
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows var(--dur-expand) var(--ease-expand);
+    }
+
+    .activity-wrap.expanded .detail-region {
+      grid-template-rows: 1fr;
+    }
+
+    .detail-inner {
+      overflow: hidden;
+    }
+
+    .detail-body {
+      margin: 0 0 6px;
+      padding: 6px var(--pad-x) 8px calc(var(--pad-x) + var(--field-indent));
+      border-left: 1px solid color-mix(in oklch, var(--panel-separator), transparent 18%);
+      background: color-mix(in oklch, var(--panel-expanded-bg), transparent 30%);
+      border-radius: 0 var(--row-radius) var(--row-radius) 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--field-row-gap);
+    }
+
+    .open-row {
+      margin: 0 0 3px;
+      font-size: 11px;
+      color: var(--s-pending);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: baseline;
+      font-size: var(--fz-field);
+      line-height: 1.35;
+    }
+
+    .field-key {
+      color: var(--panel-text-tertiary);
+      white-space: nowrap;
+    }
+
+    .field-value {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--panel-text-secondary);
+      justify-self: start;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .field-value.status.success { color: var(--s-success); }
+    .field-value.status.warning { color: var(--s-warning); }
+    .field-value.status.error { color: var(--s-error); }
+    .field-value.status.pending { color: var(--s-pending); }
+    .field-value.status.neutral { color: var(--s-neutral); }
+
+    .feed-empty,
+    .global-empty {
+      margin: 0 8px;
+      padding: 6px 8px;
+      color: var(--panel-text-tertiary);
+      font-size: 12px;
+      cursor: default;
+    }
+
+    .global-empty {
+      margin: 0;
+      padding: 12px;
+    }
+
+    .panel-footer {
+      margin-top: 8px;
+      border-top: 1px solid var(--panel-separator);
+      padding-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .footer-row {
+      margin: 0 4px;
+      min-height: 32px;
+      border-radius: var(--row-radius);
+      display: flex;
+      align-items: center;
+      padding: 0 var(--pad-x);
+      font-size: 12px;
+      color: var(--panel-text-secondary);
+      cursor: pointer;
+      transition: background var(--dur-hover) var(--ease-default);
+    }
+
+    .footer-row:hover {
+      background: var(--panel-hover);
+    }
+
+    .skeleton {
+      margin: 0 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg,
+        color-mix(in oklch, var(--panel-text-tertiary), transparent 90%) 25%,
+        color-mix(in oklch, var(--panel-text-tertiary), transparent 82%) 50%,
+        color-mix(in oklch, var(--panel-text-tertiary), transparent 90%) 75%);
+      background-size: 320px 100%;
+      animation: shimmer 1.25s linear infinite;
+    }
+
+    .skeleton + .skeleton {
+      margin-top: 8px;
+    }
+
+    .skeleton.w-40 { width: 40%; }
+    .skeleton.w-55 { width: 55%; }
+    .skeleton.w-70 { width: 70%; }
+    .skeleton.w-85 { width: 85%; }
+
+    @keyframes shimmer {
+      from { background-position: -240px 0; }
+      to { background-position: 240px 0; }
+    }
+
+    /* =========================================================
+       Sub-variant styling
+       ========================================================= */
+
+    /* 1) Strict System */
+    #panel.variant-strict {
+      --feed-gap: 8px;
+      --feed-header-h: 24px;
+      --activity-row-h: 34px;
+      --row-gap: 0;
+      --row-radius: 4px;
+      --dot-size: 6px;
+      --pad-x: 12px;
+      --field-indent: 20px;
+      --dur-expand: 200ms;
+      --fz-feed: 10px;
+    }
+
+    #panel.variant-strict .activity-row:hover {
+      background: var(--panel-hover);
+    }
+
+    #panel.variant-strict .feed-header .feed-name {
+      color: var(--panel-text-secondary);
+    }
+
+    /* 2) Warm Neutral */
+    #panel.variant-warm {
+      --feed-gap: 12px;
+      --activity-row-h: 40px;
+      --row-gap: 2px;
+      --row-radius: 8px;
+      --pad-x: 14px;
+      --field-indent: 28px;
+      --panel-surface: oklch(97% 0.006 68 / 0.96);
+      --panel-hover: oklch(48% 0.02 68 / 0.09);
+      --panel-expanded-bg: oklch(50% 0.015 68 / 0.06);
+    }
+
+    html.dark #panel.variant-warm {
+      --panel-surface: oklch(23% 0.008 68 / 0.95);
+      --panel-hover: oklch(100% 0 0 / 0.08);
+      --panel-expanded-bg: oklch(100% 0 0 / 0.05);
+    }
+
+    #panel.variant-warm .feed-header {
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-size: 11px;
+    }
+
+    /* 3) Dense Wire */
+    #panel.variant-dense {
+      --feed-gap: 6px;
+      --feed-header-h: 22px;
+      --activity-row-h: 28px;
+      --row-gap: 0;
+      --row-radius: 0;
+      --pad-x: 8px;
+      --field-indent: 16px;
+      --fz-feed: 10px;
+      --fz-title: 12px;
+      --fz-field: 11px;
+      --fw-title: 500;
+      --panel-surface: oklch(97% 0.001 250 / 0.98);
+    }
+
+    html.dark #panel.variant-dense {
+      --panel-surface: oklch(12% 0 0 / 0.98);
+      --panel-text: oklch(88% 0 0);
+      --panel-text-secondary: oklch(73% 0 0);
+      --panel-text-tertiary: oklch(58% 0 0);
+      --panel-hover: oklch(100% 0 0 / 0.04);
+    }
+
+    #panel.variant-dense,
+    #panel.variant-dense * {
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      letter-spacing: 0;
+    }
+
+    #panel.variant-dense .status-dot {
+      display: none;
+    }
+
+    #panel.variant-dense .activity-row {
+      margin: 0;
+      width: 100%;
+      border-radius: 0;
+      border-left: 2px solid var(--activity-severity);
+      padding-left: calc(var(--pad-x) - 2px);
+    }
+
+    #panel.variant-dense .chevron {
+      display: none;
+    }
+
+    #panel.variant-dense .activity-symbols {
+      display: inline-flex;
+    }
+
+    #panel.variant-dense .detail-region {
+      margin: 0;
+    }
+
+    #panel.variant-dense .detail-body {
+      border-left-width: 2px;
+      border-radius: 0;
+      margin: 0 0 4px;
+    }
+
+    /* 4) Soft Vibrancy */
+    #panel.variant-soft {
+      --feed-gap: 15px;
+      --activity-row-h: 38px;
+      --row-gap: 1px;
+      --row-radius: 8px;
+      --pad-x: 14px;
+      --field-indent: 30px;
+      --dur-expand: 250ms;
+      --dur-chevron: 200ms;
+      --panel-surface: oklch(98% 0.004 250 / 0.72);
+      --panel-hover: oklch(100% 0 0 / 0.23);
+    }
+
+    html.dark #panel.variant-soft {
+      --panel-surface: oklch(25% 0.008 250 / 0.62);
+      --panel-hover: oklch(100% 0 0 / 0.10);
+    }
+
+    #panel.variant-soft {
+      backdrop-filter: blur(38px) saturate(180%);
+      -webkit-backdrop-filter: blur(38px) saturate(180%);
+    }
+
+    #panel.variant-soft .status-dot {
+      width: 8px;
+      height: 8px;
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--activity-severity), transparent 84%);
+    }
+
+    #panel.variant-soft .detail-body {
+      background: color-mix(in oklch, var(--panel-surface), var(--panel-expanded-bg) 24%);
+      border-left-width: 0;
+      margin-left: 10px;
+      border-radius: 8px;
+    }
+
+    /* 5) Structured Cards */
+    #panel.variant-cards {
+      --feed-gap: 8px;
+      --activity-row-h: 36px;
+      --row-gap: 2px;
+      --row-radius: 6px;
+      --pad-x: 10px;
+      --field-indent: 22px;
+    }
+
+    #panel.variant-cards .feed-block {
+      margin: 0 8px;
+      border: 1px solid color-mix(in oklch, var(--panel-border), transparent 20%);
+      border-radius: 10px;
+      background: color-mix(in oklch, var(--panel-surface), var(--panel-text) 2%);
+      padding: 6px 0;
+    }
+
+    #panel.variant-cards .feed-block + .feed-block {
+      margin-top: 8px;
+    }
+
+    #panel.variant-cards .feed-header {
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-size: 12px;
+      color: var(--panel-text-secondary);
+      min-height: 24px;
+      padding: 0 10px;
+    }
+
+    #panel.variant-cards .activity-row,
+    #panel.variant-cards .detail-region,
+    #panel.variant-cards .feed-error,
+    #panel.variant-cards .feed-empty {
+      margin-left: 6px;
+      margin-right: 6px;
+      width: calc(100% - 12px);
+    }
+
+    #panel.variant-cards .detail-body {
+      margin-left: 0;
+      border-left-width: 0;
+      border-radius: 8px;
+    }
+
+    /* 6) Tight Hierarchy */
+    #panel.variant-tight {
+      --feed-gap: 18px;
+      --feed-header-h: 30px;
+      --activity-row-h: 34px;
+      --row-gap: 0;
+      --row-radius: 6px;
+      --pad-x: 14px;
+      --field-indent: 16px;
+      --fz-feed: 15px;
+      --fw-feed: 500;
+      --fz-title: 13px;
+      --fw-title: 400;
+    }
+
+    #panel.variant-tight .feed-header {
+      text-transform: none;
+      letter-spacing: -0.01em;
+      color: var(--panel-text);
+    }
+
+    #panel.variant-tight .feed-header .feed-name {
+      color: var(--panel-text);
+    }
+
+    #panel.variant-tight .status-dot {
+      display: none;
+    }
+
+    #panel.variant-tight .activity-wrap.sev-error .activity-title {
+      color: color-mix(in oklch, var(--panel-text), var(--s-error) 30%);
+    }
+
+    #panel.variant-tight .activity-wrap.sev-warning .activity-title {
+      color: color-mix(in oklch, var(--panel-text), var(--s-warning) 25%);
+    }
+
+    #panel.variant-tight .activity-wrap.sev-pending .activity-title {
+      color: color-mix(in oklch, var(--panel-text), var(--s-pending) 24%);
+    }
+
+    #panel.variant-tight .activity-wrap.sev-success .activity-title {
+      color: color-mix(in oklch, var(--panel-text), var(--s-success) 20%);
+    }
+
+    /* 7) Segmented Sections */
+    #panel.variant-segmented {
+      --feed-gap: 8px;
+      --feed-header-h: 28px;
+      --activity-row-h: 36px;
+      --row-gap: 0;
+      --row-radius: 0;
+      --pad-x: 12px;
+      --field-indent: 24px;
+      --fz-feed: 11px;
+    }
+
+    #panel.variant-segmented .feed-header {
+      margin: 0;
+      min-height: 28px;
+      background: color-mix(in oklch, var(--panel-text-secondary), transparent 91%);
+      border-top: 1px solid color-mix(in oklch, var(--panel-separator), transparent 30%);
+      border-bottom: 1px solid color-mix(in oklch, var(--panel-separator), transparent 30%);
+      color: var(--panel-text-secondary);
+    }
+
+    #panel.variant-segmented .feed-block:first-child .feed-header {
+      border-top: 0;
+    }
+
+    #panel.variant-segmented .activity-row,
+    #panel.variant-segmented .detail-region {
+      width: 100%;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    #panel.variant-segmented .detail-body {
+      margin: 0;
+      border-left-width: 0;
+      border-top: 1px solid color-mix(in oklch, var(--panel-separator), transparent 35%);
+      border-radius: 0;
+      padding-left: calc(var(--pad-x) + 18px);
+    }
+
+    #panel.variant-segmented .field-value {
+      justify-self: end;
+      text-align: right;
+    }
+
+    /* 8) Compact Pill */
+    #panel.variant-compact {
+      --feed-gap: 14px;
+      --activity-row-h: 38px;
+      --row-gap: 2px;
+      --row-radius: 8px;
+      --pad-x: 14px;
+      --field-indent: 24px;
+      --dur-expand: 200ms;
+      --dur-chevron: 180ms;
+    }
+
+    #panel.variant-compact .activity-pill {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    #panel.variant-compact .activity-wrap.sev-error .activity-pill,
+    #panel.variant-compact .activity-wrap.sev-warning .activity-pill {
+      border-color: color-mix(in oklch, var(--activity-severity), transparent 72%);
+    }
+
+    .meta-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .meta-top h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .meta-top p {
+      margin: 6px 0 0;
+      color: var(--chrome-muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .score-chip {
+      border: 1px solid var(--chrome-border);
+      border-radius: 9px;
+      padding: 8px 9px;
+      background: color-mix(in oklch, var(--btn-bg), transparent 4%);
+    }
+
+    .score-chip .label {
+      display: block;
+      font-size: 10px;
+      color: var(--chrome-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .score-chip .value {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .variant-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .variant-grid .item {
+      border: 1px solid var(--chrome-border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: color-mix(in oklch, var(--btn-bg), transparent 2%);
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--chrome-muted);
+    }
+
+    .variant-grid .item strong {
+      color: var(--chrome-text);
+      font-weight: 650;
+    }
+
+    .variant-grid .item.active {
+      border-color: color-mix(in oklch, oklch(62% 0.18 258), var(--chrome-border) 55%);
+      box-shadow: 0 0 0 1px color-mix(in oklch, oklch(62% 0.18 258), transparent 75%) inset;
+    }
+
+    code {
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+      font-size: 0.92em;
+      background: color-mix(in oklch, var(--chrome-text), transparent 92%);
+      border: 1px solid color-mix(in oklch, var(--chrome-text), transparent 88%);
+      border-radius: 5px;
+      padding: 1px 5px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .activity-row,
+      .detail-region,
+      .chevron,
+      .activity-pill,
+      .footer-row,
+      .control-group button,
+      .skeleton {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="intro">
+    <h1>Variant-3 Sub-Variants Showcase</h1>
+    <p>
+      Same core architecture in every option: <strong>Feed sections</strong>, expandable <strong>Activity</strong> rows,
+      and inline <strong>Field</strong> details. Use this to fine-tune "super native" vs "super modern" balance before implementation.
+    </p>
+  </section>
+
+  <div class="controls" role="toolbar" aria-label="Sub-variant controls">
+    <div class="control-group">
+      <label id="variant-label">Sub-variant</label>
+      <button class="variant-btn active" data-variant="strict" aria-describedby="variant-label" aria-pressed="true">Strict</button>
+      <button class="variant-btn" data-variant="warm" aria-describedby="variant-label">Warm</button>
+      <button class="variant-btn" data-variant="dense" aria-describedby="variant-label">Dense</button>
+      <button class="variant-btn" data-variant="soft" aria-describedby="variant-label">Soft</button>
+      <button class="variant-btn" data-variant="cards" aria-describedby="variant-label">Cards</button>
+      <button class="variant-btn" data-variant="tight" aria-describedby="variant-label">Tight</button>
+      <button class="variant-btn" data-variant="segmented" aria-describedby="variant-label" aria-pressed="false">Segmented</button>
+      <button class="variant-btn" data-variant="compact" aria-describedby="variant-label">Compact</button>
+    </div>
+
+    <div class="control-group">
+      <label id="state-label">State</label>
+      <button class="state-btn active" data-state="normal" aria-describedby="state-label" aria-pressed="true">Normal</button>
+      <button class="state-btn" data-state="loading" aria-describedby="state-label">Loading</button>
+      <button class="state-btn" data-state="empty" aria-describedby="state-label">Empty</button>
+      <button class="state-btn" data-state="config-error" aria-describedby="state-label">Config Err</button>
+      <button class="state-btn" data-state="poll-error" aria-describedby="state-label">Poll Err</button>
+    </div>
+
+    <div class="control-group">
+      <label id="theme-label">Theme</label>
+      <button class="theme-btn active" data-theme="light" aria-describedby="theme-label" aria-pressed="true">Light</button>
+      <button class="theme-btn" data-theme="dark" aria-describedby="theme-label">Dark</button>
+      <button class="theme-btn" data-theme="system" aria-describedby="theme-label">System</button>
+    </div>
+
+    <div class="control-group">
+      <label id="retained-label">Retained</label>
+      <button id="retained-toggle" role="switch" aria-describedby="retained-label" aria-pressed="true">Show</button>
+    </div>
+  </div>
+
+  <main class="stage">
+    <section class="preview-card">
+      <header class="preview-head">
+        <h2>Live Panel Preview</h2>
+        <p>Menubar-attached transient panel. Click any Activity row to toggle inline Field details.</p>
+      </header>
+      <div class="panel-wrap">
+        <div class="panel-anchor">
+          <div id="panel" class="variant-strict" role="region" aria-label="Variant 3 sub-variant preview"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="meta-card">
+      <header class="meta-head">
+        <h2>Sub-Variant Profile</h2>
+        <p>Design intent and scoring to help pick final implementation.</p>
+      </header>
+      <div class="meta-body">
+        <div class="meta-top">
+          <h3 id="variant-name">Strict System</h3>
+          <p id="variant-intent"></p>
+        </div>
+
+        <div class="score-row">
+          <div class="score-chip">
+            <span class="label">Native</span>
+            <span class="value" id="score-native">10/10</span>
+          </div>
+          <div class="score-chip">
+            <span class="label">Density</span>
+            <span class="value" id="score-density">7/10</span>
+          </div>
+          <div class="score-chip">
+            <span class="label">Complexity</span>
+            <span class="value" id="score-complexity">Med</span>
+          </div>
+        </div>
+
+        <div class="variant-grid" id="variant-grid"></div>
+
+        <div class="variant-grid">
+          <div class="item">
+            <strong>Token baseline:</strong>
+            <code>36px row</code>,
+            <code>13px title</code>,
+            <code>12px field</code>,
+            <code>6px radius</code>,
+            <code>200ms expand</code>.
+          </div>
+          <div class="item">
+            <strong>Decision lock:</strong>
+            Ship <strong>Strict System</strong> as the Variant-3 implementation baseline with native-style hover highlight retained.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const VARIANTS = {
+      strict: {
+        className: "variant-strict",
+        name: "Strict System",
+        intent: "Maximum macOS fidelity: restrained rows, semantic colors, minimal ornament.",
+        native: 10,
+        density: 7,
+        complexity: "Med",
+        summary: "Locked baseline: conservative and safest native option.",
+      },
+      warm: {
+        className: "variant-warm",
+        name: "Warm Neutral",
+        intent: "Softer neutrals and roomier spacing for a friendlier feel.",
+        native: 8,
+        density: 6,
+        complexity: "Low",
+        summary: "Approachable and quick to ship, slightly less dense.",
+      },
+      dense: {
+        className: "variant-dense",
+        name: "Dense Wire",
+        intent: "Ultra-compact, terminal-adjacent density with strict information packing.",
+        native: 3,
+        density: 10,
+        complexity: "Low",
+        summary: "Maximum throughput, lowest native feel.",
+      },
+      soft: {
+        className: "variant-soft",
+        name: "Soft Vibrancy",
+        intent: "Premium translucent surface with subtle depth and gentle motion.",
+        native: 9,
+        density: 6,
+        complexity: "High",
+        summary: "Most premium appearance, highest implementation tuning cost.",
+      },
+      cards: {
+        className: "variant-cards",
+        name: "Structured Cards",
+        intent: "Feed-as-card grouping for explicit visual structure.",
+        native: 7,
+        density: 5,
+        complexity: "Med",
+        summary: "Very clear grouping but consumes vertical space.",
+      },
+      tight: {
+        className: "variant-tight",
+        name: "Tight Hierarchy",
+        intent: "Typography-first hierarchy with minimal decorative cues.",
+        native: 8,
+        density: 7,
+        complexity: "Low",
+        summary: "Elegant and clean, relies on text hierarchy precision.",
+      },
+      segmented: {
+        className: "variant-segmented",
+        name: "Segmented Sections",
+        intent: "Strong section headers and scannable structure for multi-feed workflows.",
+        native: 9,
+        density: 8,
+        complexity: "Low",
+        summary: "Best overall balance for Cortado.",
+      },
+      compact: {
+        className: "variant-compact",
+        name: "Compact Pill",
+        intent: "Collapsed rows include concise status summary pills for faster glanceability.",
+        native: 7,
+        density: 9,
+        complexity: "Med",
+        summary: "Great for power users with many Activities.",
+      },
+    };
+
+    const MOCK_FEEDS_NORMAL = [
+      {
+        name: "My PRs",
+        feed_type: "github-pr",
+        error: null,
+        activities: [
+          {
+            id: "pr-42",
+            title: "Add feed scaffold",
+            retained: false,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+              { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+            ],
+          },
+          {
+            id: "pr-51",
+            title: "TOML config hot-reload",
+            retained: false,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "changes requested", severity: "error" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "failing", severity: "error" } },
+              { name: "mergeable", label: "Mergeable", value: { type: "status", value: "conflict", severity: "warning" } },
+              { name: "labels", label: "Labels", value: { type: "text", value: "draft" } },
+            ],
+          },
+          {
+            id: "pr-38",
+            title: "Fix tray icon alignment on Sonoma",
+            retained: false,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+              { name: "mergeable", label: "Mergeable", value: { type: "status", value: "yes", severity: "success" } },
+            ],
+          },
+          {
+            id: "pr-29",
+            title: "Add activity retention lifecycle",
+            retained: true,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "approved", severity: "success" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+            ],
+          },
+        ],
+      },
+      {
+        name: "ADO PRs",
+        feed_type: "ado-pr",
+        error: null,
+        activities: [
+          {
+            id: "ado-1234",
+            title: "Pipeline auth refactor",
+            retained: false,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "running", severity: "pending" } },
+              { name: "mergeable", label: "Mergeable", value: { type: "status", value: "blocked", severity: "warning" } },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Disk Usage",
+        feed_type: "shell",
+        error: null,
+        activities: [
+          {
+            id: "disk-root",
+            title: "/ (root)",
+            retained: false,
+            fields: [
+              { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+              { name: "available", label: "Available", value: { type: "text", value: "148 GB" } },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const MOCK_FEEDS_LOADING = [
+      { name: "My PRs", feed_type: "github-pr", error: null, _loading: true, activities: [] },
+      { name: "ADO PRs", feed_type: "ado-pr", error: null, _loading: true, activities: [] },
+      { name: "Disk Usage", feed_type: "shell", error: null, _loading: true, activities: [] },
+    ];
+
+    const MOCK_FEEDS_EMPTY = [];
+
+    const MOCK_FEEDS_CONFIG_ERROR = [
+      {
+        name: "Broken Feed",
+        feed_type: "github-pr",
+        error_kind: "config",
+        error: "Missing required field: 'repo'.",
+        activities: [],
+      },
+      {
+        name: "Disk Usage",
+        feed_type: "shell",
+        error: null,
+        activities: [
+          {
+            id: "disk-root",
+            title: "/ (root)",
+            retained: false,
+            fields: [
+              { name: "usage", label: "Usage", value: { type: "number", value: 67 } },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const MOCK_FEEDS_POLL_ERROR = [
+      {
+        name: "My PRs",
+        feed_type: "github-pr",
+        error_kind: "poll",
+        error: "gh: not found. Install GitHub CLI and run 'gh auth login'.",
+        activities: [
+          {
+            id: "pr-42",
+            title: "Add feed scaffold",
+            retained: false,
+            fields: [
+              { name: "review", label: "Review", value: { type: "status", value: "awaiting", severity: "pending" } },
+              { name: "checks", label: "Checks", value: { type: "status", value: "passing", severity: "success" } },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Disk Usage",
+        feed_type: "shell",
+        error_kind: "poll",
+        error: "Command exited with code 127",
+        activities: [],
+      },
+    ];
+
+    let currentVariant = "strict";
+    let currentState = "normal";
+    let currentTheme = "light";
+    let showRetained = true;
+    let openActivityKey = null;
+
+    const panelEl = document.getElementById("panel");
+
+    function esc(value) {
+      const div = document.createElement("div");
+      div.textContent = String(value);
+      return div.innerHTML;
+    }
+
+    function getFeedsForState(state) {
+      switch (state) {
+        case "normal": return MOCK_FEEDS_NORMAL;
+        case "loading": return MOCK_FEEDS_LOADING;
+        case "empty": return MOCK_FEEDS_EMPTY;
+        case "config-error": return MOCK_FEEDS_CONFIG_ERROR;
+        case "poll-error": return MOCK_FEEDS_POLL_ERROR;
+        default: return MOCK_FEEDS_NORMAL;
+      }
+    }
+
+    function visibleFeeds(rawFeeds) {
+      return rawFeeds.map((feed) => ({
+        ...feed,
+        activities: showRetained ? (feed.activities || []) : (feed.activities || []).filter((a) => !a.retained),
+      }));
+    }
+
+    function statusSymbol(severity) {
+      switch (severity) {
+        case "error": return "✕";
+        case "warning": return "⚠";
+        case "pending": return "◷";
+        case "success": return "✓";
+        default: return "•";
+      }
+    }
+
+    function severityOfActivity(activity) {
+      let hasWarning = false;
+      let hasPending = false;
+      let hasSuccess = false;
+
+      for (const field of activity.fields || []) {
+        const v = field.value;
+        if (!v || v.type !== "status") continue;
+        if (v.severity === "error") return "error";
+        if (v.severity === "warning") hasWarning = true;
+        if (v.severity === "pending") hasPending = true;
+        if (v.severity === "success") hasSuccess = true;
+      }
+
+      if (hasWarning) return "warning";
+      if (hasPending) return "pending";
+      if (hasSuccess) return "success";
+      return "neutral";
+    }
+
+    function firstStatusField(activity) {
+      return (activity.fields || []).find((f) => f.value?.type === "status") || null;
+    }
+
+    function statusSummary(activity, max = 2) {
+      const statuses = (activity.fields || [])
+        .filter((f) => f.value?.type === "status")
+        .slice(0, max)
+        .map((f) => f.value.value);
+      return statuses.join(" · ");
+    }
+
+    function statusSummarySymbols(activity, max = 3) {
+      const statuses = (activity.fields || [])
+        .filter((f) => f.value?.type === "status")
+        .slice(0, max)
+        .map((f) => statusSymbol(f.value.severity || "neutral"));
+      return statuses.join(" ");
+    }
+
+    function formatFieldValue(field) {
+      const value = field.value;
+      if (!value) return "";
+      if (value.type === "number") {
+        return Number.isInteger(value.value) ? String(value.value) : String(value.value);
+      }
+      return String(value.value);
+    }
+
+    function renderLoadingFeedSkeleton() {
+      return `
+        <div style="padding: 4px 0 10px;">
+          <div class="skeleton w-55"></div>
+          <div class="skeleton w-85"></div>
+          <div class="skeleton w-40"></div>
+        </div>
+      `;
+    }
+
+    function renderFieldRows(activity) {
+      if (!(activity.fields || []).length) {
+        return `<div class="field-row"><span class="field-key">Info</span><span class="field-value">No fields</span></div>`;
+      }
+
+      return activity.fields.map((field) => {
+        const isStatus = field.value?.type === "status";
+        const severity = isStatus ? field.value.severity || "neutral" : "";
+        return `
+          <div class="field-row">
+            <span class="field-key">${esc(field.label)}</span>
+            <span class="field-value ${isStatus ? `status ${esc(severity)}` : ""}">${esc(formatFieldValue(field))}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderActivity(feed, activity) {
+      const severity = severityOfActivity(activity);
+      const key = `${feed.name}::${activity.id}`;
+      const expanded = openActivityKey === key;
+      const firstStatus = firstStatusField(activity);
+      const summary = statusSummary(activity, 2);
+      const summarySymbols = statusSummarySymbols(activity, 3);
+
+      return `
+        <div class="activity-wrap sev-${esc(severity)} ${expanded ? "expanded" : ""}" data-activity-key="${esc(key)}">
+          <button class="activity-row" data-activity-key="${esc(key)}" aria-expanded="${expanded ? "true" : "false"}">
+            <span class="activity-main">
+              <span class="status-dot ${activity.retained ? "retained" : ""}" aria-hidden="true"></span>
+              <span class="activity-title">${esc(activity.title)}</span>
+            </span>
+
+            <span class="activity-symbols" aria-hidden="true">${esc(summarySymbols || statusSymbol(severity))}</span>
+            <span class="activity-pill" title="${esc(summary)}">${esc(summary || (firstStatus ? firstStatus.value.value : "status"))}</span>
+            <span class="chevron" aria-hidden="true">▸</span>
+          </button>
+
+          <div class="detail-region">
+            <div class="detail-inner">
+              <div class="detail-body">
+                <div class="open-row">↗ Open Activity</div>
+                ${renderFieldRows(activity)}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFeed(feed) {
+      const feedCount = (feed.activities || []).length;
+
+      let html = `
+        <section class="feed-block">
+          <div class="feed-header">
+            <span class="feed-name">${esc(feed.name)}</span>
+            ${!feed.error && !feed._loading ? `<span class="feed-count">${feedCount}</span>` : ""}
+          </div>
+      `;
+
+      if (feed._loading) {
+        html += renderLoadingFeedSkeleton();
+        html += `</section>`;
+        return html;
+      }
+
+      if (feed.error) {
+        const kind = feed.error_kind === "config" ? "config" : "poll";
+        html += `<div class="feed-error ${kind}">${kind === "config" ? "Config" : "Poll"}: ${esc(feed.error)}</div>`;
+      }
+
+      if (!(feed.activities || []).length && !feed.error) {
+        html += `<div class="feed-empty">No activities</div>`;
+        html += `</section>`;
+        return html;
+      }
+
+      if (!(feed.activities || []).length && feed.error) {
+        html += `</section>`;
+        return html;
+      }
+
+      html += `<div class="activity-list">`;
+      html += feed.activities.map((activity) => renderActivity(feed, activity)).join("");
+      html += `</div>`;
+
+      html += `</section>`;
+      return html;
+    }
+
+    function renderPanel() {
+      const feeds = visibleFeeds(getFeedsForState(currentState));
+      panelEl.className = VARIANTS[currentVariant].className;
+
+      if (currentState === "empty") {
+        panelEl.innerHTML = `
+          <div class="panel-content">
+            <div class="global-empty">No feeds configured. Add a Feed in <code>~/.config/cortado/feeds.toml</code>.</div>
+            <div class="panel-footer">
+              <div class="footer-row">Refresh feeds</div>
+              <div class="footer-row">Quit Cortado</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      panelEl.innerHTML = `
+        <div class="panel-content">
+          ${feeds.map(renderFeed).join("")}
+          <div class="panel-footer">
+            <div class="footer-row">Refresh feeds</div>
+            <div class="footer-row">Quit Cortado</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderVariantMeta() {
+      const variant = VARIANTS[currentVariant];
+
+      document.getElementById("variant-name").textContent = variant.name;
+      document.getElementById("variant-intent").textContent = variant.intent;
+      document.getElementById("score-native").textContent = `${variant.native}/10`;
+      document.getElementById("score-density").textContent = `${variant.density}/10`;
+      document.getElementById("score-complexity").textContent = variant.complexity;
+
+      const grid = document.getElementById("variant-grid");
+      grid.innerHTML = Object.entries(VARIANTS).map(([key, item]) => {
+        return `
+          <div class="item ${key === currentVariant ? "active" : ""}">
+            <strong>${esc(item.name)}</strong><br>
+            ${esc(item.summary)}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function applyTheme() {
+      if (currentTheme === "light") {
+        document.documentElement.classList.remove("dark");
+        return;
+      }
+
+      if (currentTheme === "dark") {
+        document.documentElement.classList.add("dark");
+        return;
+      }
+
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
+    }
+
+    function setActiveButtons(className, activeButton) {
+      document.querySelectorAll(`.${className}`).forEach((button) => {
+        button.classList.toggle("active", button === activeButton);
+        button.setAttribute("aria-pressed", button === activeButton ? "true" : "false");
+      });
+    }
+
+    document.querySelectorAll(".variant-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentVariant = button.dataset.variant;
+        openActivityKey = null;
+        setActiveButtons("variant-btn", button);
+        renderVariantMeta();
+        renderPanel();
+      });
+    });
+
+    document.querySelectorAll(".state-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentState = button.dataset.state;
+        openActivityKey = null;
+        setActiveButtons("state-btn", button);
+        renderPanel();
+      });
+    });
+
+    document.querySelectorAll(".theme-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        currentTheme = button.dataset.theme;
+        setActiveButtons("theme-btn", button);
+        applyTheme();
+        renderPanel();
+      });
+    });
+
+    document.getElementById("retained-toggle").addEventListener("click", (event) => {
+      showRetained = !showRetained;
+      const btn = event.currentTarget;
+      btn.textContent = showRetained ? "Show" : "Hide";
+      btn.setAttribute("aria-pressed", showRetained ? "true" : "false");
+      btn.classList.toggle("active", showRetained);
+      openActivityKey = null;
+      renderPanel();
+    });
+
+    panelEl.addEventListener("click", (event) => {
+      const button = event.target.closest(".activity-row");
+      if (!button) return;
+
+      const key = button.dataset.activityKey;
+      openActivityKey = openActivityKey === key ? null : key;
+      renderPanel();
+    });
+
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (currentTheme === "system") {
+        applyTheme();
+        renderPanel();
+      }
+    });
+
+    applyTheme();
+    renderVariantMeta();
+    renderPanel();
+  </script>
+</body>
+</html>
