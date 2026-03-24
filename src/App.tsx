@@ -129,6 +129,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
+  const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
 
   const sortedFeeds = useMemo(() => {
@@ -214,6 +215,7 @@ function App() {
       unlistenFns.push(unlisten);
 
       const unlistenPanelWillShow = await listen("menubar_panel_will_show", () => {
+        setSuppressCollapseAnimation(true);
         setExpandedActivityKey(null);
 
         requestAnimationFrame(() => {
@@ -221,6 +223,10 @@ function App() {
           if (panelContent) {
             panelContent.scrollTop = 0;
           }
+
+          requestAnimationFrame(() => {
+            setSuppressCollapseAnimation(false);
+          });
         });
       });
 
@@ -238,7 +244,11 @@ function App() {
   }, []);
 
   return (
-    <div className="panel-root" role="region" aria-label="Cortado menubar panel">
+    <div
+      className={`panel-root ${suppressCollapseAnimation ? "suppress-collapse-animation" : ""}`}
+      role="region"
+      aria-label="Cortado menubar panel"
+    >
       <div className="panel-content" ref={panelContentRef}>
         {loading ? (
           <div className="loading-state" aria-live="polite">

@@ -337,6 +337,11 @@ body {
   transition: grid-template-rows var(--dur-expand) var(--ease-expand);
 }
 
+.panel-root.suppress-collapse-animation .detail-region,
+.panel-root.suppress-collapse-animation .chevron {
+  transition: none !important;
+}
+
 .activity-wrap.expanded .detail-region {
   grid-template-rows: 1fr;
 }
