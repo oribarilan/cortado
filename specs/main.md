@@ -5,13 +5,7 @@ It gives developers a persistent, glanceable view of things they care about.
 
 ## Terminology
 
-| Term | Definition |
-|------|-----------|
-| **Feed** | A configured data source that discovers and tracks related items. Example: "GitHub PRs for personal/cortado". |
-| **Activity** | An individual tracked item within a feed, discovered and managed by the feed's lifecycle. Example: PR #42 "Add feed scaffold". |
-| **Field** | A typed, structured piece of data on an activity. Fields have a name, label, value, and type. Example: `review: awaiting` (status field). |
-| **Retained Activity** | An activity no longer returned by a feed's latest poll, kept visible for a configured retention duration. |
-| **Status** | The overall state of an activity, derived from its fields. |
+See `specs/glossary.md` for canonical definitions of all terms (Feed, Activity, Field, Status Kind, Status Value, etc.).
 
 ### Hierarchy
 

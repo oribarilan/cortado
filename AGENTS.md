@@ -8,7 +8,7 @@ The spec is the source of truth. If during implementation you notice the code di
 
 ## Terminology
 
-Read the Terminology section in `specs/main.md`. The key terms are:
+Canonical definitions live in `specs/glossary.md`. Read it before starting any work. Quick reference:
 
 | Term | What it is | Not to be confused with |
 |------|-----------|------------------------|
@@ -18,13 +18,10 @@ Read the Terminology section in `specs/main.md`. The key terms are:
 | **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` | The status value (display text like "approved") |
 | **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") | The status kind (semantic classification) |
 
-The old codebase used "Bean" and "Watch" — these terms are deprecated. Use Feed and Activity.
-
 ### Terminology discipline
 
 - Use established terms consistently. Don't introduce synonyms (e.g., don't call a status kind a "severity" or "status type").
-- If a concept needs a new term, define it in the relevant spec first, then use it in code and docs.
-- Canonical definitions live in specs: `specs/main.md` (feeds, activities, fields), `specs/status.md` (status kinds, status values).
+- If a concept needs a new term, define it in `specs/glossary.md` first, then use it in code and docs.
 
 ## Task Management
 
