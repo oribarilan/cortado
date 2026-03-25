@@ -1,10 +1,10 @@
 # Status Model
 
-Cortado's status system has two layers: **status types** (semantic, global) and **status values** (display text, per-feed).
+Cortado's status system has two layers: **status kinds** (semantic, global) and **status values** (display text, per-feed).
 
-## Status Types (`StatusKind`)
+## Status Kinds (`StatusKind`)
 
-A status type answers one question: **who has the ball?**
+A status kind answers one question: **who has the ball?**
 
 | Type | Meaning | Color |
 |------|---------|-------|
@@ -14,13 +14,13 @@ A status type answers one question: **who has the ball?**
 | `Running` | Machine working | Pulsing blue |
 | `Idle` | Nothing happening | Gray |
 
-Status types are global. Their rendering (colors, animation) is defined once in the theme and varies only by light/dark mode. No feed controls how a status type looks.
+Status kinds are global. Their rendering (colors, animation) is defined once in the theme and varies only by light/dark mode. No feed controls how a status kind looks.
 
 Activity-level dot precedence: `AttentionNegative > Waiting > Running > AttentionPositive > Idle` (highest wins across all status fields, no cross-field reasoning).
 
 ## Status Values
 
-A status value is the human-readable text shown alongside a status type. Values are per-feed — each feed defines its own vocabulary in code. For example, `github-pr` maps `"approved"` → `AttentionPositive` and `"failing"` → `AttentionNegative`.
+A status value is the human-readable text shown alongside a status kind. Values are per-feed — each feed defines its own vocabulary in code. For example, `github-pr` maps `"approved"` → `AttentionPositive` and `"failing"` → `AttentionNegative`.
 
 The UI renders the value as text (in chips, field rows) and uses the type to determine color and animation.
 
@@ -35,8 +35,8 @@ See `.todo/backlog/semantic-status-types.md` for the full design discussion, sce
 ## Implementation
 
 - `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`
-- `src-tauri/src/feed/github_pr.rs` — GitHub PR value→type mappings
-- `src-tauri/src/feed/ado_pr.rs` — ADO PR value→type mappings
+- `src-tauri/src/feed/github_pr.rs` — GitHub PR value→kind mappings
+- `src-tauri/src/feed/ado_pr.rs` — ADO PR value→kind mappings
 - `src-tauri/src/feed/shell.rs` — Shell feed keyword inference
 - `src/App.tsx` — `kindPriority`, `deriveActivityKind`, rendering
-- `src/styles.css` — Status type colors, pulse animation, theme variables
+- `src/styles.css` — Status kind colors, pulse animation, theme variables

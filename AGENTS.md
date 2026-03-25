@@ -15,8 +15,16 @@ Read the Terminology section in `specs/main.md`. The key terms are:
 | **Feed** | A configured data source (e.g., "GitHub PRs for repo X") | A single item — that's an Activity |
 | **Activity** | One tracked item within a feed (e.g., PR #42) | The feed itself |
 | **Field** | A typed data point on an activity (e.g., `review: awaiting`) | A config option |
+| **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` | The status value (display text like "approved") |
+| **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") | The status kind (semantic classification) |
 
 The old codebase used "Bean" and "Watch" — these terms are deprecated. Use Feed and Activity.
+
+### Terminology discipline
+
+- Use established terms consistently. Don't introduce synonyms (e.g., don't call a status kind a "severity" or "status type").
+- If a concept needs a new term, define it in the relevant spec first, then use it in code and docs.
+- Canonical definitions live in specs: `specs/main.md` (feeds, activities, fields), `specs/status.md` (status kinds, status values).
 
 ## Task Management
 

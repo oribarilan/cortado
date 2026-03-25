@@ -135,7 +135,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | Type | Description | Example |
 |------|-------------|---------|
 | `text` | Plain string | `labels: "wip, draft"` |
-| `status` | String with semantic status kind (attention-negative, attention-positive, waiting, running, idle) | `review: awaiting (waiting)` |
+| `status` | String + status kind (see `specs/status.md`) | `review: awaiting (waiting)` |
 | `number` | Numeric value | `response_time: 142` |
 | `url` | Clickable link | `link: https://github.com/...` |
 
@@ -264,12 +264,7 @@ Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tra
 - Retained activities are listed after active activities within each feed.
 - Activity rows support inline disclosure.
 - Expanding an activity row reveals all **Field** entries (`label: value`) inline.
-- Dot color/severity is derived from status fields using this precedence:
-  1. `attention-negative` → red
-  2. else `waiting` → yellow
-  3. else `running` → blue (pulsing)
-  4. else `attention-positive` → green
-  5. else idle/no status → gray
+- Dot color is derived from status kinds using the precedence defined in `specs/status.md`.
 - Feed-level config and poll errors are shown inline within the feed section.
 
 ## Non-goals (Phase 1)
