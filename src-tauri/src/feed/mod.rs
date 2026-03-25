@@ -38,15 +38,24 @@ pub enum FieldType {
     Url,
 }
 
-/// Visual severity for status fields.
+/// Semantic status indicating who needs to act next.
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "lowercase")]
 pub enum StatusKind {
-    Success,
-    Warning,
-    Error,
-    Pending,
-    Neutral,
+    /// My turn — something's wrong (red).
+    #[serde(rename = "attention-negative")]
+    AttentionNegative,
+    /// My turn — go do the thing (green).
+    #[serde(rename = "attention-positive")]
+    AttentionPositive,
+    /// Someone else's turn (yellow).
+    #[serde(rename = "waiting")]
+    Waiting,
+    /// Machine working (pulsing blue).
+    #[serde(rename = "running")]
+    Running,
+    /// Nothing happening (gray).
+    #[serde(rename = "idle")]
+    Idle,
 }
 
 /// Value payload for a field on an activity.

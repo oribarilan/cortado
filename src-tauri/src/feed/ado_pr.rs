@@ -299,7 +299,7 @@ impl Feed for AdoPrFeed {
             .map(|(pr, policy_result)| {
                 let checks = match policy_result {
                     Ok(policies) => map_checks_rollup(&policies),
-                    Err(_) => status_field("unknown", StatusKind::Neutral),
+                    Err(_) => status_field("unknown", StatusKind::Idle),
                 };
                 map_pr_to_activity(
                     pr,
@@ -426,37 +426,37 @@ fn map_review(reviewers: &[AdoReviewer]) -> FieldValue {
     }
 
     if has_rejected {
-        return status_field("rejected", StatusKind::Warning);
+        return status_field("rejected", StatusKind::AttentionNegative);
     }
 
     if has_waiting_author {
-        return status_field("changes requested", StatusKind::Warning);
+        return status_field("changes requested", StatusKind::AttentionNegative);
     }
 
     if required_count > 0 && required_approved == required_count {
-        return status_field("approved", StatusKind::Success);
+        return status_field("approved", StatusKind::AttentionPositive);
     }
 
-    status_field("awaiting", StatusKind::Pending)
+    status_field("awaiting", StatusKind::Waiting)
 }
 
 fn map_merge_status(raw: Option<&str>) -> FieldValue {
     match raw.unwrap_or("notSet") {
-        "succeeded" => status_field("yes", StatusKind::Success),
-        "conflicts" => status_field("no", StatusKind::Error),
-        "rejectedByPolicy" => status_field("blocked", StatusKind::Warning),
-        "queued" => status_field("checking", StatusKind::Pending),
-        "failure" => status_field("failed", StatusKind::Error),
-        "notSet" => status_field("notSet (unknown)", StatusKind::Neutral),
-        other => status_field(&format!("{other} (unknown)"), StatusKind::Neutral),
+        "succeeded" => status_field("yes", StatusKind::Idle),
+        "conflicts" => status_field("no", StatusKind::AttentionNegative),
+        "rejectedByPolicy" => status_field("blocked", StatusKind::Waiting),
+        "queued" => status_field("checking", StatusKind::Running),
+        "failure" => status_field("failed", StatusKind::AttentionNegative),
+        "notSet" => status_field("notSet (unknown)", StatusKind::Idle),
+        other => status_field(&format!("{other} (unknown)"), StatusKind::Idle),
     }
 }
 
 fn map_draft(is_draft: bool) -> FieldValue {
     if is_draft {
-        status_field("yes", StatusKind::Pending)
+        status_field("yes", StatusKind::AttentionPositive)
     } else {
-        status_field("no", StatusKind::Neutral)
+        status_field("no", StatusKind::Idle)
     }
 }
 
@@ -573,10 +573,10 @@ fn map_checks_rollup(policies: &[AdoPolicyEvaluation]) -> FieldValue {
 
     for policy in policies.iter().filter(|p| is_ci_check(p)) {
         match policy.status.as_deref().unwrap_or("") {
-            "rejected" | "broken" => return status_field("failed", StatusKind::Error),
+            "rejected" | "broken" => return status_field("failed", StatusKind::AttentionNegative),
             "queued" | "running" => {
                 if is_expired_build(policy) {
-                    return status_field("failed", StatusKind::Error);
+                    return status_field("failed", StatusKind::AttentionNegative);
                 }
                 has_running = true;
             }
@@ -591,19 +591,19 @@ fn map_checks_rollup(policies: &[AdoPolicyEvaluation]) -> FieldValue {
     }
 
     if has_running {
-        return status_field("running", StatusKind::Pending);
+        return status_field("running", StatusKind::Running);
     }
 
     if has_approved {
-        return status_field("succeeded", StatusKind::Success);
+        return status_field("succeeded", StatusKind::Idle);
     }
 
     if let Some(state) = first_unknown_state {
-        return status_field(&format!("{state} (unknown)"), StatusKind::Neutral);
+        return status_field(&format!("{state} (unknown)"), StatusKind::Idle);
     }
 
     // All notApplicable, empty statuses, or no CI policies at all.
-    status_field("succeeded", StatusKind::Success)
+    status_field("succeeded", StatusKind::Idle)
 }
 
 fn looks_like_missing_extension(stdout: &str, stderr: &str) -> bool {
@@ -983,7 +983,7 @@ mod tests {
             panic!("status expected");
         };
         assert_eq!(value, "mystery (unknown)");
-        assert!(matches!(severity, StatusKind::Neutral));
+        assert!(matches!(severity, StatusKind::Idle));
 
         let reviewers = vec![super::AdoReviewer {
             vote: Some(-10),
@@ -994,7 +994,7 @@ mod tests {
             panic!("status expected");
         };
         assert_eq!(value, "rejected");
-        assert!(matches!(severity, StatusKind::Warning));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     fn base_config() -> FeedConfig {
@@ -1119,7 +1119,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
@@ -1129,7 +1129,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
@@ -1139,7 +1139,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Pending));
+        assert!(matches!(severity, StatusKind::Running));
     }
 
     #[test]
@@ -1149,7 +1149,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Pending));
+        assert!(matches!(severity, StatusKind::Running));
     }
 
     #[test]
@@ -1159,7 +1159,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1168,7 +1168,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1178,17 +1178,17 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
-    fn checks_rollup_unknown_state_only_returns_neutral() {
+    fn checks_rollup_unknown_state_only_returns_idle() {
         let policies = vec![policy("mystery")];
         let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "mystery (unknown)");
-        assert!(matches!(severity, StatusKind::Neutral));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1198,7 +1198,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1208,17 +1208,17 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
-    fn checks_rollup_not_applicable_plus_unknown_returns_neutral() {
+    fn checks_rollup_not_applicable_plus_unknown_returns_idle() {
         let policies = vec![policy("notApplicable"), policy("newstatus")];
         let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "newstatus (unknown)");
-        assert!(matches!(severity, StatusKind::Neutral));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1236,7 +1236,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     // --- policy type filtering tests ---
@@ -1250,7 +1250,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1261,7 +1261,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1272,7 +1272,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
@@ -1283,7 +1283,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1294,7 +1294,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Success));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 
     #[test]
@@ -1313,7 +1313,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     // --- expired build tests ---
@@ -1331,7 +1331,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
@@ -1341,7 +1341,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[test]
@@ -1352,7 +1352,7 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Pending));
+        assert!(matches!(severity, StatusKind::Running));
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1402,6 +1402,6 @@ mod tests {
             panic!("expected status");
         };
         assert_eq!(value, "unknown");
-        assert!(matches!(severity, StatusKind::Neutral));
+        assert!(matches!(severity, StatusKind::Idle));
     }
 }

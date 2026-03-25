@@ -130,7 +130,7 @@ mod tests {
                 label: "Review".to_string(),
                 value: FieldValue::Status {
                     value: "approved".to_string(),
-                    severity: StatusKind::Success,
+                    severity: StatusKind::AttentionPositive,
                 },
             },
             Field {

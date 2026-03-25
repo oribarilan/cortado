@@ -265,11 +265,11 @@ fn status_severity_from_output(raw: &str) -> StatusKind {
     let normalized = raw.trim().to_ascii_lowercase();
 
     match normalized.as_str() {
-        "ok" | "pass" | "passing" | "success" | "healthy" => StatusKind::Success,
-        "warn" | "warning" => StatusKind::Warning,
-        "err" | "error" | "fail" | "failing" | "critical" => StatusKind::Error,
-        "pending" | "running" | "in_progress" => StatusKind::Pending,
-        _ => StatusKind::Neutral,
+        "ok" | "pass" | "passing" | "success" | "healthy" => StatusKind::AttentionPositive,
+        "warn" | "warning" => StatusKind::AttentionNegative,
+        "err" | "error" | "fail" | "failing" | "critical" => StatusKind::AttentionNegative,
+        "pending" | "running" | "in_progress" => StatusKind::Running,
+        _ => StatusKind::Idle,
     }
 }
 
@@ -373,7 +373,7 @@ mod tests {
         };
 
         assert_eq!(value, "FAILING");
-        assert!(matches!(severity, StatusKind::Error));
+        assert!(matches!(severity, StatusKind::AttentionNegative));
     }
 
     #[tokio::test]
@@ -549,23 +549,23 @@ mod tests {
     fn status_mapping_edge_cases() {
         assert!(matches!(
             status_severity_from_output(" ok "),
-            StatusKind::Success
+            StatusKind::AttentionPositive
         ));
         assert!(matches!(
             status_severity_from_output("WARNING"),
-            StatusKind::Warning
+            StatusKind::AttentionNegative
         ));
         assert!(matches!(
             status_severity_from_output("critical"),
-            StatusKind::Error
+            StatusKind::AttentionNegative
         ));
         assert!(matches!(
             status_severity_from_output("in_progress"),
-            StatusKind::Pending
+            StatusKind::Running
         ));
         assert!(matches!(
             status_severity_from_output("unknown"),
-            StatusKind::Neutral
+            StatusKind::Idle
         ));
     }
 

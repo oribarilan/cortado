@@ -8,11 +8,11 @@
   --panel-hover: oklch(64% 0.01 250 / 0.08);
   --panel-expanded-bg: oklch(64% 0.01 250 / 0.04);
 
-  --s-error: oklch(62% 0.24 27);
-  --s-warning: oklch(76% 0.18 75);
-  --s-pending: oklch(58% 0.2 258);
-  --s-success: oklch(73% 0.17 150);
-  --s-neutral: oklch(58% 0.01 250);
+  --s-attention-negative: oklch(62% 0.24 27);
+  --s-waiting: oklch(76% 0.18 75);
+  --s-running: oklch(58% 0.2 258);
+  --s-attention-positive: oklch(73% 0.17 150);
+  --s-idle: oklch(58% 0.01 250);
 
   --pad-x: 12px;
   --feed-gap: 8px;
@@ -62,11 +62,11 @@
     --panel-hover: oklch(100% 0 0 / 0.08);
     --panel-expanded-bg: oklch(100% 0 0 / 0.04);
 
-    --s-error: oklch(70% 0.2 25);
-    --s-warning: oklch(80% 0.16 78);
-    --s-pending: oklch(72% 0.16 259);
-    --s-success: oklch(80% 0.14 150);
-    --s-neutral: oklch(67% 0.01 250);
+    --s-attention-negative: oklch(70% 0.2 25);
+    --s-waiting: oklch(80% 0.16 78);
+    --s-running: oklch(72% 0.16 259);
+    --s-attention-positive: oklch(80% 0.14 150);
+    --s-idle: oklch(67% 0.01 250);
   }
 }
 
@@ -168,15 +168,15 @@ body {
 }
 
 .feed-error.config {
-  color: var(--s-error);
-  background: color-mix(in oklch, var(--s-error), transparent 92%);
-  border: 1px solid color-mix(in oklch, var(--s-error), transparent 82%);
+  color: var(--s-attention-negative);
+  background: color-mix(in oklch, var(--s-attention-negative), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--s-attention-negative), transparent 82%);
 }
 
 .feed-error.poll {
-  color: var(--s-warning);
-  background: color-mix(in oklch, var(--s-warning), transparent 92%);
-  border: 1px solid color-mix(in oklch, var(--s-warning), transparent 82%);
+  color: var(--s-waiting);
+  background: color-mix(in oklch, var(--s-waiting), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--s-waiting), transparent 82%);
 }
 
 .feed-empty,
@@ -209,23 +209,23 @@ body {
 }
 
 .activity-wrap {
-  --activity-severity: var(--s-neutral);
+  --activity-severity: var(--s-idle);
 }
 
-.activity-wrap.severity-error {
-  --activity-severity: var(--s-error);
+.activity-wrap.severity-attention-negative {
+  --activity-severity: var(--s-attention-negative);
 }
 
-.activity-wrap.severity-warning {
-  --activity-severity: var(--s-warning);
+.activity-wrap.severity-waiting {
+  --activity-severity: var(--s-waiting);
 }
 
-.activity-wrap.severity-pending {
-  --activity-severity: var(--s-pending);
+.activity-wrap.severity-running {
+  --activity-severity: var(--s-running);
 }
 
-.activity-wrap.severity-success {
-  --activity-severity: var(--s-success);
+.activity-wrap.severity-attention-positive {
+  --activity-severity: var(--s-attention-positive);
 }
 
 .activity-row {
@@ -253,7 +253,7 @@ body {
 .activity-row:focus-visible,
 .footer-row:focus-visible,
 .open-activity:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--s-pending), white 20%);
+  outline: 2px solid color-mix(in oklch, var(--s-running), white 20%);
   outline-offset: 1px;
 }
 
@@ -263,6 +263,10 @@ body {
   border-radius: 999px;
   background: var(--activity-severity);
   flex-shrink: 0;
+}
+
+.activity-wrap.severity-running .status-dot:not(.retained) {
+  animation: pulse 1.6s ease-in-out infinite;
 }
 
 .status-dot.retained {
@@ -292,28 +296,28 @@ body {
   border: 1px solid color-mix(in oklch, var(--panel-text-secondary), transparent 83%);
 }
 
-.status-chip.severity-error {
-  color: var(--s-error);
-  background: color-mix(in oklch, var(--s-error), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-error), transparent 80%);
+.status-chip.severity-attention-negative {
+  color: var(--s-attention-negative);
+  background: color-mix(in oklch, var(--s-attention-negative), transparent 91%);
+  border-color: color-mix(in oklch, var(--s-attention-negative), transparent 80%);
 }
 
-.status-chip.severity-warning {
-  color: var(--s-warning);
-  background: color-mix(in oklch, var(--s-warning), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-warning), transparent 80%);
+.status-chip.severity-waiting {
+  color: var(--s-waiting);
+  background: color-mix(in oklch, var(--s-waiting), transparent 91%);
+  border-color: color-mix(in oklch, var(--s-waiting), transparent 80%);
 }
 
-.status-chip.severity-pending {
-  color: var(--s-pending);
-  background: color-mix(in oklch, var(--s-pending), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-pending), transparent 80%);
+.status-chip.severity-running {
+  color: var(--s-running);
+  background: color-mix(in oklch, var(--s-running), transparent 91%);
+  border-color: color-mix(in oklch, var(--s-running), transparent 80%);
 }
 
-.status-chip.severity-success {
-  color: var(--s-success);
-  background: color-mix(in oklch, var(--s-success), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-success), transparent 80%);
+.status-chip.severity-attention-positive {
+  color: var(--s-attention-positive);
+  background: color-mix(in oklch, var(--s-attention-positive), transparent 91%);
+  border-color: color-mix(in oklch, var(--s-attention-positive), transparent 80%);
 }
 
 .chevron {
@@ -364,7 +368,7 @@ body {
 .open-activity {
   margin: 0 0 3px;
   font-size: 11px;
-  color: var(--s-pending);
+  color: var(--s-running);
   font-weight: 500;
   cursor: pointer;
   background: transparent;
@@ -397,29 +401,29 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.field-value.status.severity-success {
-  color: var(--s-success);
+.field-value.status.severity-attention-positive {
+  color: var(--s-attention-positive);
 }
 
-.field-value.status.severity-warning {
-  color: var(--s-warning);
+.field-value.status.severity-waiting {
+  color: var(--s-waiting);
 }
 
-.field-value.status.severity-error {
-  color: var(--s-error);
+.field-value.status.severity-attention-negative {
+  color: var(--s-attention-negative);
 }
 
-.field-value.status.severity-pending {
-  color: var(--s-pending);
+.field-value.status.severity-running {
+  color: var(--s-running);
 }
 
-.field-value.status.severity-neutral {
-  color: var(--s-neutral);
+.field-value.status.severity-idle {
+  color: var(--s-idle);
 }
 
 .panel-error {
   margin: 6px 10px 0;
-  color: var(--s-error);
+  color: var(--s-attention-negative);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -500,12 +504,22 @@ body {
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .activity-row,
   .detail-region,
   .chevron,
   .footer-row,
-  .skeleton {
+  .skeleton,
+  .status-dot {
     transition: none !important;
     animation: none !important;
   }

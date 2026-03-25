@@ -8,63 +8,85 @@ The current `StatusKind` enum (`Success`, `Error`, `Pending`, `Warning`, `Neutra
 
 2. **Inconsistent vocabulary across feeds.** Same semantic meaning gets different display text (`"passing"` vs `"succeeded"`, `"pending"` vs `"running"`, `"failing"` vs `"failed"`). The current model doesn't normalize this.
 
-A full "semantic type system" was considered but rejected as premature abstraction for 3 feed types. Instead, the simpler approach: **replace `StatusKind` with a new enum that has ~6-7 variants capturing who-needs-to-act**, plus normalize status strings across feeds.
+A full "semantic type system" was considered but rejected as premature abstraction for 3 feed types. Instead, the simpler approach: **replace `StatusKind` with a new 5-variant enum that answers "who has the ball?"**, plus normalize status strings across feeds.
 
 **Value delivered**: At-a-glance clarity on whether something needs my attention, someone else's attention, or is just a machine doing its thing.
 
-## Design Discussion Summary
+## Design Decisions
 
-### The Model: "Who Needs to Act?"
+### The Model: "Who Has the Ball?"
 
-Four categories were identified. The key insight is that each status answers: **who has the ball?**
+Each status variant answers one question: **who needs to act next?**
 
-| # | Category | Who acts? | Temporal feel |
-|---|----------|-----------|---------------|
-| 1 | **Blocked / waiting on someone else** | Another human or external system | Indefinite — may need nudging |
-| 2 | **Waiting on me** | Me | Depends on sub-flavor |
-| 3 | **Process running** | A machine | Finite — just wait |
-| 4 | **Idle / nothing happening** | Nobody | Stable |
+```rust
+enum StatusKind {
+    AttentionNegative,  // My turn — something's wrong
+    AttentionPositive,  // My turn — go do the thing
+    Waiting,            // Someone else's turn
+    Running,            // Machine working
+    Idle,               // Nothing happening
+}
+```
 
-### Category 2 needs sub-flavors
+### Color & Visual Mapping
 
-"Waiting on me" is the only category that needs sub-flavors because the *nature* of what's waiting matters:
+5 variants, 5 distinct visuals:
 
-- **Positive**: Something succeeded and I can take the next step (e.g., review approved → go merge)
-- **Negative**: Something failed and I need to fix it (e.g., CI broken, merge conflicts)
-- **Neutral**: Just needs doing, no strong signal (e.g., PR is draft, ticket assigned to me)
+| Variant | Color | Visual |
+|---|---|---|
+| `AttentionNegative` | red | solid dot |
+| `Waiting` | yellow | solid dot |
+| `Running` | blue | **pulsing** dot |
+| `AttentionPositive` | green | solid dot |
+| `Idle` | gray | solid dot |
 
-Categories 1, 3, and 4 don't need sub-flavors. When I'm blocked on someone else, the valence doesn't change what I can do (nothing). Same for process running and idle.
+Key change from current model: `Waiting` (was `Pending`) moves from blue to yellow. Blue is now exclusively for machine-in-progress, with a pulse animation to reinforce "actively working."
 
-### Scenario Mapping (Pressure Test)
+### Aggregation Precedence
 
-These categories were validated against a wide range of scenarios:
+Activity-level dot uses highest-priority variant across all status fields:
 
-| Scenario | Category |
-|----------|----------|
-| PR review: awaiting reviewer | 1 — blocked |
-| PR review: approved → ready to merge | 2 — me (positive) |
-| PR review: changes requested | 2 — me (negative) |
-| PR checks: failing | 2 — me (negative) |
-| PR checks: running | 3 — process |
-| PR checks: passing (review still pending) | 1 — blocked |
-| PR checks: passing (everything green) | 2 — me (positive) |
-| PR: merge conflict | 2 — me (negative) |
-| PR: draft | 2 — me (neutral) |
-| Deployment: rolling out | 3 — process |
-| Deployment: succeeded | 4 — idle |
-| Deployment: failed | 2 — me (negative) |
-| Jira ticket: assigned to me, "To Do" | 2 — me (neutral) |
-| Jira ticket: blocked by another team | 1 — blocked |
-| Jira ticket: closed/done | 4 — idle |
-| Build queued, waiting for runner | 3 — process |
-| System outage blocking my PR | 1 — blocked |
-| PR merged, all done | 4 — idle |
+```
+AttentionNegative > Waiting > Running > AttentionPositive > Idle
+```
 
-### Open Questions
+### Why Not a "Neutral" Sub-flavor?
 
-- **Field-level vs activity-level**: A single field like `checks: passing` could be idle (nothing to do) or contribute to "me-positive" (all green, go merge). The semantic category depends on context. Current thinking: feeds assign semantics per-field, the UI aggregates across fields for the activity-level dot. But this needs more thought.
-- **Idle sub-types**: "Idle — everything is fine" vs "idle — completed/archived" — probably not worth distinguishing for a menubar app, but flagged.
-- **Shell feed compatibility**: Users already pick values + severities for shell feeds. The new enum replaces `StatusKind` 1:1 in config, so shell feeds just get more options. No third concept layer needed.
+An `AttentionNeutral` variant was considered for cases like "draft PR" or "agent asked a question" — situations where the user needs to act but nothing is good or bad. It was dropped because:
+
+- It would need a 6th color or share blue with `Running`, which is confusing (one means "sit tight," the other means "your turn").
+- These scenarios map cleanly to `AttentionPositive` — "your move, nothing's wrong" is effectively green/"go."
+- The label text disambiguates the nature of the action needed.
+
+### Scenario Mapping
+
+Validated against PR and coding agent workflows:
+
+| Scenario | Variant | Dot |
+|---|---|---|
+| **PR: GitHub / ADO** | | |
+| Draft, working on it | `AttentionPositive` | 🟢 |
+| Pushed, CI running | `Running` | 🔵💫 |
+| CI failed | `AttentionNegative` | 🔴 |
+| CI passing, awaiting reviewer | `Waiting` | 🟡 |
+| Reviewer requested changes | `AttentionNegative` | 🔴 |
+| CI passing, approved, ready to merge | `AttentionPositive` | 🟢 |
+| Merge conflict | `AttentionNegative` | 🔴 |
+| Approved but blocked by policy | `Waiting` | 🟡 |
+| CI running, review approved | `Running` | 🔵💫 |
+| Merged / closed | `Idle` | ⚪ |
+| **Coding Agent** | | |
+| Agent thinking / generating | `Running` | 🔵💫 |
+| Agent asked me a question | `AttentionPositive` | 🟢 |
+| Agent hit error, needs intervention | `AttentionNegative` | 🔴 |
+| Agent finished, ready for review | `AttentionPositive` | 🟢 |
+| Agent idle, no task | `Idle` | ⚪ |
+| Agent waiting on external API | `Waiting` | 🟡 |
+
+### Resolved Questions
+
+- **Field-level vs activity-level**: Feeds assign semantics per-field as-is. Activity-level dot uses simple highest-priority-wins aggregation (same as current approach). No cross-field reasoning.
+- **Shell feed**: Shell feed changes are **out of scope** for this task. The shell feed will keep its current `StatusKind` mapping until a dedicated shell feed effort is done. This task updates `github-pr` and `ado-pr` only.
 
 ### Existing Bugs Found During Analysis
 
@@ -83,19 +105,20 @@ These should be fixed as part of (or before) this work:
 - `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status`
 - `src-tauri/src/feed/ado_pr.rs` — ADO PR status field mappings
 - `src-tauri/src/feed/github_pr.rs` — GitHub PR status field mappings
-- `src-tauri/src/feed/shell.rs` — Shell feed status parsing
-- `src-tauri/src/tray.rs` — tray rendering of status fields, dot color logic
-- `specs/main.md` — field type definitions
+- `src-tauri/src/feed/shell.rs` — Shell feed status parsing, `status_severity_from_output`
+- `src/App.tsx` — `severityPriority`, `deriveActivitySeverity`, dot rendering
+- `src/styles.css` — severity color CSS variables, dot styles
+- `specs/main.md` — field type definitions, severity precedence
 
 ## Dependencies
 - None
 
 ## Acceptance Criteria
-- [ ] New `StatusKind` enum with ~6-7 variants replacing the current 5
-- [ ] Feed implementations (`ado_pr`, `github_pr`, `shell`) updated to use new variants
-- [ ] UI rendering (`tray.rs`) updated with distinct visual treatment per variant
+- [ ] New `StatusKind` enum with 5 variants (`AttentionNegative`, `AttentionPositive`, `Waiting`, `Running`, `Idle`) replacing the current 5
+- [ ] Feed implementations (`ado_pr`, `github_pr`) updated to use new variants with correct semantic mappings
+- [ ] UI rendering (`App.tsx`, `styles.css`) updated: new colors, pulsing animation for `Running`, updated precedence
 - [ ] Spec (`specs/main.md`) updated with the new status model
-- [ ] Shell feed config supports the new variants (backward compatible)
+- [ ] Shell feed continues to work (maps old keywords to new enum, no behavioral changes)
 - [ ] Existing behavior preserved (no regressions for current feeds)
 - [ ] Bugs fixed: draft field consistency, mergeable "unknown" severity
 - [ ] `just check` passes
@@ -104,6 +127,5 @@ These should be fixed as part of (or before) this work:
 Medium
 
 ## Notes
-- Terminology for the enum variants is TBD — the semantic categories are agreed, naming is next.
-- The implementation is straightforward: expand the enum, update the match arms in each feed, update the color/symbol mapping in tray.rs.
-- Consider whether the activity-level dot aggregation logic (`infer_status` in tray.rs) needs a new precedence order for the expanded variants.
+- The implementation is straightforward: rename the enum variants, update match arms in each feed, update color/symbol mapping and precedence in the frontend.
+- The `Running` pulsing animation is a CSS addition (keyframe on the dot when `severity-running`).

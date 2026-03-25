@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-type StatusKind = "success" | "warning" | "error" | "pending" | "neutral";
+type StatusKind = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
 type FieldValue =
   | {
@@ -51,21 +51,21 @@ const FEED_TYPE_PRIORITIES: Record<string, string[]> = {
 
 function severityPriority(kind: StatusKind): number {
   switch (kind) {
-    case "error":
+    case "attention-negative":
       return 5;
-    case "warning":
+    case "waiting":
       return 4;
-    case "pending":
+    case "running":
       return 3;
-    case "success":
+    case "attention-positive":
       return 2;
-    case "neutral":
+    case "idle":
       return 1;
   }
 }
 
 function deriveActivitySeverity(activity: Activity): StatusKind {
-  let best: StatusKind = "neutral";
+  let best: StatusKind = "idle";
 
   for (const field of activity.fields) {
     if (field.value.type !== "status") {

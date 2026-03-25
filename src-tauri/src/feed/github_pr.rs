@@ -301,27 +301,27 @@ fn map_pr_to_activity(
 
 fn map_review_decision(review_decision: Option<&str>) -> FieldValue {
     match review_decision.unwrap_or_default() {
-        "APPROVED" => status_field("approved", StatusKind::Success),
-        "CHANGES_REQUESTED" => status_field("changes requested", StatusKind::Warning),
-        "REVIEW_REQUIRED" => status_field("awaiting", StatusKind::Pending),
-        _ => status_field("none", StatusKind::Neutral),
+        "APPROVED" => status_field("approved", StatusKind::AttentionPositive),
+        "CHANGES_REQUESTED" => status_field("changes requested", StatusKind::AttentionNegative),
+        "REVIEW_REQUIRED" => status_field("awaiting", StatusKind::Waiting),
+        _ => status_field("none", StatusKind::Idle),
     }
 }
 
 fn map_mergeable_state(mergeable: Option<&str>) -> FieldValue {
     match mergeable.unwrap_or_default() {
-        "MERGEABLE" => status_field("yes", StatusKind::Success),
-        "CONFLICTING" => status_field("no", StatusKind::Error),
-        "UNKNOWN" => status_field("unknown", StatusKind::Pending),
-        _ => status_field("unknown", StatusKind::Neutral),
+        "MERGEABLE" => status_field("yes", StatusKind::Idle),
+        "CONFLICTING" => status_field("no", StatusKind::AttentionNegative),
+        "UNKNOWN" => status_field("unknown", StatusKind::Running),
+        _ => status_field("unknown", StatusKind::Idle),
     }
 }
 
 fn map_draft(is_draft: bool) -> FieldValue {
     if is_draft {
-        status_field("yes", StatusKind::Pending)
+        status_field("yes", StatusKind::AttentionPositive)
     } else {
-        status_field("no", StatusKind::Neutral)
+        status_field("no", StatusKind::Idle)
     }
 }
 
@@ -341,11 +341,11 @@ fn map_labels(labels: Option<&[GhLabel]>) -> FieldValue {
 
 fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue {
     let Some(entries) = status_check_rollup else {
-        return status_field("none", StatusKind::Neutral);
+        return status_field("none", StatusKind::Idle);
     };
 
     if entries.is_empty() {
-        return status_field("none", StatusKind::Neutral);
+        return status_field("none", StatusKind::Idle);
     }
 
     let mut has_pending = false;
@@ -379,7 +379,7 @@ fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue
                     conclusion.as_str(),
                     "FAILURE" | "ERROR" | "CANCELLED" | "TIMED_OUT" | "ACTION_REQUIRED"
                 ) {
-                    return status_field("failing", StatusKind::Error);
+                    return status_field("failing", StatusKind::AttentionNegative);
                 }
 
                 if matches!(conclusion.as_str(), "SUCCESS" | "SKIPPED" | "NEUTRAL") {
@@ -396,7 +396,7 @@ fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue
                 let state = state.to_ascii_uppercase();
 
                 if matches!(state.as_str(), "FAILURE" | "ERROR") {
-                    return status_field("failing", StatusKind::Error);
+                    return status_field("failing", StatusKind::AttentionNegative);
                 }
 
                 if matches!(state.as_str(), "PENDING" | "EXPECTED") {
@@ -415,14 +415,14 @@ fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue
     }
 
     if has_pending {
-        return status_field("pending", StatusKind::Pending);
+        return status_field("pending", StatusKind::Running);
     }
 
     if has_success {
-        return status_field("passing", StatusKind::Success);
+        return status_field("passing", StatusKind::Idle);
     }
 
-    status_field("none", StatusKind::Neutral)
+    status_field("none", StatusKind::Idle)
 }
 
 fn status_field(value: &str, severity: StatusKind) -> FieldValue {
@@ -749,19 +749,19 @@ mod tests {
         assert_status(
             map_review_decision(Some("APPROVED")),
             "approved",
-            StatusKind::Success,
+            StatusKind::AttentionPositive,
         );
         assert_status(
             map_review_decision(Some("CHANGES_REQUESTED")),
             "changes requested",
-            StatusKind::Warning,
+            StatusKind::AttentionNegative,
         );
         assert_status(
             map_review_decision(Some("REVIEW_REQUIRED")),
             "awaiting",
-            StatusKind::Pending,
+            StatusKind::Waiting,
         );
-        assert_status(map_review_decision(None), "none", StatusKind::Neutral);
+        assert_status(map_review_decision(None), "none", StatusKind::Idle);
     }
 
     #[test]
@@ -769,19 +769,19 @@ mod tests {
         assert_status(
             map_mergeable_state(Some("MERGEABLE")),
             "yes",
-            StatusKind::Success,
+            StatusKind::Idle,
         );
         assert_status(
             map_mergeable_state(Some("CONFLICTING")),
             "no",
-            StatusKind::Error,
+            StatusKind::AttentionNegative,
         );
         assert_status(
             map_mergeable_state(Some("UNKNOWN")),
             "unknown",
-            StatusKind::Pending,
+            StatusKind::Running,
         );
-        assert_status(map_mergeable_state(None), "unknown", StatusKind::Neutral);
+        assert_status(map_mergeable_state(None), "unknown", StatusKind::Idle);
     }
 
     #[test]
@@ -814,7 +814,7 @@ mod tests {
         assert_status(
             map_checks_status(Some(&parsed)),
             "failing",
-            StatusKind::Error,
+            StatusKind::AttentionNegative,
         );
 
         let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
@@ -827,7 +827,7 @@ mod tests {
         assert_status(
             map_checks_status(Some(&parsed)),
             "pending",
-            StatusKind::Pending,
+            StatusKind::Running,
         );
 
         let parsed: Vec<super::GhCheckEntry> = serde_json::from_str(
@@ -841,10 +841,10 @@ mod tests {
         assert_status(
             map_checks_status(Some(&parsed)),
             "passing",
-            StatusKind::Success,
+            StatusKind::Idle,
         );
 
-        assert_status(map_checks_status(None), "none", StatusKind::Neutral);
+        assert_status(map_checks_status(None), "none", StatusKind::Idle);
     }
 
     #[test]
@@ -887,11 +887,11 @@ mod tests {
         assert_eq!(value, expected_value);
         assert!(matches!(
             (severity, expected_severity),
-            (StatusKind::Success, StatusKind::Success)
-                | (StatusKind::Warning, StatusKind::Warning)
-                | (StatusKind::Error, StatusKind::Error)
-                | (StatusKind::Pending, StatusKind::Pending)
-                | (StatusKind::Neutral, StatusKind::Neutral)
+            (StatusKind::AttentionNegative, StatusKind::AttentionNegative)
+                | (StatusKind::AttentionPositive, StatusKind::AttentionPositive)
+                | (StatusKind::Waiting, StatusKind::Waiting)
+                | (StatusKind::Running, StatusKind::Running)
+                | (StatusKind::Idle, StatusKind::Idle)
         ));
     }
 
