@@ -238,6 +238,14 @@ function App() {
       });
 
       unlistenFns.push(unlistenPanelWillShow);
+
+      const unlistenPanelResign = await listen("menubar_panel_did_resign_key", () => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
+
+      unlistenFns.push(unlistenPanelResign);
     };
 
     void bootstrap();
