@@ -102,30 +102,33 @@ These should be fixed as part of (or before) this work:
 - **Full "semantic type system"** with per-feed-type vocabulary declarations — rejected as over-engineering for current needs
 
 ## Related Files
-- `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status`
+- `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`
 - `src-tauri/src/feed/ado_pr.rs` — ADO PR status field mappings
 - `src-tauri/src/feed/github_pr.rs` — GitHub PR status field mappings
-- `src-tauri/src/feed/shell.rs` — Shell feed status parsing, `status_severity_from_output`
-- `src/App.tsx` — `severityPriority`, `deriveActivitySeverity`, dot rendering
-- `src/styles.css` — severity color CSS variables, dot styles
-- `specs/main.md` — field type definitions, severity precedence
+- `src-tauri/src/feed/shell.rs` — Shell feed status parsing, `status_kind_from_output`
+- `src/App.tsx` — `kindPriority`, `deriveActivityKind`, dot rendering
+- `src/styles.css` — status kind color CSS variables, dot styles, pulse animation
+- `specs/status.md` — status model spec (types, values, rationale)
+- `specs/main.md` — field type definitions, ADO mapping contract
 
 ## Dependencies
 - None
 
 ## Acceptance Criteria
-- [ ] New `StatusKind` enum with 5 variants (`AttentionNegative`, `AttentionPositive`, `Waiting`, `Running`, `Idle`) replacing the current 5
-- [ ] Feed implementations (`ado_pr`, `github_pr`) updated to use new variants with correct semantic mappings
-- [ ] UI rendering (`App.tsx`, `styles.css`) updated: new colors, pulsing animation for `Running`, updated precedence
-- [ ] Spec (`specs/main.md`) updated with the new status model
-- [ ] Shell feed continues to work (maps old keywords to new enum, no behavioral changes)
-- [ ] Existing behavior preserved (no regressions for current feeds)
-- [ ] Bugs fixed: draft field consistency, mergeable "unknown" severity
-- [ ] `just check` passes
+- [x] New `StatusKind` enum with 5 variants (`AttentionNegative`, `AttentionPositive`, `Waiting`, `Running`, `Idle`) replacing the current 5
+- [x] Feed implementations (`ado_pr`, `github_pr`) updated to use new variants with correct semantic mappings
+- [x] UI rendering (`App.tsx`, `styles.css`) updated: new colors, pulsing animation for `Running`, updated precedence
+- [x] Spec (`specs/main.md`, `specs/status.md`) updated with the new status model
+- [x] Shell feed continues to work (maps old keywords to new enum, no behavioral changes)
+- [x] Existing behavior preserved (no regressions for current feeds)
+- [ ] Bugs fixed: draft field consistency, mergeable "unknown" kind (pre-existing, tracked separately)
+- [x] `just check` passes
 
 ## Scope Estimate
 Medium
 
 ## Notes
-- The implementation is straightforward: rename the enum variants, update match arms in each feed, update color/symbol mapping and precedence in the frontend.
-- The `Running` pulsing animation is a CSS addition (keyframe on the dot when `severity-running`).
+- The `severity` field was renamed to `kind` throughout (Rust, TypeScript, CSS classes).
+- The `Running` pulsing animation is a CSS keyframe on the dot when `kind-running`.
+- GitHub draft field now participates in `FEED_TYPE_PRIORITIES` (was missing, fixed).
+- Remaining pre-existing bugs (mergeable "unknown" inconsistency) are tracked but not part of this task.

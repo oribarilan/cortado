@@ -210,33 +210,33 @@ interval = "30s"
 
 Review aggregation from reviewer votes (`10`, `5`, `0`, `-5`, `-10`):
 
-- Any `-10` → `rejected` (warning)
-- Else any `-5` → `changes requested` (warning)
-- Else if all required reviewers have vote `>= 5` → `approved` (success)
-- Else → `awaiting` (pending)
+- Any `-10` → `rejected` (attention-negative)
+- Else any `-5` → `changes requested` (attention-negative)
+- Else if all required reviewers have vote `>= 5` → `approved` (attention-positive)
+- Else → `awaiting` (waiting)
 
 Mergeable mapping from `mergeStatus`:
 
-- `succeeded` → `yes` (success)
-- `conflicts` → `no` (error)
-- `rejectedByPolicy` → `blocked` (warning)
-- `queued` → `checking` (pending)
-- `failure` → `failed` (error)
-- `notSet` → `notSet (unknown)` (neutral)
-- Any unrecognized state `X` → `X (unknown)` (neutral)
+- `succeeded` → `yes` (idle)
+- `conflicts` → `no` (attention-negative)
+- `rejectedByPolicy` → `blocked` (waiting)
+- `queued` → `checking` (running)
+- `failure` → `failed` (attention-negative)
+- `notSet` → `notSet (unknown)` (idle)
+- Any unrecognized state `X` → `X (unknown)` (idle)
 
 `ado-pr` polling scope for initial implementation is active PRs only (`--status active`).
 
 Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — Build and Status types; reviewer/approval policies are excluded since the `review` field covers that):
 
-- any `rejected` or `broken` → `failed` (error)
-- any `queued` or `running` with expired build context (`isExpired: true`) → `failed` (error); ADO auto-requeues builds that may never run (e.g., file-pattern scoped), leaving them as `queued` indefinitely
-- else any `queued` or `running` → `running` (pending)
+- any `rejected` or `broken` → `failed` (attention-negative)
+- any `queued` or `running` with expired build context (`isExpired: true`) → `failed` (attention-negative); ADO auto-requeues builds that may never run (e.g., file-pattern scoped), leaving them as `queued` indefinitely
+- else any `queued` or `running` → `running` (running)
 - `notApplicable` is ignored in rollup
-- else → `succeeded` (success)
-- zero policies or all `notApplicable` → `succeeded` (success)
-- unknown/unexpected states are ignored in rollup; if all non-`notApplicable` policies are unknown, the result is `<state> (unknown)` (neutral)
-- per-PR policy-call failures produce `unknown` (neutral) without failing the whole feed poll
+- else → `succeeded` (idle)
+- zero policies or all `notApplicable` → `succeeded` (idle)
+- unknown/unexpected states are ignored in rollup; if all non-`notApplicable` policies are unknown, the result is `<state> (unknown)` (idle)
+- per-PR policy-call failures produce `unknown` (idle) without failing the whole feed poll
 - policy calls use bounded concurrency (max 5 in flight) with the same per-call timeout as the main poll (30s)
 
 ## Tech stack

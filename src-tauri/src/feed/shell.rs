@@ -256,12 +256,12 @@ fn map_stdout_to_field_value(stdout: &str, field_type: &FieldType) -> Result<Fie
         }),
         FieldType::Status => Ok(FieldValue::Status {
             value: trimmed.to_string(),
-            kind: status_severity_from_output(trimmed),
+            kind: status_kind_from_output(trimmed),
         }),
     }
 }
 
-fn status_severity_from_output(raw: &str) -> StatusKind {
+fn status_kind_from_output(raw: &str) -> StatusKind {
     let normalized = raw.trim().to_ascii_lowercase();
 
     match normalized.as_str() {
@@ -287,9 +287,7 @@ mod tests {
         Feed, FieldType, FieldValue, StatusKind,
     };
 
-    use super::{
-        map_stdout_to_field_value, status_severity_from_output, ShellFeed, COMMAND_TIMEOUT,
-    };
+    use super::{map_stdout_to_field_value, status_kind_from_output, ShellFeed, COMMAND_TIMEOUT};
 
     #[derive(Clone)]
     struct StubRunner {
@@ -548,23 +546,23 @@ mod tests {
     #[test]
     fn status_mapping_edge_cases() {
         assert!(matches!(
-            status_severity_from_output(" ok "),
+            status_kind_from_output(" ok "),
             StatusKind::AttentionPositive
         ));
         assert!(matches!(
-            status_severity_from_output("WARNING"),
+            status_kind_from_output("WARNING"),
             StatusKind::AttentionNegative
         ));
         assert!(matches!(
-            status_severity_from_output("critical"),
+            status_kind_from_output("critical"),
             StatusKind::AttentionNegative
         ));
         assert!(matches!(
-            status_severity_from_output("in_progress"),
+            status_kind_from_output("in_progress"),
             StatusKind::Running
         ));
         assert!(matches!(
-            status_severity_from_output("unknown"),
+            status_kind_from_output("unknown"),
             StatusKind::Idle
         ));
     }

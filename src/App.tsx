@@ -45,7 +45,7 @@ type FeedSnapshot = {
 };
 
 const FEED_TYPE_PRIORITIES: Record<string, string[]> = {
-  "github-pr": ["review", "checks", "mergeable"],
+  "github-pr": ["review", "checks", "mergeable", "draft"],
   "ado-pr": ["review", "checks", "mergeable", "draft"],
 };
 

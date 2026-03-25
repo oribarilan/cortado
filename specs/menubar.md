@@ -74,15 +74,15 @@ It uses Tauri native menu primitives only:
 7. Feed-level errors render at feed section level.
 8. Bottom global actions: `Refresh feeds`, `Quit Cortado`.
 
-### 3.3 Severity Mapping Contract
+### 3.3 Status Kind Precedence Contract
 
-Activity severity precedence:
+Activity status kind precedence (see `specs/status.md` for the full model):
 
-1. `error`
-2. `warning`
-3. `pending`
-4. `success`
-5. fallback neutral
+1. `attention-negative`
+2. `waiting`
+3. `running`
+4. `attention-positive`
+5. fallback `idle`
 
 This precedence must remain identical in current and future panel implementations.
 
@@ -184,7 +184,7 @@ Rollback to native is possible through standard git + development workflow using
 ### 6.1 Invariants
 
 1. Same Feed/Activity/Field snapshot contract across menubar revisions.
-2. Same severity precedence across menubar revisions.
+2. Same status kind precedence across menubar revisions.
 3. Same retained ordering rule across menubar revisions.
 4. Same open-action semantics across menubar revisions.
 
@@ -198,14 +198,14 @@ No schema migration, feed reconfiguration, or data conversion should be required
 
 - [ ] Panel opens from menubar and closes on focus loss.
 - [ ] Feed headers are readable/non-disabled in appearance.
-- [ ] Activity rows are color-coded by severity at top level.
+- [ ] Activity rows are color-coded by status kind at top level.
 - [ ] Inline expand reveals full Field list.
 - [ ] Keyboard navigation and expand/collapse work.
 - [ ] Error and empty states are clear and consistent.
 
 ### 7.2 Consistency across revisions
 
-- [ ] Severity precedence matches exactly.
+- [ ] Status kind precedence matches exactly.
 - [ ] Retained behavior matches exactly.
 - [ ] Open target selection rules match exactly.
 
