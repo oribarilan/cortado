@@ -250,9 +250,9 @@ body {
   background: var(--panel-hover);
 }
 
-.activity-row:focus-visible,
-.footer-row:focus-visible,
-.open-activity:focus-visible {
+.panel-root.keyboard-active .activity-row:focus-visible,
+.panel-root.keyboard-active .footer-row:focus-visible,
+.panel-root.keyboard-active .open-activity:focus-visible {
   outline: 2px solid color-mix(in oklch, var(--s-running), white 20%);
   outline-offset: 1px;
 }

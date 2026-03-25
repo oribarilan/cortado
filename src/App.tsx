@@ -134,6 +134,22 @@ function App() {
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
   const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
+  const panelRootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const root = panelRootRef.current;
+    if (!root) return;
+
+    const onKeyDown = () => root.classList.add("keyboard-active");
+    const onMouseDown = () => root.classList.remove("keyboard-active");
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onMouseDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onMouseDown);
+    };
+  }, []);
 
   const sortedFeeds = useMemo(() => {
     return feeds.map((feed) => ({
@@ -225,6 +241,7 @@ function App() {
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }
+          panelRootRef.current?.classList.remove("keyboard-active");
 
           const panelContent = panelContentRef.current;
           if (panelContent) {
@@ -238,14 +255,6 @@ function App() {
       });
 
       unlistenFns.push(unlistenPanelWillShow);
-
-      const unlistenPanelResign = await listen("menubar_panel_did_resign_key", () => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-      });
-
-      unlistenFns.push(unlistenPanelResign);
     };
 
     void bootstrap();
@@ -261,6 +270,7 @@ function App() {
   return (
     <div
       className={`panel-root ${suppressCollapseAnimation ? "suppress-collapse-animation" : ""}`}
+      ref={panelRootRef}
       role="region"
       aria-label="Cortado menubar panel"
     >
