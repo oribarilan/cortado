@@ -20,10 +20,9 @@ Activity-level dot precedence: `AttentionNegative > Waiting > Running > Attentio
 
 ### Rollup
 
-The same highest-kind-wins algorithm applies at every level:
+The same highest-kind-wins algorithm applies at two levels:
 
-- **Fields → Activity dot** — highest status kind across an activity's status fields.
-- **Activities → Feed dot** — highest activity kind within a feed. Errored feeds roll up as Idle.
+- **Fields → Activity dot** — highest status kind across an activity's status fields. The status chip text also shows the highest-priority field, not a fixed field order.
 
 Retained activities always roll up as Idle — they are no longer actively monitored.
 

@@ -44,11 +44,6 @@ type FeedSnapshot = {
   error: string | null;
 };
 
-const FEED_TYPE_PRIORITIES: Record<string, string[]> = {
-  "github-pr": ["review", "checks", "mergeable", "draft"],
-  "ado-pr": ["review", "checks", "mergeable", "draft"],
-};
-
 function kindPriority(kind: StatusKind): number {
   switch (kind) {
     case "attention-negative":
@@ -84,36 +79,23 @@ function deriveActivityKind(activity: Activity): StatusKind {
   return best;
 }
 
-function deriveFeedKind(feed: FeedSnapshot): StatusKind {
-  if (feed.error) {
-    return "idle";
-  }
+function highestStatusField(activity: Activity): Field | null {
+  let best: Field | null = null;
+  let bestPriority = 0;
 
-  let best: StatusKind = "idle";
+  for (const field of activity.fields) {
+    if (field.value.type !== "status") {
+      continue;
+    }
 
-  for (const activity of feed.activities) {
-    const activityKind = deriveActivityKind(activity);
-    if (kindPriority(activityKind) > kindPriority(best)) {
-      best = activityKind;
+    const priority = kindPriority(field.value.kind);
+    if (priority > bestPriority) {
+      best = field;
+      bestPriority = priority;
     }
   }
 
   return best;
-}
-
-function firstStatusField(feedType: string, activity: Activity): Field | null {
-  const priorities = FEED_TYPE_PRIORITIES[feedType] ?? [];
-
-  for (const name of priorities) {
-    const match = activity.fields.find(
-      (field) => field.name === name && field.value.type === "status"
-    );
-    if (match) {
-      return match;
-    }
-  }
-
-  return activity.fields.find((field) => field.value.type === "status") ?? null;
 }
 
 function supportsOpen(activity: Activity): string | null {
@@ -288,14 +270,10 @@ function App() {
           ? sortedFeeds.map((feed) => {
               const hasError = Boolean(feed.error);
               const isConfigWarning = feed.feed_type === "app";
-              const feedKind = deriveFeedKind(feed);
 
               return (
                 <section className="feed-block" key={`${feed.name}::${feed.feed_type}`}>
                   <header className="feed-header">
-                    {!hasError && feed.activities.length > 0 ? (
-                      <span className={`feed-dot kind-${feedKind}`} aria-hidden="true" />
-                    ) : null}
                     <span className="feed-name">{feed.name}</span>
                     {!hasError ? <span className="feed-count">{feed.activities.length}</span> : null}
                   </header>
@@ -314,7 +292,7 @@ function App() {
                         const activityKind = deriveActivityKind(activity);
                         const key = activityKey(feed, activity);
                         const expanded = expandedActivityKey === key;
-                        const firstStatus = firstStatusField(feed.feed_type, activity);
+                        const firstStatus = highestStatusField(activity);
                         const openUrl = supportsOpen(activity);
 
                         return (

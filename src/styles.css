@@ -129,7 +129,7 @@ body {
   min-height: var(--feed-header-h);
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
   padding: 0 var(--pad-x);
   font-size: var(--fz-feed);
   color: var(--panel-text-tertiary);
@@ -138,19 +138,6 @@ body {
   font-weight: var(--fw-feed);
   cursor: default;
 }
-
-.feed-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.feed-dot.kind-attention-negative { background: var(--s-attention-negative); }
-.feed-dot.kind-waiting { background: var(--s-waiting); }
-.feed-dot.kind-running { background: var(--s-running); animation: pulse 1.6s ease-in-out infinite; }
-.feed-dot.kind-attention-positive { background: var(--s-attention-positive); }
-.feed-dot.kind-idle { background: var(--s-idle); }
 
 .feed-name {
   color: var(--panel-text-secondary);
@@ -161,7 +148,6 @@ body {
 }
 
 .feed-count {
-  margin-left: auto;
   font-size: 10px;
   color: var(--panel-text-tertiary);
   background: color-mix(in oklch, var(--panel-text-tertiary), transparent 86%);
@@ -533,8 +519,7 @@ body {
   .chevron,
   .footer-row,
   .skeleton,
-  .status-dot,
-  .feed-dot {
+  .status-dot {
     transition: none !important;
     animation: none !important;
   }
