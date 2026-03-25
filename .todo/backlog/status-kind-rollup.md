@@ -24,13 +24,15 @@ The per-activity rollup (fields → activity dot) already exists. This task adds
 ## Design Decisions
 
 - **Same algorithm everywhere.** No special logic at any level — just highest kind wins.
-- **Retained activities always roll up as Idle.** They are no longer actively monitored, so they should not affect the feed or tray rollup. This means no special-case exclusion is needed — they naturally have lowest priority.
+- **Retained activities always roll up as Idle.** They are no longer actively monitored, so they should not affect the feed or tray rollup. `deriveActivityKind` must check `activity.retained` and return `Idle` without inspecting fields.
+- **Errored feeds roll up as Idle.** Poll/config errors are surfaced inline in the panel, not through the rollup. A feed with no activities due to an error contributes `Idle`.
 - **Tray icon always expresses the global rollup.** When everything is Idle, the tray shows Idle (gray/neutral). The tray icon is the global at-a-glance signal.
 
 ## Open Questions
 
 - **Feed header visual** — dot? colored text? subtle background tint?
 - **Tray icon visual** — colored dot overlay? SF Symbol swap? Badge? Needs macOS-native exploration.
+- **Tray icon update mechanism** — the tray icon is managed in Rust (backend), but feed snapshots are consumed in the frontend. Either the frontend signals the backend to update the icon, or the backend computes the rollup from snapshots directly. Needs architectural decision.
 
 ## Related Files
 
@@ -42,7 +44,8 @@ The per-activity rollup (fields → activity dot) already exists. This task adds
 
 - [ ] Feed header shows a visual indicator of its rolled-up status kind
 - [ ] Tray icon reflects the global rolled-up status kind across all feeds
-- [ ] Retained activities contribute as Idle to rollup
+- [ ] `deriveActivityKind` returns Idle for retained activities (skip field inspection)
+- [ ] Errored feeds contribute Idle to rollup
 - [ ] Rollup uses same precedence at all three levels
 - [ ] `just check` passes
 
