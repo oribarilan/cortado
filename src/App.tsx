@@ -222,6 +222,10 @@ function App() {
         setExpandedActivityKey(null);
 
         requestAnimationFrame(() => {
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+
           const panelContent = panelContentRef.current;
           if (panelContent) {
             panelContent.scrollTop = 0;
