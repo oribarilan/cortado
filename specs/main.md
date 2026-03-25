@@ -138,7 +138,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | Feed type | Activities | Key fields |
 |-----------|-----------|------------|
 | `github-pr` | Open PRs per user/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
-| `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
+| `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
 | `shell` | Single activity (the command output) | User-defined |
 
 Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.

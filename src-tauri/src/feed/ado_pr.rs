@@ -202,12 +202,6 @@ impl Feed for AdoPrFeed {
                     field_type: FieldType::Status,
                     description: "Draft status".to_string(),
                 },
-                FieldDefinition {
-                    name: "labels".to_string(),
-                    label: "Labels".to_string(),
-                    field_type: FieldType::Text,
-                    description: "Applied PR labels".to_string(),
-                },
             ],
             &HashMap::new(),
             &self.config_overrides,
@@ -351,7 +345,6 @@ fn map_pr_to_activity(
     let review = map_review(pr.reviewers.as_deref().unwrap_or_default());
     let mergeable = map_merge_status(pr.merge_status.as_deref());
     let draft = map_draft(pr.is_draft.unwrap_or(false));
-    let labels = map_labels(pr.labels.as_deref());
 
     let fields = apply_activity_overrides(
         vec![
@@ -374,11 +367,6 @@ fn map_pr_to_activity(
                 name: "draft".to_string(),
                 label: "Draft".to_string(),
                 value: draft,
-            },
-            Field {
-                name: "labels".to_string(),
-                label: "Labels".to_string(),
-                value: labels,
             },
         ],
         &HashMap::new(),
@@ -457,19 +445,6 @@ fn map_draft(is_draft: bool) -> FieldValue {
         status_field("yes", StatusKind::AttentionPositive)
     } else {
         status_field("no", StatusKind::Idle)
-    }
-}
-
-fn map_labels(labels: Option<&[AdoLabel]>) -> FieldValue {
-    let mut names: Vec<String> = labels
-        .unwrap_or_default()
-        .iter()
-        .filter_map(|label| label.name.clone())
-        .collect();
-    names.sort();
-
-    FieldValue::Text {
-        value: names.join(", "),
     }
 }
 
@@ -656,7 +631,6 @@ struct AdoPullRequest {
     is_draft: Option<bool>,
     merge_status: Option<String>,
     reviewers: Option<Vec<AdoReviewer>>,
-    labels: Option<Vec<AdoLabel>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -664,12 +638,6 @@ struct AdoPullRequest {
 struct AdoReviewer {
     vote: Option<i16>,
     is_required: Option<bool>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct AdoLabel {
-    name: Option<String>,
 }
 
 /// Well-known Azure DevOps policy type GUIDs for build / CI checks.
