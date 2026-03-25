@@ -61,7 +61,10 @@ fn handle_tray_icon_event(tray: &TrayIcon, event: TrayIconEvent) {
     } = event
     {
         let app = tray.app_handle();
-        let monitor_with_cursor = monitor::get_monitor_with_cursor().unwrap();
+        let Some(monitor_with_cursor) = monitor::get_monitor_with_cursor() else {
+            eprintln!("cannot handle tray click: monitor with cursor not found");
+            return;
+        };
         let scale_factor = monitor_with_cursor.scale_factor();
 
         let icon_position = rect.position.to_logical::<f64>(scale_factor);
