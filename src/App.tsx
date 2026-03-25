@@ -65,6 +65,10 @@ function kindPriority(kind: StatusKind): number {
 }
 
 function deriveActivityKind(activity: Activity): StatusKind {
+  if (activity.retained) {
+    return "idle";
+  }
+
   let best: StatusKind = "idle";
 
   for (const field of activity.fields) {
@@ -74,6 +78,23 @@ function deriveActivityKind(activity: Activity): StatusKind {
 
     if (kindPriority(field.value.kind) > kindPriority(best)) {
       best = field.value.kind;
+    }
+  }
+
+  return best;
+}
+
+function deriveFeedKind(feed: FeedSnapshot): StatusKind {
+  if (feed.error) {
+    return "idle";
+  }
+
+  let best: StatusKind = "idle";
+
+  for (const activity of feed.activities) {
+    const activityKind = deriveActivityKind(activity);
+    if (kindPriority(activityKind) > kindPriority(best)) {
+      best = activityKind;
     }
   }
 
@@ -267,10 +288,14 @@ function App() {
           ? sortedFeeds.map((feed) => {
               const hasError = Boolean(feed.error);
               const isConfigWarning = feed.feed_type === "app";
+              const feedKind = deriveFeedKind(feed);
 
               return (
                 <section className="feed-block" key={`${feed.name}::${feed.feed_type}`}>
                   <header className="feed-header">
+                    {!hasError && feed.activities.length > 0 ? (
+                      <span className={`feed-dot kind-${feedKind}`} aria-hidden="true" />
+                    ) : null}
                     <span className="feed-name">{feed.name}</span>
                     {!hasError ? <span className="feed-count">{feed.activities.length}</span> : null}
                   </header>

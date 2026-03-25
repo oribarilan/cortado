@@ -31,8 +31,7 @@ The per-activity rollup (fields → activity dot) already exists. This task adds
 ## Open Questions
 
 - **Feed header visual** — dot? colored text? subtle background tint?
-- **Tray icon visual** — colored dot overlay? SF Symbol swap? Badge? Needs macOS-native exploration.
-- **Tray icon update mechanism** — the tray icon is managed in Rust (backend), but feed snapshots are consumed in the frontend. Either the frontend signals the backend to update the icon, or the backend computes the rollup from snapshots directly. Needs architectural decision.
+- **Tray icon visual** — colored dot overlay on template icon. Requires non-template mode + theme handling. See `.todo/backlog/tray-icon-rollup.md`.
 
 ## Related Files
 

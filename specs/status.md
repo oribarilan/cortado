@@ -18,6 +18,17 @@ Status kinds are global. Their rendering (colors, animation) is defined once in 
 
 Activity-level dot precedence: `AttentionNegative > Waiting > Running > AttentionPositive > Idle` (highest wins across all status fields, no cross-field reasoning).
 
+### Rollup
+
+The same highest-kind-wins algorithm applies at every level:
+
+- **Fields → Activity dot** — highest status kind across an activity's status fields.
+- **Activities → Feed dot** — highest activity kind within a feed. Errored feeds roll up as Idle.
+
+Retained activities always roll up as Idle — they are no longer actively monitored.
+
+Tray icon global rollup is planned but not yet implemented (see `.todo/backlog/tray-icon-rollup.md`).
+
 ## Status Values
 
 A status value is the human-readable text shown alongside a status kind. Values are per-feed — each feed defines its own vocabulary in code. For example, `github-pr` maps `"approved"` → `AttentionPositive` and `"failing"` → `AttentionNegative`.
