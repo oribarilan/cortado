@@ -13,7 +13,7 @@ type FieldValue =
   | {
       type: "status";
       value: string;
-      severity: StatusKind;
+      kind: StatusKind;
     }
   | {
       type: "number";
@@ -49,7 +49,7 @@ const FEED_TYPE_PRIORITIES: Record<string, string[]> = {
   "ado-pr": ["review", "checks", "mergeable", "draft"],
 };
 
-function severityPriority(kind: StatusKind): number {
+function kindPriority(kind: StatusKind): number {
   switch (kind) {
     case "attention-negative":
       return 5;
@@ -64,7 +64,7 @@ function severityPriority(kind: StatusKind): number {
   }
 }
 
-function deriveActivitySeverity(activity: Activity): StatusKind {
+function deriveActivityKind(activity: Activity): StatusKind {
   let best: StatusKind = "idle";
 
   for (const field of activity.fields) {
@@ -72,8 +72,8 @@ function deriveActivitySeverity(activity: Activity): StatusKind {
       continue;
     }
 
-    if (severityPriority(field.value.severity) > severityPriority(best)) {
-      best = field.value.severity;
+    if (kindPriority(field.value.kind) > kindPriority(best)) {
+      best = field.value.kind;
     }
   }
 
@@ -286,7 +286,7 @@ function App() {
                   {feed.activities.length > 0 ? (
                     <div className="activity-list">
                       {feed.activities.map((activity) => {
-                        const severity = deriveActivitySeverity(activity);
+                        const activityKind = deriveActivityKind(activity);
                         const key = activityKey(feed, activity);
                         const expanded = expandedActivityKey === key;
                         const firstStatus = firstStatusField(feed.feed_type, activity);
@@ -294,7 +294,7 @@ function App() {
 
                         return (
                           <div
-                            className={`activity-wrap severity-${severity} ${expanded ? "expanded" : ""}`}
+                            className={`activity-wrap kind-${activityKind} ${expanded ? "expanded" : ""}`}
                             key={key}
                           >
                             <button
@@ -307,7 +307,7 @@ function App() {
                               <span className={`status-dot ${activity.retained ? "retained" : ""}`} aria-hidden="true" />
                               <span className="activity-title">{activity.title}</span>
                               {firstStatus && firstStatus.value.type === "status" ? (
-                                <span className={`status-chip severity-${firstStatus.value.severity}`}>
+                                <span className={`status-chip kind-${firstStatus.value.kind}`}>
                                   {firstStatus.value.value}
                                 </span>
                               ) : null}
@@ -331,7 +331,7 @@ function App() {
                                   {activity.fields.map((field) => {
                                     const statusClass =
                                       field.value.type === "status"
-                                        ? `status severity-${field.value.severity}`
+                                        ? `status kind-${field.value.kind}`
                                         : "";
 
                                     return (

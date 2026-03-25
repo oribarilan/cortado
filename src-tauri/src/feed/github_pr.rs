@@ -425,10 +425,10 @@ fn map_checks_status(status_check_rollup: Option<&[GhCheckEntry]>) -> FieldValue
     status_field("none", StatusKind::Idle)
 }
 
-fn status_field(value: &str, severity: StatusKind) -> FieldValue {
+fn status_field(value: &str, kind: StatusKind) -> FieldValue {
     FieldValue::Status {
         value: value.to_string(),
-        severity,
+        kind,
     }
 }
 
@@ -879,14 +879,14 @@ mod tests {
         assert_eq!(feed.user, "@me");
     }
 
-    fn assert_status(value: FieldValue, expected_value: &str, expected_severity: StatusKind) {
-        let FieldValue::Status { value, severity } = value else {
+    fn assert_status(value: FieldValue, expected_value: &str, expected_kind: StatusKind) {
+        let FieldValue::Status { value, kind } = value else {
             panic!("expected status field");
         };
 
         assert_eq!(value, expected_value);
         assert!(matches!(
-            (severity, expected_severity),
+            (kind, expected_kind),
             (StatusKind::AttentionNegative, StatusKind::AttentionNegative)
                 | (StatusKind::AttentionPositive, StatusKind::AttentionPositive)
                 | (StatusKind::Waiting, StatusKind::Waiting)

@@ -256,7 +256,7 @@ fn map_stdout_to_field_value(stdout: &str, field_type: &FieldType) -> Result<Fie
         }),
         FieldType::Status => Ok(FieldValue::Status {
             value: trimmed.to_string(),
-            severity: status_severity_from_output(trimmed),
+            kind: status_severity_from_output(trimmed),
         }),
     }
 }
@@ -368,12 +368,12 @@ mod tests {
         let feed = ShellFeed::from_config_with_runner(&config, runner).expect("builds");
         let activities = feed.poll().await.expect("polls");
 
-        let FieldValue::Status { value, severity } = &activities[0].fields[0].value else {
+        let FieldValue::Status { value, kind } = &activities[0].fields[0].value else {
             panic!("expected status field");
         };
 
         assert_eq!(value, "FAILING");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[tokio::test]

@@ -209,23 +209,23 @@ body {
 }
 
 .activity-wrap {
-  --activity-severity: var(--s-idle);
+  --activity-kind: var(--s-idle);
 }
 
-.activity-wrap.severity-attention-negative {
-  --activity-severity: var(--s-attention-negative);
+.activity-wrap.kind-attention-negative {
+  --activity-kind: var(--s-attention-negative);
 }
 
-.activity-wrap.severity-waiting {
-  --activity-severity: var(--s-waiting);
+.activity-wrap.kind-waiting {
+  --activity-kind: var(--s-waiting);
 }
 
-.activity-wrap.severity-running {
-  --activity-severity: var(--s-running);
+.activity-wrap.kind-running {
+  --activity-kind: var(--s-running);
 }
 
-.activity-wrap.severity-attention-positive {
-  --activity-severity: var(--s-attention-positive);
+.activity-wrap.kind-attention-positive {
+  --activity-kind: var(--s-attention-positive);
 }
 
 .activity-row {
@@ -261,17 +261,17 @@ body {
   width: var(--dot-size);
   height: var(--dot-size);
   border-radius: 999px;
-  background: var(--activity-severity);
+  background: var(--activity-kind);
   flex-shrink: 0;
 }
 
-.activity-wrap.severity-running .status-dot:not(.retained) {
+.activity-wrap.kind-running .status-dot:not(.retained) {
   animation: pulse 1.6s ease-in-out infinite;
 }
 
 .status-dot.retained {
   background: transparent;
-  border: 1.5px solid var(--activity-severity);
+  border: 1.5px solid var(--activity-kind);
 }
 
 .activity-title {
@@ -296,25 +296,25 @@ body {
   border: 1px solid color-mix(in oklch, var(--panel-text-secondary), transparent 83%);
 }
 
-.status-chip.severity-attention-negative {
+.status-chip.kind-attention-negative {
   color: var(--s-attention-negative);
   background: color-mix(in oklch, var(--s-attention-negative), transparent 91%);
   border-color: color-mix(in oklch, var(--s-attention-negative), transparent 80%);
 }
 
-.status-chip.severity-waiting {
+.status-chip.kind-waiting {
   color: var(--s-waiting);
   background: color-mix(in oklch, var(--s-waiting), transparent 91%);
   border-color: color-mix(in oklch, var(--s-waiting), transparent 80%);
 }
 
-.status-chip.severity-running {
+.status-chip.kind-running {
   color: var(--s-running);
   background: color-mix(in oklch, var(--s-running), transparent 91%);
   border-color: color-mix(in oklch, var(--s-running), transparent 80%);
 }
 
-.status-chip.severity-attention-positive {
+.status-chip.kind-attention-positive {
   color: var(--s-attention-positive);
   background: color-mix(in oklch, var(--s-attention-positive), transparent 91%);
   border-color: color-mix(in oklch, var(--s-attention-positive), transparent 80%);
@@ -401,23 +401,23 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.field-value.status.severity-attention-positive {
+.field-value.status.kind-attention-positive {
   color: var(--s-attention-positive);
 }
 
-.field-value.status.severity-waiting {
+.field-value.status.kind-waiting {
   color: var(--s-waiting);
 }
 
-.field-value.status.severity-attention-negative {
+.field-value.status.kind-attention-negative {
   color: var(--s-attention-negative);
 }
 
-.field-value.status.severity-running {
+.field-value.status.kind-running {
   color: var(--s-running);
 }
 
-.field-value.status.severity-idle {
+.field-value.status.kind-idle {
   color: var(--s-idle);
 }
 

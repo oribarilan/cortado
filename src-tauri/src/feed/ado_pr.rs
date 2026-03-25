@@ -473,10 +473,10 @@ fn map_labels(labels: Option<&[AdoLabel]>) -> FieldValue {
     }
 }
 
-fn status_field(value: &str, severity: StatusKind) -> FieldValue {
+fn status_field(value: &str, kind: StatusKind) -> FieldValue {
     FieldValue::Status {
         value: value.to_string(),
-        severity,
+        kind,
     }
 }
 
@@ -979,22 +979,22 @@ mod tests {
 
     #[test]
     fn mapping_merge_status_unknown_and_review_rejected_are_deterministic() {
-        let FieldValue::Status { value, severity } = map_merge_status(Some("mystery")) else {
+        let FieldValue::Status { value, kind } = map_merge_status(Some("mystery")) else {
             panic!("status expected");
         };
         assert_eq!(value, "mystery (unknown)");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
 
         let reviewers = vec![super::AdoReviewer {
             vote: Some(-10),
             is_required: Some(true),
         }];
 
-        let FieldValue::Status { value, severity } = map_review(&reviewers) else {
+        let FieldValue::Status { value, kind } = map_review(&reviewers) else {
             panic!("status expected");
         };
         assert_eq!(value, "rejected");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     fn base_config() -> FeedConfig {
@@ -1115,110 +1115,110 @@ mod tests {
     #[test]
     fn checks_rollup_rejected_returns_failed() {
         let policies = vec![policy("approved"), policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_broken_returns_failed() {
         let policies = vec![policy("approved"), policy("broken")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_queued_returns_running() {
         let policies = vec![policy("approved"), policy("queued")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Running));
+        assert!(matches!(kind, StatusKind::Running));
     }
 
     #[test]
     fn checks_rollup_running_returns_running() {
         let policies = vec![policy("running"), policy("approved")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Running));
+        assert!(matches!(kind, StatusKind::Running));
     }
 
     #[test]
     fn checks_rollup_all_approved_returns_succeeded() {
         let policies = vec![policy("approved"), policy("approved")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_empty_returns_succeeded() {
-        let FieldValue::Status { value, severity } = map_checks_rollup(&[]) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&[]) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_all_not_applicable_returns_succeeded() {
         let policies = vec![policy("notApplicable"), policy("notApplicable")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_unknown_state_only_returns_idle() {
         let policies = vec![policy("mystery")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "mystery (unknown)");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_unknown_with_approved_returns_succeeded() {
         let policies = vec![policy("approved"), policy("mystery")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_rejected_beats_running() {
         let policies = vec![policy("running"), policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_not_applicable_plus_unknown_returns_idle() {
         let policies = vec![policy("notApplicable"), policy("newstatus")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "newstatus (unknown)");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
@@ -1232,11 +1232,11 @@ mod tests {
             }),
             context: None,
         }];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     // --- policy type filtering tests ---
@@ -1246,55 +1246,55 @@ mod tests {
         // Reviewer policy is "running" (waiting for approval), build is "approved".
         // Without filtering this would return "running"; with filtering it returns "succeeded".
         let policies = vec![build_policy("approved"), reviewer_policy("running")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_ignores_reviewer_rejected_policy() {
         // Reviewer policy is "rejected" but it's not a CI check — should not affect rollup.
         let policies = vec![build_policy("approved"), reviewer_policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_includes_status_check_policy() {
         // Status (external check) policies should be included alongside build policies.
         let policies = vec![build_policy("approved"), status_check_policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_ignores_untyped_policy() {
         // Policies without configuration type info are excluded from the rollup.
         let policies = vec![build_policy("approved"), untyped_policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
     fn checks_rollup_only_reviewer_policies_returns_succeeded() {
         // If the only policies are reviewer types, no CI checks exist → succeeded.
         let policies = vec![reviewer_policy("running"), reviewer_policy("rejected")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "succeeded");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 
     #[test]
@@ -1309,11 +1309,11 @@ mod tests {
             reviewer_policy("running"),
             reviewer_policy("approved"),
         ];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     // --- expired build tests ---
@@ -1327,32 +1327,32 @@ mod tests {
             expired_build_policy("queued"),
             status_check_policy("approved"),
         ];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_expired_running_build_returns_failed() {
         let policies = vec![expired_build_policy("running")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "failed");
-        assert!(matches!(severity, StatusKind::AttentionNegative));
+        assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
     #[test]
     fn checks_rollup_non_expired_queued_build_returns_running() {
         // A fresh queued build (no expired context) is genuinely pending.
         let policies = vec![build_policy("queued")];
-        let FieldValue::Status { value, severity } = map_checks_rollup(&policies) else {
+        let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");
         };
         assert_eq!(value, "running");
-        assert!(matches!(severity, StatusKind::Running));
+        assert!(matches!(kind, StatusKind::Running));
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1398,10 +1398,10 @@ mod tests {
             .find(|f| f.name == "checks")
             .expect("checks field should exist");
 
-        let FieldValue::Status { value, severity } = &checks_field.value else {
+        let FieldValue::Status { value, kind } = &checks_field.value else {
             panic!("expected status");
         };
         assert_eq!(value, "unknown");
-        assert!(matches!(severity, StatusKind::Idle));
+        assert!(matches!(kind, StatusKind::Idle));
     }
 }

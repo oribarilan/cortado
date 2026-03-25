@@ -63,7 +63,7 @@ pub enum StatusKind {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum FieldValue {
     Text { value: String },
-    Status { value: String, severity: StatusKind },
+    Status { value: String, kind: StatusKind },
     Number { value: f64 },
     Url { value: String },
 }
