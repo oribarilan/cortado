@@ -125,6 +125,11 @@ pub fn load_feeds_config() -> Result<Vec<FeedConfig>> {
     load_feeds_config_from_path(&config_path)
 }
 
+/// Parses feed config entries from a TOML string.
+pub fn parse_feeds_config_str(raw: &str) -> Result<Vec<FeedConfig>> {
+    parse_feeds_config_toml(raw)
+}
+
 fn load_feeds_config_from_path(config_path: &Path) -> Result<Vec<FeedConfig>> {
     if !config_path.exists() {
         return Ok(Vec::new());

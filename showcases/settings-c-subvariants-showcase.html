@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado Settings — Variant C Sub-variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;450;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    background: oklch(10% 0.006 250);
+    color: oklch(88% 0.008 250);
+    min-height: 100vh;
+    padding: 40px 32px;
+  }
+
+  .showcase-header {
+    max-width: 940px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+
+  .showcase-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: oklch(92% 0.008 250);
+  }
+
+  .showcase-header p {
+    margin-top: 8px;
+    font-size: 13px;
+    color: oklch(50% 0.008 250);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  .variant-section {
+    max-width: 940px;
+    margin: 0 auto 64px;
+  }
+
+  .variant-label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .variant-label h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: oklch(88% 0.008 250);
+  }
+
+  .variant-label .tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: oklch(22% 0.01 250);
+    color: oklch(60% 0.008 250);
+    border: 1px solid oklch(28% 0.01 250);
+  }
+
+  .variant-desc {
+    font-size: 12.5px;
+    color: oklch(48% 0.008 250);
+    margin-bottom: 16px;
+    line-height: 1.55;
+    max-width: 720px;
+  }
+
+  .window-chrome {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px oklch(0% 0 0 / 0.25),
+      0 8px 32px oklch(0% 0 0 / 0.4),
+      0 0 0 0.5px oklch(100% 0 0 / 0.06);
+  }
+
+  .traffic-lights {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    align-items: center;
+  }
+
+  .traffic-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .traffic-dot.close { background: oklch(65% 0.22 25); }
+  .traffic-dot.minimize { background: oklch(80% 0.17 85); }
+  .traffic-dot.maximize { background: oklch(70% 0.18 145); }
+
+  .traffic-title {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.5;
+  }
+
+  /* ===== SHARED DARK TOKENS ===== */
+  :root {
+    --d-bg: oklch(14% 0.008 250);
+    --d-surface: oklch(17% 0.01 250);
+    --d-surface2: oklch(20% 0.012 250);
+    --d-surface3: oklch(23% 0.012 250);
+    --d-text: oklch(90% 0.008 250);
+    --d-text2: oklch(68% 0.008 250);
+    --d-text3: oklch(50% 0.006 250);
+    --d-border: oklch(26% 0.01 250);
+    --d-border-subtle: oklch(22% 0.008 250);
+    --d-hover: oklch(22% 0.012 250);
+    --d-danger: oklch(70% 0.18 25);
+
+    --mono: "Space Mono", "SF Mono", ui-monospace, monospace;
+  }
+
+
+  /* ============================================================
+     C1 — TEAL ACCENT / ORIGINAL REFINED
+     Faithful to the original C. Teal accent, table layout,
+     sidebar nav. Polished with better spacing and details.
+     ============================================================ */
+  .c1 {
+    --accent: oklch(72% 0.14 178);
+    --accent-dim: oklch(38% 0.06 178);
+    --accent-soft: oklch(22% 0.03 178);
+  }
+
+  .c1 .traffic-lights { background: var(--d-surface); border-bottom: 1px solid var(--d-border); color: var(--d-text2); }
+
+  .c1-layout {
+    display: grid;
+    grid-template-columns: 176px 1fr;
+    min-height: 440px;
+    background: var(--d-bg);
+  }
+
+  .c1-sidebar {
+    background: var(--d-surface);
+    border-right: 1px solid var(--d-border);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .c1-nav {
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    color: var(--d-text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 450;
+    transition: background 80ms ease;
+  }
+
+  .c1-nav:hover { background: var(--d-hover); }
+  .c1-nav.active { background: var(--accent-soft); color: var(--accent); font-weight: 550; }
+  .c1-nav-icon { font-size: 13px; width: 18px; text-align: center; opacity: 0.7; }
+  .c1-nav.active .c1-nav-icon { opacity: 1; }
+
+  .c1-main { padding: 22px 24px; }
+
+  .c1-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .c1-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--d-text);
+    letter-spacing: -0.01em;
+  }
+
+  .c1-btn {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 5px 12px;
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 100ms ease;
+  }
+
+  .c1-btn:hover { background: var(--accent-dim); }
+
+  .c1-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .c1-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--d-text3);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--d-border);
+  }
+
+  .c1-table td {
+    padding: 9px 10px;
+    color: var(--d-text2);
+    border-bottom: 1px solid var(--d-border-subtle);
+  }
+
+  .c1-table tr:hover td { background: var(--d-hover); }
+  .c1-table .name { color: var(--d-text); font-weight: 500; }
+
+  .c1-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--d-surface2);
+    color: var(--accent);
+    border: 1px solid var(--d-border);
+    font-family: var(--mono);
+  }
+
+  .c1-mono {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--d-text3);
+  }
+
+  .c1-row-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .c1-icon-btn {
+    font-size: 12px;
+    color: var(--d-text3);
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 80ms ease, color 80ms ease;
+  }
+
+  .c1-icon-btn:hover { background: var(--d-hover); color: var(--d-text); }
+  .c1-icon-btn.danger:hover { color: var(--d-danger); }
+
+  .c1-divider {
+    margin: 22px 0 16px;
+    border: none;
+    border-top: 1px solid var(--d-border);
+  }
+
+  .c1-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--d-border-subtle);
+  }
+
+  .c1-setting:last-child { border-bottom: none; }
+
+  .c1-setting-label { font-size: 12px; color: var(--d-text); font-weight: 450; }
+  .c1-setting-hint { font-size: 10.5px; color: var(--d-text3); margin-top: 1px; }
+
+  .c1-toggle {
+    width: 34px; height: 18px; border-radius: 999px;
+    background: oklch(30% 0.01 250); border: 1px solid var(--d-border);
+    position: relative; cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .c1-toggle.on { background: var(--accent-dim); border-color: var(--accent); }
+  .c1-toggle::after {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--d-text3); position: absolute; top: 1px; left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .c1-toggle.on::after { transform: translateX(16px); background: var(--accent); }
+
+
+  /* ============================================================
+     C2 — AMBER ACCENT / MONOCHROME MINIMAL
+     Stripped-back layout. Amber/gold accent for warmth against
+     the dark surface. No table — uses a flat list with inline
+     editing affordances. Feels like a terminal config tool.
+     ============================================================ */
+  .c2 {
+    --accent: oklch(78% 0.14 80);
+    --accent-dim: oklch(36% 0.06 80);
+    --accent-soft: oklch(20% 0.03 80);
+  }
+
+  .c2 .traffic-lights { background: var(--d-surface); border-bottom: 1px solid var(--d-border); color: var(--d-text2); }
+
+  .c2-layout {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    min-height: 440px;
+    background: var(--d-bg);
+  }
+
+  .c2-sidebar {
+    background: var(--d-surface);
+    border-right: 1px solid var(--d-border);
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .c2-nav {
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    color: var(--d-text3);
+    cursor: pointer;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    transition: color 80ms ease, background 80ms ease;
+  }
+
+  .c2-nav:hover { color: var(--d-text2); background: var(--d-hover); }
+  .c2-nav.active { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+  .c2-main { padding: 20px 28px; }
+
+  .c2-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--d-text3);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--d-border);
+  }
+
+  .c2-feed-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--d-border-subtle);
+    cursor: pointer;
+    transition: background 80ms ease;
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 4px;
+  }
+
+  .c2-feed-row:hover { background: var(--d-hover); }
+
+  .c2-feed-info {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .c2-feed-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--d-text);
+  }
+
+  .c2-feed-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--d-text3);
+    display: flex;
+    gap: 8px;
+  }
+
+  .c2-feed-meta .type { color: var(--accent); }
+
+  .c2-feed-arrow {
+    font-size: 14px;
+    color: var(--d-text3);
+    opacity: 0;
+    transition: opacity 80ms ease;
+  }
+
+  .c2-feed-row:hover .c2-feed-arrow { opacity: 1; }
+
+  .c2-add-row {
+    padding: 10px 8px;
+    margin: 0 -8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 80ms ease;
+  }
+
+  .c2-add-row:hover { background: var(--accent-soft); }
+
+  .c2-add-plus {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1.5px solid var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .c2-divider {
+    margin: 20px 0 14px;
+    border: none;
+    border-top: 1px solid var(--d-border);
+  }
+
+  .c2-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+  }
+
+  .c2-setting + .c2-setting { border-top: 1px solid var(--d-border-subtle); }
+
+  .c2-setting-text { font-size: 12px; color: var(--d-text); font-weight: 450; }
+  .c2-setting-sub { font-size: 10.5px; color: var(--d-text3); margin-top: 1px; }
+
+  .c2-toggle {
+    width: 32px; height: 16px; border-radius: 999px;
+    background: oklch(28% 0.01 250); border: 1px solid oklch(34% 0.01 250);
+    position: relative; cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+  }
+  .c2-toggle.on { background: var(--accent-dim); border-color: var(--accent); }
+  .c2-toggle::after {
+    content: ''; width: 12px; height: 12px; border-radius: 50%;
+    background: oklch(50% 0.006 250); position: absolute; top: 1px; left: 1px;
+    transition: transform 160ms ease, background 160ms ease;
+  }
+  .c2-toggle.on::after { transform: translateX(16px); background: var(--accent); }
+
+
+  /* ============================================================
+     C3 — VIOLET ACCENT / SEGMENTED CONTROLS
+     Uses a segmented control (pill switcher) instead of sidebar.
+     Violet accent for a distinct but still technical personality.
+     Feeds shown in a compact card list with status indicators.
+     ============================================================ */
+  .c3 {
+    --accent: oklch(72% 0.16 290);
+    --accent-dim: oklch(34% 0.08 290);
+    --accent-soft: oklch(20% 0.04 290);
+  }
+
+  .c3 .traffic-lights { background: var(--d-surface); border-bottom: 1px solid var(--d-border); color: var(--d-text2); }
+
+  .c3-layout {
+    min-height: 440px;
+    background: var(--d-bg);
+  }
+
+  .c3-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--d-border);
+    background: var(--d-surface);
+  }
+
+  .c3-segmented {
+    display: flex;
+    background: oklch(12% 0.006 250);
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid var(--d-border);
+  }
+
+  .c3-seg-item {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 16px;
+    border-radius: 4px;
+    color: var(--d-text3);
+    cursor: pointer;
+    transition: color 100ms ease, background 100ms ease;
+  }
+
+  .c3-seg-item:hover { color: var(--d-text2); }
+
+  .c3-seg-item.active {
+    background: var(--d-surface2);
+    color: var(--d-text);
+    font-weight: 600;
+    box-shadow: 0 1px 3px oklch(0% 0 0 / 0.2);
+  }
+
+  .c3-btn-sm {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 5px 14px;
+    border: none;
+    border-radius: 5px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 100ms ease;
+  }
+
+  .c3-btn-sm:hover { background: oklch(38% 0.1 290); }
+
+  .c3-content { padding: 20px 24px; }
+
+  .c3-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .c3-feed-card {
+    background: var(--d-surface);
+    border: 1px solid var(--d-border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 4px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 100ms ease, background 100ms ease;
+  }
+
+  .c3-feed-card:hover {
+    border-color: oklch(32% 0.012 250);
+    background: var(--d-surface2);
+  }
+
+  .c3-feed-indicator {
+    width: 4px;
+    height: 28px;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.6;
+  }
+
+  .c3-feed-indicator.teal { background: oklch(72% 0.14 178); }
+  .c3-feed-indicator.amber { background: oklch(78% 0.14 80); }
+  .c3-feed-indicator.violet { background: var(--accent); }
+
+  .c3-feed-body {}
+
+  .c3-feed-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+
+  .c3-feed-name {
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--d-text);
+  }
+
+  .c3-feed-type {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--d-text3);
+  }
+
+  .c3-feed-details {
+    font-size: 11px;
+    color: var(--d-text3);
+    display: flex;
+    gap: 14px;
+  }
+
+  .c3-feed-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .c3-feed-detail-icon { opacity: 0.5; font-size: 10px; }
+
+  .c3-feed-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 100ms ease;
+  }
+
+  .c3-feed-card:hover .c3-feed-actions { opacity: 1; }
+
+  .c3-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--d-text3);
+    cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+  }
+
+  .c3-action-btn:hover { background: var(--d-hover); color: var(--d-text); }
+  .c3-action-btn.danger:hover { color: var(--d-danger); }
+
+  .c3-section-gap {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--d-border);
+  }
+
+  .c3-section-head {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--d-text3);
+    margin-bottom: 10px;
+  }
+
+  .c3-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+  }
+
+  .c3-setting + .c3-setting { border-top: 1px solid var(--d-border-subtle); }
+
+  .c3-setting-label { font-size: 12px; color: var(--d-text); font-weight: 450; }
+  .c3-setting-hint { font-size: 10.5px; color: var(--d-text3); margin-top: 1px; }
+
+  .c3-toggle {
+    width: 34px; height: 18px; border-radius: 999px;
+    background: oklch(28% 0.008 250); border: 1px solid oklch(34% 0.01 250);
+    position: relative; cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .c3-toggle.on { background: var(--accent-dim); border-color: var(--accent); }
+  .c3-toggle::after {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--d-text3); position: absolute; top: 1px; left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .c3-toggle.on::after { transform: translateX(16px); background: var(--accent); }
+
+
+  /* ============================================================
+     C4 — BLUE ACCENT / FULL-WIDTH NO SIDEBAR
+     No sidebar at all — single-column scrollable layout with
+     collapsible sections. Maximum content width. Blue accent
+     stays close to the panel's existing blue-gray identity.
+     Feels like a focused config document.
+     ============================================================ */
+  .c4 {
+    --accent: oklch(68% 0.16 258);
+    --accent-dim: oklch(34% 0.08 258);
+    --accent-soft: oklch(20% 0.04 258);
+  }
+
+  .c4 .traffic-lights { background: var(--d-surface); border-bottom: 1px solid var(--d-border); color: var(--d-text2); }
+
+  .c4-layout {
+    min-height: 440px;
+    background: var(--d-bg);
+    padding: 24px 32px;
+    max-width: 100%;
+  }
+
+  .c4-section {
+    margin-bottom: 24px;
+  }
+
+  .c4-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--d-border);
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .c4-section-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .c4-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--d-text);
+    letter-spacing: -0.005em;
+  }
+
+  .c4-section-count {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--d-surface2);
+    color: var(--d-text3);
+    border: 1px solid var(--d-border);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .c4-section-toggle {
+    font-size: 12px;
+    color: var(--d-text3);
+    transition: transform 180ms ease;
+  }
+
+  .c4-section-toggle.open { transform: rotate(90deg); }
+
+  .c4-btn-inline {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 100ms ease;
+  }
+
+  .c4-btn-inline:hover { background: oklch(38% 0.1 258); }
+
+  .c4-feed-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .c4-feed-row {
+    display: grid;
+    grid-template-columns: 6px 1fr auto auto auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 9px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 80ms ease;
+  }
+
+  .c4-feed-row:hover { background: var(--d-hover); }
+
+  .c4-feed-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .c4-feed-dot.blue { background: var(--accent); }
+  .c4-feed-dot.teal { background: oklch(72% 0.14 178); }
+  .c4-feed-dot.amber { background: oklch(78% 0.14 80); }
+
+  .c4-feed-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--d-text);
+  }
+
+  .c4-feed-type-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--d-text3);
+    background: var(--d-surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--d-border-subtle);
+  }
+
+  .c4-feed-interval {
+    font-size: 10.5px;
+    font-family: var(--mono);
+    color: var(--d-text3);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .c4-feed-edit {
+    font-size: 11px;
+    color: var(--d-text3);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 80ms ease, color 80ms ease;
+    padding: 2px 4px;
+  }
+
+  .c4-feed-row:hover .c4-feed-edit { opacity: 1; }
+  .c4-feed-edit:hover { color: var(--d-text); }
+
+  .c4-feed-remove {
+    font-size: 11px;
+    color: var(--d-text3);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 80ms ease, color 80ms ease;
+    padding: 2px 4px;
+  }
+
+  .c4-feed-row:hover .c4-feed-remove { opacity: 1; }
+  .c4-feed-remove:hover { color: var(--d-danger); }
+
+  .c4-add-row {
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 80ms ease;
+    margin-top: 2px;
+  }
+
+  .c4-add-row:hover { background: var(--accent-soft); }
+
+  .c4-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 10px;
+    border-radius: 5px;
+  }
+
+  .c4-setting + .c4-setting { border-top: 1px solid var(--d-border-subtle); }
+
+  .c4-setting-label { font-size: 12px; color: var(--d-text); font-weight: 450; }
+  .c4-setting-hint { font-size: 10.5px; color: var(--d-text3); margin-top: 1px; }
+
+  .c4-toggle {
+    width: 34px; height: 18px; border-radius: 999px;
+    background: oklch(28% 0.008 250); border: 1px solid oklch(34% 0.01 250);
+    position: relative; cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .c4-toggle.on { background: var(--accent-dim); border-color: var(--accent); }
+  .c4-toggle::after {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--d-text3); position: absolute; top: 1px; left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .c4-toggle.on::after { transform: translateX(16px); background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <h1>Variant C — Sub-variants</h1>
+  <p>Four refinements of the dark utilitarian direction. Same foundation — dark surfaces, Space Grotesk, developer density — different accent colors, layouts, and interaction patterns.</p>
+</div>
+
+
+<!-- ===== C1 — Teal / Original Refined ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>C1 — Teal Accent</h2>
+    <span class="tag">Sidebar + Table</span>
+  </div>
+  <p class="variant-desc">
+    The original C, polished. Sidebar navigation, tabular feed list, teal accent. Clean separation between nav and content. Most conventional settings layout — instantly familiar.
+  </p>
+
+  <div class="window-chrome c1">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="c1-layout">
+      <nav class="c1-sidebar">
+        <div class="c1-nav"><span class="c1-nav-icon">⚙</span> General</div>
+        <div class="c1-nav active"><span class="c1-nav-icon">◉</span> Feeds</div>
+      </nav>
+      <main class="c1-main">
+        <div class="c1-toolbar">
+          <h2 class="c1-title">Feeds</h2>
+          <button class="c1-btn">+ New feed</button>
+        </div>
+        <table class="c1-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Interval</th><th style="width:68px"></th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="name">My PRs</td>
+              <td><span class="c1-badge">github-pr</span></td>
+              <td><span class="c1-mono">5m</span></td>
+              <td><div class="c1-row-actions"><span class="c1-icon-btn">✎</span><span class="c1-icon-btn danger">✕</span></div></td>
+            </tr>
+            <tr>
+              <td class="name">Backend PRs</td>
+              <td><span class="c1-badge">ado-pr</span></td>
+              <td><span class="c1-mono">10m</span></td>
+              <td><div class="c1-row-actions"><span class="c1-icon-btn">✎</span><span class="c1-icon-btn danger">✕</span></div></td>
+            </tr>
+            <tr>
+              <td class="name">Deploy Status</td>
+              <td><span class="c1-badge">shell</span></td>
+              <td><span class="c1-mono">30s</span></td>
+              <td><div class="c1-row-actions"><span class="c1-icon-btn">✎</span><span class="c1-icon-btn danger">✕</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <hr class="c1-divider">
+        <h2 class="c1-title" style="margin-bottom: 8px;">General</h2>
+        <div class="c1-setting">
+          <div><div class="c1-setting-label">Start on system startup</div><div class="c1-setting-hint">Launch Cortado at login</div></div>
+          <div class="c1-toggle on"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== C2 — Amber / Monochrome Minimal ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>C2 — Amber Accent</h2>
+    <span class="tag">Sidebar + Flat List</span>
+  </div>
+  <p class="variant-desc">
+    Stripped to essentials. No table chrome — feeds are a flat hover-to-reveal list. Amber/gold accent adds warmth without sacrificing the technical feel. Smaller toggles, tighter spacing. The most minimal option.
+  </p>
+
+  <div class="window-chrome c2">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="c2-layout">
+      <nav class="c2-sidebar">
+        <div class="c2-nav active">General</div>
+        <div class="c2-nav">Feeds</div>
+      </nav>
+      <main class="c2-main">
+        <div class="c2-section-label">Feeds</div>
+
+        <div class="c2-feed-row">
+          <div class="c2-feed-info">
+            <span class="c2-feed-name">My PRs</span>
+            <span class="c2-feed-meta"><span class="type">github-pr</span> <span>· 5m</span></span>
+          </div>
+          <span class="c2-feed-arrow">→</span>
+        </div>
+        <div class="c2-feed-row">
+          <div class="c2-feed-info">
+            <span class="c2-feed-name">Backend PRs</span>
+            <span class="c2-feed-meta"><span class="type">ado-pr</span> <span>· 10m</span></span>
+          </div>
+          <span class="c2-feed-arrow">→</span>
+        </div>
+        <div class="c2-feed-row">
+          <div class="c2-feed-info">
+            <span class="c2-feed-name">Deploy Status</span>
+            <span class="c2-feed-meta"><span class="type">shell</span> <span>· 30s</span></span>
+          </div>
+          <span class="c2-feed-arrow">→</span>
+        </div>
+
+        <div class="c2-add-row">
+          <span class="c2-add-plus">+</span>
+          Add feed
+        </div>
+
+        <hr class="c2-divider">
+        <div class="c2-section-label">System</div>
+
+        <div class="c2-setting">
+          <div><div class="c2-setting-text">Start on system startup</div><div class="c2-setting-sub">Launch Cortado at login</div></div>
+          <div class="c2-toggle on"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== C3 — Violet / Segmented Controls ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>C3 — Violet Accent</h2>
+    <span class="tag">Segmented Nav + Cards</span>
+  </div>
+  <p class="variant-desc">
+    Sidebar replaced by a segmented control (pill switcher) in a top bar. Feeds shown as compact cards with color-coded left-edge indicators. Hover reveals action buttons. Violet accent gives it a distinct identity. The most "app-like" of the four.
+  </p>
+
+  <div class="window-chrome c3">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="c3-layout">
+      <div class="c3-topbar">
+        <div class="c3-segmented">
+          <div class="c3-seg-item active">Feeds</div>
+          <div class="c3-seg-item">General</div>
+        </div>
+        <button class="c3-btn-sm">+ New feed</button>
+      </div>
+      <div class="c3-content">
+        <div class="c3-feed-list">
+          <div class="c3-feed-card">
+            <div class="c3-feed-indicator teal"></div>
+            <div class="c3-feed-body">
+              <div class="c3-feed-top">
+                <span class="c3-feed-name">My PRs</span>
+                <span class="c3-feed-type">github-pr</span>
+              </div>
+              <div class="c3-feed-details">
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">↻</span> 5m</span>
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">⊞</span> org/frontend</span>
+              </div>
+            </div>
+            <div class="c3-feed-actions">
+              <span class="c3-action-btn">✎</span>
+              <span class="c3-action-btn danger">✕</span>
+            </div>
+          </div>
+
+          <div class="c3-feed-card">
+            <div class="c3-feed-indicator amber"></div>
+            <div class="c3-feed-body">
+              <div class="c3-feed-top">
+                <span class="c3-feed-name">Backend PRs</span>
+                <span class="c3-feed-type">ado-pr</span>
+              </div>
+              <div class="c3-feed-details">
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">↻</span> 10m</span>
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">⊞</span> myorg/backend</span>
+              </div>
+            </div>
+            <div class="c3-feed-actions">
+              <span class="c3-action-btn">✎</span>
+              <span class="c3-action-btn danger">✕</span>
+            </div>
+          </div>
+
+          <div class="c3-feed-card">
+            <div class="c3-feed-indicator violet"></div>
+            <div class="c3-feed-body">
+              <div class="c3-feed-top">
+                <span class="c3-feed-name">Deploy Status</span>
+                <span class="c3-feed-type">shell</span>
+              </div>
+              <div class="c3-feed-details">
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">↻</span> 30s</span>
+                <span class="c3-feed-detail-item"><span class="c3-feed-detail-icon">⊞</span> ./check-deploy.sh</span>
+              </div>
+            </div>
+            <div class="c3-feed-actions">
+              <span class="c3-action-btn">✎</span>
+              <span class="c3-action-btn danger">✕</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="c3-section-gap">
+          <div class="c3-section-head">System</div>
+          <div class="c3-setting">
+            <div><div class="c3-setting-label">Start on system startup</div><div class="c3-setting-hint">Launch Cortado at login</div></div>
+            <div class="c3-toggle on"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== C4 — Blue / Full-Width No Sidebar ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>C4 — Blue Accent</h2>
+    <span class="tag">No Sidebar / Sections</span>
+  </div>
+  <p class="variant-desc">
+    No sidebar, no tabs — a single scrollable column with collapsible sections. Blue accent matches the panel's existing blue-gray identity for maximum cohesion. Feeds shown as a compact flat list with status dots. Feels like a focused config document — closest to how a TOML file already reads.
+  </p>
+
+  <div class="window-chrome c4">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Cortado — Settings</span>
+    </div>
+    <div class="c4-layout">
+
+      <div class="c4-section">
+        <div class="c4-section-header">
+          <div class="c4-section-left">
+            <span class="c4-section-title">Feeds</span>
+            <span class="c4-section-count">3</span>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="c4-btn-inline">+ Add</button>
+            <span class="c4-section-toggle open">▸</span>
+          </div>
+        </div>
+        <div class="c4-feed-rows">
+          <div class="c4-feed-row">
+            <span class="c4-feed-dot blue"></span>
+            <span class="c4-feed-name">My PRs</span>
+            <span class="c4-feed-type-label">github-pr</span>
+            <span class="c4-feed-interval">5m</span>
+            <span class="c4-feed-edit">✎</span>
+            <span class="c4-feed-remove">✕</span>
+          </div>
+          <div class="c4-feed-row">
+            <span class="c4-feed-dot teal"></span>
+            <span class="c4-feed-name">Backend PRs</span>
+            <span class="c4-feed-type-label">ado-pr</span>
+            <span class="c4-feed-interval">10m</span>
+            <span class="c4-feed-edit">✎</span>
+            <span class="c4-feed-remove">✕</span>
+          </div>
+          <div class="c4-feed-row">
+            <span class="c4-feed-dot amber"></span>
+            <span class="c4-feed-name">Deploy Status</span>
+            <span class="c4-feed-type-label">shell</span>
+            <span class="c4-feed-interval">30s</span>
+            <span class="c4-feed-edit">✎</span>
+            <span class="c4-feed-remove">✕</span>
+          </div>
+          <div class="c4-add-row">
+            <span>+</span> Add feed
+          </div>
+        </div>
+      </div>
+
+      <div class="c4-section">
+        <div class="c4-section-header">
+          <div class="c4-section-left">
+            <span class="c4-section-title">General</span>
+          </div>
+          <span class="c4-section-toggle open">▸</span>
+        </div>
+        <div class="c4-setting">
+          <div><div class="c4-setting-label">Start on system startup</div><div class="c4-setting-hint">Launch Cortado at login</div></div>
+          <div class="c4-toggle on"></div>
+        </div>
+        <div class="c4-setting">
+          <div><div class="c4-setting-label">Show in dock</div><div class="c4-setting-hint">Display Cortado in the macOS dock</div></div>
+          <div class="c4-toggle"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

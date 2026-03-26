@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Core Colors & Themes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    background: oklch(96% 0.004 250);
+    color: oklch(20% 0.01 250);
+    min-height: 100vh;
+    padding: 40px 32px 80px;
+  }
+
+  .header {
+    max-width: 860px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+  .header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .header p { margin-top: 8px; font-size: 13px; color: oklch(50% 0.01 250); line-height: 1.55; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .section {
+    max-width: 860px;
+    margin: 0 auto 56px;
+  }
+
+  .section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: oklch(25% 0.01 250);
+  }
+
+  .section .desc {
+    font-size: 12.5px;
+    color: oklch(50% 0.01 250);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    max-width: 700px;
+  }
+
+  /* ===== COLOR SWATCHES ===== */
+  .palette-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .palette-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .palette-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: oklch(50% 0.01 250);
+    margin-bottom: 4px;
+  }
+
+  .swatch-row {
+    display: flex;
+    gap: 3px;
+  }
+
+  .swatch {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    position: relative;
+    border: 1px solid oklch(0% 0 0 / 0.06);
+  }
+
+  .swatch-label {
+    position: absolute;
+    bottom: -18px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: oklch(50% 0.01 250);
+    font-family: "Space Mono", monospace;
+  }
+
+  .swatch-name {
+    font-size: 10px;
+    font-weight: 500;
+    color: oklch(40% 0.01 250);
+    margin-top: 20px;
+  }
+
+  /* ===== ACCENT OPTION CARDS ===== */
+  .accent-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .accent-card {
+    border: 1px solid oklch(88% 0.008 250);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .accent-card-header {
+    padding: 14px 16px 10px;
+    background: oklch(98% 0.003 250);
+    border-bottom: 1px solid oklch(92% 0.006 250);
+  }
+
+  .accent-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .accent-card-header .subtitle {
+    font-size: 11px;
+    color: oklch(50% 0.01 250);
+    line-height: 1.45;
+  }
+
+  .accent-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .accent-band {
+    display: flex;
+    gap: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 32px;
+  }
+
+  .accent-band-swatch {
+    flex: 1;
+    position: relative;
+  }
+
+  .accent-band-swatch .band-label {
+    position: absolute;
+    bottom: -16px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8px;
+    color: oklch(55% 0.01 250);
+    font-family: "Space Mono", monospace;
+  }
+
+  /* Mini theme previews */
+  .mini-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .mini-theme {
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    border: 1px solid;
+  }
+
+  .mini-theme .mini-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    opacity: 0.5;
+  }
+
+  .mini-theme .mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+
+  .mini-theme .mini-text { font-weight: 450; }
+  .mini-theme .mini-sub { font-size: 10px; opacity: 0.5; }
+
+  .mini-toggle {
+    width: 28px; height: 15px; border-radius: 999px;
+    position: relative;
+  }
+  .mini-toggle::after {
+    content: ''; width: 11px; height: 11px; border-radius: 50%;
+    background: white; position: absolute; top: 2px;
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.15);
+  }
+  .mini-toggle.on::after { right: 2px; }
+  .mini-toggle.off::after { left: 2px; }
+
+  .mini-card {
+    border-radius: 4px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .mini-indicator {
+    width: 3px;
+    height: 18px;
+    border-radius: 1.5px;
+  }
+
+  .mini-card-name { font-size: 10px; font-weight: 500; }
+  .mini-card-type { font-size: 8px; font-family: "Space Mono", monospace; opacity: 0.5; }
+
+  .mini-btn {
+    margin-top: 6px;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+    display: inline-block;
+  }
+
+  /* ===== FULL THEME PREVIEWS ===== */
+  .theme-previews {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .theme-preview-card {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid oklch(88% 0.008 250);
+  }
+
+  .theme-preview-title {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 14px;
+    background: oklch(98% 0.003 250);
+    border-bottom: 1px solid oklch(92% 0.006 250);
+  }
+
+  .window-chrome-sm {
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 12px;
+    border: 1px solid;
+  }
+
+  .wc-titlebar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    align-items: center;
+    border-bottom: 1px solid;
+  }
+
+  .wc-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .wc-dot.close { background: oklch(65% 0.22 25); }
+  .wc-dot.min { background: oklch(80% 0.17 85); }
+  .wc-dot.max { background: oklch(70% 0.18 145); }
+
+  .wc-title { font-size: 9px; font-weight: 500; opacity: 0.4; margin-left: 4px; }
+
+  .wc-layout {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    min-height: 200px;
+  }
+
+  .wc-sidebar {
+    padding: 6px 4px;
+    border-right: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .wc-nav {
+    font-size: 9px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-weight: 450;
+    cursor: default;
+  }
+
+  .wc-main { padding: 10px 12px; }
+
+  .wc-section-title {
+    font-size: 10px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .wc-feed-card {
+    border-radius: 4px;
+    padding: 7px 8px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid;
+  }
+
+  .wc-feed-ind { width: 3px; height: 20px; border-radius: 2px; }
+  .wc-feed-name { font-size: 9px; font-weight: 500; }
+  .wc-feed-type { font-size: 7px; font-family: "Space Mono", monospace; opacity: 0.5; }
+
+  .wc-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 9px;
+    border-bottom: 1px solid;
+  }
+
+  .wc-toggle {
+    width: 22px; height: 12px; border-radius: 999px;
+    position: relative;
+  }
+  .wc-toggle::after {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: white; position: absolute; top: 2px;
+    box-shadow: 0 0.5px 1px oklch(0% 0 0 / 0.15);
+  }
+  .wc-toggle.on::after { right: 2px; }
+
+  .wc-add {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid;
+    display: inline-block;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Cortado — Core Colors & Themes</h1>
+  <p>Establishing the app's color identity. The panel already uses blue-gray neutrals (hue 250) and semantic status colors. We need to choose an accent color, then derive coherent light and dark themes.</p>
+</div>
+
+
+<!-- ===== EXISTING PALETTE ===== -->
+<div class="section">
+  <h2>Existing Panel Palette</h2>
+  <p class="desc">What's already established. Blue-gray neutrals, four semantic status colors. These are non-negotiable — the accent must coexist with them.</p>
+
+  <div class="palette-row">
+    <div class="palette-group">
+      <div class="palette-group-label">Neutrals (hue 250)</div>
+      <div class="swatch-row" style="margin-bottom: 24px;">
+        <div class="swatch" style="background: oklch(97% 0.004 250);"><span class="swatch-label">97%</span></div>
+        <div class="swatch" style="background: oklch(84% 0.01 250);"><span class="swatch-label">84%</span></div>
+        <div class="swatch" style="background: oklch(58% 0.01 250);"><span class="swatch-label">58%</span></div>
+        <div class="swatch" style="background: oklch(43% 0.01 250);"><span class="swatch-label">43%</span></div>
+        <div class="swatch" style="background: oklch(22% 0.008 250);"><span class="swatch-label">22%</span></div>
+        <div class="swatch" style="background: oklch(20% 0.01 250);"><span class="swatch-label">20%</span></div>
+      </div>
+    </div>
+
+    <div class="palette-group">
+      <div class="palette-group-label">Status Colors</div>
+      <div class="swatch-row" style="margin-bottom: 24px;">
+        <div class="swatch" style="background: oklch(62% 0.24 27);"><span class="swatch-label">neg h27</span></div>
+        <div class="swatch" style="background: oklch(76% 0.18 75);"><span class="swatch-label">wait h75</span></div>
+        <div class="swatch" style="background: oklch(58% 0.2 258);"><span class="swatch-label">run h258</span></div>
+        <div class="swatch" style="background: oklch(73% 0.17 150);"><span class="swatch-label">pos h150</span></div>
+        <div class="swatch" style="background: oklch(58% 0.01 250);"><span class="swatch-label">idle</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== ACCENT OPTIONS ===== -->
+<div class="section">
+  <h2>Accent Color Options</h2>
+  <p class="desc">Four accent hue candidates. Each is shown as a 5-stop scale (from soft background to vivid foreground) plus mini light/dark previews of the settings L5b layout.</p>
+
+  <div class="accent-options">
+
+    <!-- OPTION 1: TEAL (hue 178) -->
+    <div class="accent-card">
+      <div class="accent-card-header">
+        <h3>1 — Teal <span style="font-weight:400;color:oklch(50% 0.01 250);font-size:12px;">hue 178</span></h3>
+        <div class="subtitle">Cool, technical. Distinct from all four status colors. A "developer tool" signal.</div>
+      </div>
+      <div class="accent-card-body">
+        <div>
+          <div class="accent-band">
+            <div class="accent-band-swatch" style="background: oklch(94% 0.03 178);"><span class="band-label">soft</span></div>
+            <div class="accent-band-swatch" style="background: oklch(80% 0.08 178);"></div>
+            <div class="accent-band-swatch" style="background: oklch(65% 0.12 178);"><span class="band-label">base</span></div>
+            <div class="accent-band-swatch" style="background: oklch(50% 0.1 178);"></div>
+            <div class="accent-band-swatch" style="background: oklch(38% 0.06 178);"><span class="band-label">dim</span></div>
+          </div>
+        </div>
+        <div class="mini-preview">
+          <div class="mini-theme" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+            <div class="mini-label">Light</div>
+            <div class="mini-card" style="background:oklch(97% 0.004 250);border:1px solid oklch(90% 0.008 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(65% 0.12 178);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(50% 0.1 178);border-color:oklch(80% 0.08 178);background:transparent;">+ Add</div>
+          </div>
+          <div class="mini-theme" style="background:oklch(17% 0.01 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+            <div class="mini-label">Dark</div>
+            <div class="mini-card" style="background:oklch(20% 0.012 250);border:1px solid oklch(26% 0.01 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(72% 0.14 178);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type" style="color:oklch(72% 0.14 178);">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(72% 0.14 178);border-color:oklch(38% 0.06 178);background:transparent;">+ Add</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION 2: BLUE (hue 258) — matches running status -->
+    <div class="accent-card">
+      <div class="accent-card-header">
+        <h3>2 — Blue <span style="font-weight:400;color:oklch(50% 0.01 250);font-size:12px;">hue 258</span></h3>
+        <div class="subtitle">Matches the panel's neutral hue and "running" status. Maximum brand cohesion. Risk: accent blends into neutrals.</div>
+      </div>
+      <div class="accent-card-body">
+        <div>
+          <div class="accent-band">
+            <div class="accent-band-swatch" style="background: oklch(94% 0.03 258);"><span class="band-label">soft</span></div>
+            <div class="accent-band-swatch" style="background: oklch(78% 0.08 258);"></div>
+            <div class="accent-band-swatch" style="background: oklch(62% 0.15 258);"><span class="band-label">base</span></div>
+            <div class="accent-band-swatch" style="background: oklch(48% 0.12 258);"></div>
+            <div class="accent-band-swatch" style="background: oklch(36% 0.08 258);"><span class="band-label">dim</span></div>
+          </div>
+        </div>
+        <div class="mini-preview">
+          <div class="mini-theme" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+            <div class="mini-label">Light</div>
+            <div class="mini-card" style="background:oklch(97% 0.004 250);border:1px solid oklch(90% 0.008 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(62% 0.15 258);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(48% 0.12 258);border-color:oklch(78% 0.08 258);background:transparent;">+ Add</div>
+          </div>
+          <div class="mini-theme" style="background:oklch(17% 0.01 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+            <div class="mini-label">Dark</div>
+            <div class="mini-card" style="background:oklch(20% 0.012 250);border:1px solid oklch(26% 0.01 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(68% 0.16 258);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type" style="color:oklch(68% 0.16 258);">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(68% 0.16 258);border-color:oklch(36% 0.08 258);background:transparent;">+ Add</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION 3: AMBER (hue 75) -->
+    <div class="accent-card">
+      <div class="accent-card-header">
+        <h3>3 — Amber <span style="font-weight:400;color:oklch(50% 0.01 250);font-size:12px;">hue 75</span></h3>
+        <div class="subtitle">Warm, distinctive. "Cortado" is a coffee drink — amber is on-brand. Risk: close to "waiting" status (hue 75).</div>
+      </div>
+      <div class="accent-card-body">
+        <div>
+          <div class="accent-band">
+            <div class="accent-band-swatch" style="background: oklch(95% 0.04 75);"><span class="band-label">soft</span></div>
+            <div class="accent-band-swatch" style="background: oklch(84% 0.1 75);"></div>
+            <div class="accent-band-swatch" style="background: oklch(72% 0.14 75);"><span class="band-label">base</span></div>
+            <div class="accent-band-swatch" style="background: oklch(58% 0.1 75);"></div>
+            <div class="accent-band-swatch" style="background: oklch(40% 0.06 75);"><span class="band-label">dim</span></div>
+          </div>
+        </div>
+        <div class="mini-preview">
+          <div class="mini-theme" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+            <div class="mini-label">Light</div>
+            <div class="mini-card" style="background:oklch(97% 0.004 250);border:1px solid oklch(90% 0.008 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(72% 0.14 75);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(58% 0.1 75);border-color:oklch(84% 0.1 75);background:transparent;">+ Add</div>
+          </div>
+          <div class="mini-theme" style="background:oklch(17% 0.01 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+            <div class="mini-label">Dark</div>
+            <div class="mini-card" style="background:oklch(20% 0.012 250);border:1px solid oklch(26% 0.01 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(78% 0.14 75);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type" style="color:oklch(78% 0.14 75);">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(78% 0.14 75);border-color:oklch(40% 0.06 75);background:transparent;">+ Add</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION 4: COPPER/BROWN (hue 55) — coffee-inspired -->
+    <div class="accent-card">
+      <div class="accent-card-header">
+        <h3>4 — Copper <span style="font-weight:400;color:oklch(50% 0.01 250);font-size:12px;">hue 55</span></h3>
+        <div class="subtitle">The coffee hue. Warm brown-copper, unmistakably "cortado". Distinctive and away from all status colors. Rich personality.</div>
+      </div>
+      <div class="accent-card-body">
+        <div>
+          <div class="accent-band">
+            <div class="accent-band-swatch" style="background: oklch(94% 0.03 55);"><span class="band-label">soft</span></div>
+            <div class="accent-band-swatch" style="background: oklch(80% 0.07 55);"></div>
+            <div class="accent-band-swatch" style="background: oklch(65% 0.11 55);"><span class="band-label">base</span></div>
+            <div class="accent-band-swatch" style="background: oklch(52% 0.09 55);"></div>
+            <div class="accent-band-swatch" style="background: oklch(38% 0.05 55);"><span class="band-label">dim</span></div>
+          </div>
+        </div>
+        <div class="mini-preview">
+          <div class="mini-theme" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+            <div class="mini-label">Light</div>
+            <div class="mini-card" style="background:oklch(97% 0.004 250);border:1px solid oklch(90% 0.008 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(65% 0.11 55);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(52% 0.09 55);border-color:oklch(80% 0.07 55);background:transparent;">+ Add</div>
+          </div>
+          <div class="mini-theme" style="background:oklch(17% 0.01 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+            <div class="mini-label">Dark</div>
+            <div class="mini-card" style="background:oklch(20% 0.012 250);border:1px solid oklch(26% 0.01 250);border-radius:4px;">
+              <div class="mini-indicator" style="background:oklch(72% 0.12 55);"></div>
+              <div><div class="mini-card-name">My PRs</div><div class="mini-card-type" style="color:oklch(72% 0.12 55);">github-pr</div></div>
+            </div>
+            <div class="mini-btn" style="color:oklch(72% 0.12 55);border-color:oklch(38% 0.05 55);background:transparent;">+ Add</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ===== FULL THEME PREVIEWS ===== -->
+<div class="section">
+  <h2>Full L5b Preview — Each Accent × Light/Dark</h2>
+  <p class="desc">The same L5b layout rendered at each accent, in both light and dark. Neutrals are always blue-gray (hue 250). Only the accent changes.</p>
+
+  <div class="theme-previews" style="margin-bottom: 24px;">
+    <!-- TEAL LIGHT -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Teal — Light</div>
+      <div class="window-chrome-sm" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+        <div class="wc-titlebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+            <div class="wc-nav" style="color:oklch(42% 0.01 250);">General</div>
+            <div class="wc-nav" style="background:oklch(94% 0.03 178);color:oklch(45% 0.1 178);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(99% 0.003 250);">
+            <div class="wc-section-title" style="color:oklch(20% 0.01 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(65% 0.12 178);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(65% 0.12 178);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(50% 0.1 178);border-color:oklch(80% 0.08 178);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAL DARK -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Teal — Dark</div>
+      <div class="window-chrome-sm" style="background:oklch(14% 0.008 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+        <div class="wc-titlebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title" style="color:oklch(68% 0.008 250);">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+            <div class="wc-nav" style="color:oklch(50% 0.006 250);">General</div>
+            <div class="wc-nav" style="background:oklch(22% 0.03 178);color:oklch(72% 0.14 178);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(14% 0.008 250);">
+            <div class="wc-section-title" style="color:oklch(90% 0.008 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.14 178);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.14 178);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(72% 0.14 178);border-color:oklch(38% 0.06 178);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLUE LIGHT -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Blue — Light</div>
+      <div class="window-chrome-sm" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+        <div class="wc-titlebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+            <div class="wc-nav" style="color:oklch(42% 0.01 250);">General</div>
+            <div class="wc-nav" style="background:oklch(94% 0.03 258);color:oklch(48% 0.12 258);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(99% 0.003 250);">
+            <div class="wc-section-title" style="color:oklch(20% 0.01 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(62% 0.15 258);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(62% 0.15 258);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(48% 0.12 258);border-color:oklch(78% 0.08 258);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLUE DARK -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Blue — Dark</div>
+      <div class="window-chrome-sm" style="background:oklch(14% 0.008 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+        <div class="wc-titlebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title" style="color:oklch(68% 0.008 250);">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+            <div class="wc-nav" style="color:oklch(50% 0.006 250);">General</div>
+            <div class="wc-nav" style="background:oklch(22% 0.04 258);color:oklch(68% 0.16 258);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(14% 0.008 250);">
+            <div class="wc-section-title" style="color:oklch(90% 0.008 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(68% 0.16 258);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(68% 0.16 258);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(68% 0.16 258);border-color:oklch(36% 0.08 258);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AMBER LIGHT -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Amber — Light</div>
+      <div class="window-chrome-sm" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+        <div class="wc-titlebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+            <div class="wc-nav" style="color:oklch(42% 0.01 250);">General</div>
+            <div class="wc-nav" style="background:oklch(95% 0.04 75);color:oklch(52% 0.1 75);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(99% 0.003 250);">
+            <div class="wc-section-title" style="color:oklch(20% 0.01 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.14 75);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.14 75);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(58% 0.1 75);border-color:oklch(84% 0.1 75);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AMBER DARK -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Amber — Dark</div>
+      <div class="window-chrome-sm" style="background:oklch(14% 0.008 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+        <div class="wc-titlebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title" style="color:oklch(68% 0.008 250);">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+            <div class="wc-nav" style="color:oklch(50% 0.006 250);">General</div>
+            <div class="wc-nav" style="background:oklch(22% 0.03 75);color:oklch(78% 0.14 75);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(14% 0.008 250);">
+            <div class="wc-section-title" style="color:oklch(90% 0.008 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(78% 0.14 75);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(78% 0.14 75);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(78% 0.14 75);border-color:oklch(40% 0.06 75);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COPPER LIGHT -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Copper — Light</div>
+      <div class="window-chrome-sm" style="background:oklch(99% 0.003 250);color:oklch(20% 0.01 250);border-color:oklch(90% 0.008 250);">
+        <div class="wc-titlebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(96% 0.006 250);border-color:oklch(90% 0.008 250);">
+            <div class="wc-nav" style="color:oklch(42% 0.01 250);">General</div>
+            <div class="wc-nav" style="background:oklch(94% 0.03 55);color:oklch(48% 0.09 55);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(99% 0.003 250);">
+            <div class="wc-section-title" style="color:oklch(20% 0.01 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(65% 0.11 55);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(97% 0.004 250);border-color:oklch(90% 0.008 250);">
+              <div class="wc-feed-ind" style="background:oklch(65% 0.11 55);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.01 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(52% 0.09 55);border-color:oklch(80% 0.07 55);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COPPER DARK -->
+    <div class="theme-preview-card">
+      <div class="theme-preview-title">Copper — Dark</div>
+      <div class="window-chrome-sm" style="background:oklch(14% 0.008 250);color:oklch(90% 0.008 250);border-color:oklch(26% 0.01 250);">
+        <div class="wc-titlebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+          <div class="wc-dot close"></div><div class="wc-dot min"></div><div class="wc-dot max"></div>
+          <span class="wc-title" style="color:oklch(68% 0.008 250);">Settings</span>
+        </div>
+        <div class="wc-layout">
+          <div class="wc-sidebar" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+            <div class="wc-nav" style="color:oklch(50% 0.006 250);">General</div>
+            <div class="wc-nav" style="background:oklch(22% 0.03 55);color:oklch(72% 0.12 55);font-weight:600;">Feeds</div>
+          </div>
+          <div class="wc-main" style="background:oklch(14% 0.008 250);">
+            <div class="wc-section-title" style="color:oklch(90% 0.008 250);">Feeds</div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.12 55);"></div>
+              <div><div class="wc-feed-name">My PRs</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">github-pr · 5m</div></div>
+            </div>
+            <div class="wc-feed-card" style="background:oklch(17% 0.01 250);border-color:oklch(26% 0.01 250);">
+              <div class="wc-feed-ind" style="background:oklch(72% 0.12 55);"></div>
+              <div><div class="wc-feed-name">Deploy Status</div><div class="wc-feed-type" style="color:oklch(50% 0.006 250);">shell · 30s</div></div>
+            </div>
+            <div class="wc-add" style="color:oklch(72% 0.12 55);border-color:oklch(38% 0.05 55);">+ New feed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

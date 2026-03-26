@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 04 — Settings UI: Feeds config
@@ -19,7 +19,7 @@ Build the frontend GUI for managing feed configurations visually. Users should b
   - `github-pr`: repo, token (masked), interval, retain
   - `ado-pr`: org, project, token (masked), interval, retain
   - `shell`: command, interval, retain
-- [ ] Field overrides section lets user toggle field visibility and change labels
+- [ ] ~~Field overrides section lets user toggle field visibility and change labels~~ (deferred to backlog: `optional-field-overrides-ui.md`)
 - [ ] Save button validates via backend and shows errors inline if invalid
 - [ ] Successful save shows a confirmation and a note that restart is needed for changes to take effect
 - [ ] Cancel / discard changes option

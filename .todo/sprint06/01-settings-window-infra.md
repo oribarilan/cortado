@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 01 — Settings window infrastructure

@@ -1,13 +1,12 @@
 use std::process::Command;
 use std::sync::Once;
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, WebviewWindowBuilder};
 
 use crate::{
     feed::{BackgroundPoller, FeedRegistry, FeedSnapshot},
     fns, ui_snapshot,
 };
-
 static PANEL_INIT: Once = Once::new();
 
 #[tauri::command]
@@ -59,4 +58,28 @@ pub fn open_activity(url: String) -> Result<(), String> {
 #[tauri::command]
 pub fn quit_app(app_handle: AppHandle) {
     app_handle.exit(0);
+}
+
+#[tauri::command]
+pub fn open_settings(app_handle: AppHandle) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window("settings") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    let config = &app_handle.config().app.windows;
+    let settings_config = config
+        .iter()
+        .find(|w| w.label == "settings")
+        .ok_or_else(|| "settings window config not found".to_string())?;
+
+    let window = WebviewWindowBuilder::from_config(&app_handle, settings_config)
+        .map_err(|e| e.to_string())?
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let _ = window.center();
+
+    Ok(())
 }

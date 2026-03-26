@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado Settings — Test Feed Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;450;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    background: oklch(10% 0.006 250);
+    color: oklch(88% 0.008 250);
+    min-height: 100vh;
+    padding: 40px 32px 80px;
+  }
+
+  .showcase-header { max-width: 940px; margin: 0 auto 48px; text-align: center; }
+  .showcase-header h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: oklch(92% 0.008 250); }
+  .showcase-header p { margin-top: 8px; font-size: 13px; color: oklch(50% 0.008 250); max-width: 640px; margin-left: auto; margin-right: auto; line-height: 1.55; }
+
+  .variant-section { max-width: 940px; margin: 0 auto 72px; }
+  .variant-label { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .variant-label h2 { font-size: 16px; font-weight: 600; color: oklch(88% 0.008 250); }
+  .variant-label .tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 3px; background: oklch(22% 0.01 250); color: oklch(60% 0.008 250); border: 1px solid oklch(28% 0.01 250); }
+  .variant-desc { font-size: 12.5px; color: oklch(48% 0.008 250); margin-bottom: 16px; line-height: 1.55; max-width: 720px; }
+
+  .states-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .state-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(45% 0.008 250); margin-bottom: 8px; }
+
+  :root {
+    --bg: oklch(14% 0.008 250);
+    --s: oklch(17% 0.01 250);
+    --s2: oklch(20% 0.012 250);
+    --t1: oklch(90% 0.008 250);
+    --t2: oklch(68% 0.008 250);
+    --t3: oklch(50% 0.006 250);
+    --border: oklch(26% 0.01 250);
+    --border-s: oklch(22% 0.008 250);
+    --hover: oklch(22% 0.012 250);
+    --danger: oklch(70% 0.18 25);
+    --ac: oklch(72% 0.14 178);
+    --ac-dim: oklch(38% 0.06 178);
+    --ac-soft: oklch(22% 0.03 178);
+    --success: oklch(72% 0.14 150);
+    --success-dim: oklch(28% 0.04 150);
+    --mono: "Space Mono", "SF Mono", ui-monospace, monospace;
+  }
+
+  .mock-card {
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    padding: 16px;
+  }
+
+  .mock-form-field {
+    margin-bottom: 10px;
+  }
+
+  .mock-label {
+    font-size: 10px;
+    font-weight: 550;
+    color: var(--t2);
+    margin-bottom: 3px;
+  }
+
+  .mock-input {
+    width: 100%;
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--s);
+    color: var(--t1);
+  }
+
+  .mock-divider {
+    margin: 12px 0 10px;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-row-mock {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    align-items: center;
+  }
+
+  .btn-primary-mock {
+    font-size: 10px; font-weight: 600; font-family: inherit;
+    padding: 5px 12px; border: none; border-radius: 4px;
+    background: var(--ac-dim); color: var(--ac); cursor: default;
+  }
+
+  .btn-secondary-mock {
+    font-size: 10px; font-weight: 500; font-family: inherit;
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 4px;
+    background: transparent; color: var(--t2); cursor: default;
+  }
+
+  .btn-test {
+    font-size: 10px; font-weight: 600; font-family: inherit;
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--s2); color: var(--t2); cursor: default;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .btn-test-icon { font-size: 11px; }
+
+  /* ===== Inline results panel ===== */
+  .test-panel {
+    margin-top: 10px;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .test-panel.loading {
+    background: var(--s2);
+    border: 1px solid var(--border);
+    color: var(--t2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .test-panel.success {
+    background: var(--success-dim);
+    border: 1px solid oklch(34% 0.06 150);
+    color: var(--success);
+  }
+
+  .test-panel.error {
+    background: oklch(22% 0.03 25);
+    border: 1px solid oklch(32% 0.06 25);
+    color: var(--danger);
+  }
+
+  .test-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .test-status {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .test-dismiss {
+    font-size: 10px;
+    color: inherit;
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .test-preview {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid oklch(34% 0.04 150);
+  }
+
+  .test-preview-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .test-activity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    font-size: 10px;
+    color: var(--t1);
+  }
+
+  .test-activity + .test-activity {
+    border-top: 1px solid oklch(32% 0.03 150);
+  }
+
+  .test-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .test-dot.green { background: oklch(72% 0.14 150); }
+  .test-dot.yellow { background: oklch(78% 0.14 80); }
+  .test-dot.blue { background: oklch(72% 0.14 258); }
+  .test-dot.red { background: oklch(70% 0.18 25); }
+
+  .test-activity-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .test-activity-status {
+    margin-left: auto;
+    font-size: 9px;
+    color: var(--t3);
+    flex-shrink: 0;
+  }
+
+  .test-count {
+    font-size: 9px;
+    opacity: 0.6;
+    margin-top: 4px;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--ac);
+    border-radius: 50%;
+    animation: spin 600ms linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Toast style */
+  .test-toast {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .test-toast.success {
+    background: var(--success-dim);
+    border: 1px solid oklch(34% 0.06 150);
+    color: var(--success);
+  }
+
+  .test-toast.error {
+    background: oklch(22% 0.03 25);
+    border: 1px solid oklch(32% 0.06 25);
+    color: var(--danger);
+  }
+
+  .test-toast-icon { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <h1>Test Feed — Results Display</h1>
+  <p>Three ways to show test results when the user clicks "Test" on an unsaved feed form. Each shown in loading, success (with activity preview), and error states.</p>
+</div>
+
+
+<!-- ===== T1 — INLINE PANEL (expandable) ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>T1 — Inline Panel</h2>
+    <span class="tag">Recommended</span>
+  </div>
+  <p class="variant-desc">
+    A result panel appears below the "Test" button. Shows a spinner while polling, then expands to show status + activity preview on success, or error message on failure. Dismissible with ✕. The form stays fully visible above.
+  </p>
+
+  <div class="states-row">
+    <div>
+      <div class="state-label">Loading</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel loading">
+          <div class="spinner"></div>
+          Polling feed...
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Success</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel success">
+          <div class="test-header">
+            <span class="test-status">✓ Connected — 3 activities</span>
+            <span class="test-dismiss">✕</span>
+          </div>
+          <div class="test-preview">
+            <div class="test-preview-title">Preview</div>
+            <div class="test-activity">
+              <span class="test-dot red"></span>
+              <span class="test-activity-name">Fix login redirect loop</span>
+              <span class="test-activity-status">changes requested</span>
+            </div>
+            <div class="test-activity">
+              <span class="test-dot yellow"></span>
+              <span class="test-activity-name">Add rate limiting to API</span>
+              <span class="test-activity-status">review pending</span>
+            </div>
+            <div class="test-activity">
+              <span class="test-dot green"></span>
+              <span class="test-activity-name">Update deps to latest</span>
+              <span class="test-activity-status">approved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Error</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/nonexistent</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel error">
+          <div class="test-header">
+            <span class="test-status">✕ Poll failed</span>
+            <span class="test-dismiss">✕</span>
+          </div>
+          <div style="margin-top: 4px; font-size: 10px; opacity: 0.85; line-height: 1.4;">
+            gh api error: Could not resolve to a Repository with the name 'org/nonexistent'. Verify the repo exists and you're authenticated with <span style="font-family: var(--mono); font-size: 9px;">gh auth login</span>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== T2 — COMPACT TOAST ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>T2 — Compact Toast</h2>
+    <span class="tag">Minimal</span>
+  </div>
+  <p class="variant-desc">
+    A one-line toast banner appears below the buttons. Success shows count only ("✓ 3 activities found"), error shows the message. No activity preview. Simplest to build. Click to expand details optionally.
+  </p>
+
+  <div class="states-row">
+    <div>
+      <div class="state-label">Loading</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test" style="opacity:0.5;"><div class="spinner" style="width:10px;height:10px;border-width:1.5px;"></div> Testing...</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Success</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-toast success">
+          <span class="test-toast-icon">✓</span> Connected — 3 activities found
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Error</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/nonexistent</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-toast error">
+          <span class="test-toast-icon">✕</span> Could not resolve repo 'org/nonexistent'
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== T3 — INLINE PANEL + COLLAPSIBLE PREVIEW ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>T3 — Panel + Collapsible Preview</h2>
+    <span class="tag">Progressive</span>
+  </div>
+  <p class="variant-desc">
+    Like T1 but the activity preview is collapsed by default behind a "Show preview" toggle. The status line is always visible ("✓ Connected — 3 activities"). Keeps the form compact by default but lets curious users peek at what the feed returned.
+  </p>
+
+  <div class="states-row">
+    <div>
+      <div class="state-label">Loading</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel loading">
+          <div class="spinner"></div>
+          Polling feed...
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Success (collapsed)</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <div class="mock-form-field"><div class="mock-label">Interval</div><div class="mock-input">5m</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel success">
+          <div class="test-header">
+            <span class="test-status">✓ Connected — 3 activities</span>
+            <span style="font-size:10px;opacity:0.6;cursor:default;">Show preview ▸</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="state-label">Success (expanded)</div>
+      <div class="mock-card">
+        <div class="mock-form-field"><div class="mock-label">Repository</div><div class="mock-input">org/frontend</div></div>
+        <hr class="mock-divider">
+        <div class="btn-row-mock">
+          <div class="btn-primary-mock">Save</div>
+          <div class="btn-secondary-mock">Discard</div>
+          <div style="flex:1"></div>
+          <div class="btn-test"><span class="btn-test-icon">▶</span> Test</div>
+        </div>
+        <div class="test-panel success">
+          <div class="test-header">
+            <span class="test-status">✓ Connected — 3 activities</span>
+            <span style="font-size:10px;opacity:0.6;cursor:default;">Hide preview ▾</span>
+          </div>
+          <div class="test-preview">
+            <div class="test-activity">
+              <span class="test-dot red"></span>
+              <span class="test-activity-name">Fix login redirect loop</span>
+              <span class="test-activity-status">changes requested</span>
+            </div>
+            <div class="test-activity">
+              <span class="test-dot yellow"></span>
+              <span class="test-activity-name">Add rate limiting to API</span>
+              <span class="test-activity-status">review pending</span>
+            </div>
+            <div class="test-activity">
+              <span class="test-dot green"></span>
+              <span class="test-activity-name">Update deps to latest</span>
+              <span class="test-activity-status">approved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

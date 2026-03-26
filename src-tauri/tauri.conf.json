@@ -32,6 +32,20 @@
         "decorations": false,
         "transparent": true,
         "visible": false
+      },
+      {
+        "label": "settings",
+        "title": "Cortado Settings",
+        "url": "settings.html",
+        "create": false,
+        "width": 780,
+        "height": 560,
+        "minWidth": 640,
+        "minHeight": 480,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "visible": true
       }
     ],
     "security": {

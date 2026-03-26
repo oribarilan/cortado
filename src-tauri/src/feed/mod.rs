@@ -68,6 +68,34 @@ pub enum FieldValue {
     Url { value: String },
 }
 
+impl FieldValue {
+    /// Returns the type discriminator as a string.
+    pub fn field_type(&self) -> &str {
+        match self {
+            FieldValue::Text { .. } => "text",
+            FieldValue::Status { .. } => "status",
+            FieldValue::Number { .. } => "number",
+            FieldValue::Url { .. } => "url",
+        }
+    }
+
+    /// Returns the display-friendly value string.
+    pub fn display_value(&self) -> String {
+        match self {
+            FieldValue::Text { value }
+            | FieldValue::Status { value, .. }
+            | FieldValue::Url { value } => value.clone(),
+            FieldValue::Number { value } => {
+                if value.fract() == 0.0 {
+                    format!("{}", *value as i64)
+                } else {
+                    format!("{value:.2}")
+                }
+            }
+        }
+    }
+}
+
 /// Metadata describing a field that a feed can provide.
 #[derive(Debug, Clone, Serialize)]
 pub struct FieldDefinition {
@@ -207,7 +235,7 @@ pub fn build_feed_registry_from_configs(
     Ok(registry)
 }
 
-fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
+pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
     match config.feed_type.as_str() {
         "github-pr" => {
             GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)

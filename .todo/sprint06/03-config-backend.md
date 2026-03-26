@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 03 — Config backend commands

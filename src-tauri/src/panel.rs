@@ -7,6 +7,7 @@ use tauri::{
 use crate::{command, fns};
 
 const MENU_ID_REFRESH_FEEDS: &str = "refresh-feeds";
+const MENU_ID_SETTINGS: &str = "settings";
 const MENU_ID_QUIT: &str = "quit";
 const PANEL_PADDING_TOP: f64 = 6.0;
 
@@ -20,11 +21,15 @@ pub fn create(app_handle: &AppHandle) -> tauri::Result<TrayIcon> {
         true,
         None::<&str>,
     )?;
+    let settings_item =
+        MenuItem::with_id(app_handle, MENU_ID_SETTINGS, "Settings", true, None::<&str>)?;
     let quit_item =
         MenuItem::with_id(app_handle, MENU_ID_QUIT, "Quit Cortado", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app_handle)?;
-    let tray_menu =
-        tauri::menu::Menu::with_items(app_handle, &[&refresh_item, &separator, &quit_item])?;
+    let tray_menu = tauri::menu::Menu::with_items(
+        app_handle,
+        &[&refresh_item, &settings_item, &separator, &quit_item],
+    )?;
 
     TrayIconBuilder::with_id("tray")
         .icon(icon)
@@ -48,6 +53,11 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
                     eprintln!("failed refreshing feeds from tray action: {err}");
                 }
             });
+        }
+        MENU_ID_SETTINGS => {
+            if let Err(err) = command::open_settings(app_handle.clone()) {
+                eprintln!("failed opening settings from tray action: {err}");
+            }
         }
         _ => {}
     }

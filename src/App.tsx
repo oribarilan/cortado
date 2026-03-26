@@ -385,6 +385,14 @@ function App() {
           <button
             className="footer-row"
             onClick={() => {
+              void invoke("open_settings");
+            }}
+          >
+            Settings
+          </button>
+          <button
+            className="footer-row"
+            onClick={() => {
               void refreshNow();
             }}
           >

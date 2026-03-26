@@ -5,6 +5,7 @@ mod command;
 mod feed;
 mod fns;
 mod panel;
+mod settings_config;
 mod ui_snapshot;
 
 use std::sync::Arc;
@@ -31,6 +32,10 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
@@ -40,7 +45,15 @@ fn main() {
             command::list_feeds,
             command::refresh_feeds,
             command::open_activity,
-            command::quit_app
+            command::quit_app,
+            command::open_settings,
+            settings_config::get_feeds_config,
+            settings_config::save_feeds_config,
+            settings_config::get_config_path,
+            settings_config::open_config_file,
+            settings_config::reveal_config_file,
+            settings_config::check_feed_dependency,
+            settings_config::test_feed
         ])
         .setup({
             let feed_registry = feed_registry.clone();

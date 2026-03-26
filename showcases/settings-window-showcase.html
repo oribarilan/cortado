@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado Settings — Design Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== SHOWCASE SHELL ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "DM Sans", system-ui, sans-serif;
+    background: oklch(96% 0.005 250);
+    color: oklch(20% 0.01 250);
+    min-height: 100vh;
+    padding: 40px 32px;
+  }
+
+  .showcase-header {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+
+  .showcase-header h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: oklch(15% 0.01 250);
+  }
+
+  .showcase-header p {
+    margin-top: 8px;
+    font-size: 14px;
+    color: oklch(50% 0.01 250);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  .variant-section {
+    max-width: 900px;
+    margin: 0 auto 64px;
+  }
+
+  .variant-label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .variant-label h2 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: oklch(25% 0.01 250);
+  }
+
+  .variant-label .tag {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: oklch(92% 0.02 250);
+    color: oklch(45% 0.02 250);
+  }
+
+  .variant-desc {
+    font-size: 13px;
+    color: oklch(50% 0.01 250);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    max-width: 700px;
+  }
+
+  .window-chrome {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px oklch(0% 0 0 / 0.06),
+      0 8px 32px oklch(0% 0 0 / 0.1),
+      0 0 0 0.5px oklch(0% 0 0 / 0.08);
+  }
+
+  .traffic-lights {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    align-items: center;
+  }
+
+  .traffic-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .traffic-dot.close { background: oklch(65% 0.22 25); }
+  .traffic-dot.minimize { background: oklch(80% 0.17 85); }
+  .traffic-dot.maximize { background: oklch(70% 0.18 145); }
+
+  .traffic-title {
+    margin-left: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.6;
+  }
+
+  /* ===== VARIANT A — "Swiss Instrument" ===== */
+  .variant-a {
+    --va-bg: oklch(98% 0.003 250);
+    --va-surface: oklch(100% 0 0);
+    --va-sidebar: oklch(96% 0.006 250);
+    --va-text: oklch(18% 0.01 250);
+    --va-text2: oklch(42% 0.01 250);
+    --va-text3: oklch(58% 0.008 250);
+    --va-border: oklch(88% 0.008 250);
+    --va-accent: oklch(55% 0.2 258);
+    --va-accent-soft: oklch(94% 0.04 258);
+    --va-hover: oklch(95% 0.008 250);
+    --va-danger: oklch(62% 0.2 25);
+    --va-success: oklch(65% 0.16 150);
+    font-family: "Instrument Sans", -apple-system, sans-serif;
+  }
+
+  .variant-a .traffic-lights { background: var(--va-sidebar); border-bottom: 1px solid var(--va-border); }
+  .variant-a .traffic-title { font-family: "Instrument Sans", sans-serif; color: var(--va-text); }
+
+  .va-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: 420px;
+    background: var(--va-bg);
+  }
+
+  .va-sidebar {
+    background: var(--va-sidebar);
+    border-right: 1px solid var(--va-border);
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .va-nav-item {
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    color: var(--va-text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 120ms ease;
+    font-weight: 450;
+    letter-spacing: -0.005em;
+  }
+
+  .va-nav-item:hover { background: var(--va-hover); }
+  .va-nav-item.active {
+    background: var(--va-accent-soft);
+    color: var(--va-accent);
+    font-weight: 550;
+  }
+
+  .va-nav-icon {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .va-main {
+    padding: 28px 32px;
+    background: var(--va-surface);
+  }
+
+  .va-section-title {
+    font-size: 18px;
+    font-weight: 650;
+    color: var(--va-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .va-section-desc {
+    font-size: 12.5px;
+    color: var(--va-text3);
+    margin-bottom: 24px;
+    line-height: 1.45;
+  }
+
+  .va-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid oklch(92% 0.005 250);
+  }
+
+  .va-setting-row:last-child { border-bottom: none; }
+
+  .va-setting-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--va-text);
+    letter-spacing: -0.005em;
+  }
+
+  .va-setting-hint {
+    font-size: 11.5px;
+    color: var(--va-text3);
+    margin-top: 2px;
+  }
+
+  .va-toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: oklch(82% 0.008 250);
+    position: relative;
+    cursor: pointer;
+    transition: background 200ms ease;
+  }
+
+  .va-toggle.on { background: var(--va-accent); }
+
+  .va-toggle::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 200ms ease;
+    box-shadow: 0 1px 3px oklch(0% 0 0 / 0.15);
+  }
+
+  .va-toggle.on::after { transform: translateX(18px); }
+
+  /* Feed list styles for Variant A */
+  .va-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+  }
+
+  .va-feed-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 100ms ease;
+  }
+
+  .va-feed-item:hover { background: var(--va-hover); }
+
+  .va-feed-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--va-text);
+  }
+
+  .va-feed-type {
+    font-size: 11px;
+    color: var(--va-text3);
+    background: oklch(94% 0.005 250);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .va-feed-chevron {
+    font-size: 14px;
+    color: var(--va-text3);
+  }
+
+  .va-add-btn {
+    margin-top: 12px;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--va-accent);
+    background: transparent;
+    border: 1.5px dashed oklch(82% 0.06 258);
+    border-radius: 6px;
+    padding: 9px 16px;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: border-color 150ms ease, background 150ms ease;
+    letter-spacing: -0.005em;
+  }
+
+  .va-add-btn:hover {
+    border-color: var(--va-accent);
+    background: var(--va-accent-soft);
+  }
+
+
+  /* ===== VARIANT B — "Editorial" ===== */
+  .variant-b {
+    --vb-bg: oklch(97.5% 0.004 55);
+    --vb-surface: oklch(99% 0.003 55);
+    --vb-text: oklch(16% 0.015 55);
+    --vb-text2: oklch(40% 0.015 55);
+    --vb-text3: oklch(55% 0.01 55);
+    --vb-border: oklch(89% 0.008 55);
+    --vb-accent: oklch(48% 0.12 30);
+    --vb-accent-soft: oklch(95% 0.02 30);
+    --vb-hover: oklch(95.5% 0.005 55);
+    font-family: "DM Sans", sans-serif;
+  }
+
+  .variant-b .traffic-lights { background: var(--vb-surface); border-bottom: 1px solid var(--vb-border); }
+  .variant-b .traffic-title { font-family: "Source Serif 4", serif; color: var(--vb-text); font-weight: 400; }
+
+  .vb-layout {
+    background: var(--vb-surface);
+    min-height: 420px;
+    padding: 0;
+  }
+
+  .vb-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--vb-border);
+    padding: 0 32px;
+  }
+
+  .vb-tab {
+    font-size: 13px;
+    padding: 12px 20px;
+    color: var(--vb-text3);
+    cursor: pointer;
+    position: relative;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    transition: color 120ms ease;
+  }
+
+  .vb-tab:hover { color: var(--vb-text2); }
+
+  .vb-tab.active {
+    color: var(--vb-text);
+    font-weight: 600;
+  }
+
+  .vb-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--vb-accent);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .vb-content {
+    padding: 32px 36px;
+    max-width: 520px;
+  }
+
+  .vb-section-title {
+    font-family: "Source Serif 4", serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--vb-text);
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .vb-section-desc {
+    font-size: 13px;
+    color: var(--vb-text3);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .vb-group {
+    margin-bottom: 28px;
+  }
+
+  .vb-group-title {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--vb-text3);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vb-border);
+  }
+
+  .vb-field {
+    margin-bottom: 18px;
+  }
+
+  .vb-field-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--vb-text);
+    margin-bottom: 5px;
+    display: block;
+  }
+
+  .vb-field-hint {
+    font-size: 11.5px;
+    color: var(--vb-text3);
+    margin-bottom: 6px;
+  }
+
+  .vb-input {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 12px;
+    border: 1px solid var(--vb-border);
+    border-radius: 6px;
+    background: var(--vb-bg);
+    color: var(--vb-text);
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+
+  .vb-input:focus { border-color: var(--vb-accent); }
+
+  .vb-select {
+    width: 100%;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 12px;
+    border: 1px solid var(--vb-border);
+    border-radius: 6px;
+    background: var(--vb-bg);
+    color: var(--vb-text);
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  .vb-inline-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+
+  .vb-inline-toggle + .vb-inline-toggle {
+    border-top: 1px solid oklch(94% 0.004 55);
+  }
+
+  .vb-toggle-label {
+    font-size: 13px;
+    color: var(--vb-text);
+    font-weight: 450;
+  }
+
+  .vb-toggle-desc {
+    font-size: 11.5px;
+    color: var(--vb-text3);
+    margin-top: 1px;
+  }
+
+  .vb-toggle {
+    width: 38px;
+    height: 21px;
+    border-radius: 999px;
+    background: oklch(82% 0.006 55);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 200ms ease;
+  }
+
+  .vb-toggle.on { background: var(--vb-accent); }
+
+  .vb-toggle::after {
+    content: '';
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 200ms ease;
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.12);
+  }
+
+  .vb-toggle.on::after { transform: translateX(17px); }
+
+  .vb-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--vb-border);
+  }
+
+  .vb-btn-primary {
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    background: var(--vb-accent);
+    color: white;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+  }
+
+  .vb-btn-secondary {
+    font-size: 12.5px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 8px 20px;
+    border: 1px solid var(--vb-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vb-text2);
+    cursor: pointer;
+  }
+
+
+  /* ===== VARIANT C — "Utilitarian Dense" ===== */
+  .variant-c {
+    --vc-bg: oklch(14% 0.008 250);
+    --vc-surface: oklch(17% 0.01 250);
+    --vc-surface2: oklch(20% 0.012 250);
+    --vc-text: oklch(90% 0.008 250);
+    --vc-text2: oklch(68% 0.008 250);
+    --vc-text3: oklch(50% 0.006 250);
+    --vc-border: oklch(26% 0.01 250);
+    --vc-accent: oklch(72% 0.14 178);
+    --vc-accent-dim: oklch(38% 0.06 178);
+    --vc-hover: oklch(22% 0.012 250);
+    --vc-danger: oklch(70% 0.18 25);
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  .variant-c .window-chrome { box-shadow: 0 1px 3px oklch(0% 0 0 / 0.2), 0 8px 32px oklch(0% 0 0 / 0.35), 0 0 0 0.5px oklch(100% 0 0 / 0.06); }
+  .variant-c .traffic-lights { background: var(--vc-surface); border-bottom: 1px solid var(--vc-border); }
+  .variant-c .traffic-title { font-family: "Space Grotesk", sans-serif; color: var(--vc-text2); }
+
+  .vc-layout {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    min-height: 420px;
+    background: var(--vc-bg);
+  }
+
+  .vc-sidebar {
+    background: var(--vc-surface);
+    border-right: 1px solid var(--vc-border);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .vc-nav-item {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    color: var(--vc-text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 450;
+    transition: background 80ms ease;
+  }
+
+  .vc-nav-item:hover { background: var(--vc-hover); }
+
+  .vc-nav-item.active {
+    background: var(--vc-accent-dim);
+    color: var(--vc-accent);
+    font-weight: 550;
+  }
+
+  .vc-nav-icon {
+    font-size: 13px;
+    width: 18px;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  .vc-main {
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+
+  .vc-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vc-text);
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+
+  .vc-feed-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .vc-feed-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--vc-text3);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--vc-border);
+  }
+
+  .vc-feed-table td {
+    padding: 8px 10px;
+    color: var(--vc-text2);
+    border-bottom: 1px solid oklch(22% 0.008 250);
+    vertical-align: middle;
+  }
+
+  .vc-feed-table tr:hover td {
+    background: var(--vc-hover);
+  }
+
+  .vc-feed-table .name-cell {
+    color: var(--vc-text);
+    font-weight: 500;
+  }
+
+  .vc-type-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--vc-surface2);
+    color: var(--vc-accent);
+    border: 1px solid var(--vc-border);
+    font-family: "SF Mono", ui-monospace, monospace;
+  }
+
+  .vc-interval {
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--vc-text3);
+  }
+
+  .vc-actions-cell {
+    display: flex;
+    gap: 6px;
+  }
+
+  .vc-icon-btn {
+    font-size: 12px;
+    color: var(--vc-text3);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 80ms ease, color 80ms ease;
+  }
+
+  .vc-icon-btn:hover { background: var(--vc-hover); color: var(--vc-text); }
+  .vc-icon-btn.danger:hover { color: var(--vc-danger); }
+
+  .vc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .vc-add-btn {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 5px 12px;
+    border: 1px solid var(--vc-accent-dim);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vc-accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 100ms ease;
+  }
+
+  .vc-add-btn:hover { background: var(--vc-accent-dim); }
+
+  .vc-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid oklch(22% 0.008 250);
+  }
+
+  .vc-setting-label {
+    font-size: 12px;
+    color: var(--vc-text);
+    font-weight: 450;
+  }
+
+  .vc-setting-hint {
+    font-size: 10.5px;
+    color: var(--vc-text3);
+    margin-top: 1px;
+  }
+
+  .vc-toggle {
+    width: 34px;
+    height: 18px;
+    border-radius: 999px;
+    background: oklch(30% 0.01 250);
+    border: 1px solid var(--vc-border);
+    position: relative;
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+
+  .vc-toggle.on {
+    background: var(--vc-accent-dim);
+    border-color: var(--vc-accent);
+  }
+
+  .vc-toggle::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--vc-text3);
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+
+  .vc-toggle.on::after {
+    transform: translateX(16px);
+    background: var(--vc-accent);
+  }
+
+
+  /* ===== VARIANT D — "Warm Studio" ===== */
+  .variant-d {
+    --vd-bg: oklch(97% 0.006 80);
+    --vd-surface: oklch(99% 0.003 80);
+    --vd-text: oklch(20% 0.02 80);
+    --vd-text2: oklch(42% 0.015 80);
+    --vd-text3: oklch(56% 0.01 80);
+    --vd-border: oklch(90% 0.01 80);
+    --vd-accent: oklch(52% 0.14 258);
+    --vd-accent-soft: oklch(94% 0.03 258);
+    --vd-warm: oklch(62% 0.12 45);
+    --vd-warm-soft: oklch(96% 0.02 45);
+    --vd-hover: oklch(96% 0.006 80);
+    font-family: "Outfit", sans-serif;
+  }
+
+  .variant-d .traffic-lights { background: var(--vd-surface); border-bottom: 1px solid var(--vd-border); }
+  .variant-d .traffic-title { font-family: "Fraunces", serif; font-weight: 400; font-style: italic; color: var(--vd-text2); font-size: 14px; }
+
+  .vd-layout {
+    background: var(--vd-surface);
+    min-height: 420px;
+  }
+
+  .vd-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--vd-border);
+  }
+
+  .vd-nav-pill {
+    font-size: 12.5px;
+    padding: 10px 0;
+    color: var(--vd-text3);
+    cursor: pointer;
+    font-weight: 450;
+    position: relative;
+    transition: color 120ms ease;
+  }
+
+  .vd-nav-pill:hover { color: var(--vd-text2); }
+
+  .vd-nav-pill.active {
+    color: var(--vd-text);
+    font-weight: 600;
+  }
+
+  .vd-nav-pill.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--vd-accent);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .vd-content {
+    padding: 28px 32px;
+  }
+
+  .vd-page-title {
+    font-family: "Fraunces", serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--vd-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+
+  .vd-page-desc {
+    font-size: 13px;
+    color: var(--vd-text3);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .vd-feed-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .vd-feed-card {
+    background: var(--vd-bg);
+    border: 1px solid var(--vd-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+    position: relative;
+  }
+
+  .vd-feed-card:hover {
+    border-color: oklch(82% 0.02 250);
+    box-shadow: 0 2px 8px oklch(0% 0 0 / 0.04);
+  }
+
+  .vd-feed-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .vd-feed-card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vd-text);
+    letter-spacing: -0.01em;
+  }
+
+  .vd-feed-card-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .vd-feed-card-type.github {
+    background: var(--vd-accent-soft);
+    color: var(--vd-accent);
+  }
+
+  .vd-feed-card-type.shell {
+    background: var(--vd-warm-soft);
+    color: var(--vd-warm);
+  }
+
+  .vd-feed-card-meta {
+    font-size: 11.5px;
+    color: var(--vd-text3);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .vd-feed-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .vd-feed-card-meta .meta-icon {
+    font-size: 11px;
+    opacity: 0.6;
+  }
+
+  .vd-add-card {
+    background: transparent;
+    border: 1.5px dashed var(--vd-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--vd-text3);
+    font-size: 13px;
+    font-weight: 500;
+    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+    min-height: 95px;
+  }
+
+  .vd-add-card:hover {
+    border-color: var(--vd-accent);
+    color: var(--vd-accent);
+    background: var(--vd-accent-soft);
+  }
+
+  .vd-general-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--vd-border);
+  }
+
+  .vd-general-title {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--vd-text3);
+    margin-bottom: 14px;
+  }
+
+  .vd-general-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+  }
+
+  .vd-general-row + .vd-general-row {
+    border-top: 1px solid oklch(94% 0.006 80);
+  }
+
+  .vd-general-label {
+    font-size: 13px;
+    color: var(--vd-text);
+    font-weight: 450;
+  }
+
+  .vd-general-hint {
+    font-size: 11px;
+    color: var(--vd-text3);
+    margin-top: 1px;
+  }
+
+  .vd-toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: oklch(86% 0.006 80);
+    position: relative;
+    cursor: pointer;
+    transition: background 200ms ease;
+  }
+
+  .vd-toggle.on { background: var(--vd-accent); }
+
+  .vd-toggle::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 200ms ease;
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.1);
+  }
+
+  .vd-toggle.on::after { transform: translateX(18px); }
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <h1>Cortado Settings — Design Showcase</h1>
+  <p>Four distinct approaches to the settings window. Each variant explores different layout, typography, and tone — from precision instruments to warm editorial.</p>
+</div>
+
+
+<!-- ===== VARIANT A — Swiss Instrument ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>A — Swiss Instrument</h2>
+    <span class="tag">Sidebar + Clean Grid</span>
+  </div>
+  <p class="variant-desc">
+    Precision-oriented. Sidebar navigation with a clinical, high-contrast layout. Instrument Sans typography gives it a contemporary European feel. Tight spacing, clear hierarchy. The "serious tool" option.
+  </p>
+
+  <div class="window-chrome variant-a">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Cortado Settings</span>
+    </div>
+    <div class="va-layout">
+      <nav class="va-sidebar">
+        <div class="va-nav-item active">
+          <span class="va-nav-icon">⚙</span> General
+        </div>
+        <div class="va-nav-item">
+          <span class="va-nav-icon">◉</span> Feeds
+        </div>
+      </nav>
+      <main class="va-main">
+        <h2 class="va-section-title">Feeds</h2>
+        <p class="va-section-desc">Manage your data sources. Each feed tracks activities from a service.</p>
+
+        <div class="va-feed-list">
+          <div class="va-feed-item">
+            <span class="va-feed-name">My PRs</span>
+            <span class="va-feed-type">github-pr</span>
+            <span class="va-feed-chevron">›</span>
+          </div>
+          <div class="va-feed-item">
+            <span class="va-feed-name">Backend PRs</span>
+            <span class="va-feed-type">ado-pr</span>
+            <span class="va-feed-chevron">›</span>
+          </div>
+          <div class="va-feed-item">
+            <span class="va-feed-name">Deploy Status</span>
+            <span class="va-feed-type">shell</span>
+            <span class="va-feed-chevron">›</span>
+          </div>
+        </div>
+
+        <button class="va-add-btn">+ Add Feed</button>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== VARIANT B — Editorial ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>B — Editorial</h2>
+    <span class="tag">Top Tabs + Serif Headings</span>
+  </div>
+  <p class="variant-desc">
+    Refined and warm. Pairs DM Sans body text with Source Serif headings for an editorial quality. Top-mounted tabs, generous whitespace. The "considered design" option — feels more opinionated than a typical settings panel.
+  </p>
+
+  <div class="window-chrome variant-b">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Cortado Settings</span>
+    </div>
+    <div class="vb-layout">
+      <div class="vb-tabs">
+        <div class="vb-tab active">General</div>
+        <div class="vb-tab">Feeds</div>
+      </div>
+      <div class="vb-content">
+        <h2 class="vb-section-title">General</h2>
+        <p class="vb-section-desc">App-wide preferences and system integration.</p>
+
+        <div class="vb-group">
+          <div class="vb-group-title">System</div>
+          <div class="vb-inline-toggle">
+            <div>
+              <div class="vb-toggle-label">Start on system startup</div>
+              <div class="vb-toggle-desc">Launch Cortado when you log in</div>
+            </div>
+            <div class="vb-toggle on"></div>
+          </div>
+        </div>
+
+        <div class="vb-group">
+          <div class="vb-group-title">New Feed</div>
+          <div class="vb-field">
+            <label class="vb-field-label">Feed name</label>
+            <input class="vb-input" type="text" placeholder="e.g. My PRs" />
+          </div>
+          <div class="vb-field">
+            <label class="vb-field-label">Type</label>
+            <select class="vb-select">
+              <option>github-pr</option>
+              <option>ado-pr</option>
+              <option>shell</option>
+            </select>
+          </div>
+          <div class="vb-field">
+            <label class="vb-field-label">Repository</label>
+            <input class="vb-input" type="text" placeholder="owner/repo" />
+          </div>
+          <div class="vb-field">
+            <label class="vb-field-label">Poll interval</label>
+            <div class="vb-field-hint">Duration string, e.g. 5m, 30s, 1h</div>
+            <input class="vb-input" type="text" placeholder="5m" />
+          </div>
+        </div>
+
+        <div class="vb-actions">
+          <button class="vb-btn-primary">Save feed</button>
+          <button class="vb-btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== VARIANT C — Utilitarian Dense ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>C — Utilitarian Dense</h2>
+    <span class="tag">Dark + Table Layout</span>
+  </div>
+  <p class="variant-desc">
+    Developer-first density. Dark theme, compact table view for feeds, Space Grotesk typography. Feels like a terminal-adjacent control panel. Teal accent for a technical but not cold personality. The "power user" option.
+  </p>
+
+  <div class="window-chrome variant-c">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="vc-layout">
+      <nav class="vc-sidebar">
+        <div class="vc-nav-item active">
+          <span class="vc-nav-icon">⚙</span> General
+        </div>
+        <div class="vc-nav-item">
+          <span class="vc-nav-icon">◉</span> Feeds
+        </div>
+      </nav>
+      <main class="vc-main">
+        <div class="vc-toolbar">
+          <h2 class="vc-section-title">Feeds</h2>
+          <button class="vc-add-btn">+ New feed</button>
+        </div>
+
+        <table class="vc-feed-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Interval</th>
+              <th style="width:72px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name-cell">My PRs</td>
+              <td><span class="vc-type-badge">github-pr</span></td>
+              <td><span class="vc-interval">5m</span></td>
+              <td>
+                <div class="vc-actions-cell">
+                  <span class="vc-icon-btn">✎</span>
+                  <span class="vc-icon-btn danger">✕</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="name-cell">Backend PRs</td>
+              <td><span class="vc-type-badge">ado-pr</span></td>
+              <td><span class="vc-interval">10m</span></td>
+              <td>
+                <div class="vc-actions-cell">
+                  <span class="vc-icon-btn">✎</span>
+                  <span class="vc-icon-btn danger">✕</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="name-cell">Deploy Status</td>
+              <td><span class="vc-type-badge">shell</span></td>
+              <td><span class="vc-interval">30s</span></td>
+              <td>
+                <div class="vc-actions-cell">
+                  <span class="vc-icon-btn">✎</span>
+                  <span class="vc-icon-btn danger">✕</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--vc-border);">
+          <h2 class="vc-section-title" style="margin-bottom: 8px;">General</h2>
+          <div class="vc-setting-row">
+            <div>
+              <div class="vc-setting-label">Start on system startup</div>
+              <div class="vc-setting-hint">Launch Cortado at login</div>
+            </div>
+            <div class="vc-toggle on"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== VARIANT D — Warm Studio ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>D — Warm Studio</h2>
+    <span class="tag">Cards + Serif Display</span>
+  </div>
+  <p class="variant-desc">
+    Approachable and warm. Fraunces serif headings add personality, Outfit body text stays clean. Feeds presented as cards with color-coded type badges. Warm neutral tones (hue 80) instead of blue-gray. The "friendly craft tool" option.
+  </p>
+
+  <div class="window-chrome variant-d">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Cortado</span>
+    </div>
+    <div class="vd-layout">
+      <div class="vd-header-bar">
+        <div class="vd-nav-pill active">Feeds</div>
+        <div class="vd-nav-pill">General</div>
+      </div>
+      <div class="vd-content">
+        <h2 class="vd-page-title">Your Feeds</h2>
+        <p class="vd-page-desc">Each feed connects to a data source and tracks activities you care about.</p>
+
+        <div class="vd-feed-cards">
+          <div class="vd-feed-card">
+            <div class="vd-feed-card-header">
+              <span class="vd-feed-card-name">My PRs</span>
+              <span class="vd-feed-card-type github">GitHub PR</span>
+            </div>
+            <div class="vd-feed-card-meta">
+              <span><span class="meta-icon">↻</span> Every 5 minutes</span>
+              <span><span class="meta-icon">⊞</span> org/frontend</span>
+            </div>
+          </div>
+
+          <div class="vd-feed-card">
+            <div class="vd-feed-card-header">
+              <span class="vd-feed-card-name">Deploy Status</span>
+              <span class="vd-feed-card-type shell">Shell</span>
+            </div>
+            <div class="vd-feed-card-meta">
+              <span><span class="meta-icon">↻</span> Every 30 seconds</span>
+              <span><span class="meta-icon">⊞</span> ./check-deploy.sh</span>
+            </div>
+          </div>
+
+          <div class="vd-add-card">
+            <span>+</span> Add feed
+          </div>
+        </div>
+
+        <div class="vd-general-section">
+          <h3 class="vd-general-title">Preferences</h3>
+          <div class="vd-general-row">
+            <div>
+              <div class="vd-general-label">Start on system startup</div>
+              <div class="vd-general-hint">Launch Cortado when you log in</div>
+            </div>
+            <div class="vd-toggle on"></div>
+          </div>
+          <div class="vd-general-row">
+            <div>
+              <div class="vd-general-label">Show in dock</div>
+              <div class="vd-general-hint">Display Cortado in the macOS dock</div>
+            </div>
+            <div class="vd-toggle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

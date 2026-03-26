@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado Settings — L5 Sidebar + Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;450;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    background: oklch(10% 0.006 250);
+    color: oklch(88% 0.008 250);
+    min-height: 100vh;
+    padding: 40px 32px;
+  }
+
+  .showcase-header {
+    max-width: 940px;
+    margin: 0 auto 48px;
+    text-align: center;
+  }
+
+  .showcase-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: oklch(92% 0.008 250);
+  }
+
+  .showcase-header p {
+    margin-top: 8px;
+    font-size: 13px;
+    color: oklch(50% 0.008 250);
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.55;
+  }
+
+  .variant-section {
+    max-width: 940px;
+    margin: 0 auto 64px;
+  }
+
+  .variant-label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .variant-label h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: oklch(88% 0.008 250);
+  }
+
+  .variant-label .tag {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: oklch(22% 0.01 250);
+    color: oklch(60% 0.008 250);
+    border: 1px solid oklch(28% 0.01 250);
+  }
+
+  .variant-desc {
+    font-size: 12.5px;
+    color: oklch(48% 0.008 250);
+    margin-bottom: 16px;
+    line-height: 1.55;
+    max-width: 720px;
+  }
+
+  .window-chrome {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px oklch(0% 0 0 / 0.25),
+      0 8px 32px oklch(0% 0 0 / 0.4),
+      0 0 0 0.5px oklch(100% 0 0 / 0.06);
+  }
+
+  .traffic-lights {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    align-items: center;
+    background: var(--s);
+    border-bottom: 1px solid var(--border);
+    color: var(--t2);
+  }
+
+  .traffic-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .traffic-dot.close { background: oklch(65% 0.22 25); }
+  .traffic-dot.minimize { background: oklch(80% 0.17 85); }
+  .traffic-dot.maximize { background: oklch(70% 0.18 145); }
+
+  .traffic-title {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.5;
+  }
+
+  :root {
+    --bg: oklch(14% 0.008 250);
+    --s: oklch(17% 0.01 250);
+    --s2: oklch(20% 0.012 250);
+    --s3: oklch(23% 0.012 250);
+    --t1: oklch(90% 0.008 250);
+    --t2: oklch(68% 0.008 250);
+    --t3: oklch(50% 0.006 250);
+    --border: oklch(26% 0.01 250);
+    --border-s: oklch(22% 0.008 250);
+    --hover: oklch(22% 0.012 250);
+    --danger: oklch(70% 0.18 25);
+    --ac: oklch(72% 0.14 178);
+    --ac-dim: oklch(38% 0.06 178);
+    --ac-soft: oklch(22% 0.03 178);
+    --mono: "Space Mono", "SF Mono", ui-monospace, monospace;
+  }
+
+  .toggle {
+    width: 34px; height: 18px; border-radius: 999px;
+    background: oklch(30% 0.01 250); border: 1px solid var(--border);
+    position: relative; cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+  }
+  .toggle.on { background: var(--ac-dim); border-color: var(--ac); }
+  .toggle::after {
+    content: ''; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--t3); position: absolute; top: 1px; left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .toggle.on::after { transform: translateX(16px); background: var(--ac); }
+
+
+  /* ============================================================
+     SHARED SIDEBAR
+     ============================================================ */
+  .layout {
+    display: grid;
+    grid-template-columns: 176px 1fr;
+    min-height: 440px;
+    background: var(--bg);
+  }
+
+  .sidebar {
+    background: var(--s);
+    border-right: 1px solid var(--border);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .nav {
+    font-size: 12px; padding: 7px 10px; border-radius: 5px;
+    color: var(--t2); cursor: pointer; display: flex;
+    align-items: center; gap: 8px; font-weight: 450;
+    transition: background 80ms ease;
+  }
+  .nav:hover { background: var(--hover); }
+  .nav.active { background: var(--ac-soft); color: var(--ac); font-weight: 550; }
+  .nav-icon { font-size: 13px; width: 18px; text-align: center; opacity: 0.7; }
+  .nav.active .nav-icon { opacity: 1; }
+
+  .main { padding: 22px 24px; }
+
+  .toolbar {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 16px;
+  }
+
+  .title {
+    font-size: 14px; font-weight: 600; color: var(--t1);
+    letter-spacing: -0.01em;
+  }
+
+  .add-btn {
+    font-size: 11px; font-weight: 600; font-family: inherit;
+    padding: 5px 12px; border: 1px solid var(--ac-dim);
+    border-radius: 4px; background: transparent; color: var(--ac);
+    cursor: pointer; display: flex; align-items: center; gap: 4px;
+    transition: background 100ms ease;
+  }
+  .add-btn:hover { background: var(--ac-dim); }
+
+  .divider { margin: 22px 0 16px; border: none; border-top: 1px solid var(--border); }
+
+  .setting {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border-s);
+  }
+  .setting:last-child { border-bottom: none; }
+  .setting-label { font-size: 12px; color: var(--t1); font-weight: 450; }
+  .setting-hint { font-size: 10.5px; color: var(--t3); margin-top: 1px; }
+
+
+  /* ============================================================
+     L5a — COMPACT CARDS (tight, single-line meta)
+     Cards but minimal — one line of meta, compact height.
+     ============================================================ */
+  .l5a-cards { display: flex; flex-direction: column; gap: 6px; }
+
+  .l5a-card {
+    background: var(--s);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 4px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 100ms ease, background 100ms ease;
+  }
+  .l5a-card:hover { border-color: oklch(32% 0.012 250); background: var(--s2); }
+
+  .l5a-indicator {
+    width: 4px;
+    height: 24px;
+    border-radius: 2px;
+    background: var(--ac);
+    opacity: 0.5;
+  }
+
+  .l5a-body {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .l5a-name {
+    font-size: 13px; font-weight: 550; color: var(--t1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .l5a-type {
+    font-size: 10px; font-family: var(--mono); color: var(--t3);
+    flex-shrink: 0;
+  }
+
+  .l5a-interval {
+    font-size: 10px; font-family: var(--mono); color: var(--t3);
+    flex-shrink: 0;
+    margin-left: auto;
+    padding-left: 12px;
+  }
+
+  .l5a-actions {
+    display: flex; gap: 3px;
+    opacity: 0; transition: opacity 100ms ease;
+  }
+  .l5a-card:hover .l5a-actions { opacity: 1; }
+
+  .l5a-act {
+    width: 26px; height: 26px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--t3); cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+  }
+  .l5a-act:hover { background: var(--hover); color: var(--t1); }
+  .l5a-act.danger:hover { color: var(--danger); }
+
+
+  /* ============================================================
+     L5b — TWO-LINE CARDS (name + meta row below)
+     Cards with a second line showing repo/command + interval.
+     More info at a glance but taller cards.
+     ============================================================ */
+  .l5b-cards { display: flex; flex-direction: column; gap: 6px; }
+
+  .l5b-card {
+    background: var(--s);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 14px;
+    display: grid;
+    grid-template-columns: 4px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 100ms ease, background 100ms ease;
+  }
+  .l5b-card:hover { border-color: oklch(32% 0.012 250); background: var(--s2); }
+
+  .l5b-indicator {
+    width: 4px;
+    height: 32px;
+    border-radius: 2px;
+    background: var(--ac);
+    opacity: 0.5;
+  }
+
+  .l5b-top {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px;
+  }
+
+  .l5b-name { font-size: 13px; font-weight: 550; color: var(--t1); }
+
+  .l5b-type-badge {
+    font-size: 10px; font-weight: 500; padding: 1px 6px;
+    border-radius: 3px; background: var(--s2); color: var(--ac);
+    border: 1px solid var(--border); font-family: var(--mono);
+  }
+
+  .l5b-meta {
+    font-size: 11px; color: var(--t3); display: flex; gap: 12px;
+  }
+  .l5b-detail { display: flex; align-items: center; gap: 4px; }
+  .l5b-detail-icon { opacity: 0.5; font-size: 10px; }
+
+  .l5b-actions {
+    display: flex; gap: 3px;
+    opacity: 0; transition: opacity 100ms ease;
+  }
+  .l5b-card:hover .l5b-actions { opacity: 1; }
+
+  .l5b-act {
+    width: 28px; height: 28px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--t3); cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+  }
+  .l5b-act:hover { background: var(--hover); color: var(--t1); }
+  .l5b-act.danger:hover { color: var(--danger); }
+
+
+  /* ============================================================
+     L5c — GRID CARDS (2-col grid, more spatial)
+     Cards in a 2-column grid. Works when content area is wide
+     enough. Each card is a self-contained unit.
+     ============================================================ */
+  .l5c-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .l5c-card {
+    background: var(--s);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 100ms ease, background 100ms ease;
+    position: relative;
+  }
+  .l5c-card:hover { border-color: oklch(32% 0.012 250); background: var(--s2); }
+
+  .l5c-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .l5c-name { font-size: 13px; font-weight: 600; color: var(--t1); }
+
+  .l5c-type-badge {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em; padding: 2px 6px; border-radius: 3px;
+    background: var(--ac-soft); color: var(--ac); font-family: var(--mono);
+    border: 1px solid var(--ac-dim);
+  }
+
+  .l5c-meta {
+    font-size: 11px; color: var(--t3); display: flex;
+    flex-direction: column; gap: 3px;
+  }
+  .l5c-detail { display: flex; align-items: center; gap: 5px; }
+  .l5c-detail-icon { opacity: 0.5; font-size: 10px; }
+
+  .l5c-actions {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; gap: 2px;
+    opacity: 0; transition: opacity 100ms ease;
+  }
+  .l5c-card:hover .l5c-actions { opacity: 1; }
+
+  .l5c-act {
+    width: 24px; height: 24px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--t3); cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+    background: var(--s);
+  }
+  .l5c-act:hover { background: var(--hover); color: var(--t1); }
+  .l5c-act.danger:hover { color: var(--danger); }
+
+  .l5c-add {
+    background: transparent;
+    border: 1.5px dashed var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; color: var(--t3); font-size: 12px; font-weight: 500;
+    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+    min-height: 80px;
+  }
+  .l5c-add:hover { border-color: var(--ac); color: var(--ac); background: var(--ac-soft); }
+
+
+  /* ============================================================
+     L5d — BORDERLESS CARDS (subtle elevation, no visible border)
+     Cards differentiated by background elevation instead of
+     borders. Softer, less "boxy". Hover lifts subtly.
+     ============================================================ */
+  .l5d-cards { display: flex; flex-direction: column; gap: 4px; }
+
+  .l5d-card {
+    background: var(--s);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 12px 14px 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  }
+  .l5d-card:hover {
+    background: var(--s2);
+    border-color: var(--border-s);
+    box-shadow: 0 2px 8px oklch(0% 0 0 / 0.15);
+  }
+
+  .l5d-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .l5d-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ac); opacity: 0.6; flex-shrink: 0;
+  }
+
+  .l5d-info { min-width: 0; }
+
+  .l5d-top {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px;
+  }
+
+  .l5d-name {
+    font-size: 13px; font-weight: 550; color: var(--t1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .l5d-type {
+    font-size: 10px; font-family: var(--mono); color: var(--t3);
+    flex-shrink: 0;
+  }
+
+  .l5d-meta {
+    font-size: 11px; color: var(--t3); display: flex; gap: 12px;
+  }
+  .l5d-detail { display: flex; align-items: center; gap: 4px; }
+  .l5d-detail-icon { opacity: 0.4; font-size: 10px; }
+
+  .l5d-actions {
+    display: flex; gap: 3px;
+    opacity: 0; transition: opacity 100ms ease;
+  }
+  .l5d-card:hover .l5d-actions { opacity: 1; }
+
+  .l5d-act {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--t3); cursor: pointer;
+    transition: background 80ms ease, color 80ms ease;
+  }
+  .l5d-act:hover { background: var(--hover); color: var(--t1); }
+  .l5d-act.danger:hover { color: var(--danger); }
+
+  .l5d-add {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 12px; color: var(--ac); font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background 80ms ease;
+  }
+  .l5d-add:hover { background: var(--ac-soft); }
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <h1>L5 — Sidebar + Cards</h1>
+  <p>Same sidebar navigation, four different card treatments for feeds. Varying info density, visual weight, and spatial feel.</p>
+</div>
+
+
+<!-- ===== L5a — Compact Cards ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>L5a — Compact Single-Line</h2>
+    <span class="tag">Tight / Inline Meta</span>
+  </div>
+  <p class="variant-desc">
+    Cards reduced to their minimum — one line, left-edge indicator, name + type + interval inline. Almost as dense as a table row but with card affordance. Best for many feeds.
+  </p>
+
+  <div class="window-chrome">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="nav"><span class="nav-icon">⚙</span> General</div>
+        <div class="nav active"><span class="nav-icon">◉</span> Feeds</div>
+      </nav>
+      <main class="main">
+        <div class="toolbar">
+          <h2 class="title">Feeds</h2>
+          <button class="add-btn">+ New feed</button>
+        </div>
+        <div class="l5a-cards">
+          <div class="l5a-card">
+            <div class="l5a-indicator"></div>
+            <div class="l5a-body">
+              <span class="l5a-name">My PRs</span>
+              <span class="l5a-type">github-pr</span>
+              <span class="l5a-interval">5m</span>
+            </div>
+            <div class="l5a-actions"><span class="l5a-act">✎</span><span class="l5a-act danger">✕</span></div>
+          </div>
+          <div class="l5a-card">
+            <div class="l5a-indicator"></div>
+            <div class="l5a-body">
+              <span class="l5a-name">Backend PRs</span>
+              <span class="l5a-type">ado-pr</span>
+              <span class="l5a-interval">10m</span>
+            </div>
+            <div class="l5a-actions"><span class="l5a-act">✎</span><span class="l5a-act danger">✕</span></div>
+          </div>
+          <div class="l5a-card">
+            <div class="l5a-indicator"></div>
+            <div class="l5a-body">
+              <span class="l5a-name">Deploy Status</span>
+              <span class="l5a-type">shell</span>
+              <span class="l5a-interval">30s</span>
+            </div>
+            <div class="l5a-actions"><span class="l5a-act">✎</span><span class="l5a-act danger">✕</span></div>
+          </div>
+        </div>
+        <hr class="divider">
+        <h2 class="title" style="margin-bottom: 8px;">General</h2>
+        <div class="setting"><div><div class="setting-label">Start on system startup</div><div class="setting-hint">Launch Cortado at login</div></div><div class="toggle on"></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== L5b — Two-Line Cards ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>L5b — Two-Line with Meta</h2>
+    <span class="tag">Standard / Rich Info</span>
+  </div>
+  <p class="variant-desc">
+    Each card gets two lines: name + type badge on top, repo/command + interval below. Shows the most context per feed without clicking in. Slightly taller but more informative.
+  </p>
+
+  <div class="window-chrome">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="nav"><span class="nav-icon">⚙</span> General</div>
+        <div class="nav active"><span class="nav-icon">◉</span> Feeds</div>
+      </nav>
+      <main class="main">
+        <div class="toolbar">
+          <h2 class="title">Feeds</h2>
+          <button class="add-btn">+ New feed</button>
+        </div>
+        <div class="l5b-cards">
+          <div class="l5b-card">
+            <div class="l5b-indicator"></div>
+            <div>
+              <div class="l5b-top"><span class="l5b-name">My PRs</span><span class="l5b-type-badge">github-pr</span></div>
+              <div class="l5b-meta"><span class="l5b-detail"><span class="l5b-detail-icon">↻</span> 5m</span><span class="l5b-detail"><span class="l5b-detail-icon">⊞</span> org/frontend</span></div>
+            </div>
+            <div class="l5b-actions"><span class="l5b-act">✎</span><span class="l5b-act danger">✕</span></div>
+          </div>
+          <div class="l5b-card">
+            <div class="l5b-indicator"></div>
+            <div>
+              <div class="l5b-top"><span class="l5b-name">Backend PRs</span><span class="l5b-type-badge">ado-pr</span></div>
+              <div class="l5b-meta"><span class="l5b-detail"><span class="l5b-detail-icon">↻</span> 10m</span><span class="l5b-detail"><span class="l5b-detail-icon">⊞</span> myorg/backend</span></div>
+            </div>
+            <div class="l5b-actions"><span class="l5b-act">✎</span><span class="l5b-act danger">✕</span></div>
+          </div>
+          <div class="l5b-card">
+            <div class="l5b-indicator"></div>
+            <div>
+              <div class="l5b-top"><span class="l5b-name">Deploy Status</span><span class="l5b-type-badge">shell</span></div>
+              <div class="l5b-meta"><span class="l5b-detail"><span class="l5b-detail-icon">↻</span> 30s</span><span class="l5b-detail"><span class="l5b-detail-icon">⊞</span> ./check-deploy.sh</span></div>
+            </div>
+            <div class="l5b-actions"><span class="l5b-act">✎</span><span class="l5b-act danger">✕</span></div>
+          </div>
+        </div>
+        <hr class="divider">
+        <h2 class="title" style="margin-bottom: 8px;">General</h2>
+        <div class="setting"><div><div class="setting-label">Start on system startup</div><div class="setting-hint">Launch Cortado at login</div></div><div class="toggle on"></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== L5c — Grid Cards ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>L5c — Two-Column Grid</h2>
+    <span class="tag">Spatial / Grid</span>
+  </div>
+  <p class="variant-desc">
+    Cards laid out in a 2-column grid. Each feed is a self-contained tile with type badge and metadata. More spatial, more visual. Includes an "Add feed" placeholder tile. Works best when you want each feed to feel like its own entity.
+  </p>
+
+  <div class="window-chrome">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="nav"><span class="nav-icon">⚙</span> General</div>
+        <div class="nav active"><span class="nav-icon">◉</span> Feeds</div>
+      </nav>
+      <main class="main">
+        <div class="toolbar">
+          <h2 class="title">Feeds</h2>
+        </div>
+        <div class="l5c-cards">
+          <div class="l5c-card">
+            <div class="l5c-actions"><span class="l5c-act">✎</span><span class="l5c-act danger">✕</span></div>
+            <div class="l5c-top"><span class="l5c-name">My PRs</span><span class="l5c-type-badge">github-pr</span></div>
+            <div class="l5c-meta"><span class="l5c-detail"><span class="l5c-detail-icon">↻</span> Every 5m</span><span class="l5c-detail"><span class="l5c-detail-icon">⊞</span> org/frontend</span></div>
+          </div>
+          <div class="l5c-card">
+            <div class="l5c-actions"><span class="l5c-act">✎</span><span class="l5c-act danger">✕</span></div>
+            <div class="l5c-top"><span class="l5c-name">Backend PRs</span><span class="l5c-type-badge">ado-pr</span></div>
+            <div class="l5c-meta"><span class="l5c-detail"><span class="l5c-detail-icon">↻</span> Every 10m</span><span class="l5c-detail"><span class="l5c-detail-icon">⊞</span> myorg/backend</span></div>
+          </div>
+          <div class="l5c-card">
+            <div class="l5c-actions"><span class="l5c-act">✎</span><span class="l5c-act danger">✕</span></div>
+            <div class="l5c-top"><span class="l5c-name">Deploy Status</span><span class="l5c-type-badge">shell</span></div>
+            <div class="l5c-meta"><span class="l5c-detail"><span class="l5c-detail-icon">↻</span> Every 30s</span><span class="l5c-detail"><span class="l5c-detail-icon">⊞</span> ./check-deploy.sh</span></div>
+          </div>
+          <div class="l5c-add">+ Add feed</div>
+        </div>
+        <hr class="divider">
+        <h2 class="title" style="margin-bottom: 8px;">General</h2>
+        <div class="setting"><div><div class="setting-label">Start on system startup</div><div class="setting-hint">Launch Cortado at login</div></div><div class="toggle on"></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== L5d — Borderless Cards ===== -->
+<div class="variant-section">
+  <div class="variant-label">
+    <h2>L5d — Borderless Elevation</h2>
+    <span class="tag">Soft / No Borders</span>
+  </div>
+  <p class="variant-desc">
+    Cards differentiated by background elevation, not borders. Transparent border at rest; on hover, a subtle border and shadow appear. Status dot instead of edge indicator. Softer, less "boxy" — closer in spirit to the menubar panel's own row style.
+  </p>
+
+  <div class="window-chrome">
+    <div class="traffic-lights">
+      <div class="traffic-dot close"></div>
+      <div class="traffic-dot minimize"></div>
+      <div class="traffic-dot maximize"></div>
+      <span class="traffic-title">Settings</span>
+    </div>
+    <div class="layout">
+      <nav class="sidebar">
+        <div class="nav"><span class="nav-icon">⚙</span> General</div>
+        <div class="nav active"><span class="nav-icon">◉</span> Feeds</div>
+      </nav>
+      <main class="main">
+        <div class="toolbar">
+          <h2 class="title">Feeds</h2>
+          <button class="add-btn">+ New feed</button>
+        </div>
+        <div class="l5d-cards">
+          <div class="l5d-card">
+            <div class="l5d-left">
+              <div class="l5d-dot"></div>
+              <div class="l5d-info">
+                <div class="l5d-top"><span class="l5d-name">My PRs</span><span class="l5d-type">github-pr</span></div>
+                <div class="l5d-meta"><span class="l5d-detail"><span class="l5d-detail-icon">↻</span> 5m</span><span class="l5d-detail"><span class="l5d-detail-icon">⊞</span> org/frontend</span></div>
+              </div>
+            </div>
+            <div class="l5d-actions"><span class="l5d-act">✎</span><span class="l5d-act danger">✕</span></div>
+          </div>
+          <div class="l5d-card">
+            <div class="l5d-left">
+              <div class="l5d-dot"></div>
+              <div class="l5d-info">
+                <div class="l5d-top"><span class="l5d-name">Backend PRs</span><span class="l5d-type">ado-pr</span></div>
+                <div class="l5d-meta"><span class="l5d-detail"><span class="l5d-detail-icon">↻</span> 10m</span><span class="l5d-detail"><span class="l5d-detail-icon">⊞</span> myorg/backend</span></div>
+              </div>
+            </div>
+            <div class="l5d-actions"><span class="l5d-act">✎</span><span class="l5d-act danger">✕</span></div>
+          </div>
+          <div class="l5d-card">
+            <div class="l5d-left">
+              <div class="l5d-dot"></div>
+              <div class="l5d-info">
+                <div class="l5d-top"><span class="l5d-name">Deploy Status</span><span class="l5d-type">shell</span></div>
+                <div class="l5d-meta"><span class="l5d-detail"><span class="l5d-detail-icon">↻</span> 30s</span><span class="l5d-detail"><span class="l5d-detail-icon">⊞</span> ./check-deploy.sh</span></div>
+              </div>
+            </div>
+            <div class="l5d-actions"><span class="l5d-act">✎</span><span class="l5d-act danger">✕</span></div>
+          </div>
+          <div class="l5d-add"><span>+</span> Add feed</div>
+        </div>
+        <hr class="divider">
+        <h2 class="title" style="margin-bottom: 8px;">General</h2>
+        <div class="setting"><div><div class="setting-label">Start on system startup</div><div class="setting-hint">Launch Cortado at login</div></div><div class="toggle on"></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
