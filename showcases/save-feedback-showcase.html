@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Save Feedback — Showcase</title>
+<style>
+  /* ===== Tokens (from settings.css) ===== */
+  :root {
+    --bg: oklch(14% 0.008 250);
+    --s: oklch(17% 0.01 250);
+    --s2: oklch(20% 0.012 250);
+    --t1: oklch(90% 0.008 250);
+    --t2: oklch(68% 0.008 250);
+    --t3: oklch(50% 0.006 250);
+    --border: oklch(26% 0.01 250);
+    --hover: oklch(22% 0.012 250);
+    --ac: oklch(72% 0.14 178);
+    --ac-dim: oklch(38% 0.06 178);
+    --ac-soft: oklch(22% 0.03 178);
+    --danger: oklch(70% 0.18 25);
+
+    font-family: "Space Grotesk", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--t1);
+    background: oklch(10% 0.005 250);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: oklch(99% 0.003 250);
+      --s: oklch(96% 0.006 250);
+      --s2: oklch(93% 0.008 250);
+      --t1: oklch(20% 0.01 250);
+      --t2: oklch(42% 0.01 250);
+      --t3: oklch(58% 0.008 250);
+      --border: oklch(88% 0.008 250);
+      --hover: oklch(94% 0.006 250);
+      --ac: oklch(65% 0.12 178);
+      --ac-dim: oklch(50% 0.1 178);
+      --ac-soft: oklch(94% 0.03 178);
+      --danger: oklch(62% 0.2 25);
+      background: oklch(94% 0.003 250);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  /* ===== Showcase shell ===== */
+  .showcase-header {
+    padding: 32px 40px 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .showcase-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--t1);
+    margin: 0 0 6px;
+  }
+  .showcase-header p {
+    font-size: 12px;
+    color: var(--t3);
+    margin: 0;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+
+  .variants {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 0 40px 48px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .variant {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .variant-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--s);
+  }
+  .variant-label h2 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--t1);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .variant-label span {
+    font-size: 10.5px;
+    color: var(--t3);
+    font-weight: 400;
+  }
+
+  .variant-body {
+    padding: 0;
+    position: relative;
+  }
+
+  /* ===== Simulated settings pane ===== */
+  .sim-pane {
+    padding: 22px 24px;
+    min-height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sim-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--t1);
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+
+  .sim-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+  }
+  .sim-row-label {
+    font-size: 12px;
+    color: var(--t1);
+    font-weight: 450;
+  }
+  .sim-row-hint {
+    font-size: 10.5px;
+    color: var(--t3);
+    margin-top: 1px;
+  }
+
+  /* Toggle */
+  .toggle {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 34px;
+    height: 18px;
+    border-radius: 999px;
+    background: oklch(30% 0.01 250);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .toggle::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--t3);
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+  .toggle.on {
+    background: var(--ac-dim);
+    border-color: var(--ac);
+  }
+  .toggle.on::after {
+    transform: translateX(16px);
+    background: var(--ac);
+  }
+  @media (prefers-color-scheme: light) {
+    .toggle { background: oklch(82% 0.008 250); }
+    .toggle::after { background: white; box-shadow: 0 1px 3px oklch(0% 0 0 / 0.15); }
+    .toggle.on { background: var(--ac); }
+    .toggle.on::after { background: white; }
+  }
+
+  /* Trigger button */
+  .trigger-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-trigger {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--t2);
+    cursor: pointer;
+    transition: background 100ms ease;
+  }
+  .btn-trigger:hover { background: var(--hover); }
+  .btn-trigger.primary {
+    border: none;
+    background: var(--ac-dim);
+    color: var(--ac);
+  }
+  .btn-trigger.primary:hover { background: oklch(42% 0.08 178); }
+  @media (prefers-color-scheme: light) {
+    .btn-trigger.primary:hover { background: oklch(55% 0.1 178); }
+  }
+
+  .btn-trigger.danger {
+    border-color: oklch(32% 0.04 25);
+    color: var(--danger);
+    font-size: 10.5px;
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  @media (prefers-color-scheme: light) {
+    .btn-trigger.danger { border-color: oklch(80% 0.06 25); }
+  }
+
+  /* ==============================
+     A. BASELINE — Inline banner
+     ============================== */
+  .baseline-banner {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    color: var(--ac);
+    background: var(--ac-soft);
+    border: 1px solid var(--ac-dim);
+    line-height: 1.4;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .baseline-banner.visible { opacity: 1; }
+  .baseline-banner.error {
+    color: var(--danger);
+    background: oklch(22% 0.03 25);
+    border-color: oklch(32% 0.06 25);
+  }
+  @media (prefers-color-scheme: light) {
+    .baseline-banner:not(.error) {
+      background: oklch(96% 0.03 178);
+      border-color: oklch(88% 0.06 178);
+    }
+    .baseline-banner.error {
+      background: oklch(97% 0.02 25);
+      border-color: oklch(88% 0.06 25);
+    }
+  }
+
+  /* ==============================
+     B. TOAST — Bottom-right toast
+     ============================== */
+  .toast-container {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ac);
+    background: var(--s);
+    border: 1px solid var(--ac-dim);
+    box-shadow: 0 4px 16px oklch(0% 0 0 / 0.25);
+    transform: translateY(8px);
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: auto;
+  }
+  .toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast.error {
+    color: var(--danger);
+    border-color: oklch(32% 0.06 25);
+  }
+  @media (prefers-color-scheme: light) {
+    .toast {
+      box-shadow: 0 4px 16px oklch(0% 0 0 / 0.1);
+      background: var(--bg);
+    }
+  }
+
+  /* ==============================
+     C. INLINE STATUS — Text next to toggle
+     ============================== */
+  .inline-status {
+    font-size: 10.5px;
+    font-weight: 450;
+    color: var(--ac);
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 250ms ease;
+  }
+  .inline-status.visible { opacity: 1; }
+  .inline-status.error { color: var(--danger); }
+
+  /* ==============================
+     D. CHECKMARK MORPH — Toggle morphs briefly
+     ============================== */
+  .morph-check {
+    position: absolute;
+    width: 34px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--ac);
+    opacity: 0;
+    transition: opacity 180ms ease;
+    pointer-events: none;
+    right: 0;
+    top: 0;
+  }
+  .morph-check.visible { opacity: 1; }
+  .morph-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .morph-wrapper .toggle.faded { opacity: 0.3; }
+
+  /* ==============================
+     E. TITLE BADGE — Subtle dot or text in heading
+     ============================== */
+  .title-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .title-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ac);
+    opacity: 0;
+    transition: opacity 250ms ease;
+    flex-shrink: 0;
+  }
+  .title-badge-dot.visible { opacity: 1; }
+  .title-badge-text {
+    font-size: 10.5px;
+    font-weight: 450;
+    color: var(--ac);
+    opacity: 0;
+    transition: opacity 250ms ease;
+  }
+  .title-badge-text.visible { opacity: 1; }
+  .title-badge-text.error { color: var(--danger); }
+
+  /* ==============================
+     F. SILENT — No feedback (auto-save feel)
+     ============================== */
+  /* No additional CSS needed — that's the point */
+</style>
+</head>
+<body>
+
+<div class="showcase-header">
+  <h1>Save Feedback Alternatives</h1>
+  <p>
+    Current behavior: an inline "Saved." banner appears below settings controls after each change.
+    Click any toggle to trigger the save feedback for each variant. Feedback auto-dismisses after 1.5s.
+  </p>
+</div>
+
+<div class="variants">
+
+  <!-- A. BASELINE -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>A. Baseline — Inline Banner</h2>
+      <span>Current implementation. Persistent "Saved." block between controls and action buttons.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-a">
+        <div class="sim-title">Notifications</div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <button class="toggle on" onclick="demoA(this)"></button>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <button class="toggle on" onclick="demoA(this)"></button>
+        </div>
+        <div class="baseline-banner" id="banner-a">Saved.</div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoA()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoA()">Configure in System Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B. TOAST -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>B. Toast — Bottom-right</h2>
+      <span>Non-intrusive floating toast. Doesn't shift layout. Disappears on its own.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-b">
+        <div class="sim-title">Notifications</div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <button class="toggle on" onclick="demoB(this)"></button>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <button class="toggle on" onclick="demoB(this)"></button>
+        </div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoB()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoB()">Configure in System Settings</button>
+        </div>
+        <div class="toast-container">
+          <div class="toast" id="toast-b">Saved</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. INLINE STATUS -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>C. Inline Status — Next to Control</h2>
+      <span>Tiny "Saved" text appears right next to the changed toggle. Minimal, contextual.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-c">
+        <div class="sim-title">Notifications</div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <button class="toggle on" onclick="demoC(this)"></button>
+            <span class="inline-status" id="inline-c1">Saved</span>
+          </div>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <div style="display:flex;align-items:center">
+            <button class="toggle on" onclick="demoC(this)"></button>
+            <span class="inline-status" id="inline-c2">Saved</span>
+          </div>
+        </div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoC()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoC()">Configure in System Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D. CHECKMARK MORPH -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>D. Checkmark Flash — On the Toggle</h2>
+      <span>Toggle briefly fades and a checkmark appears in its place, then restores. Zero layout shift.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-d">
+        <div class="sim-title">Notifications</div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <div class="morph-wrapper">
+            <button class="toggle on" onclick="demoD(this)"></button>
+            <div class="morph-check" id="morph-d1">&#10003;</div>
+          </div>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <div class="morph-wrapper">
+            <button class="toggle on" onclick="demoD(this)"></button>
+            <div class="morph-check" id="morph-d2">&#10003;</div>
+          </div>
+        </div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoD()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoD()">Configure in System Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E. TITLE BADGE -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>E. Title Badge — Dot + Text in Heading</h2>
+      <span>A small accent dot and "Saved" appear next to the section title. Subtle, out of the way.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-e">
+        <div class="sim-title">
+          <span class="title-badge">
+            Notifications
+            <span class="title-badge-dot" id="badge-dot-e"></span>
+            <span class="title-badge-text" id="badge-text-e">Saved</span>
+          </span>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <button class="toggle on" onclick="demoE(this)"></button>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <button class="toggle on" onclick="demoE(this)"></button>
+        </div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoE()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoE()">Configure in System Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F. SILENT -->
+  <div class="variant">
+    <div class="variant-label">
+      <h2>F. Silent — No Feedback</h2>
+      <span>Auto-save with no visible confirmation. The toggle state IS the feedback. Errors use a toast.</span>
+    </div>
+    <div class="variant-body">
+      <div class="sim-pane" id="pane-f">
+        <div class="sim-title">Notifications</div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">Enable notifications</div>
+            <div class="sim-row-hint">Send system notifications when activity statuses change</div>
+          </div>
+          <button class="toggle on" onclick="demoF(this)"></button>
+        </div>
+        <div class="sim-row">
+          <div>
+            <div class="sim-row-label">New activities</div>
+            <div class="sim-row-hint">Notify when new activities appear</div>
+          </div>
+          <button class="toggle on" onclick="demoF(this)"></button>
+        </div>
+        <div class="trigger-row">
+          <button class="btn-trigger" onclick="demoF()">Send test notification</button>
+          <button class="btn-trigger" onclick="demoF()">Configure in System Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Shared toggle helper
+  function flipToggle(btn) {
+    if (btn && btn.classList.contains('toggle')) {
+      btn.classList.toggle('on');
+    }
+  }
+
+  // Timers
+  const timers = {};
+  function clearTimer(id) {
+    if (timers[id]) { clearTimeout(timers[id]); timers[id] = null; }
+  }
+
+  // A. Baseline banner
+  function demoA(btn) {
+    flipToggle(btn);
+    const banner = document.getElementById('banner-a');
+    clearTimer('a');
+    banner.classList.add('visible');
+    timers.a = setTimeout(() => banner.classList.remove('visible'), 1500);
+  }
+
+  // B. Toast
+  function demoB(btn) {
+    flipToggle(btn);
+    const toast = document.getElementById('toast-b');
+    clearTimer('b');
+    toast.classList.add('visible');
+    timers.b = setTimeout(() => toast.classList.remove('visible'), 1500);
+  }
+
+  // C. Inline status
+  let lastInlineC = null;
+  function demoC(btn) {
+    flipToggle(btn);
+    clearTimer('c');
+    if (lastInlineC) lastInlineC.classList.remove('visible');
+
+    // Find the inline-status next to the clicked toggle
+    let target = null;
+    if (btn && btn.classList.contains('toggle')) {
+      target = btn.parentElement.querySelector('.inline-status');
+    }
+    if (!target) target = document.getElementById('inline-c1');
+
+    target.classList.add('visible');
+    lastInlineC = target;
+    timers.c = setTimeout(() => target.classList.remove('visible'), 1500);
+  }
+
+  // D. Checkmark morph
+  function demoD(btn) {
+    flipToggle(btn);
+    let toggle = btn;
+    let check = null;
+    if (toggle && toggle.classList.contains('toggle')) {
+      check = toggle.parentElement.querySelector('.morph-check');
+    }
+    if (!check) {
+      toggle = document.querySelector('#pane-d .toggle');
+      check = document.getElementById('morph-d1');
+    }
+    clearTimer('d');
+    toggle.classList.add('faded');
+    check.classList.add('visible');
+    timers.d = setTimeout(() => {
+      toggle.classList.remove('faded');
+      check.classList.remove('visible');
+    }, 900);
+  }
+
+  // E. Title badge
+  function demoE(btn) {
+    flipToggle(btn);
+    const dot = document.getElementById('badge-dot-e');
+    const text = document.getElementById('badge-text-e');
+    clearTimer('e');
+    dot.classList.add('visible');
+    text.classList.add('visible');
+    timers.e = setTimeout(() => {
+      text.classList.remove('visible');
+      setTimeout(() => dot.classList.remove('visible'), 600);
+    }, 1500);
+  }
+
+  // F. Silent — just flip the toggle, no feedback
+  function demoF(btn) {
+    flipToggle(btn);
+  }
+</script>
+
+</body>
+</html>

@@ -222,7 +222,7 @@ function SettingsApp() {
     notify_removed_activities: true,
   });
   const [notifLoading, setNotifLoading] = useState(true);
-  const [notifSaveSuccess, setNotifSaveSuccess] = useState(false);
+  const [notifSaveSuccess, setNotifSaveSuccess] = useState<string | null>(null);
   const [notifSaveError, setNotifSaveError] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<boolean | null>(null);
 
@@ -295,17 +295,22 @@ function SettingsApp() {
     }
   }, [autostart]);
 
-  const saveNotifSettings = useCallback(async (updated: NotificationSettings) => {
+  const notifSaveTimer = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNotifSettings = useCallback(async (updated: NotificationSettings, key?: string) => {
     setNotifSettings(updated);
-    setNotifSaveSuccess(false);
+    setNotifSaveSuccess(null);
     setNotifSaveError(null);
+    if (notifSaveTimer[0]) clearTimeout(notifSaveTimer[0]);
     try {
       await invoke("save_settings", { settings: { notifications: updated } });
-      setNotifSaveSuccess(true);
+      setNotifSaveSuccess(key ?? "general");
+      const t = setTimeout(() => setNotifSaveSuccess(null), 1500);
+      notifSaveTimer[0] = t;
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, []);
+  }, [notifSaveTimer]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -526,14 +531,17 @@ function SettingsApp() {
                     <div className="setting-label">Enable notifications</div>
                     <div className="setting-hint">Send system notifications when activity statuses change</div>
                   </div>
-                  <button
-                    className={`toggle ${notifSettings.enabled ? "on" : ""}`}
-                    onClick={() => {
-                      void saveNotifSettings({ ...notifSettings, enabled: !notifSettings.enabled });
-                    }}
-                    aria-pressed={notifSettings.enabled}
-                    aria-label="Enable notifications"
-                  />
+                  <div className="control-with-status">
+                    <button
+                      className={`toggle ${notifSettings.enabled ? "on" : ""}`}
+                      onClick={() => {
+                        void saveNotifSettings({ ...notifSettings, enabled: !notifSettings.enabled }, "enable");
+                      }}
+                      aria-pressed={notifSettings.enabled}
+                      aria-label="Enable notifications"
+                    />
+                    <span className={`inline-saved ${notifSaveSuccess === "enable" ? "visible" : ""}`}>Saved</span>
+                  </div>
                 </div>
 
                 {notifPermission === false && (
@@ -549,12 +557,15 @@ function SettingsApp() {
                 )}
 
                 <div className={!notifSettings.enabled ? "section-disabled" : ""}>
-                  <div className="section-header">Mode</div>
+                  <div className="section-header">
+                    Mode
+                    <span className={`inline-saved ${notifSaveSuccess === "mode" ? "visible" : ""}`}>Saved</span>
+                  </div>
                   <div className="section-hint">Which status changes trigger notifications</div>
 
                   <div
                     className={`option-row ${notifSettings.mode === "all" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }, "mode"); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -564,7 +575,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.mode === "escalation_only" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }, "mode"); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -574,7 +585,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.mode === "specific_kinds" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }, "mode"); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -600,7 +611,7 @@ function SettingsApp() {
                             const updated = current.includes(kind)
                               ? current.filter((k) => k !== kind)
                               : [...current, kind];
-                            void saveNotifSettings({ ...notifSettings, kinds: updated });
+                            void saveNotifSettings({ ...notifSettings, kinds: updated }, "mode");
                           }}
                         >
                           {label}
@@ -609,12 +620,15 @@ function SettingsApp() {
                     </div>
                   )}
 
-                  <div className="section-header">Delivery</div>
+                  <div className="section-header">
+                    Delivery
+                    <span className={`inline-saved ${notifSaveSuccess === "delivery" ? "visible" : ""}`}>Saved</span>
+                  </div>
                   <div className="section-hint">How notifications are batched</div>
 
                   <div
                     className={`option-row ${notifSettings.delivery === "grouped" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }, "delivery"); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -624,7 +638,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.delivery === "immediate" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }, "delivery"); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -640,29 +654,34 @@ function SettingsApp() {
                       <div className="setting-label">New activities</div>
                       <div className="setting-hint">Notify when new activities appear</div>
                     </div>
-                    <button
-                      className={`toggle ${notifSettings.notify_new_activities ? "on" : ""}`}
-                      onClick={() => { void saveNotifSettings({ ...notifSettings, notify_new_activities: !notifSettings.notify_new_activities }); }}
-                      aria-pressed={notifSettings.notify_new_activities}
-                      aria-label="Notify on new activities"
-                    />
+                    <div className="control-with-status">
+                      <button
+                        className={`toggle ${notifSettings.notify_new_activities ? "on" : ""}`}
+                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_new_activities: !notifSettings.notify_new_activities }, "new"); }}
+                        aria-pressed={notifSettings.notify_new_activities}
+                        aria-label="Notify on new activities"
+                      />
+                      <span className={`inline-saved ${notifSaveSuccess === "new" ? "visible" : ""}`}>Saved</span>
+                    </div>
                   </div>
                   <div className="setting-row">
                     <div className="setting-info">
                       <div className="setting-label">Removed activities</div>
                       <div className="setting-hint">Notify when activities disappear</div>
                     </div>
-                    <button
-                      className={`toggle ${notifSettings.notify_removed_activities ? "on" : ""}`}
-                      onClick={() => { void saveNotifSettings({ ...notifSettings, notify_removed_activities: !notifSettings.notify_removed_activities }); }}
-                      aria-pressed={notifSettings.notify_removed_activities}
-                      aria-label="Notify on removed activities"
-                    />
+                    <div className="control-with-status">
+                      <button
+                        className={`toggle ${notifSettings.notify_removed_activities ? "on" : ""}`}
+                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_removed_activities: !notifSettings.notify_removed_activities }, "removed"); }}
+                        aria-pressed={notifSettings.notify_removed_activities}
+                        aria-label="Notify on removed activities"
+                      />
+                      <span className={`inline-saved ${notifSaveSuccess === "removed" ? "visible" : ""}`}>Saved</span>
+                    </div>
                   </div>
                 </div>
 
                 {notifSaveError && <div className="save-error">{notifSaveError}</div>}
-                {notifSaveSuccess && <div className="save-success">Saved.</div>}
                 {testNotifError && <div className="save-error">{testNotifError}</div>}
 
                 <div className="btn-row" style={{ marginTop: 16 }}>
@@ -995,7 +1014,7 @@ function SettingsApp() {
                     delivery: "grouped",
                     notify_new_activities: true,
                     notify_removed_activities: true,
-                  });
+                  }, "enable");
                 }}
               >
                 Reset

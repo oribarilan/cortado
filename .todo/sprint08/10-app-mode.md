@@ -29,7 +29,15 @@ Make the menubar (tray icon + menubar panel) optional via a setting. Ensure the 
 
 ## Notes
 
-- The app currently uses `ActivationPolicy::Accessory` — this may need to stay as-is even when menubar is off, since the main screen is still an overlay (not a Dock app). Test that reopen events still fire with Accessory policy.
-- The `reopen` event in Tauri: check if `tauri::RunEvent::Reopen` exists in Tauri v2, or if we need to use a macOS-specific hook.
+### Reopen event (researched)
+
+- **`RunEvent::Reopen { has_visible_windows: bool }` exists in Tauri v2** (confirmed in `tauri 2.10.3`, which is the resolved version in `Cargo.lock`).
+- It maps from macOS's `applicationShouldHandleReopen` via `tauri-runtime-wry`.
+- Tauri does NOT special-case it away for `ActivationPolicy::Accessory` — the event should still fire when the app is re-launched from Spotlight/Finder/`open -a` while already running.
+- **The app does NOT currently handle any `RunEvent` variants** — `main.rs` calls `.run(tauri::generate_context!())` with no event callback. Task 10 needs to switch to `.run(|_app, event| { match event { ... } })` to handle `Reopen`.
+- Since Accessory apps have no Dock icon, the primary reopen trigger is Spotlight / Finder / `open -a`. This should be tested early in the task.
+
+### Other notes
+
 - Tray icon removal at runtime: verify `tray.set_visible(false)` or equivalent works without crashing. Alternatively, just don't create the tray on startup when the setting is off.
 - Consider the first-launch experience: if menubar is on by default, the user has both. They can then disable the menubar from settings if they prefer hotkey-only.

@@ -513,15 +513,31 @@ body {
   line-height: 1.4;
 }
 
-.save-success {
-  margin-top: 12px;
-  padding: 8px 10px;
-  border-radius: 5px;
-  font-size: 11px;
+/* ===== Inline save feedback ===== */
+.control-with-status {
+  display: flex;
+  align-items: center;
+}
+
+.inline-saved {
+  font-size: 10.5px;
+  font-weight: 450;
   color: var(--ac);
-  background: var(--ac-soft);
-  border: 1px solid var(--ac-dim);
-  line-height: 1.4;
+  margin-left: 10px;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  white-space: nowrap;
+}
+
+.inline-saved.visible {
+  opacity: 1;
+}
+
+.section-header .inline-saved {
+  margin-left: 8px;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 @media (prefers-color-scheme: light) {
@@ -534,6 +550,17 @@ body {
     background: oklch(96% 0.03 178);
     border-color: oklch(88% 0.06 178);
   }
+}
+
+.save-success {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--ac);
+  background: var(--ac-soft);
+  border: 1px solid var(--ac-dim);
+  line-height: 1.4;
 }
 
 /* ===== Config path bar ===== */
