@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Main Screen Drilldown Showcase</title>
+<style>
+/* ============================================================
+   SHOWCASE CHROME
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light dark;
+  --chrome-bg: #f0f0f0;
+  --chrome-fg: #1a1a1a;
+  --chrome-muted: #666;
+  --chrome-border: #d0d0d0;
+  --chrome-controls-bg: #eaeaea;
+  --chrome-btn-bg: #fff;
+  --chrome-btn-border: #c0c0c0;
+  --chrome-btn-fg: #333;
+  --chrome-btn-hover: #f2f2f2;
+  --chrome-btn-active-bg: #1d1d1f;
+  --chrome-btn-active-fg: #fff;
+  --chrome-btn-active-border: #1d1d1f;
+  --note-bg: #fffcf0;
+  --note-border: #e6d88a;
+  --note-fg: #5a4e1a;
+  --brief-bg: #f5f3ff;
+  --brief-border: #d4ccf0;
+  --brief-fg: #3b2f6e;
+}
+
+html.dark {
+  --chrome-bg: #161616;
+  --chrome-fg: #e0e0e0;
+  --chrome-muted: #888;
+  --chrome-border: #2e2e2e;
+  --chrome-controls-bg: #1e1e1e;
+  --chrome-btn-bg: #2a2a2a;
+  --chrome-btn-border: #444;
+  --chrome-btn-fg: #ccc;
+  --chrome-btn-hover: #363636;
+  --chrome-btn-active-bg: #e0e0e0;
+  --chrome-btn-active-fg: #111;
+  --chrome-btn-active-border: #e0e0e0;
+  --note-bg: #1e1c14;
+  --note-border: #3a3520;
+  --note-fg: #c8bc7a;
+  --brief-bg: #1c1928;
+  --brief-border: #2e2750;
+  --brief-fg: #a89ae0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.design-brief {
+  max-width: 880px;
+  margin: 28px auto 0;
+  padding: 14px 18px;
+  background: var(--brief-bg);
+  border: 1px solid var(--brief-border);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--brief-fg);
+}
+.design-brief strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.design-brief p { margin-bottom: 6px; }
+.design-brief p:last-child { margin-bottom: 0; }
+.design-brief code {
+  font-size: 0.9em;
+  background: color-mix(in oklch, var(--brief-border), transparent 50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.fidelity-notes {
+  max-width: 880px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--note-fg);
+}
+.fidelity-notes strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fidelity-notes ul { padding-left: 16px; margin: 0; }
+.fidelity-notes li { margin-bottom: 1px; }
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--chrome-controls-bg);
+  border-bottom: 1px solid var(--chrome-border);
+  padding: 10px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.control-group label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--chrome-muted);
+  margin-right: 5px;
+}
+
+.ctrl-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--chrome-btn-border);
+  border-radius: 5px;
+  background: var(--chrome-btn-bg);
+  color: var(--chrome-btn-fg);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.ctrl-btn:hover { background: var(--chrome-btn-hover); }
+.ctrl-btn.active {
+  background: var(--chrome-btn-active-bg);
+  color: var(--chrome-btn-active-fg);
+  border-color: var(--chrome-btn-active-border);
+}
+
+/* Desktop stage */
+.desktop-stage {
+  max-width: 880px;
+  margin: 20px auto 40px;
+  min-height: 520px;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+html:not(.dark) .desktop-stage {
+  background: linear-gradient(135deg, #c9d6e3 0%, #e8ddd0 50%, #d5c8b8 100%);
+}
+html.dark .desktop-stage {
+  background: linear-gradient(135deg, #1a1f2e 0%, #1e1a28 50%, #22201c 100%);
+}
+
+.variant { display: none; width: 100%; }
+.variant.active { display: flex; align-items: flex-start; justify-content: center; padding-top: 36px; }
+
+/* Variant descriptions */
+.variant-desc {
+  max-width: 880px;
+  margin: 14px auto 0;
+  padding: 12px 16px;
+  border: 1px solid var(--chrome-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--chrome-bg), transparent 30%);
+  display: none;
+}
+.variant-desc.active { display: block; }
+.variant-desc h3 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.variant-desc p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--chrome-muted);
+  margin: 0 0 4px;
+}
+.variant-desc p:last-child { margin-bottom: 0; }
+.desc-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.trait-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--chrome-muted), transparent 88%);
+  color: var(--chrome-muted);
+}
+
+/* ============================================================
+   SHARED PANEL TOKENS
+   ============================================================ */
+
+.v-panel {
+  --p-surface-l: oklch(97% 0.004 250 / 0.94);
+  --p-surface-d: oklch(22% 0.008 250 / 0.93);
+  --p-text-l: oklch(20% 0.01 250);
+  --p-text-d: oklch(92% 0.01 250);
+  --p-text2-l: oklch(43% 0.01 250);
+  --p-text2-d: oklch(70% 0.01 250);
+  --p-text3-l: oklch(58% 0.01 250);
+  --p-text3-d: oklch(56% 0.01 250);
+  --p-border-l: oklch(84% 0.01 250 / 0.78);
+  --p-border-d: oklch(33% 0.01 250 / 0.78);
+  --p-sep-l: oklch(82% 0.01 250 / 0.72);
+  --p-sep-d: oklch(36% 0.01 250 / 0.75);
+  --p-hover-l: oklch(64% 0.01 250 / 0.08);
+  --p-hover-d: oklch(100% 0 0 / 0.08);
+  --p-expanded-l: oklch(64% 0.01 250 / 0.04);
+  --p-expanded-d: oklch(100% 0 0 / 0.04);
+  --p-focus: oklch(58% 0.2 258);
+
+  --s-neg: oklch(62% 0.24 27);
+  --s-wait: oklch(76% 0.18 75);
+  --s-run: oklch(58% 0.2 258);
+  --s-pos: oklch(73% 0.17 150);
+  --s-idle: oklch(58% 0.01 250);
+
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html.dark .v-panel {
+  --s-neg: oklch(70% 0.2 25);
+  --s-wait: oklch(80% 0.16 78);
+  --s-run: oklch(72% 0.16 259);
+  --s-pos: oklch(80% 0.14 150);
+  --s-idle: oklch(67% 0.01 250);
+}
+
+html:not(.dark) .v-panel {
+  --p-surface: var(--p-surface-l);
+  --p-text: var(--p-text-l);
+  --p-text2: var(--p-text2-l);
+  --p-text3: var(--p-text3-l);
+  --p-border: var(--p-border-l);
+  --p-sep: var(--p-sep-l);
+  --p-hover: var(--p-hover-l);
+  --p-expanded: var(--p-expanded-l);
+}
+html.dark .v-panel {
+  --p-surface: var(--p-surface-d);
+  --p-text: var(--p-text-d);
+  --p-text2: var(--p-text2-d);
+  --p-text3: var(--p-text3-d);
+  --p-border: var(--p-border-d);
+  --p-sep: var(--p-sep-d);
+  --p-hover: var(--p-hover-d);
+  --p-expanded: var(--p-expanded-d);
+}
+
+/* Shared primitives */
+.sd { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
+.sd.neg { background: var(--s-neg); }
+.sd.wait { background: var(--s-wait); }
+.sd.run { background: var(--s-run); animation: pulse 1.6s ease-in-out infinite; }
+.sd.pos { background: var(--s-pos); }
+.sd.idle { background: var(--s-idle); }
+.sd.retained { background: transparent; border: 1.5px solid var(--s-idle); }
+
+.sc {
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.sc.neg { color: var(--s-neg); background: color-mix(in oklch, var(--s-neg), transparent 91%); }
+.sc.wait { color: var(--s-wait); background: color-mix(in oklch, var(--s-wait), transparent 91%); }
+.sc.run { color: var(--s-run); background: color-mix(in oklch, var(--s-run), transparent 91%); }
+.sc.pos { color: var(--s-pos); background: color-mix(in oklch, var(--s-pos), transparent 91%); }
+.sc.idle { color: var(--s-idle); background: color-mix(in oklch, var(--s-idle), transparent 91%); }
+
+.kbd {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  background: color-mix(in oklch, var(--p-text3), transparent 86%);
+  border: 1px solid color-mix(in oklch, var(--p-text3), transparent 78%);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: "SF Mono", ui-monospace, monospace;
+  line-height: 1.3;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Shared panel shell */
+.panel-shell {
+  border-radius: 12px;
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  box-shadow:
+    0 0 0 0.5px color-mix(in oklch, var(--p-border), transparent 15%),
+    0 24px 80px oklch(0% 0 0 / 0.28),
+    0 4px 12px oklch(0% 0 0 / 0.10);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  overflow: hidden;
+  color: var(--p-text);
+}
+
+/* ============================================================
+   VARIANT 1 — CLEAN SPLIT
+   Filter bar at top spanning full width.
+   Left: compact list (dot + title only). Right: field details.
+   Minimal, balanced proportions.
+   ============================================================ */
+
+.v1 {
+  width: 560px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.v1-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--p-sep);
+}
+
+.v1-filter-icon {
+  color: var(--p-text3);
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.v1-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--p-text);
+  font-family: inherit;
+}
+.v1-filter-input::placeholder { color: var(--p-text3); }
+
+.v1-filter-badge {
+  font-size: 10px;
+  color: var(--p-text3);
+  background: color-mix(in oklch, var(--p-text3), transparent 88%);
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.v1-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 0;
+}
+
+.v1-list {
+  border-right: 1px solid var(--p-sep);
+  overflow-y: auto;
+  max-height: 370px;
+  padding: 4px 0;
+}
+
+.v1-feed-label {
+  padding: 7px 10px 2px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--p-text3);
+}
+
+.v1-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.v1-row:hover { background: var(--p-hover); }
+.v1-row.active {
+  background: var(--p-hover);
+  outline: 2px solid color-mix(in oklch, var(--p-focus), white 20%);
+  outline-offset: -1px;
+}
+
+.v1-row-title {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--p-text);
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.v1-detail {
+  padding: 14px 16px;
+  overflow-y: auto;
+  max-height: 370px;
+}
+
+.v1-detail-feed {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text3);
+  margin-bottom: 6px;
+}
+
+.v1-detail-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--p-text);
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+
+.v1-detail-status {
+  display: inline-flex;
+  margin-bottom: 14px;
+}
+
+.v1-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.v1-field {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.v1-field-key {
+  color: var(--p-text3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.v1-field-val {
+  color: var(--p-text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v1-field-val.neg { color: var(--s-neg); }
+.v1-field-val.wait { color: var(--s-wait); }
+.v1-field-val.run { color: var(--s-run); }
+.v1-field-val.pos { color: var(--s-pos); }
+.v1-field-val.idle { color: var(--s-idle); }
+
+.v1-open {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--p-focus);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+.v1-footer {
+  border-top: 1px solid var(--p-sep);
+  padding: 5px 14px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-text3);
+}
+
+.v1-footer-keys {
+  display: flex;
+  gap: 10px;
+}
+.v1-footer-keys span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ============================================================
+   VARIANT 2 — BORDERLESS SPLIT
+   No filter bar. List and detail share the panel without a header.
+   Detail pane has a subtle background tint. More spacious, calmer.
+   The list shows dot + title + inline chip for the highest status.
+   ============================================================ */
+
+.v2 {
+  width: 580px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.v2-body {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 0;
+}
+
+.v2-list {
+  overflow-y: auto;
+  max-height: 400px;
+  padding: 8px 0;
+}
+
+.v2-feed-label {
+  padding: 6px 12px 2px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--p-text3);
+}
+.v2-feed-label:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in oklch, var(--p-sep), transparent 40%);
+}
+
+.v2-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.v2-row:hover { background: var(--p-hover); }
+.v2-row.active {
+  background: var(--p-hover);
+  outline: 2px solid color-mix(in oklch, var(--p-focus), white 20%);
+  outline-offset: -1px;
+}
+
+.v2-row-title {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--p-text);
+  line-height: 1.3;
+}
+
+.v2-detail {
+  background: var(--p-expanded);
+  border-left: 1px solid var(--p-sep);
+  padding: 16px 18px;
+  overflow-y: auto;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.v2-detail-feed {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text3);
+  margin-bottom: 8px;
+}
+
+.v2-detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.v2-detail-title-row .sd {
+  margin-top: 6px;
+  width: 8px;
+  height: 8px;
+}
+
+.v2-detail-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--p-text);
+  line-height: 1.35;
+}
+
+.v2-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.v2-field {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.v2-field-key {
+  color: var(--p-text3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.v2-field-val {
+  color: var(--p-text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v2-field-val.neg { color: var(--s-neg); }
+.v2-field-val.wait { color: var(--s-wait); }
+.v2-field-val.run { color: var(--s-run); }
+.v2-field-val.pos { color: var(--s-pos); }
+
+.v2-open {
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 11px;
+  color: var(--p-focus);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding-left: 0;
+  font-family: inherit;
+  text-align: left;
+}
+
+.v2-footer {
+  border-top: 1px solid var(--p-sep);
+  padding: 5px 14px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-text3);
+}
+
+/* ============================================================
+   VARIANT 3 — COMPACT SPOTLIGHT SPLIT
+   Tighter list (smaller rows, no feed headers — feed indicated by
+   subtle left-edge color). Filter bar integrated.
+   Detail pane is narrower, just the essentials.
+   Most compact of the three — feels fast and dense.
+   ============================================================ */
+
+.v3 {
+  width: 540px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.v3-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--p-sep);
+}
+
+.v3-filter-icon {
+  color: var(--p-text3);
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.v3-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12.5px;
+  color: var(--p-text);
+  font-family: inherit;
+}
+.v3-filter-input::placeholder { color: var(--p-text3); }
+
+.v3-hotkey {
+  font-size: 10px;
+  color: var(--p-text3);
+  background: color-mix(in oklch, var(--p-text3), transparent 88%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.v3-body {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  min-height: 0;
+}
+
+.v3-list {
+  border-right: 1px solid var(--p-sep);
+  overflow-y: auto;
+  max-height: 350px;
+  padding: 3px 0;
+}
+
+.v3-row {
+  display: grid;
+  grid-template-columns: 3px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
+  padding: 4px 8px 4px 0;
+  margin: 0 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 80ms ease;
+  font-size: 12px;
+}
+.v3-row:hover { background: var(--p-hover); }
+.v3-row.active {
+  background: var(--p-hover);
+  outline: 2px solid color-mix(in oklch, var(--p-focus), white 20%);
+  outline-offset: -1px;
+}
+
+.v3-row-bar {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  margin-right: 7px;
+  flex-shrink: 0;
+}
+.v3-row-bar.f1 { background: oklch(58% 0.14 210); }
+.v3-row-bar.f2 { background: oklch(58% 0.14 290); }
+.v3-row-bar.f3 { background: oklch(58% 0.14 50); }
+html.dark .v3-row-bar.f1 { background: oklch(65% 0.14 210); }
+html.dark .v3-row-bar.f2 { background: oklch(65% 0.14 290); }
+html.dark .v3-row-bar.f3 { background: oklch(65% 0.14 50); }
+
+.v3-row .sd {
+  margin-right: 6px;
+}
+
+.v3-row-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--p-text);
+  line-height: 1.3;
+}
+
+.v3-detail {
+  padding: 12px 14px;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.v3-detail-feed {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text3);
+  margin-bottom: 5px;
+}
+
+.v3-detail-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--p-text);
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+.v3-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.v3-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v3-field {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.v3-field-key {
+  color: var(--p-text3);
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.v3-field-val {
+  color: var(--p-text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v3-field-val.neg { color: var(--s-neg); }
+.v3-field-val.wait { color: var(--s-wait); }
+.v3-field-val.run { color: var(--s-run); }
+.v3-field-val.pos { color: var(--s-pos); }
+
+.v3-open {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--p-focus);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+.v3-footer {
+  border-top: 1px solid var(--p-sep);
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-text3);
+}
+
+/* ============================================================
+   VARIANT 4 — STACKED SPLIT
+   Filter bar at top. List shows dot + title + chip (like current
+   menubar). Detail pane below the list instead of beside it — 
+   vertical split. Narrower overall (closer to menubar width).
+   Good for users who prefer the single-column mental model.
+   ============================================================ */
+
+.v4 {
+  width: 400px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.v4-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--p-sep);
+}
+
+.v4-filter-icon {
+  color: var(--p-text3);
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.v4-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--p-text);
+  font-family: inherit;
+}
+.v4-filter-input::placeholder { color: var(--p-text3); }
+
+.v4-hotkey {
+  font-size: 10px;
+  color: var(--p-text3);
+  background: color-mix(in oklch, var(--p-text3), transparent 88%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.v4-list {
+  overflow-y: auto;
+  max-height: 220px;
+  padding: 4px 0;
+}
+
+.v4-feed-label {
+  padding: 6px 12px 2px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--p-text3);
+}
+
+.v4-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.v4-row:hover { background: var(--p-hover); }
+.v4-row.active {
+  background: var(--p-hover);
+  outline: 2px solid color-mix(in oklch, var(--p-focus), white 20%);
+  outline-offset: -1px;
+}
+
+.v4-row-title {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--p-text);
+  line-height: 1.3;
+}
+
+.v4-detail {
+  border-top: 1px solid var(--p-sep);
+  background: var(--p-expanded);
+  padding: 10px 14px 12px;
+  min-height: 120px;
+}
+
+.v4-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.v4-detail-feed {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text3);
+}
+
+.v4-detail-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--p-text);
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.v4-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.v4-field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 11.5px;
+}
+
+.v4-field-key {
+  color: var(--p-text3);
+  font-size: 10px;
+}
+
+.v4-field-val {
+  color: var(--p-text2);
+  font-size: 12px;
+}
+.v4-field-val.neg { color: var(--s-neg); }
+.v4-field-val.wait { color: var(--s-wait); }
+.v4-field-val.run { color: var(--s-run); }
+.v4-field-val.pos { color: var(--s-pos); }
+
+.v4-open {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--p-focus);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+.v4-footer {
+  border-top: 1px solid var(--p-sep);
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-text3);
+}
+
+/* ============================================================
+   VARIANT 5 — WIDE SPLIT WITH PRIORITY SECTION
+   Wider panel. First section in list is "Needs Attention" (cross-feed,
+   negative-status items), followed by per-feed groups.
+   Detail pane includes a prominent status chip and "Open" CTA button.
+   ============================================================ */
+
+.v5 {
+  width: 600px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.v5-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--p-sep);
+}
+
+.v5-filter-icon {
+  color: var(--p-text3);
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.v5-filter-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--p-text);
+  font-family: inherit;
+}
+.v5-filter-input::placeholder { color: var(--p-text3); }
+
+.v5-count {
+  font-size: 10px;
+  color: var(--p-text3);
+  font-variant-numeric: tabular-nums;
+}
+
+.v5-body {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  min-height: 0;
+}
+
+.v5-list {
+  border-right: 1px solid var(--p-sep);
+  overflow-y: auto;
+  max-height: 390px;
+  padding: 4px 0;
+}
+
+.v5-section-label {
+  padding: 7px 12px 2px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--p-text3);
+}
+
+.v5-section-label.attention {
+  color: var(--s-neg);
+}
+
+.v5-section-sep {
+  height: 1px;
+  background: var(--p-sep);
+  margin: 4px 12px;
+}
+
+.v5-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 80ms ease;
+}
+.v5-row:hover { background: var(--p-hover); }
+.v5-row.active {
+  background: var(--p-hover);
+  outline: 2px solid color-mix(in oklch, var(--p-focus), white 20%);
+  outline-offset: -1px;
+}
+
+.v5-row-title {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--p-text);
+  line-height: 1.3;
+}
+
+.v5-row-feed-hint {
+  font-size: 9px;
+  color: var(--p-text3);
+  white-space: nowrap;
+}
+
+.v5-detail {
+  padding: 16px 18px;
+  overflow-y: auto;
+  max-height: 390px;
+  display: flex;
+  flex-direction: column;
+}
+
+.v5-detail-feed {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text3);
+  margin-bottom: 8px;
+}
+
+.v5-detail-title-block {
+  margin-bottom: 14px;
+}
+
+.v5-detail-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--p-text);
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.v5-detail-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.v5-detail-status-row .sd {
+  width: 7px;
+  height: 7px;
+}
+
+.v5-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.v5-field {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.v5-field-key {
+  color: var(--p-text3);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.v5-field-val {
+  color: var(--p-text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v5-field-val.neg { color: var(--s-neg); }
+.v5-field-val.wait { color: var(--s-wait); }
+.v5-field-val.run { color: var(--s-run); }
+.v5-field-val.pos { color: var(--s-pos); }
+
+.v5-open-cta {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.v5-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--p-focus);
+  font-weight: 500;
+  cursor: pointer;
+  background: color-mix(in oklch, var(--p-focus), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--p-focus), transparent 80%);
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-family: inherit;
+  transition: background 80ms ease;
+}
+.v5-open-btn:hover {
+  background: color-mix(in oklch, var(--p-focus), transparent 85%);
+}
+
+.v5-footer {
+  border-top: 1px solid var(--p-sep);
+  padding: 5px 14px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--p-text3);
+}
+
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="control-group">
+    <label>Variant</label>
+    <button class="ctrl-btn active" data-variant="1">1 · Clean Split</button>
+    <button class="ctrl-btn" data-variant="2">2 · Borderless</button>
+    <button class="ctrl-btn" data-variant="3">3 · Compact</button>
+    <button class="ctrl-btn" data-variant="4">4 · Stacked</button>
+    <button class="ctrl-btn" data-variant="5">5 · Priority</button>
+  </div>
+  <div class="control-group">
+    <label>Theme</label>
+    <button class="ctrl-btn active" data-theme="light">Light</button>
+    <button class="ctrl-btn" data-theme="dark">Dark</button>
+  </div>
+</div>
+
+<!-- Design Brief -->
+<div class="design-brief">
+  <strong>Design Brief — Split-Panel Drilldown</strong>
+  <p>Five sub-variants of the <strong>Spotlight + Split</strong> concept. All share: floating centered overlay, global hotkey trigger, <code>↑↓</code> to navigate the activity list, detail pane updates live with focus, <code>Enter</code> opens the activity URL, <code>Esc</code> closes. The variants explore differences in: filter bar presence, list density, detail placement, feed identification method, and the "needs attention" cross-feed section idea.</p>
+</div>
+
+<div class="fidelity-notes">
+  <strong>Fidelity Notes</strong>
+  <ul>
+    <li>Active/focused row shown with blue outline. In all variants, arrow-key focus drives the detail pane content.</li>
+    <li>Data matches <code>FeedSnapshot</code>/<code>Activity</code>/<code>Field</code> types. Three feeds: GitHub PRs (3 activities), ADO PRs (2), Deploy Status (2, 1 retained).</li>
+    <li>Filter bar is passive in all variants — panel opens showing full list, typing activates filter.</li>
+  </ul>
+</div>
+
+<!-- Variant descriptions -->
+<div class="variant-desc active" id="desc-1">
+  <h3>1 · Clean Split</h3>
+  <p>Full-width filter bar at top. Left list shows dot + title only (no chips) to keep it narrow. Right detail pane with feed label, title, fields, and open link. Classic balanced proportions — 220px list, ~340px detail.</p>
+  <p>Trade-off: The list is minimal — you need to look at the detail pane to see status text. Good if the dot color is enough for scanning.</p>
+  <div class="desc-traits">
+    <span class="trait-tag">Filter bar</span>
+    <span class="trait-tag">Minimal list</span>
+    <span class="trait-tag">Balanced split</span>
+    <span class="trait-tag">Feed headers in list</span>
+  </div>
+</div>
+
+<div class="variant-desc" id="desc-2">
+  <h3>2 · Borderless</h3>
+  <p>No filter bar — the panel opens directly into the content. List shows dot + title + inline status chip. Detail pane has a subtle tinted background and a larger title with the status dot beside it. Calmer and more spacious.</p>
+  <p>Trade-off: No filter means you always scroll/arrow to find things. But with 5-15 activities, that's fast. The inline chips mean the list is wider.</p>
+  <div class="desc-traits">
+    <span class="trait-tag">No filter</span>
+    <span class="trait-tag">Inline chips</span>
+    <span class="trait-tag">Tinted detail pane</span>
+    <span class="trait-tag">Spacious</span>
+  </div>
+</div>
+
+<div class="variant-desc" id="desc-3">
+  <h3>3 · Compact</h3>
+  <p>Tightest variant. List uses color-coded left-edge bars instead of feed section headers — saves vertical space. Filter bar is slim. Detail pane shows status chips in a row, then fields. Feels fast and dense.</p>
+  <p>Trade-off: Color bars need a legend (or learning). Row height is minimal, requiring precise arrow navigation. Best for power users comfortable with density.</p>
+  <div class="desc-traits">
+    <span class="trait-tag">Color-coded feeds</span>
+    <span class="trait-tag">No feed headers</span>
+    <span class="trait-tag">Dense rows</span>
+    <span class="trait-tag">Slim filter</span>
+  </div>
+</div>
+
+<div class="variant-desc" id="desc-4">
+  <h3>4 · Stacked</h3>
+  <p>Vertical split — list on top, detail below — in a narrower panel (400px). Closer to the current menubar panel's single-column feel. Detail pane uses a 2-column field grid to stay compact. Familiar mental model.</p>
+  <p>Trade-off: Less horizontal space means shorter titles truncate earlier. The detail pane competes with the list for vertical space — shorter list visible at once.</p>
+  <div class="desc-traits">
+    <span class="trait-tag">Vertical split</span>
+    <span class="trait-tag">Narrow (400px)</span>
+    <span class="trait-tag">2-col fields</span>
+    <span class="trait-tag">Menubar-like</span>
+  </div>
+</div>
+
+<div class="variant-desc" id="desc-5">
+  <h3>5 · Priority + Split</h3>
+  <p>Widest variant. List starts with a "Needs Attention" cross-feed section (attention-negative items from any feed), followed by per-feed groups. Items in the attention section show a feed hint label. Detail pane includes a styled "Open" button instead of a text link. The hybrid of A+C+D ideas.</p>
+  <p>Trade-off: The attention section duplicates items that also appear in their feed group — or do we remove them from the feed group? Either way, it adds UX complexity. The wider size (600px) feels more like a window than an overlay.</p>
+  <div class="desc-traits">
+    <span class="trait-tag">Cross-feed attention section</span>
+    <span class="trait-tag">Feed groups below</span>
+    <span class="trait-tag">Styled CTA button</span>
+    <span class="trait-tag">Widest (600px)</span>
+  </div>
+</div>
+
+<!-- ============================================================
+     DESKTOP STAGE
+     ============================================================ -->
+<div class="desktop-stage">
+
+  <!-- ========== VARIANT 1 — CLEAN SPLIT ========== -->
+  <div class="variant active" id="variant-1">
+    <div class="v-panel panel-shell v1">
+      <div class="v1-filter">
+        <span class="v1-filter-icon">⌕</span>
+        <input class="v1-filter-input" placeholder="Filter activities…" readonly>
+        <span class="v1-filter-badge">7</span>
+      </div>
+      <div class="v1-body">
+        <div class="v1-list">
+          <div class="v1-feed-label">GitHub PRs — cortado</div>
+          <div class="v1-row">
+            <span class="sd neg"></span>
+            <span class="v1-row-title">refactor: feed registry types</span>
+          </div>
+          <div class="v1-row active">
+            <span class="sd wait"></span>
+            <span class="v1-row-title">fix: panel scroll jank on Ventura</span>
+          </div>
+          <div class="v1-row">
+            <span class="sd pos"></span>
+            <span class="v1-row-title">add: Azure DevOps PR feed</span>
+          </div>
+
+          <div class="v1-feed-label">ADO PRs — backend-api</div>
+          <div class="v1-row">
+            <span class="sd run"></span>
+            <span class="v1-row-title">FEAT-1234: User auth middleware</span>
+          </div>
+          <div class="v1-row">
+            <span class="sd wait"></span>
+            <span class="v1-row-title">BUG-5678: Fix timeout on batch</span>
+          </div>
+
+          <div class="v1-feed-label">Deploy Status</div>
+          <div class="v1-row">
+            <span class="sd run"></span>
+            <span class="v1-row-title">staging-deploy-042</span>
+          </div>
+          <div class="v1-row">
+            <span class="sd retained"></span>
+            <span class="v1-row-title">prod-deploy-041</span>
+          </div>
+        </div>
+
+        <div class="v1-detail">
+          <div class="v1-detail-feed">GitHub PRs — cortado</div>
+          <div class="v1-detail-title">fix: panel scroll jank on Ventura</div>
+          <div class="v1-detail-status"><span class="sc wait">awaiting review</span></div>
+          <div class="v1-fields">
+            <div class="v1-field">
+              <span class="v1-field-key">review</span>
+              <span class="v1-field-val wait">awaiting review</span>
+            </div>
+            <div class="v1-field">
+              <span class="v1-field-key">CI</span>
+              <span class="v1-field-val pos">passing</span>
+            </div>
+            <div class="v1-field">
+              <span class="v1-field-key">author</span>
+              <span class="v1-field-val">orbarila</span>
+            </div>
+            <div class="v1-field">
+              <span class="v1-field-key">updated</span>
+              <span class="v1-field-val">14 min ago</span>
+            </div>
+          </div>
+          <button class="v1-open">↗ Open in GitHub</button>
+        </div>
+      </div>
+      <div class="v1-footer">
+        <div class="v1-footer-keys">
+          <span><span class="kbd">↑↓</span> navigate</span>
+          <span><span class="kbd">↵</span> open</span>
+          <span><span class="kbd">esc</span> close</span>
+        </div>
+        <span>7 activities</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VARIANT 2 — BORDERLESS ========== -->
+  <div class="variant" id="variant-2">
+    <div class="v-panel panel-shell v2">
+      <div class="v2-body">
+        <div class="v2-list">
+          <div class="v2-feed-label">GitHub PRs — cortado</div>
+          <div class="v2-row">
+            <span class="sd neg"></span>
+            <span class="v2-row-title">refactor: feed registry types</span>
+            <span class="sc neg">failing</span>
+          </div>
+          <div class="v2-row active">
+            <span class="sd wait"></span>
+            <span class="v2-row-title">fix: panel scroll jank on Ventura</span>
+            <span class="sc wait">awaiting</span>
+          </div>
+          <div class="v2-row">
+            <span class="sd pos"></span>
+            <span class="v2-row-title">add: Azure DevOps PR feed</span>
+            <span class="sc pos">approved</span>
+          </div>
+
+          <div class="v2-feed-label">ADO PRs — backend-api</div>
+          <div class="v2-row">
+            <span class="sd run"></span>
+            <span class="v2-row-title">FEAT-1234: User auth middleware</span>
+            <span class="sc run">in progress</span>
+          </div>
+          <div class="v2-row">
+            <span class="sd wait"></span>
+            <span class="v2-row-title">BUG-5678: Fix timeout on batch</span>
+            <span class="sc wait">awaiting</span>
+          </div>
+
+          <div class="v2-feed-label">Deploy Status</div>
+          <div class="v2-row">
+            <span class="sd run"></span>
+            <span class="v2-row-title">staging-deploy-042</span>
+            <span class="sc run">deploying</span>
+          </div>
+          <div class="v2-row">
+            <span class="sd retained"></span>
+            <span class="v2-row-title">prod-deploy-041</span>
+            <span class="sc idle">complete</span>
+          </div>
+        </div>
+
+        <div class="v2-detail">
+          <div class="v2-detail-feed">GitHub PRs — cortado</div>
+          <div class="v2-detail-title-row">
+            <span class="sd wait"></span>
+            <span class="v2-detail-title">fix: panel scroll jank on Ventura</span>
+          </div>
+          <div class="v2-fields">
+            <div class="v2-field">
+              <span class="v2-field-key">review</span>
+              <span class="v2-field-val wait">awaiting review</span>
+            </div>
+            <div class="v2-field">
+              <span class="v2-field-key">CI</span>
+              <span class="v2-field-val pos">passing</span>
+            </div>
+            <div class="v2-field">
+              <span class="v2-field-key">author</span>
+              <span class="v2-field-val">orbarila</span>
+            </div>
+            <div class="v2-field">
+              <span class="v2-field-key">updated</span>
+              <span class="v2-field-val">14 min ago</span>
+            </div>
+          </div>
+          <button class="v2-open">↗ Open in GitHub</button>
+        </div>
+      </div>
+      <div class="v2-footer">
+        <span><span class="kbd">↑↓</span> navigate · <span class="kbd">↵</span> open · <span class="kbd">esc</span> close</span>
+        <span>7 activities</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VARIANT 3 — COMPACT ========== -->
+  <div class="variant" id="variant-3">
+    <div class="v-panel panel-shell v3">
+      <div class="v3-filter">
+        <span class="v3-filter-icon">⌕</span>
+        <input class="v3-filter-input" placeholder="Filter…" readonly>
+        <span class="v3-hotkey">⌘K</span>
+      </div>
+      <div class="v3-body">
+        <div class="v3-list">
+          <!-- GitHub PRs -->
+          <div class="v3-row">
+            <span class="v3-row-bar f1"></span>
+            <span class="sd neg"></span>
+            <span class="v3-row-title">refactor: feed registry types</span>
+          </div>
+          <div class="v3-row active">
+            <span class="v3-row-bar f1"></span>
+            <span class="sd wait"></span>
+            <span class="v3-row-title">fix: panel scroll jank on Ventura</span>
+          </div>
+          <div class="v3-row">
+            <span class="v3-row-bar f1"></span>
+            <span class="sd pos"></span>
+            <span class="v3-row-title">add: Azure DevOps PR feed</span>
+          </div>
+          <!-- ADO PRs -->
+          <div class="v3-row">
+            <span class="v3-row-bar f2"></span>
+            <span class="sd run"></span>
+            <span class="v3-row-title">FEAT-1234: User auth middleware</span>
+          </div>
+          <div class="v3-row">
+            <span class="v3-row-bar f2"></span>
+            <span class="sd wait"></span>
+            <span class="v3-row-title">BUG-5678: Fix timeout on batch</span>
+          </div>
+          <!-- Deploy -->
+          <div class="v3-row">
+            <span class="v3-row-bar f3"></span>
+            <span class="sd run"></span>
+            <span class="v3-row-title">staging-deploy-042</span>
+          </div>
+          <div class="v3-row">
+            <span class="v3-row-bar f3"></span>
+            <span class="sd retained"></span>
+            <span class="v3-row-title">prod-deploy-041</span>
+          </div>
+        </div>
+
+        <div class="v3-detail">
+          <div class="v3-detail-feed">GitHub PRs — cortado</div>
+          <div class="v3-detail-title">fix: panel scroll jank on Ventura</div>
+          <div class="v3-detail-chips">
+            <span class="sc wait">awaiting</span>
+            <span class="sc pos">CI passing</span>
+          </div>
+          <div class="v3-fields">
+            <div class="v3-field">
+              <span class="v3-field-key">review</span>
+              <span class="v3-field-val wait">awaiting review</span>
+            </div>
+            <div class="v3-field">
+              <span class="v3-field-key">CI</span>
+              <span class="v3-field-val pos">passing</span>
+            </div>
+            <div class="v3-field">
+              <span class="v3-field-key">author</span>
+              <span class="v3-field-val">orbarila</span>
+            </div>
+            <div class="v3-field">
+              <span class="v3-field-key">updated</span>
+              <span class="v3-field-val">14 min ago</span>
+            </div>
+          </div>
+          <button class="v3-open">↗ Open in GitHub</button>
+        </div>
+      </div>
+      <div class="v3-footer">
+        <span><span class="kbd">↑↓</span> nav · <span class="kbd">↵</span> open · <span class="kbd">esc</span> close</span>
+        <span>7</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VARIANT 4 — STACKED ========== -->
+  <div class="variant" id="variant-4">
+    <div class="v-panel panel-shell v4">
+      <div class="v4-filter">
+        <span class="v4-filter-icon">⌕</span>
+        <input class="v4-filter-input" placeholder="Filter activities…" readonly>
+        <span class="v4-hotkey">⌘K</span>
+      </div>
+      <div class="v4-list">
+        <div class="v4-feed-label">GitHub PRs — cortado</div>
+        <div class="v4-row">
+          <span class="sd neg"></span>
+          <span class="v4-row-title">refactor: feed registry types</span>
+          <span class="sc neg">failing</span>
+        </div>
+        <div class="v4-row active">
+          <span class="sd wait"></span>
+          <span class="v4-row-title">fix: panel scroll jank on Ventura</span>
+          <span class="sc wait">awaiting</span>
+        </div>
+        <div class="v4-row">
+          <span class="sd pos"></span>
+          <span class="v4-row-title">add: Azure DevOps PR feed</span>
+          <span class="sc pos">approved</span>
+        </div>
+
+        <div class="v4-feed-label">ADO PRs — backend-api</div>
+        <div class="v4-row">
+          <span class="sd run"></span>
+          <span class="v4-row-title">FEAT-1234: User auth middleware</span>
+          <span class="sc run">in progress</span>
+        </div>
+        <div class="v4-row">
+          <span class="sd wait"></span>
+          <span class="v4-row-title">BUG-5678: Batch timeout</span>
+          <span class="sc wait">awaiting</span>
+        </div>
+
+        <div class="v4-feed-label">Deploy Status</div>
+        <div class="v4-row">
+          <span class="sd run"></span>
+          <span class="v4-row-title">staging-deploy-042</span>
+          <span class="sc run">deploying</span>
+        </div>
+        <div class="v4-row">
+          <span class="sd retained"></span>
+          <span class="v4-row-title">prod-deploy-041</span>
+          <span class="sc idle">complete</span>
+        </div>
+      </div>
+
+      <div class="v4-detail">
+        <div class="v4-detail-header">
+          <span class="v4-detail-feed">GitHub PRs — cortado</span>
+          <span class="sc wait">awaiting</span>
+        </div>
+        <div class="v4-detail-title">fix: panel scroll jank on Ventura</div>
+        <div class="v4-fields">
+          <div class="v4-field">
+            <span class="v4-field-key">review</span>
+            <span class="v4-field-val wait">awaiting review</span>
+          </div>
+          <div class="v4-field">
+            <span class="v4-field-key">CI</span>
+            <span class="v4-field-val pos">passing</span>
+          </div>
+          <div class="v4-field">
+            <span class="v4-field-key">author</span>
+            <span class="v4-field-val">orbarila</span>
+          </div>
+          <div class="v4-field">
+            <span class="v4-field-key">updated</span>
+            <span class="v4-field-val">14 min ago</span>
+          </div>
+        </div>
+        <button class="v4-open">↗ Open in GitHub</button>
+      </div>
+      <div class="v4-footer">
+        <span><span class="kbd">↑↓</span> navigate · <span class="kbd">↵</span> open · <span class="kbd">esc</span> close</span>
+        <span>7 activities</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== VARIANT 5 — PRIORITY + SPLIT ========== -->
+  <div class="variant" id="variant-5">
+    <div class="v-panel panel-shell v5">
+      <div class="v5-filter">
+        <span class="v5-filter-icon">⌕</span>
+        <input class="v5-filter-input" placeholder="Filter activities…" readonly>
+        <span class="v5-count">7 activities</span>
+      </div>
+      <div class="v5-body">
+        <div class="v5-list">
+          <div class="v5-section-label attention">⚑ Needs Attention</div>
+          <div class="v5-row">
+            <span class="sd neg"></span>
+            <span class="v5-row-title">refactor: feed registry types</span>
+            <span class="v5-row-feed-hint">GitHub</span>
+          </div>
+
+          <div class="v5-section-sep"></div>
+
+          <div class="v5-section-label">GitHub PRs — cortado</div>
+          <div class="v5-row active">
+            <span class="sd wait"></span>
+            <span class="v5-row-title">fix: panel scroll jank on Ventura</span>
+          </div>
+          <div class="v5-row">
+            <span class="sd pos"></span>
+            <span class="v5-row-title">add: Azure DevOps PR feed</span>
+          </div>
+
+          <div class="v5-section-label">ADO PRs — backend-api</div>
+          <div class="v5-row">
+            <span class="sd run"></span>
+            <span class="v5-row-title">FEAT-1234: User auth middleware</span>
+          </div>
+          <div class="v5-row">
+            <span class="sd wait"></span>
+            <span class="v5-row-title">BUG-5678: Fix timeout on batch</span>
+          </div>
+
+          <div class="v5-section-label">Deploy Status</div>
+          <div class="v5-row">
+            <span class="sd run"></span>
+            <span class="v5-row-title">staging-deploy-042</span>
+          </div>
+          <div class="v5-row">
+            <span class="sd retained"></span>
+            <span class="v5-row-title">prod-deploy-041</span>
+          </div>
+        </div>
+
+        <div class="v5-detail">
+          <div class="v5-detail-feed">GitHub PRs — cortado</div>
+          <div class="v5-detail-title-block">
+            <div class="v5-detail-title">fix: panel scroll jank on Ventura</div>
+            <div class="v5-detail-status-row">
+              <span class="sd wait" style="width:7px;height:7px"></span>
+              <span class="sc wait">awaiting review</span>
+            </div>
+          </div>
+          <div class="v5-fields">
+            <div class="v5-field">
+              <span class="v5-field-key">review</span>
+              <span class="v5-field-val wait">awaiting review</span>
+            </div>
+            <div class="v5-field">
+              <span class="v5-field-key">CI</span>
+              <span class="v5-field-val pos">passing</span>
+            </div>
+            <div class="v5-field">
+              <span class="v5-field-key">author</span>
+              <span class="v5-field-val">orbarila</span>
+            </div>
+            <div class="v5-field">
+              <span class="v5-field-key">updated</span>
+              <span class="v5-field-val">14 min ago</span>
+            </div>
+          </div>
+          <div class="v5-open-cta">
+            <button class="v5-open-btn">↗ Open in GitHub</button>
+          </div>
+        </div>
+      </div>
+      <div class="v5-footer">
+        <span><span class="kbd">↑↓</span> navigate · <span class="kbd">↵</span> open · <span class="kbd">esc</span> close</span>
+        <span>3 feeds</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /desktop-stage -->
+
+<script>
+const variantBtns = document.querySelectorAll('[data-variant]');
+const variants = document.querySelectorAll('.variant');
+const descs = document.querySelectorAll('.variant-desc');
+
+variantBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.variant;
+    variantBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    variants.forEach(v => v.classList.toggle('active', v.id === `variant-${id}`));
+    descs.forEach(d => {
+      d.classList.toggle('active', d.id === `desc-${id}`);
+    });
+  });
+});
+
+const themeBtns = document.querySelectorAll('[data-theme]');
+themeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const isDark = btn.dataset.theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    themeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.documentElement.classList.add('dark');
+  themeBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === 'dark'));
+}
+</script>
+</body>
+</html>

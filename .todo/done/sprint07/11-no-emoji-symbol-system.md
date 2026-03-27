@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 11 -- No-emoji policy and symbol system

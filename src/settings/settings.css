@@ -372,6 +372,8 @@ body {
 }
 
 .reveal-toggle {
+  -webkit-appearance: none;
+  appearance: none;
   position: absolute;
   right: 6px;
   top: 50%;
@@ -401,6 +403,8 @@ body {
 }
 
 .btn-primary {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 11.5px;
   font-weight: 600;
   font-family: inherit;
@@ -418,6 +422,8 @@ body {
 }
 
 .btn-secondary {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 11.5px;
   font-weight: 500;
   font-family: inherit;
@@ -427,9 +433,25 @@ body {
   background: transparent;
   color: var(--t2);
   cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.btn-secondary:hover {
+  background: var(--hover);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-secondary:disabled:hover {
+  background: transparent;
 }
 
 .btn-danger-sm {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 10.5px;
   font-weight: 500;
   font-family: inherit;
@@ -439,9 +461,16 @@ body {
   background: transparent;
   color: var(--danger);
   cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.btn-danger-sm:hover {
+  background: oklch(32% 0.04 25 / 0.15);
 }
 
 .btn-secondary-sm {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 10.5px;
   font-weight: 500;
   font-family: inherit;
@@ -451,6 +480,11 @@ body {
   background: transparent;
   color: var(--t2);
   cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.btn-secondary-sm:hover {
+  background: var(--hover);
 }
 
 @media (prefers-color-scheme: light) {
@@ -460,6 +494,10 @@ body {
 
   .btn-danger-sm {
     border-color: oklch(80% 0.06 25);
+  }
+
+  .btn-danger-sm:hover {
+    background: oklch(80% 0.06 25 / 0.15);
   }
 }
 
@@ -643,6 +681,8 @@ body {
 }
 
 .toggle {
+  -webkit-appearance: none;
+  appearance: none;
   width: 34px;
   height: 18px;
   border-radius: 999px;
@@ -798,6 +838,8 @@ body {
 
 /* ===== Test button ===== */
 .btn-test {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 10.5px;
   font-weight: 600;
   font-family: inherit;
@@ -1053,6 +1095,8 @@ body {
 }
 
 .kind-chip {
+  -webkit-appearance: none;
+  appearance: none;
   font-size: 11px;
   font-weight: 450;
   padding: 4px 10px;
@@ -1075,4 +1119,55 @@ body {
   border-color: var(--ac-dim);
   color: var(--ac);
   font-weight: 500;
+}
+
+/* ===== Modal ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: oklch(0% 0 0 / 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-dialog {
+  background: var(--s);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  min-width: 320px;
+  max-width: 400px;
+  box-shadow: 0 8px 32px oklch(0% 0 0 / 0.4);
+}
+
+.modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t1);
+  margin-bottom: 8px;
+}
+
+.modal-body {
+  font-size: 12px;
+  color: var(--t2);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (prefers-color-scheme: light) {
+  .modal-backdrop {
+    background: oklch(0% 0 0 / 0.2);
+  }
+
+  .modal-dialog {
+    box-shadow: 0 8px 32px oklch(0% 0 0 / 0.15);
+  }
 }

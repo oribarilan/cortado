@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 14 -- Reset to default button

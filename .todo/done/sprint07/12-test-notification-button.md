@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 12 -- Test notification button

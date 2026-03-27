@@ -100,3 +100,17 @@ pub fn open_notification_settings(app_handle: AppHandle) -> Result<(), String> {
 
     Ok(())
 }
+
+/// Sends a test notification through the native notification pipeline.
+#[tauri::command]
+pub fn send_test_notification(app_handle: AppHandle) -> Result<(), String> {
+    use tauri_plugin_notification::NotificationExt;
+
+    app_handle
+        .notification()
+        .builder()
+        .title("Cortado")
+        .body("Test notification -- notifications are working!")
+        .show()
+        .map_err(|err| format!("failed to send test notification: {err}"))
+}

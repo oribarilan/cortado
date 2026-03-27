@@ -73,7 +73,8 @@ fn main() {
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,
-            command::open_notification_settings
+            command::open_notification_settings,
+            command::send_test_notification
         ])
         .setup({
             let feed_registry = feed_registry.clone();

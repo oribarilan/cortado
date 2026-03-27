@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 13 -- Open system notification settings

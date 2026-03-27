@@ -4,7 +4,6 @@ import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
   isPermissionGranted,
   requestPermission,
-  sendNotification,
 } from "@tauri-apps/plugin-notification";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
@@ -318,11 +317,12 @@ function SettingsApp() {
   }, []);
 
   const [testNotifError, setTestNotifError] = useState<string | null>(null);
+  const [resetConfirm, setResetConfirm] = useState(false);
 
   const handleTestNotification = useCallback(async () => {
     setTestNotifError(null);
     try {
-      sendNotification({ title: "Cortado", body: "Test notification -- notifications are working!" });
+      await invoke("send_test_notification");
     } catch (err) {
       setTestNotifError(err instanceof Error ? err.message : String(err));
     }
@@ -682,15 +682,7 @@ function SettingsApp() {
                   <div style={{ flex: 1 }} />
                   <button
                     className="btn-danger-sm"
-                    onClick={() => {
-                      void saveNotifSettings({
-                        enabled: true,
-                        mode: "all",
-                        delivery: "grouped",
-                        notify_new_activities: true,
-                        notify_removed_activities: true,
-                      });
-                    }}
+                    onClick={() => setResetConfirm(true)}
                   >
                     Reset to defaults
                   </button>
@@ -986,6 +978,32 @@ function SettingsApp() {
           </>
         )}
       </main>
+      {resetConfirm && (
+        <div className="modal-backdrop" onClick={() => setResetConfirm(false)}>
+          <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">Reset to defaults</div>
+            <div className="modal-body">Reset all notification settings to their default values?</div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setResetConfirm(false)}>Cancel</button>
+              <button
+                className="btn-danger-sm"
+                onClick={() => {
+                  setResetConfirm(false);
+                  void saveNotifSettings({
+                    enabled: true,
+                    mode: "all",
+                    delivery: "grouped",
+                    notify_new_activities: true,
+                    notify_removed_activities: true,
+                  });
+                }}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
