@@ -5,6 +5,7 @@ mod app_settings;
 mod command;
 mod feed;
 mod fns;
+mod notification;
 mod panel;
 mod settings_config;
 mod ui_snapshot;
@@ -16,11 +17,19 @@ use tauri::{Emitter, Manager};
 
 use crate::app_settings::{load_settings, AppSettingsState};
 use crate::feed::{
-    config::ConfigChangeTracker, load_feed_registry, BackgroundPoller, FeedSnapshotCache,
-    RegistryBuildMode,
+    config::{self, ConfigChangeTracker},
+    load_feed_registry,
+    runtime::NotificationContext,
+    BackgroundPoller, FeedSnapshotCache, RegistryBuildMode,
 };
 
 fn main() {
+    let feed_configs = config::load_feeds_config().unwrap_or_default();
+    let feed_notify_map: std::collections::HashMap<String, bool> = feed_configs
+        .iter()
+        .map(|c| (c.name.clone(), c.notify.unwrap_or(true)))
+        .collect();
+
     let feed_registry = Arc::new(
         load_feed_registry(RegistryBuildMode::Tolerant)
             .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
@@ -47,7 +56,7 @@ fn main() {
         .manage(feed_registry.clone())
         .manage(poller.clone())
         .manage(config_tracker)
-        .manage(app_settings_state)
+        .manage(app_settings_state.clone())
         .invoke_handler(tauri::generate_handler![
             command::init_panel,
             command::list_feeds,
@@ -69,6 +78,8 @@ fn main() {
             let feed_registry = feed_registry.clone();
             let feed_cache = feed_cache.clone();
             let poller = poller.clone();
+            let app_settings_state = app_settings_state.clone();
+            let feed_notify_map = Arc::new(feed_notify_map);
 
             move |app| {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -81,8 +92,16 @@ fn main() {
 
                 start_refresh_loop(app_handle.clone(), feed_cache.clone(), updates);
 
+                let notify_ctx = NotificationContext {
+                    app_handle: app_handle.clone(),
+                    settings_state: app_settings_state,
+                    feed_notify_map,
+                };
+                let poller = poller.with_notifications(notify_ctx);
+
                 // Seed feeds and start polling in the background.
                 // The refresh loop will update the tray once the seed completes.
+                // Notifications are suppressed during seed (no previous snapshot to diff against).
                 tauri::async_runtime::spawn(async move {
                     poller
                         .seed_startup_best_effort(feed_registry.clone(), Duration::from_secs(15))

@@ -908,6 +908,7 @@ mod tests {
             feed_type: "github-pr".to_string(),
             interval: Some(Duration::from_secs(60)),
             retain: None,
+            notify: None,
             type_specific,
             field_overrides: HashMap::new(),
         }

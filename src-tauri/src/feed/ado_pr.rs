@@ -983,6 +983,7 @@ mod tests {
             feed_type: "ado-pr".to_string(),
             interval: Some(Duration::from_secs(120)),
             retain: None,
+            notify: None,
             type_specific,
             field_overrides: HashMap::new(),
         }

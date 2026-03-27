@@ -27,6 +27,7 @@ pub struct FeedConfig {
     pub feed_type: String,
     pub interval: Option<Duration>,
     pub retain: Option<Duration>,
+    pub notify: Option<bool>,
     pub type_specific: Table,
     pub field_overrides: HashMap<String, FieldOverride>,
 }
@@ -175,6 +176,13 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
 
         let interval = optional_duration_string(feed_table, "interval", index)?;
         let retain = optional_duration_string(feed_table, "retain", index)?;
+        let notify = feed_table
+            .get("notify")
+            .map(|v| {
+                v.as_bool()
+                    .ok_or_else(|| anyhow!("feed[{index}].notify must be a boolean"))
+            })
+            .transpose()?;
         let field_overrides = parse_field_overrides(feed_table, index)?;
 
         let mut type_specific = feed_table.clone();
@@ -182,6 +190,7 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
         type_specific.remove("type");
         type_specific.remove("interval");
         type_specific.remove("retain");
+        type_specific.remove("notify");
         type_specific.remove("fields");
 
         configs.push(FeedConfig {
@@ -189,6 +198,7 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
             feed_type: feed_type.to_string(),
             interval,
             retain,
+            notify,
             type_specific,
             field_overrides,
         });

@@ -6,7 +6,9 @@ use std::{
 
 use tokio::sync::{watch, RwLock};
 
+use crate::app_settings::AppSettingsState;
 use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot};
+use crate::notification;
 
 const MAX_ACTIVITIES_PER_FEED: usize = 20;
 
@@ -44,11 +46,21 @@ impl FeedSnapshotCache {
     }
 }
 
+/// Optional context for dispatching OS notifications from the poll loop.
+#[derive(Clone)]
+pub struct NotificationContext {
+    pub app_handle: tauri::AppHandle,
+    pub settings_state: AppSettingsState,
+    /// Per-feed notify override: feed name → notify enabled.
+    pub feed_notify_map: Arc<std::collections::HashMap<String, bool>>,
+}
+
 /// Background poller that seeds and continuously refreshes snapshots.
 #[derive(Clone)]
 pub struct BackgroundPoller {
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
+    notify_ctx: Option<NotificationContext>,
 }
 
 impl BackgroundPoller {
@@ -56,7 +68,17 @@ impl BackgroundPoller {
     pub fn new(cache: FeedSnapshotCache) -> Self {
         let (update_tx, _) = watch::channel(0_u64);
 
-        Self { cache, update_tx }
+        Self {
+            cache,
+            update_tx,
+            notify_ctx: None,
+        }
+    }
+
+    /// Attaches notification dispatch context to this poller.
+    pub fn with_notifications(mut self, ctx: NotificationContext) -> Self {
+        self.notify_ctx = Some(ctx);
+        self
     }
 
     /// Returns a receiver that is notified whenever the cache updates.
@@ -93,9 +115,10 @@ impl BackgroundPoller {
         for feed in feeds {
             let cache = self.cache.clone();
             let update_tx = self.update_tx.clone();
+            let notify_ctx = self.notify_ctx.clone();
 
             tokio::spawn(async move {
-                poll_feed_loop(cache, update_tx, feed).await;
+                poll_feed_loop(cache, update_tx, feed, notify_ctx).await;
             });
         }
     }
@@ -138,12 +161,40 @@ async fn poll_feed_loop(
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
     feed: Arc<dyn Feed>,
+    notify_ctx: Option<NotificationContext>,
 ) {
     loop {
         let interval = feed.interval().max(Duration::from_secs(1));
         tokio::time::sleep(interval).await;
 
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+
+        // Dispatch notifications before upserting (prev snapshot is still in cache).
+        if let Some(ref ctx) = notify_ctx {
+            let prev = cache
+                .list()
+                .await
+                .into_iter()
+                .find(|s| s.name == feed.name() && s.feed_type == feed.feed_type());
+
+            if let Some(prev) = prev {
+                let feed_notify = ctx
+                    .feed_notify_map
+                    .get(feed.name())
+                    .copied()
+                    .unwrap_or(true);
+
+                notification::dispatch::process_feed_update(
+                    &ctx.app_handle,
+                    &ctx.settings_state,
+                    &prev,
+                    &snapshot,
+                    feed_notify,
+                )
+                .await;
+            }
+        }
+
         cache.upsert(snapshot).await;
 
         bump_update_counter(&update_tx);

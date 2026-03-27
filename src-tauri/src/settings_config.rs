@@ -18,6 +18,8 @@ pub struct FeedConfigDto {
     pub interval: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retain: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notify: Option<bool>,
     #[serde(default)]
     pub type_specific: HashMap<String, serde_json::Value>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
@@ -75,6 +77,7 @@ fn feed_config_to_dto(config: &config::FeedConfig) -> FeedConfigDto {
         feed_type: config.feed_type.clone(),
         interval: config.interval.map(duration_to_string),
         retain: config.retain.map(duration_to_string),
+        notify: config.notify,
         type_specific,
         fields,
     }
@@ -119,6 +122,10 @@ fn dto_to_toml_document(feeds: &[FeedConfigDto]) -> String {
         }
         if let Some(ref retain) = feed.retain {
             output.push_str(&format!("retain = {}\n", toml_quote(retain)));
+        }
+
+        if let Some(notify) = feed.notify {
+            output.push_str(&format!("notify = {notify}\n"));
         }
 
         // Field overrides
@@ -355,6 +362,7 @@ mod tests {
                 feed_type: "github-pr".into(),
                 interval: Some("5m".into()),
                 retain: None,
+                notify: None,
                 type_specific: [("repo".into(), serde_json::json!("org/frontend"))]
                     .into_iter()
                     .collect(),
@@ -365,6 +373,7 @@ mod tests {
                 feed_type: "shell".into(),
                 interval: Some("30s".into()),
                 retain: Some("1h".into()),
+                notify: Some(false),
                 type_specific: [("command".into(), serde_json::json!("./check.sh"))]
                     .into_iter()
                     .collect(),

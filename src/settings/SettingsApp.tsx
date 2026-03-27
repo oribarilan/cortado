@@ -12,6 +12,7 @@ type FeedConfigDto = {
   type: string;
   interval?: string;
   retain?: string;
+  notify?: boolean;
   type_specific: Record<string, unknown>;
   fields: Record<string, FieldOverrideDto>;
 };
@@ -562,6 +563,23 @@ function SettingsApp() {
                   placeholder="—"
                 />
               </div>
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Notifications</div>
+                <div className="setting-hint">Send OS notifications for status changes in this feed</div>
+              </div>
+              <button
+                className={`toggle ${editingFeed.notify !== false ? "on" : ""}`}
+                onClick={() => {
+                  setSaveSuccess(false);
+                  const current = editingFeed.notify !== false;
+                  setEditingFeed({ ...editingFeed, notify: current ? false : undefined });
+                }}
+                aria-pressed={editingFeed.notify !== false}
+                aria-label="Enable notifications for this feed"
+              />
             </div>
 
             {saveError && <div className="save-error">{saveError}</div>}

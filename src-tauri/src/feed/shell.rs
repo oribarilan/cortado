@@ -591,6 +591,7 @@ mod tests {
             feed_type: "shell".to_string(),
             interval: Some(Duration::from_secs(5)),
             retain: None,
+            notify: None,
             type_specific,
             field_overrides: HashMap::new(),
         }
