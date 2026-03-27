@@ -240,7 +240,8 @@ Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — 
 | Shell | Tauri v2 (Rust) |
 | UI | React + TypeScript + Vite |
 | Menubar | tauri-nspanel + tauri-toolkit (macOS panel behavior) |
-| Config | TOML (`~/.config/cortado/feeds.toml`) |
+| Config | TOML (`~/.config/cortado/feeds.toml`, `~/.config/cortado/settings.toml`) |
+| Notifications | tauri-plugin-notification (macOS Notification Center) |
 | Package manager | pnpm |
 | Dev shell | Nix flake |
 | Task runner | Just |
@@ -261,9 +262,73 @@ Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tra
 - Dot color is derived from status kinds using the precedence defined in `specs/status.md`.
 - Feed-level config and poll errors are shown inline within the feed section.
 
+## Notifications
+
+Cortado sends macOS Notification Center alerts when activity statuses change. Notification behavior is configurable at two levels: global preferences in `settings.toml` and per-feed toggles in `feeds.toml`.
+
+### Trigger model
+
+Notifications fire when an activity's **rollup kind** changes — the highest-priority `StatusKind` across all its status fields shifts (e.g., Waiting → AttentionNegative). New and removed activities are also optionally notifiable.
+
+### Configuration layers
+
+1. **Global settings** (`~/.config/cortado/settings.toml`) — master toggle, notification mode, delivery preset, new/removed activity toggles.
+2. **Per-feed toggle** (`feeds.toml`) — `notify = false` disables notifications for a specific feed. Default is `true` (opt-out model).
+
+### Notification modes
+
+| Mode | Behavior |
+|------|----------|
+| `all` (default) | Any rollup kind change fires a notification |
+| `escalation_only` | Only when the new kind is higher priority than the old kind |
+| `specific_kinds` | Only when the new kind is in the configured set |
+
+### Delivery presets
+
+| Preset | Behavior |
+|--------|----------|
+| `grouped` (default) | At most one notification per feed per poll cycle |
+| `immediate` | One notification per activity change |
+
+### Startup suppression
+
+Notifications are suppressed during the initial startup seed poll. The first poll establishes the baseline — it is not a "change."
+
+### Settings reload behavior
+
+The master `enabled` toggle takes effect immediately (read live from shared state). All other notification settings take effect on the next poll cycle.
+
+### Click action
+
+Clicking a notification is handled by the OS. Future: open the activity's URL.
+
+### `settings.toml` format
+
+```toml
+[notifications]
+enabled = true
+mode = "all"               # "all", "escalation_only", or "specific_kinds"
+# kinds = ["attention-negative", "attention-positive"]  # only when mode = "specific_kinds"
+delivery = "grouped"       # "grouped" or "immediate"
+notify_new_activities = true
+notify_removed_activities = true
+```
+
+### Per-feed notify toggle
+
+```toml
+[[feed]]
+name = "Noisy feed"
+type = "github-pr"
+repo = "org/mono"
+notify = false  # Suppress notifications for this feed
+```
+
 ## Non-goals (Phase 1)
 
 - External plugin system (WASM, JS, or otherwise).
 - Windows/Linux support.
-- Advanced notification policies (digesting, scheduling, status-change alerts, channels/actions).
-- Persistent storage beyond the config file.
+- Notification digest mode (time-window summary batching — deferred to backlog).
+- Notification scheduling / DND / quiet hours.
+- Notification history / log.
+- Persistent storage beyond config files.

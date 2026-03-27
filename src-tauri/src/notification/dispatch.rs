@@ -80,7 +80,7 @@ pub async fn process_feed_update(
 }
 
 /// Checks whether a kind-change event passes the notification mode filter.
-fn matches_mode(mode: &NotificationMode, event: &StatusChangeEvent) -> bool {
+pub(crate) fn matches_mode(mode: &NotificationMode, event: &StatusChangeEvent) -> bool {
     match mode {
         NotificationMode::All => true,
         NotificationMode::EscalationOnly => match (event.previous_kind, event.new_kind) {
