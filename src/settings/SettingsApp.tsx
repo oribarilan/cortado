@@ -4,6 +4,7 @@ import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
   isPermissionGranted,
   requestPermission,
+  sendNotification,
 } from "@tauri-apps/plugin-notification";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
@@ -316,6 +317,17 @@ function SettingsApp() {
     }
   }, []);
 
+  const [testNotifError, setTestNotifError] = useState<string | null>(null);
+
+  const handleTestNotification = useCallback(async () => {
+    setTestNotifError(null);
+    try {
+      sendNotification({ title: "Cortado", body: "Test notification -- notifications are working!" });
+    } catch (err) {
+      setTestNotifError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
   const startEdit = useCallback((index: number) => {
     setEditingIndex(index);
     setEditingFeed(structuredClone(feeds[index]));
@@ -480,7 +492,7 @@ function SettingsApp() {
           className={`settings-nav ${section === "notifications" ? "active" : ""}`}
           onClick={() => { setSection("notifications"); cancelEdit(); }}
         >
-          <span className="settings-nav-icon">🔔</span> Notifications
+          <span className="settings-nav-icon">♪</span> Notifications
         </div>
       </nav>
       <main className="settings-main">
@@ -512,7 +524,7 @@ function SettingsApp() {
                 <div className="setting-row">
                   <div className="setting-info">
                     <div className="setting-label">Enable notifications</div>
-                    <div className="setting-hint">Send OS notifications when activity statuses change</div>
+                    <div className="setting-hint">Send system notifications when activity statuses change</div>
                   </div>
                   <button
                     className={`toggle ${notifSettings.enabled ? "on" : ""}`}
@@ -622,6 +634,38 @@ function SettingsApp() {
 
                 {notifSaveError && <div className="save-error">{notifSaveError}</div>}
                 {notifSaveSuccess && <div className="save-success">Saved.</div>}
+                {testNotifError && <div className="save-error">{testNotifError}</div>}
+
+                <div className="btn-row" style={{ marginTop: 16 }}>
+                  <button
+                    className="btn-secondary"
+                    disabled={!notifSettings.enabled || notifPermission === false}
+                    onClick={() => { void handleTestNotification(); }}
+                  >
+                    Send test notification
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => { void invoke("open_notification_settings"); }}
+                  >
+                    Configure in System Settings
+                  </button>
+                  <div style={{ flex: 1 }} />
+                  <button
+                    className="btn-danger-sm"
+                    onClick={() => {
+                      void saveNotifSettings({
+                        enabled: true,
+                        mode: "all",
+                        delivery: "grouped",
+                        notify_new_activities: true,
+                        notify_removed_activities: true,
+                      });
+                    }}
+                  >
+                    Reset to defaults
+                  </button>
+                </div>
               </>
             )}
           </>
@@ -760,7 +804,7 @@ function SettingsApp() {
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Notifications</div>
-                <div className="setting-hint">Send OS notifications for status changes in this feed</div>
+                <div className="setting-hint">Send system notifications for status changes in this feed</div>
               </div>
               <button
                 className={`toggle ${editingFeed.notify !== false ? "on" : ""}`}

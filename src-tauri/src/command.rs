@@ -83,3 +83,20 @@ pub fn open_settings(app_handle: AppHandle) -> Result<(), String> {
 
     Ok(())
 }
+
+/// Opens macOS System Settings to Cortado's notification preferences.
+#[tauri::command]
+pub fn open_notification_settings(app_handle: AppHandle) -> Result<(), String> {
+    let bundle_id = app_handle.config().identifier.as_str();
+
+    let url = format!(
+        "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id={bundle_id}"
+    );
+
+    Command::new("open")
+        .arg(&url)
+        .spawn()
+        .map_err(|err| format!("failed to open system notification settings: {err}"))?;
+
+    Ok(())
+}

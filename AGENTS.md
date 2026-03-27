@@ -146,6 +146,11 @@ Any context, decisions, or gotchas.
 - Always ask the user before introducing a new dependency.
 - When evaluating a dependency, consider maintenance status, community adoption, and security track record.
 
+### No Emoji
+- Never use emoji characters in code, UI text, or comments.
+- Use plain Unicode text symbols for icons (e.g. `⚙`, `◉`, `♪`, `▸`, `⚠`, `✓`, `✕`).
+- These render consistently across OS versions and themes, unlike emoji which are colorful bitmaps.
+
 ## Code Organization
 
 ```

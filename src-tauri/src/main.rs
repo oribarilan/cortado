@@ -72,7 +72,8 @@ fn main() {
             settings_config::check_feed_dependency,
             settings_config::test_feed,
             app_settings::get_settings,
-            app_settings::save_settings
+            app_settings::save_settings,
+            command::open_notification_settings
         ])
         .setup({
             let feed_registry = feed_registry.clone();
