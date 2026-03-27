@@ -8,6 +8,8 @@ use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
+use crate::feed::StatusKind;
+
 const CONFIG_DIR: &str = ".config/cortado";
 const SETTINGS_FILE: &str = "settings.toml";
 
@@ -18,18 +20,54 @@ pub struct AppSettings {
     pub notifications: NotificationSettings,
 }
 
+/// Which status changes should trigger a notification.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "mode", rename_all = "snake_case")]
+pub enum NotificationMode {
+    /// Any rollup kind change fires a notification.
+    #[default]
+    All,
+    /// Only when the new kind is higher priority than the old kind.
+    EscalationOnly,
+    /// Only when the new kind is in the configured set.
+    SpecificKinds {
+        #[serde(default)]
+        kinds: Vec<StatusKind>,
+    },
+}
+
+/// How notifications are batched before delivery.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DeliveryPreset {
+    /// One notification per activity change.
+    Immediate,
+    /// At most one notification per feed per poll cycle.
+    #[default]
+    Grouped,
+}
+
 /// Notification preferences within global settings.
-///
-/// Populated fully in task 03; for now carries the master toggle only.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct NotificationSettings {
     pub enabled: bool,
+    #[serde(flatten)]
+    pub mode: NotificationMode,
+    pub delivery: DeliveryPreset,
+    pub notify_new_activities: bool,
+    pub notify_removed_activities: bool,
 }
 
 impl Default for NotificationSettings {
     fn default() -> Self {
-        Self { enabled: true }
+        Self {
+            enabled: true,
+            mode: NotificationMode::default(),
+            delivery: DeliveryPreset::default(),
+            notify_new_activities: true,
+            notify_removed_activities: true,
+        }
     }
 }
 
@@ -135,6 +173,8 @@ pub async fn save_settings(
 mod tests {
     use std::fs;
 
+    use crate::feed::StatusKind;
+
     use super::*;
 
     fn temp_settings_path(name: &str) -> PathBuf {
@@ -156,20 +196,65 @@ mod tests {
 
         let settings = load_settings_from_path(&path).expect("should return defaults");
         assert!(settings.notifications.enabled);
+        assert_eq!(settings.notifications.mode, NotificationMode::All);
+        assert_eq!(settings.notifications.delivery, DeliveryPreset::Grouped);
+        assert!(settings.notifications.notify_new_activities);
+        assert!(settings.notifications.notify_removed_activities);
     }
 
     #[test]
-    fn round_trip_preserves_values() {
+    fn round_trip_preserves_all_values() {
         let path = temp_settings_path("roundtrip");
 
         let settings = AppSettings {
-            notifications: NotificationSettings { enabled: false },
+            notifications: NotificationSettings {
+                enabled: false,
+                mode: NotificationMode::EscalationOnly,
+                delivery: DeliveryPreset::Immediate,
+                notify_new_activities: false,
+                notify_removed_activities: true,
+            },
         };
 
         save_settings_to_path(&settings, &path).expect("save should succeed");
         let loaded = load_settings_from_path(&path).expect("load should succeed");
 
         assert!(!loaded.notifications.enabled);
+        assert_eq!(loaded.notifications.mode, NotificationMode::EscalationOnly);
+        assert_eq!(loaded.notifications.delivery, DeliveryPreset::Immediate);
+        assert!(!loaded.notifications.notify_new_activities);
+        assert!(loaded.notifications.notify_removed_activities);
+
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn round_trip_specific_kinds() {
+        let path = temp_settings_path("specific");
+
+        let settings = AppSettings {
+            notifications: NotificationSettings {
+                enabled: true,
+                mode: NotificationMode::SpecificKinds {
+                    kinds: vec![StatusKind::AttentionNegative, StatusKind::AttentionPositive],
+                },
+                delivery: DeliveryPreset::Grouped,
+                notify_new_activities: true,
+                notify_removed_activities: false,
+            },
+        };
+
+        save_settings_to_path(&settings, &path).expect("save should succeed");
+        let loaded = load_settings_from_path(&path).expect("load should succeed");
+
+        match &loaded.notifications.mode {
+            NotificationMode::SpecificKinds { kinds } => {
+                assert_eq!(kinds.len(), 2);
+                assert!(kinds.contains(&StatusKind::AttentionNegative));
+                assert!(kinds.contains(&StatusKind::AttentionPositive));
+            }
+            other => panic!("expected SpecificKinds, got {:?}", other),
+        }
 
         let _ = fs::remove_file(&path);
     }
@@ -182,14 +267,16 @@ mod tests {
         save_settings_to_path(&original, &path).expect("first save");
 
         let updated = AppSettings {
-            notifications: NotificationSettings { enabled: false },
+            notifications: NotificationSettings {
+                enabled: false,
+                ..NotificationSettings::default()
+            },
         };
         save_settings_to_path(&updated, &path).expect("second save");
 
         let backup_path = path.with_extension("toml.bak");
         assert!(backup_path.exists(), "backup file should exist");
 
-        // Backup should contain the original (enabled=true)
         let backup_content = fs::read_to_string(&backup_path).unwrap();
         assert!(backup_content.contains("enabled = true"));
 
@@ -204,6 +291,7 @@ mod tests {
 
         let settings = load_settings_from_path(&path).expect("should use defaults");
         assert!(settings.notifications.enabled);
+        assert_eq!(settings.notifications.mode, NotificationMode::All);
 
         let _ = fs::remove_file(&path);
     }

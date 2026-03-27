@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use self::{ado_pr::AdoPrFeed, config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
 
@@ -39,7 +39,7 @@ pub enum FieldType {
 }
 
 /// Semantic status indicating who needs to act next.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StatusKind {
     /// My turn — something's wrong (red).
     #[serde(rename = "attention-negative")]
@@ -56,6 +56,54 @@ pub enum StatusKind {
     /// Nothing happening (gray).
     #[serde(rename = "idle")]
     Idle,
+}
+
+#[allow(dead_code)] // Used by notification subsystem (tasks 05-07).
+impl StatusKind {
+    /// Priority rank for rollup: higher value wins.
+    ///
+    /// Matches the frontend `kindPriority()` in `App.tsx`.
+    pub fn priority(self) -> u8 {
+        match self {
+            StatusKind::AttentionNegative => 5,
+            StatusKind::Waiting => 4,
+            StatusKind::Running => 3,
+            StatusKind::AttentionPositive => 2,
+            StatusKind::Idle => 1,
+        }
+    }
+
+    /// Derives the rollup kind for an activity from its status fields.
+    ///
+    /// Returns the highest-priority `StatusKind` across all status fields,
+    /// defaulting to `Idle` if no status fields exist.
+    /// Retained activities always roll up as `Idle`.
+    pub fn rollup_for_activity(activity: &Activity) -> StatusKind {
+        if activity.retained {
+            return StatusKind::Idle;
+        }
+
+        activity
+            .fields
+            .iter()
+            .filter_map(|field| match &field.value {
+                FieldValue::Status { kind, .. } => Some(*kind),
+                _ => None,
+            })
+            .max_by_key(|kind| kind.priority())
+            .unwrap_or(StatusKind::Idle)
+    }
+
+    /// Human-friendly display name for notifications.
+    pub fn human_name(self) -> &'static str {
+        match self {
+            StatusKind::AttentionNegative => "needs attention",
+            StatusKind::AttentionPositive => "ready to go",
+            StatusKind::Waiting => "waiting",
+            StatusKind::Running => "in progress",
+            StatusKind::Idle => "idle",
+        }
+    }
 }
 
 /// Value payload for a field on an activity.
@@ -249,5 +297,93 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
 impl Default for FeedRegistry {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn activity_with_statuses(statuses: &[(&str, StatusKind)]) -> Activity {
+        let fields = statuses
+            .iter()
+            .map(|(name, kind)| Field {
+                name: name.to_string(),
+                label: name.to_string(),
+                value: FieldValue::Status {
+                    value: "test".to_string(),
+                    kind: *kind,
+                },
+            })
+            .collect();
+
+        Activity {
+            id: "test".to_string(),
+            title: "Test".to_string(),
+            fields,
+            retained: false,
+            retained_at_unix_ms: None,
+        }
+    }
+
+    #[test]
+    fn priority_ordering_matches_spec() {
+        assert!(StatusKind::AttentionNegative.priority() > StatusKind::Waiting.priority());
+        assert!(StatusKind::Waiting.priority() > StatusKind::Running.priority());
+        assert!(StatusKind::Running.priority() > StatusKind::AttentionPositive.priority());
+        assert!(StatusKind::AttentionPositive.priority() > StatusKind::Idle.priority());
+    }
+
+    #[test]
+    fn rollup_picks_highest_priority_kind() {
+        let activity = activity_with_statuses(&[
+            ("review", StatusKind::AttentionPositive),
+            ("checks", StatusKind::Running),
+            ("mergeable", StatusKind::Idle),
+        ]);
+
+        assert_eq!(
+            StatusKind::rollup_for_activity(&activity),
+            StatusKind::Running
+        );
+    }
+
+    #[test]
+    fn rollup_defaults_to_idle_with_no_status_fields() {
+        let activity = Activity {
+            id: "test".to_string(),
+            title: "Test".to_string(),
+            fields: vec![Field {
+                name: "label".to_string(),
+                label: "Labels".to_string(),
+                value: FieldValue::Text {
+                    value: "wip".to_string(),
+                },
+            }],
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+
+        assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
+    }
+
+    #[test]
+    fn rollup_retained_is_always_idle() {
+        let mut activity = activity_with_statuses(&[("checks", StatusKind::AttentionNegative)]);
+        activity.retained = true;
+
+        assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
+    }
+
+    #[test]
+    fn human_names_are_lowercase() {
+        assert_eq!(
+            StatusKind::AttentionNegative.human_name(),
+            "needs attention"
+        );
+        assert_eq!(StatusKind::AttentionPositive.human_name(), "ready to go");
+        assert_eq!(StatusKind::Waiting.human_name(), "waiting");
+        assert_eq!(StatusKind::Running.human_name(), "in progress");
+        assert_eq!(StatusKind::Idle.human_name(), "idle");
     }
 }
