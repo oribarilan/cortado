@@ -1,6 +1,7 @@
 // Prevent additional console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_settings;
 mod command;
 mod feed;
 mod fns;
@@ -13,6 +14,7 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager};
 
+use crate::app_settings::{load_settings, AppSettingsState};
 use crate::feed::{
     config::ConfigChangeTracker, load_feed_registry, BackgroundPoller, FeedSnapshotCache,
     RegistryBuildMode,
@@ -29,6 +31,10 @@ fn main() {
         ConfigChangeTracker::initialize()
             .unwrap_or_else(|err| panic!("failed to initialize config change tracker: {err}")),
     );
+    let app_settings_state = AppSettingsState::new(load_settings().unwrap_or_else(|err| {
+        eprintln!("failed to load settings, using defaults: {err}");
+        app_settings::AppSettings::default()
+    }));
 
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
@@ -36,10 +42,12 @@ fn main() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_notification::init())
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
         .manage(config_tracker)
+        .manage(app_settings_state)
         .invoke_handler(tauri::generate_handler![
             command::init_panel,
             command::list_feeds,
@@ -53,7 +61,9 @@ fn main() {
             settings_config::open_config_file,
             settings_config::reveal_config_file,
             settings_config::check_feed_dependency,
-            settings_config::test_feed
+            settings_config::test_feed,
+            app_settings::get_settings,
+            app_settings::save_settings
         ])
         .setup({
             let feed_registry = feed_registry.clone();
