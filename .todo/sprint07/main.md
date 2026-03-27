@@ -37,6 +37,15 @@ Tasks are mostly sequential — each builds on prior work:
 
 Tasks 1 and 2 can run in parallel. Task 4 is structurally independent from 3 but benefits from having types defined. Task 8 (UI) can be developed in parallel with 5-7 once types exist.
 
+### Follow-up additions (tasks 11-14)
+
+All independent of each other. Can be done in any order.
+
+11. **no-emoji symbol system** — ban emoji from codebase, establish Unicode text symbol convention
+12. **test notification button** — "Send test notification" in settings UI
+13. **open system notification settings** — deep-link to macOS System Settings for Cortado
+14. **reset to defaults** — restore notification preferences to defaults
+
 ## Scope boundaries
 
 **In scope:**
