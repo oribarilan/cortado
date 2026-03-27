@@ -965,3 +965,58 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* --- Notification settings --- */
+
+.notif-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px 10px;
+  margin: 12px 0;
+}
+
+.notif-fieldset:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.notif-legend {
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--t2);
+  padding: 0 4px;
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.radio-row input[type="radio"] {
+  accent-color: var(--ac);
+  margin: 0;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 4px 22px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  accent-color: var(--ac);
+  margin: 0;
+}
+
+.specific-kinds-checkboxes {
+  margin: 4px 0 2px;
+}

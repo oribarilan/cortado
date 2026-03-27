@@ -1,6 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
+import {
+  isPermissionGranted,
+  requestPermission,
+} from "@tauri-apps/plugin-notification";
+
+type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
+
+type NotificationSettings = {
+  enabled: boolean;
+  mode: string;
+  kinds?: StatusKindKey[];
+  delivery: string;
+  notify_new_activities: boolean;
+  notify_removed_activities: boolean;
+};
+
+type AppSettings = {
+  notifications: NotificationSettings;
+};
 
 type FieldOverrideDto = {
   visible?: boolean;
@@ -190,9 +209,22 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
 }
 
 function SettingsApp() {
-  const [section, setSection] = useState<"general" | "feeds">("general");
+  const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
+
+  // Notification settings state
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
+    enabled: true,
+    mode: "all",
+    delivery: "grouped",
+    notify_new_activities: true,
+    notify_removed_activities: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaveSuccess, setNotifSaveSuccess] = useState(false);
+  const [notifSaveError, setNotifSaveError] = useState<string | null>(null);
+  const [notifPermission, setNotifPermission] = useState<boolean | null>(null);
 
   // Feeds state
   const [feeds, setFeeds] = useState<FeedConfigDto[]>([]);
@@ -220,6 +252,15 @@ function SettingsApp() {
       .then(setAutostart)
       .catch(() => setAutostart(false))
       .finally(() => setAutostartLoading(false));
+
+    invoke<AppSettings>("get_settings")
+      .then((s) => setNotifSettings(s.notifications))
+      .catch(() => {})
+      .finally(() => setNotifLoading(false));
+
+    isPermissionGranted()
+      .then(setNotifPermission)
+      .catch(() => setNotifPermission(null));
   }, []);
 
   const loadFeeds = useCallback(async () => {
@@ -253,6 +294,27 @@ function SettingsApp() {
       console.error("autostart toggle failed:", err);
     }
   }, [autostart]);
+
+  const saveNotifSettings = useCallback(async (updated: NotificationSettings) => {
+    setNotifSettings(updated);
+    setNotifSaveSuccess(false);
+    setNotifSaveError(null);
+    try {
+      await invoke("save_settings", { settings: { notifications: updated } });
+      setNotifSaveSuccess(true);
+    } catch (err) {
+      setNotifSaveError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
+  const handleRequestPermission = useCallback(async () => {
+    try {
+      const result = await requestPermission();
+      setNotifPermission(result === "granted");
+    } catch (err) {
+      console.error("permission request failed:", err);
+    }
+  }, []);
 
   const startEdit = useCallback((index: number) => {
     setEditingIndex(index);
@@ -414,6 +476,12 @@ function SettingsApp() {
         >
           <span className="settings-nav-icon">◉</span> Feeds
         </div>
+        <div
+          className={`settings-nav ${section === "notifications" ? "active" : ""}`}
+          onClick={() => { setSection("notifications"); cancelEdit(); }}
+        >
+          <span className="settings-nav-icon">🔔</span> Notifications
+        </div>
       </nav>
       <main className="settings-main">
         {section === "general" ? (
@@ -432,6 +500,130 @@ function SettingsApp() {
                 aria-label="Start on system startup"
               />
             </div>
+          </>
+        ) : section === "notifications" ? (
+          <>
+            <h2 className="settings-title">Notifications</h2>
+
+            {notifLoading ? (
+              <p className="settings-placeholder">Loading...</p>
+            ) : (
+              <>
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">Enable notifications</div>
+                    <div className="setting-hint">Send OS notifications when activity statuses change</div>
+                  </div>
+                  <button
+                    className={`toggle ${notifSettings.enabled ? "on" : ""}`}
+                    onClick={() => {
+                      void saveNotifSettings({ ...notifSettings, enabled: !notifSettings.enabled });
+                    }}
+                    aria-pressed={notifSettings.enabled}
+                    aria-label="Enable notifications"
+                  />
+                </div>
+
+                {notifPermission === false && (
+                  <div className="dep-banner-warning">
+                    <span className="dep-banner-icon">⚠</span>
+                    <div>
+                      <strong>Notification permission not granted.</strong>{" "}
+                      <button className="btn-secondary-sm" onClick={() => { void handleRequestPermission(); }}>
+                        Request permission
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
+                  <legend className="notif-legend">Notification mode</legend>
+                  <div className="setting-hint" style={{ marginBottom: 8 }}>Which status changes trigger notifications</div>
+                  <label className="radio-row">
+                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "all"}
+                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }} />
+                    <span>All — any status change</span>
+                  </label>
+                  <label className="radio-row">
+                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "escalation_only"}
+                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }} />
+                    <span>Escalation only — status worsens</span>
+                  </label>
+                  <label className="radio-row">
+                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "specific_kinds"}
+                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: [] }); }} />
+                    <span>Specific kinds</span>
+                  </label>
+                  {notifSettings.mode === "specific_kinds" && (
+                    <div className="specific-kinds-checkboxes">
+                      {([
+                        ["attention-negative", "Needs attention"],
+                        ["attention-positive", "Ready to go"],
+                        ["waiting", "Waiting"],
+                        ["running", "In progress"],
+                        ["idle", "Idle"],
+                      ] as [StatusKindKey, string][]).map(([kind, label]) => (
+                        <label className="checkbox-row" key={kind}>
+                          <input type="checkbox" checked={notifSettings.kinds?.includes(kind) ?? false}
+                            onChange={(e) => {
+                              const current = notifSettings.kinds ?? [];
+                              const updated = e.target.checked ? [...current, kind] : current.filter((k) => k !== kind);
+                              void saveNotifSettings({ ...notifSettings, kinds: updated });
+                            }} />
+                          <span>{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
+
+                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
+                  <legend className="notif-legend">Delivery</legend>
+                  <div className="setting-hint" style={{ marginBottom: 8 }}>How notifications are batched</div>
+                  <label className="radio-row">
+                    <input type="radio" name="notif-delivery" checked={notifSettings.delivery === "grouped"}
+                      onChange={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }); }} />
+                    <span>Grouped — one per feed per poll (default)</span>
+                  </label>
+                  <label className="radio-row">
+                    <input type="radio" name="notif-delivery" checked={notifSettings.delivery === "immediate"}
+                      onChange={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }); }} />
+                    <span>Immediate — one per change</span>
+                  </label>
+                </fieldset>
+
+                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
+                  <legend className="notif-legend">Activity events</legend>
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <div className="setting-label">New activities</div>
+                      <div className="setting-hint">Notify when new activities appear</div>
+                    </div>
+                    <button
+                      className={`toggle ${notifSettings.notify_new_activities ? "on" : ""}`}
+                      onClick={() => { void saveNotifSettings({ ...notifSettings, notify_new_activities: !notifSettings.notify_new_activities }); }}
+                      aria-pressed={notifSettings.notify_new_activities}
+                      aria-label="Notify on new activities"
+                    />
+                  </div>
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <div className="setting-label">Removed activities</div>
+                      <div className="setting-hint">Notify when activities disappear</div>
+                    </div>
+                    <button
+                      className={`toggle ${notifSettings.notify_removed_activities ? "on" : ""}`}
+                      onClick={() => { void saveNotifSettings({ ...notifSettings, notify_removed_activities: !notifSettings.notify_removed_activities }); }}
+                      aria-pressed={notifSettings.notify_removed_activities}
+                      aria-label="Notify on removed activities"
+                    />
+                  </div>
+                </fieldset>
+
+                {notifSaveError && <div className="save-error">{notifSaveError}</div>}
+                {notifSaveSuccess && <div className="save-success">Saved.</div>}
+              </>
+            )}
           </>
         ) : editingFeed !== null ? (
           /* ===== FEED EDIT FORM (F2 breadcrumb replace) ===== */
