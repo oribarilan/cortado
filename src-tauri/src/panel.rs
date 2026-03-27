@@ -4,9 +4,9 @@ use tauri::{
     AppHandle,
 };
 
-use crate::{command, fns};
+use crate::{command, fns, main_screen};
 
-const MENU_ID_REFRESH_FEEDS: &str = "refresh-feeds";
+const MENU_ID_OPEN_APP: &str = "open-app";
 const MENU_ID_SETTINGS: &str = "settings";
 const MENU_ID_QUIT: &str = "quit";
 const PANEL_PADDING_TOP: f64 = 6.0;
@@ -14,21 +14,23 @@ const PANEL_PADDING_TOP: f64 = 6.0;
 pub fn create(app_handle: &AppHandle) -> tauri::Result<TrayIcon> {
     let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?;
 
-    let refresh_item = MenuItem::with_id(
-        app_handle,
-        MENU_ID_REFRESH_FEEDS,
-        "Refresh feeds",
-        true,
-        None::<&str>,
-    )?;
+    let open_app_item =
+        MenuItem::with_id(app_handle, MENU_ID_OPEN_APP, "Open App", true, None::<&str>)?;
     let settings_item =
         MenuItem::with_id(app_handle, MENU_ID_SETTINGS, "Settings", true, None::<&str>)?;
     let quit_item =
         MenuItem::with_id(app_handle, MENU_ID_QUIT, "Quit Cortado", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app_handle)?;
+    let separator2 = PredefinedMenuItem::separator(app_handle)?;
     let tray_menu = tauri::menu::Menu::with_items(
         app_handle,
-        &[&refresh_item, &settings_item, &separator, &quit_item],
+        &[
+            &open_app_item,
+            &separator,
+            &settings_item,
+            &separator2,
+            &quit_item,
+        ],
     )?;
 
     TrayIconBuilder::with_id("tray")
@@ -43,16 +45,11 @@ pub fn create(app_handle: &AppHandle) -> tauri::Result<TrayIcon> {
 
 fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
     match event.id().as_ref() {
+        MENU_ID_OPEN_APP => {
+            main_screen::toggle_main_screen_panel(app_handle);
+        }
         MENU_ID_QUIT => {
             app_handle.exit(0);
-        }
-        MENU_ID_REFRESH_FEEDS => {
-            let app = app_handle.clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(err) = command::refresh_feeds(app).await {
-                    eprintln!("failed refreshing feeds from tray action: {err}");
-                }
-            });
         }
         MENU_ID_SETTINGS => {
             if let Err(err) = command::open_settings(app_handle.clone()) {

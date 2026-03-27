@@ -581,6 +581,7 @@ command = "echo hi"
                     notify_new_activities: false,
                     notify_removed_activities: true,
                 },
+                ..AppSettings::default()
             };
 
             // This tests the serde round-trip, not file I/O.

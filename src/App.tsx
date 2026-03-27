@@ -3,129 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-type StatusKind = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
-
-type FieldValue =
-  | {
-      type: "text";
-      value: string;
-    }
-  | {
-      type: "status";
-      value: string;
-      kind: StatusKind;
-    }
-  | {
-      type: "number";
-      value: number;
-    }
-  | {
-      type: "url";
-      value: string;
-    };
-
-type Field = {
-  name: string;
-  label: string;
-  value: FieldValue;
-};
-
-type Activity = {
-  id: string;
-  title: string;
-  fields: Field[];
-  retained: boolean;
-};
-
-type FeedSnapshot = {
-  name: string;
-  feed_type: string;
-  activities: Activity[];
-  error: string | null;
-};
-
-function kindPriority(kind: StatusKind): number {
-  switch (kind) {
-    case "attention-negative":
-      return 5;
-    case "waiting":
-      return 4;
-    case "running":
-      return 3;
-    case "attention-positive":
-      return 2;
-    case "idle":
-      return 1;
-  }
-}
-
-function deriveActivityKind(activity: Activity): StatusKind {
-  if (activity.retained) {
-    return "idle";
-  }
-
-  let best: StatusKind = "idle";
-
-  for (const field of activity.fields) {
-    if (field.value.type !== "status") {
-      continue;
-    }
-
-    if (kindPriority(field.value.kind) > kindPriority(best)) {
-      best = field.value.kind;
-    }
-  }
-
-  return best;
-}
-
-function highestStatusField(activity: Activity): Field | null {
-  let best: Field | null = null;
-  let bestPriority = 0;
-
-  for (const field of activity.fields) {
-    if (field.value.type !== "status") {
-      continue;
-    }
-
-    const priority = kindPriority(field.value.kind);
-    if (priority > bestPriority) {
-      best = field;
-      bestPriority = priority;
-    }
-  }
-
-  return best;
-}
-
-function supportsOpen(activity: Activity): string | null {
-  if (activity.id.startsWith("https://") || activity.id.startsWith("http://")) {
-    return activity.id;
-  }
-
-  const fieldUrl = activity.fields.find(
-    (field) => field.value.type === "url" && (field.value.value.startsWith("https://") || field.value.value.startsWith("http://"))
-  );
-  if (fieldUrl && fieldUrl.value.type === "url") {
-    return fieldUrl.value.value;
-  }
-
-  return null;
-}
-
-function formatFieldValue(field: Field): string {
-  if (field.value.type === "number") {
-    return Number.isInteger(field.value.value)
-      ? String(field.value.value)
-      : field.value.value.toFixed(2);
-  }
-
-  return field.value.value;
-}
-
-function activityKey(feed: FeedSnapshot, activity: Activity): string {
-  return `${feed.name}::${feed.feed_type}::${activity.id}`;
-}
+import type { Activity, FeedSnapshot } from "./shared/types";
+import {
+  deriveActivityKind,
+  highestStatusField,
+  supportsOpen,
+  formatFieldValue,
+  activityKey,
+} from "./shared/utils";
 
 function App() {
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
@@ -382,6 +267,14 @@ function App() {
         {loadError ? <p className="panel-error">{loadError}</p> : null}
 
         <footer className="panel-footer">
+          <button
+            className="footer-row"
+            onClick={() => {
+              void invoke("open_main_screen");
+            }}
+          >
+            Open App
+          </button>
           <button
             className="footer-row"
             onClick={() => {

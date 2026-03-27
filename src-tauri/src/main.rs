@@ -5,6 +5,7 @@ mod app_settings;
 mod command;
 mod feed;
 mod fns;
+mod main_screen;
 mod notification;
 mod panel;
 mod settings_config;
@@ -40,10 +41,12 @@ fn main() {
         ConfigChangeTracker::initialize()
             .unwrap_or_else(|err| panic!("failed to initialize config change tracker: {err}")),
     );
-    let app_settings_state = AppSettingsState::new(load_settings().unwrap_or_else(|err| {
+    let initial_settings = load_settings().unwrap_or_else(|err| {
         eprintln!("failed to load settings, using defaults: {err}");
         app_settings::AppSettings::default()
-    }));
+    });
+    let show_menubar = initial_settings.show_menubar;
+    let app_settings_state = AppSettingsState::new(initial_settings);
 
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
@@ -59,6 +62,9 @@ fn main() {
         .manage(app_settings_state.clone())
         .invoke_handler(tauri::generate_handler![
             command::init_panel,
+            command::init_main_screen_panel,
+            command::hide_main_screen_panel,
+            command::open_main_screen,
             command::list_feeds,
             command::refresh_feeds,
             command::open_activity,
@@ -88,7 +94,25 @@ fn main() {
 
                 let app_handle = app.app_handle().clone();
 
-                panel::create(&app_handle)?;
+                if show_menubar {
+                    panel::create(&app_handle)?;
+                }
+
+                // Register ⌘+Shift+Space global shortcut to toggle the main screen.
+                {
+                    use tauri_plugin_global_shortcut::ShortcutState;
+
+                    app.handle().plugin(
+                        tauri_plugin_global_shortcut::Builder::new()
+                            .with_shortcuts(["super+shift+space"])?
+                            .with_handler(|app, _shortcut, event| {
+                                if event.state == ShortcutState::Pressed {
+                                    main_screen::toggle_main_screen_panel(app);
+                                }
+                            })
+                            .build(),
+                    )?;
+                }
 
                 let updates = poller.subscribe();
 
@@ -114,8 +138,13 @@ fn main() {
                 Ok(())
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| {
+            if let tauri::RunEvent::Reopen { .. } = event {
+                main_screen::toggle_main_screen_panel(_app_handle);
+            }
+        });
 }
 
 fn start_refresh_loop(

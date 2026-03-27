@@ -1,0 +1,18 @@
+{
+  "identifier": "main-screen",
+  "description": "Permissions for the Cortado main screen window",
+  "local": true,
+  "windows": [
+    "main-screen"
+  ],
+  "permissions": [
+    "core:path:default",
+    "core:event:default",
+    "core:window:default",
+    "core:app:default",
+    "core:resources:default",
+    "core:menu:default",
+    "core:tray:default",
+    "shell:allow-open"
+  ]
+}

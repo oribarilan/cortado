@@ -17,8 +17,14 @@ type NotificationSettings = {
   notify_removed_activities: boolean;
 };
 
+type MainScreenSettings = {
+  show_priority_section: boolean;
+};
+
 type AppSettings = {
   notifications: NotificationSettings;
+  main_screen: MainScreenSettings;
+  show_menubar: boolean;
 };
 
 type FieldOverrideDto = {
@@ -50,9 +56,7 @@ const FEED_TYPE_FIELDS: Record<FeedType, { key: string; label: string; placehold
     { key: "user", label: "Author filter", placeholder: "@me", hint: "GitHub username or @me (default)", mono: true },
   ],
   "ado-pr": [
-    { key: "org", label: "Organization URL", placeholder: "https://dev.azure.com/my-org", hint: "Must be an https:// URL", mono: true, required: true },
-    { key: "project", label: "Project", placeholder: "my-project", mono: true, required: true },
-    { key: "repo", label: "Repository", placeholder: "my-repo", mono: true, required: true },
+    { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
     { key: "user", label: "Creator filter", placeholder: "me", hint: "User identity or 'me' (default)", mono: true },
   ],
   "shell": [
@@ -192,9 +196,11 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
 
   // Type-specific validations
   if (feed.type === "ado-pr") {
-    const org = String(feed.type_specific.org ?? "").trim();
-    if (org && !org.startsWith("https://")) {
-      errors.org = "Must be an https:// URL";
+    const url = String(feed.type_specific.url ?? "").trim();
+    if (url && !url.startsWith("https://")) {
+      errors.url = "Must be an https:// URL";
+    } else if (url && !url.includes("/_git/")) {
+      errors.url = "URL must contain /_git/ (e.g., https://dev.azure.com/org/project/_git/repo)";
     }
   }
 
@@ -212,6 +218,10 @@ function SettingsApp() {
   const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
+
+  // General settings state
+  const [showMenubar, setShowMenubar] = useState(true);
+  const [showPrioritySection, setShowPrioritySection] = useState(true);
 
   // Notification settings state
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
@@ -254,7 +264,11 @@ function SettingsApp() {
       .finally(() => setAutostartLoading(false));
 
     invoke<AppSettings>("get_settings")
-      .then((s) => setNotifSettings(s.notifications))
+      .then((s) => {
+        setNotifSettings(s.notifications);
+        setShowMenubar(s.show_menubar);
+        setShowPrioritySection(s.main_screen?.show_priority_section ?? true);
+      })
       .catch(() => {})
       .finally(() => setNotifLoading(false));
 
@@ -303,14 +317,40 @@ function SettingsApp() {
     setNotifSaveError(null);
     if (notifSaveTimer[0]) clearTimeout(notifSaveTimer[0]);
     try {
-      await invoke("save_settings", { settings: { notifications: updated } });
+      await invoke("save_settings", {
+        settings: {
+          notifications: updated,
+          main_screen: { show_priority_section: showPrioritySection },
+          show_menubar: showMenubar,
+        },
+      });
       setNotifSaveSuccess(key ?? "general");
       const t = setTimeout(() => setNotifSaveSuccess(null), 1500);
       notifSaveTimer[0] = t;
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [notifSaveTimer]);
+  }, [notifSaveTimer, showPrioritySection, showMenubar]);
+
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean }) => {
+    const newMenubar = updates.showMenubar ?? showMenubar;
+    const newPriority = updates.showPrioritySection ?? showPrioritySection;
+
+    if (updates.showMenubar !== undefined) setShowMenubar(newMenubar);
+    if (updates.showPrioritySection !== undefined) setShowPrioritySection(newPriority);
+
+    try {
+      await invoke("save_settings", {
+        settings: {
+          notifications: notifSettings,
+          main_screen: { show_priority_section: newPriority },
+          show_menubar: newMenubar,
+        },
+      });
+    } catch (err) {
+      console.error("failed saving general setting:", err);
+    }
+  }, [notifSettings, showMenubar, showPrioritySection]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -515,6 +555,32 @@ function SettingsApp() {
                 disabled={autostartLoading}
                 aria-pressed={autostart}
                 aria-label="Start on system startup"
+              />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Show menubar icon</div>
+                <div className="setting-hint">Show tray icon and menubar panel. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
+              </div>
+              <button
+                className={`toggle ${showMenubar ? "on" : ""}`}
+                onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }); }}
+                aria-pressed={showMenubar}
+                aria-label="Show menubar icon"
+              />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Needs Attention section</div>
+                <div className="setting-hint">Show a priority section in the main screen for activities that need your attention</div>
+              </div>
+              <button
+                className={`toggle ${showPrioritySection ? "on" : ""}`}
+                onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }); }}
+                aria-pressed={showPrioritySection}
+                aria-label="Show Needs Attention section"
               />
             </div>
           </>

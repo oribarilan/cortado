@@ -52,9 +52,9 @@ impl AdoPrFeed {
         config: &FeedConfig,
         process_runner: Arc<dyn ProcessRunner>,
     ) -> Result<Self> {
-        let org_url = required_non_empty_type_specific_string(config, "org")?;
-        let project = required_non_empty_type_specific_string(config, "project")?;
-        let repo = required_non_empty_type_specific_string(config, "repo")?;
+        let url = required_non_empty_type_specific_string(config, "url")?;
+        let (org_url, project, repo) = parse_ado_repo_url(&url)
+            .map_err(|err| anyhow!("feed `{}` (type ado-pr): {err}", config.name))?;
         let user = config
             .type_specific
             .get("user")
@@ -63,15 +63,6 @@ impl AdoPrFeed {
             .filter(|value| !value.is_empty())
             .map(str::to_string)
             .unwrap_or_else(|| "me".to_string());
-
-        if !org_url.starts_with("https://") {
-            bail!(
-                "feed `{}` (type ado-pr) requires `org` to be an https URL",
-                config.name
-            );
-        }
-
-        let org_url = org_url.trim_end_matches('/').to_string();
 
         Ok(Self {
             name: config.name.clone(),
@@ -308,6 +299,58 @@ impl Feed for AdoPrFeed {
 
         Ok(activities)
     }
+}
+
+/// Parses an Azure DevOps repository URL into (org_url, project, repo).
+///
+/// Accepts URLs like:
+///   `https://dev.azure.com/{org}/{project}/_git/{repo}`
+///   `https://{host}/{collection}/{project}/_git/{repo}`
+///   `https://{host}.visualstudio.com/{project}/_git/{repo}`
+fn parse_ado_repo_url(url: &str) -> Result<(String, String, String)> {
+    if !url.starts_with("https://") {
+        bail!("`url` must be an https:// URL");
+    }
+
+    // Find `_git` segment to split project and repo.
+    let Some(git_idx) = url.find("/_git/") else {
+        bail!("`url` must contain `/_git/` (e.g., https://dev.azure.com/org/project/_git/repo)");
+    };
+
+    let after_git = &url[git_idx + "/_git/".len()..];
+    let repo = after_git
+        .split(&['?', '#'][..])
+        .next()
+        .unwrap_or(after_git)
+        .trim_end_matches('/');
+    if repo.is_empty() {
+        bail!("`url` is missing the repository name after `/_git/`");
+    }
+
+    let before_git = &url[..git_idx];
+
+    // Split off the last path segment as the project.
+    let Some(slash_idx) = before_git.rfind('/') else {
+        bail!("`url` is missing the project segment before `/_git/`");
+    };
+
+    let project = &before_git[slash_idx + 1..];
+    if project.is_empty() {
+        bail!("`url` is missing the project name before `/_git/`");
+    }
+
+    let org_url = &before_git[..slash_idx];
+
+    // Sanity: org_url should still start with https:// and have a host.
+    if org_url.len() <= "https://".len() {
+        bail!("`url` is missing the organization segment");
+    }
+
+    Ok((
+        org_url.trim_end_matches('/').to_string(),
+        project.to_string(),
+        repo.to_string(),
+    ))
 }
 
 fn required_non_empty_type_specific_string(config: &FeedConfig, key: &str) -> Result<String> {
@@ -687,10 +730,10 @@ mod tests {
     };
 
     use super::{
-        map_checks_rollup, map_merge_status, map_review, AdoPolicyConfiguration,
-        AdoPolicyEvaluation, AdoPolicyType, AdoPrFeed, AZ_CREATOR_IDENTITY_MESSAGE,
-        AZ_EXTENSION_MISSING_MESSAGE, AZ_MISSING_MESSAGE, AZ_UNAUTHENTICATED_MESSAGE,
-        BUILD_POLICY_TYPE_ID, STATUS_POLICY_TYPE_ID,
+        map_checks_rollup, map_merge_status, map_review, parse_ado_repo_url,
+        AdoPolicyConfiguration, AdoPolicyEvaluation, AdoPolicyType, AdoPrFeed,
+        AZ_CREATOR_IDENTITY_MESSAGE, AZ_EXTENSION_MISSING_MESSAGE, AZ_MISSING_MESSAGE,
+        AZ_UNAUTHENTICATED_MESSAGE, BUILD_POLICY_TYPE_ID, STATUS_POLICY_TYPE_ID,
     };
 
     #[derive(Clone)]
@@ -894,39 +937,32 @@ mod tests {
     }
 
     #[test]
-    fn from_config_requires_org_project_repo_and_defaults_user() {
+    fn from_config_requires_url_and_defaults_user() {
         let mut config = base_config();
-        config.type_specific.remove("org");
+        config.type_specific.remove("url");
         let error = match AdoPrFeed::from_config_with_runner(
             &config,
             Arc::new(StubRunner::new(Vec::new())),
         ) {
-            Ok(_) => panic!("org should be required"),
+            Ok(_) => panic!("url should be required"),
             Err(error) => error,
         };
-        assert!(error.to_string().contains("missing required `org`"));
+        assert!(error.to_string().contains("missing required `url`"));
 
+        // Invalid URL (no _git segment)
         let mut config = base_config();
-        config.type_specific.remove("project");
+        config.type_specific.insert(
+            "url".to_string(),
+            Value::String("https://dev.azure.com/my-org/my-project".to_string()),
+        );
         let error = match AdoPrFeed::from_config_with_runner(
             &config,
             Arc::new(StubRunner::new(Vec::new())),
         ) {
-            Ok(_) => panic!("project should be required"),
+            Ok(_) => panic!("should require _git in URL"),
             Err(error) => error,
         };
-        assert!(error.to_string().contains("missing required `project`"));
-
-        let mut config = base_config();
-        config.type_specific.remove("repo");
-        let error = match AdoPrFeed::from_config_with_runner(
-            &config,
-            Arc::new(StubRunner::new(Vec::new())),
-        ) {
-            Ok(_) => panic!("repo should be required"),
-            Err(error) => error,
-        };
-        assert!(error.to_string().contains("missing required `repo`"));
+        assert!(error.to_string().contains("_git"));
 
         let mut config = base_config();
         config.type_specific.remove("user");
@@ -965,17 +1001,58 @@ mod tests {
         assert!(matches!(kind, StatusKind::AttentionNegative));
     }
 
+    #[test]
+    fn parse_ado_repo_url_extracts_components() {
+        // Standard dev.azure.com URL
+        let (org, proj, repo) =
+            parse_ado_repo_url("https://dev.azure.com/my-org/my-project/_git/my-repo").unwrap();
+        assert_eq!(org, "https://dev.azure.com/my-org");
+        assert_eq!(proj, "my-project");
+        assert_eq!(repo, "my-repo");
+
+        // visualstudio.com URL
+        let (org, proj, repo) =
+            parse_ado_repo_url("https://microsoft.visualstudio.com/WDATP/_git/OneCyber.Content")
+                .unwrap();
+        assert_eq!(org, "https://microsoft.visualstudio.com");
+        assert_eq!(proj, "WDATP");
+        assert_eq!(repo, "OneCyber.Content");
+
+        // Trailing slash
+        let (org, proj, repo) =
+            parse_ado_repo_url("https://dev.azure.com/my-org/proj/_git/repo/").unwrap();
+        assert_eq!(org, "https://dev.azure.com/my-org");
+        assert_eq!(proj, "proj");
+        assert_eq!(repo, "repo");
+
+        // URL with query parameters
+        let (org, proj, repo) =
+            parse_ado_repo_url("https://dev.azure.com/org/proj/_git/repo?version=GBmain").unwrap();
+        assert_eq!(org, "https://dev.azure.com/org");
+        assert_eq!(proj, "proj");
+        assert_eq!(repo, "repo");
+
+        // URL with fragment
+        let (_, _, repo) =
+            parse_ado_repo_url("https://dev.azure.com/org/proj/_git/repo#path=/src").unwrap();
+        assert_eq!(repo, "repo");
+
+        // Missing https
+        assert!(parse_ado_repo_url("http://dev.azure.com/o/p/_git/r").is_err());
+
+        // Missing _git
+        assert!(parse_ado_repo_url("https://dev.azure.com/o/p/r").is_err());
+
+        // Missing repo after _git
+        assert!(parse_ado_repo_url("https://dev.azure.com/o/p/_git/").is_err());
+    }
+
     fn base_config() -> FeedConfig {
         let mut type_specific = Table::new();
         type_specific.insert(
-            "org".to_string(),
-            Value::String("https://dev.azure.com/my-org".to_string()),
+            "url".to_string(),
+            Value::String("https://dev.azure.com/my-org/my-project/_git/my-repo".to_string()),
         );
-        type_specific.insert(
-            "project".to_string(),
-            Value::String("my-project".to_string()),
-        );
-        type_specific.insert("repo".to_string(), Value::String("my-repo".to_string()));
         type_specific.insert("user".to_string(), Value::String("me".to_string()));
 
         FeedConfig {

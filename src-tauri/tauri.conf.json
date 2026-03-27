@@ -34,6 +34,18 @@
         "visible": false
       },
       {
+        "label": "main-screen",
+        "title": "Cortado",
+        "url": "main-screen.html",
+        "fullscreen": false,
+        "resizable": false,
+        "width": 560,
+        "height": 440,
+        "decorations": false,
+        "transparent": true,
+        "visible": false
+      },
+      {
         "label": "settings",
         "title": "Cortado Settings",
         "url": "settings.html",

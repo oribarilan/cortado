@@ -13,11 +13,45 @@ use crate::feed::StatusKind;
 const CONFIG_DIR: &str = ".config/cortado";
 const SETTINGS_FILE: &str = "settings.toml";
 
+fn default_true() -> bool {
+    true
+}
+
 /// Global app settings persisted in `~/.config/cortado/settings.toml`.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
     pub notifications: NotificationSettings,
+    pub main_screen: MainScreenSettings,
+    #[serde(default = "default_true")]
+    pub show_menubar: bool,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            notifications: NotificationSettings::default(),
+            main_screen: MainScreenSettings::default(),
+            show_menubar: true,
+        }
+    }
+}
+
+/// Main screen display preferences.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MainScreenSettings {
+    /// Show the "Needs Attention" priority section at the top of the activity list.
+    #[serde(default = "default_true")]
+    pub show_priority_section: bool,
+}
+
+impl Default for MainScreenSettings {
+    fn default() -> Self {
+        Self {
+            show_priority_section: true,
+        }
+    }
 }
 
 /// Which status changes should trigger a notification.
@@ -214,6 +248,7 @@ mod tests {
                 notify_new_activities: false,
                 notify_removed_activities: true,
             },
+            ..AppSettings::default()
         };
 
         save_settings_to_path(&settings, &path).expect("save should succeed");
@@ -242,6 +277,7 @@ mod tests {
                 notify_new_activities: true,
                 notify_removed_activities: false,
             },
+            ..AppSettings::default()
         };
 
         save_settings_to_path(&settings, &path).expect("save should succeed");
@@ -271,6 +307,7 @@ mod tests {
                 enabled: false,
                 ..NotificationSettings::default()
             },
+            ..AppSettings::default()
         };
         save_settings_to_path(&updated, &path).expect("second save");
 

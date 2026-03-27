@@ -170,9 +170,7 @@ retain = "2h"
 [[feed]]
 name = "ADO PRs"
 type = "ado-pr"
-org = "https://dev.azure.com/your-org"
-project = "your-project"
-repo = "your-repo"
+url = "https://dev.azure.com/your-org/your-project/_git/your-repo"
 interval = "120s"
 
 # Optional: override field display
@@ -189,7 +187,7 @@ interval = "30s"
 ### Config rules
 
 - `name` and `type` are required on every feed.
-- Type-specific fields (e.g., `repo`, `org`, `project`, `command`) are flat, not nested.
+- Type-specific fields (e.g., `repo`, `url`, `command`) are flat, not nested.
 - PR feed types support optional `user` author filter values:
   - `github-pr`: default `@me` when omitted; accepts GitHub login or `@me`
   - `ado-pr`: default `me` when omitted; accepts creator identity (prefer email/UPN) or `me`
@@ -332,3 +330,57 @@ notify = false  # Suppress notifications for this feed
 - Notification scheduling / DND / quiet hours.
 - Notification history / log.
 - Persistent storage beyond config files.
+
+## Main Screen
+
+The main screen is a floating, keyboard-centric panel opened via a global hotkey. It coexists with the menubar panel — both remain accessible.
+
+### Activation
+
+- **Global hotkey**: ⌘+Shift+Space toggles the panel (press again to hide).
+- **App reopen**: Launching Cortado while it's already running (via Spotlight, Finder, or `open -a`) also opens the main screen.
+
+### Panel behavior
+
+- Floating NSPanel, non-activating, centered on the monitor with the cursor.
+- Hides on: Esc, clicking outside (resign key), desktop/space change, pressing the hotkey again.
+- State resets on each show: scroll to top, focus first activity.
+- No Dock icon — the app remains an Accessory (`ActivationPolicy::Accessory`).
+
+### Layout
+
+Split panel (~560×440):
+
+- **Left pane (~220px)**: Compact activity list grouped by feed. Each row shows a status dot + title. Full keyboard navigation with ↑↓, Enter opens the activity URL.
+- **Right pane (~340px)**: Detail view for the focused activity. Shows feed label, title, status chip, field rows, and an "Open" link. Updates instantly as focus moves.
+
+### Priority section (Needs Attention)
+
+When enabled, a "⚑ Needs Attention" section appears at the top of the list, before feed groups. It aggregates activities with `AttentionNegative` as their derived status kind from all feeds, with a feed-hint label on each row.
+
+- Activities in this section are **deduplicated** from their feed group below.
+- Hidden when there are no attention-negative activities.
+- Toggleable via `main_screen.show_priority_section` in `settings.toml` (default: `true`). Accessible from Settings > General.
+
+### Keyboard shortcuts
+
+| Key | Action |
+|-----|--------|
+| ↑/↓ | Navigate activities |
+| Enter | Open focused activity URL |
+| Esc | Close panel |
+| ⌘, | Open Settings |
+| ⌘Q | Quit Cortado |
+
+### Footer
+
+Shows keyboard hints and a gear icon to open Settings.
+
+## App Mode
+
+The menubar (tray icon + menubar panel) is optional via the `show_menubar` setting.
+
+- `show_menubar = true` (default): Both tray icon and menubar panel are available. The main screen is also available via hotkey.
+- `show_menubar = false`: No tray icon. The app is accessed via the global hotkey (⌘+Shift+Space) or by re-launching from Spotlight/Finder.
+
+The setting takes effect on next app launch. Settings are always accessible from the main screen footer or via ⌘, from the main screen.

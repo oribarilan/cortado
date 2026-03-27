@@ -2,12 +2,46 @@ use std::process::Command;
 use std::sync::Once;
 
 use tauri::{AppHandle, Manager, WebviewWindowBuilder};
+use tauri_nspanel::ManagerExt;
 
 use crate::{
     feed::{BackgroundPoller, FeedRegistry, FeedSnapshot},
-    fns, ui_snapshot,
+    fns, main_screen, ui_snapshot,
 };
 static PANEL_INIT: Once = Once::new();
+static MAIN_SCREEN_INIT: Once = Once::new();
+
+fn hide_menubar_panel(app_handle: &AppHandle) {
+    if let Ok(panel) = app_handle.get_webview_panel("main") {
+        panel.order_out(None);
+    }
+}
+
+/// Tauri command: one-time NSPanel setup for the main screen window.
+/// Called from the frontend on first mount.
+#[tauri::command]
+pub fn init_main_screen_panel(app_handle: AppHandle) {
+    MAIN_SCREEN_INIT.call_once(|| {
+        main_screen::swizzle_to_main_screen_panel(&app_handle);
+        main_screen::update_main_screen_appearance(&app_handle);
+        main_screen::setup_main_screen_panel_listeners(&app_handle);
+    });
+}
+
+/// Tauri command: hides the main screen panel (used by Esc handler).
+#[tauri::command]
+pub fn hide_main_screen_panel(app_handle: AppHandle) {
+    if let Ok(panel) = app_handle.get_webview_panel("main-screen") {
+        panel.order_out(None);
+    }
+}
+
+/// Tauri command: hides the menubar panel and opens the main screen.
+#[tauri::command]
+pub fn open_main_screen(app_handle: AppHandle) {
+    hide_menubar_panel(&app_handle);
+    main_screen::toggle_main_screen_panel(&app_handle);
+}
 
 #[tauri::command]
 pub async fn list_feeds(app_handle: AppHandle) -> Result<Vec<FeedSnapshot>, String> {
@@ -62,6 +96,7 @@ pub fn quit_app(app_handle: AppHandle) {
 
 #[tauri::command]
 pub fn open_settings(app_handle: AppHandle) -> Result<(), String> {
+    hide_menubar_panel(&app_handle);
     if let Some(window) = app_handle.get_webview_window("settings") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;

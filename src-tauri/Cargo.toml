@@ -33,6 +33,7 @@ tokio = { version = "1.37.0", features = ["time", "process", "sync", "rt", "macr
 tauri-plugin-shell = "2.0.0-beta.7"
 jiff = "0.2"
 tauri-plugin-autostart = "2.5.1"
+tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2.3.3"
 
 [features]

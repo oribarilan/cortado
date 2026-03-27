@@ -45,6 +45,16 @@ Tasks 01–03 are foundational and sequential. Tasks 05–07 and 10 can be paral
 
 9. **10-app-mode** — Make the menubar (tray icon + menubar panel) optional via a `show_menubar` setting. App launch/reopen (double-click, Spotlight, `open -a`) always opens the main screen. Settings accessible from the main screen footer. Global hotkey always registered regardless of menubar setting. Includes Rust-side schema changes to `AppSettings` and new Tauri commands to read/write the setting.
 
+10. **11-open-app-button** — Add "Open App" to tray right-click menu and menubar panel footer.
+
+11. **12-close-panel-on-action** — Close the menubar panel when "Open App" or "Settings" is clicked in its footer.
+
+12. **13-focus-highlight-alignment** — Align the main screen's focused-row styling with the app's design language (outline-only, keyboard-gated).
+
+13. **15-ado-pr-url-simplify** — Replace ADO PR `org` + `project` + `repo` fields with a single repository URL. Breaking config change.
+
+> Task 14 (theme picker) moved to sprint 09 — it requires normalizing all three CSS files and introducing a cross-window theme system.
+
 ## Implementation Notes (from review)
 
 - **`tauri-plugin-global-shortcut`** is NOT currently a dependency — must be added to `Cargo.toml` and registered in the plugin builder chain in `main.rs`.

@@ -10,6 +10,7 @@ export default defineConfig(async () => ({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
+        "main-screen": resolve(__dirname, "main-screen.html"),
         settings: resolve(__dirname, "settings.html"),
       },
     },
