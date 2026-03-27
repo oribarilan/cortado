@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 04 — Per-feed notify toggle

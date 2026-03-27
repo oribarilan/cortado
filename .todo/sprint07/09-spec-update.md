@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 09 — Spec update

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 03 — Notification config types

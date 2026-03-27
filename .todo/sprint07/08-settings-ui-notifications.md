@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 08 — Settings UI — Notifications tab

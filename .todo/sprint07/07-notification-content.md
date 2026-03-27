@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 07 — Notification content formatting

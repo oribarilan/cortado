@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 10 — Integration testing & edge cases

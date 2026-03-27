@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Sprint 07 — Notifications

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 05 — Status change detection
