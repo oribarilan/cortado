@@ -548,26 +548,43 @@ function SettingsApp() {
                   </div>
                 )}
 
-                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
-                  <legend className="notif-legend">Notification mode</legend>
-                  <div className="setting-hint" style={{ marginBottom: 8 }}>Which status changes trigger notifications</div>
-                  <label className="radio-row">
-                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "all"}
-                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }} />
-                    <span>All — any status change</span>
-                  </label>
-                  <label className="radio-row">
-                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "escalation_only"}
-                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }} />
-                    <span>Escalation only — status worsens</span>
-                  </label>
-                  <label className="radio-row">
-                    <input type="radio" name="notif-mode" checked={notifSettings.mode === "specific_kinds"}
-                      onChange={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: [] }); }} />
-                    <span>Specific kinds</span>
-                  </label>
+                <div className={!notifSettings.enabled ? "section-disabled" : ""}>
+                  <div className="section-header">Mode</div>
+                  <div className="section-hint">Which status changes trigger notifications</div>
+
+                  <div
+                    className={`option-row ${notifSettings.mode === "all" ? "selected" : ""}`}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }}
+                  >
+                    <span className="option-indicator" />
+                    <div className="option-body">
+                      <div className="option-label">All</div>
+                      <div className="option-hint">Any status change</div>
+                    </div>
+                  </div>
+                  <div
+                    className={`option-row ${notifSettings.mode === "escalation_only" ? "selected" : ""}`}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }}
+                  >
+                    <span className="option-indicator" />
+                    <div className="option-body">
+                      <div className="option-label">Escalation only</div>
+                      <div className="option-hint">Only when status worsens</div>
+                    </div>
+                  </div>
+                  <div
+                    className={`option-row ${notifSettings.mode === "specific_kinds" ? "selected" : ""}`}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }); }}
+                  >
+                    <span className="option-indicator" />
+                    <div className="option-body">
+                      <div className="option-label">Specific kinds</div>
+                      <div className="option-hint">Only selected status types</div>
+                    </div>
+                  </div>
+
                   {notifSettings.mode === "specific_kinds" && (
-                    <div className="specific-kinds-checkboxes">
+                    <div className="kind-chips">
                       {([
                         ["attention-negative", "Needs attention"],
                         ["attention-positive", "Ready to go"],
@@ -575,37 +592,49 @@ function SettingsApp() {
                         ["running", "In progress"],
                         ["idle", "Idle"],
                       ] as [StatusKindKey, string][]).map(([kind, label]) => (
-                        <label className="checkbox-row" key={kind}>
-                          <input type="checkbox" checked={notifSettings.kinds?.includes(kind) ?? false}
-                            onChange={(e) => {
-                              const current = notifSettings.kinds ?? [];
-                              const updated = e.target.checked ? [...current, kind] : current.filter((k) => k !== kind);
-                              void saveNotifSettings({ ...notifSettings, kinds: updated });
-                            }} />
-                          <span>{label}</span>
-                        </label>
+                        <button
+                          className={`kind-chip ${notifSettings.kinds?.includes(kind) ? "active" : ""}`}
+                          key={kind}
+                          onClick={() => {
+                            const current = notifSettings.kinds ?? [];
+                            const updated = current.includes(kind)
+                              ? current.filter((k) => k !== kind)
+                              : [...current, kind];
+                            void saveNotifSettings({ ...notifSettings, kinds: updated });
+                          }}
+                        >
+                          {label}
+                        </button>
                       ))}
                     </div>
                   )}
-                </fieldset>
 
-                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
-                  <legend className="notif-legend">Delivery</legend>
-                  <div className="setting-hint" style={{ marginBottom: 8 }}>How notifications are batched</div>
-                  <label className="radio-row">
-                    <input type="radio" name="notif-delivery" checked={notifSettings.delivery === "grouped"}
-                      onChange={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }); }} />
-                    <span>Grouped — one per feed per poll (default)</span>
-                  </label>
-                  <label className="radio-row">
-                    <input type="radio" name="notif-delivery" checked={notifSettings.delivery === "immediate"}
-                      onChange={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }); }} />
-                    <span>Immediate — one per change</span>
-                  </label>
-                </fieldset>
+                  <div className="section-header">Delivery</div>
+                  <div className="section-hint">How notifications are batched</div>
 
-                <fieldset className="notif-fieldset" disabled={!notifSettings.enabled}>
-                  <legend className="notif-legend">Activity events</legend>
+                  <div
+                    className={`option-row ${notifSettings.delivery === "grouped" ? "selected" : ""}`}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }); }}
+                  >
+                    <span className="option-indicator" />
+                    <div className="option-body">
+                      <div className="option-label">Grouped</div>
+                      <div className="option-hint">One notification per feed per poll</div>
+                    </div>
+                  </div>
+                  <div
+                    className={`option-row ${notifSettings.delivery === "immediate" ? "selected" : ""}`}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }); }}
+                  >
+                    <span className="option-indicator" />
+                    <div className="option-body">
+                      <div className="option-label">Immediate</div>
+                      <div className="option-hint">One notification per change</div>
+                    </div>
+                  </div>
+
+                  <div className="section-header">Activity events</div>
+
                   <div className="setting-row">
                     <div className="setting-info">
                       <div className="setting-label">New activities</div>
@@ -630,7 +659,7 @@ function SettingsApp() {
                       aria-label="Notify on removed activities"
                     />
                   </div>
-                </fieldset>
+                </div>
 
                 {notifSaveError && <div className="save-error">{notifSaveError}</div>}
                 {notifSaveSuccess && <div className="save-success">Saved.</div>}
