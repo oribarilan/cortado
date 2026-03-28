@@ -674,7 +674,7 @@ body {
   width: 14px;
   height: 14px;
   border-radius: var(--radius-full);
-  background: var(--surface);
+  background: white;
   box-shadow: 0 1px 3px oklch(0% 0 0 / 0.15);
   position: absolute;
   top: 1px;
@@ -684,7 +684,11 @@ body {
 
 .toggle.on::after {
   transform: translateX(16px);
-  background: white;
+}
+
+.toggle:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ===== Dependency banner (missing CLI) ===== */
