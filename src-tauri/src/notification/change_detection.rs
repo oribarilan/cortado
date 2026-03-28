@@ -336,6 +336,60 @@ mod tests {
     }
 
     #[test]
+    fn extracts_url_from_url_field_when_id_is_not_url() {
+        let a = Activity {
+            id: "shell:disk-check".to_string(),
+            title: "Disk check".to_string(),
+            fields: vec![
+                Field {
+                    name: "link".to_string(),
+                    label: "Link".to_string(),
+                    value: FieldValue::Url {
+                        value: "https://dashboard.example.com/disk".to_string(),
+                    },
+                },
+                status_field("status", "ok", StatusKind::Idle),
+            ],
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+
+        let prev = snapshot("Feed", vec![]);
+        let new = snapshot("Feed", vec![a]);
+
+        let events = detect_changes(&prev, &new);
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].activity_url.as_deref(),
+            Some("https://dashboard.example.com/disk")
+        );
+    }
+
+    #[test]
+    fn no_url_when_id_and_fields_are_not_urls() {
+        let a = Activity {
+            id: "shell:test".to_string(),
+            title: "Test".to_string(),
+            fields: vec![Field {
+                name: "output".to_string(),
+                label: "Output".to_string(),
+                value: FieldValue::Text {
+                    value: "hello".to_string(),
+                },
+            }],
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+
+        let prev = snapshot("Feed", vec![]);
+        let new = snapshot("Feed", vec![a]);
+
+        let events = detect_changes(&prev, &new);
+        assert_eq!(events.len(), 1);
+        assert!(events[0].activity_url.is_none());
+    }
+
+    #[test]
     fn errored_feed_snapshot_produces_no_changes() {
         let prev = snapshot(
             "Feed",

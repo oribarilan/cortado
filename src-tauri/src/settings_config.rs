@@ -412,4 +412,150 @@ mod tests {
         assert_eq!(toml_quote("he\"llo"), "\"he\\\"llo\"");
         assert_eq!(toml_quote("back\\slash"), "\"back\\\\slash\"");
     }
+
+    #[test]
+    fn duration_to_string_zero_seconds() {
+        assert_eq!(duration_to_string(Duration::from_secs(0)), "0s");
+    }
+
+    #[test]
+    fn json_value_to_toml_inline_covers_all_types() {
+        assert_eq!(
+            json_value_to_toml_inline(&serde_json::json!("hello")),
+            "\"hello\""
+        );
+        assert_eq!(json_value_to_toml_inline(&serde_json::json!(42)), "42");
+        assert_eq!(json_value_to_toml_inline(&serde_json::json!(1.5)), "1.5");
+        assert_eq!(json_value_to_toml_inline(&serde_json::json!(true)), "true");
+        assert_eq!(json_value_to_toml_inline(&serde_json::Value::Null), "\"\"");
+        assert_eq!(
+            json_value_to_toml_inline(&serde_json::json!(["a", "b"])),
+            "[\"a\", \"b\"]"
+        );
+        assert_eq!(
+            json_value_to_toml_inline(&serde_json::json!({"key": "val"})),
+            "{}"
+        );
+    }
+
+    #[test]
+    fn feed_config_to_dto_preserves_all_fields() {
+        use crate::feed::config::{FeedConfig, FieldOverride};
+
+        let mut type_specific = toml::Table::new();
+        type_specific.insert(
+            "repo".to_string(),
+            toml::Value::String("org/repo".to_string()),
+        );
+
+        let config = FeedConfig {
+            name: "My PRs".to_string(),
+            feed_type: "github-pr".to_string(),
+            interval: Some(Duration::from_secs(300)),
+            retain: Some(Duration::from_secs(7200)),
+            notify: Some(false),
+            type_specific,
+            field_overrides: [(
+                "labels".to_string(),
+                FieldOverride {
+                    visible: Some(false),
+                    label: Some("Tags".to_string()),
+                },
+            )]
+            .into_iter()
+            .collect(),
+        };
+
+        let dto = feed_config_to_dto(&config);
+        assert_eq!(dto.name, "My PRs");
+        assert_eq!(dto.feed_type, "github-pr");
+        assert_eq!(dto.interval.as_deref(), Some("5m"));
+        assert_eq!(dto.retain.as_deref(), Some("2h"));
+        assert_eq!(dto.notify, Some(false));
+        assert_eq!(
+            dto.type_specific.get("repo"),
+            Some(&serde_json::json!("org/repo"))
+        );
+        assert_eq!(dto.fields.get("labels").unwrap().visible, Some(false));
+        assert_eq!(
+            dto.fields.get("labels").unwrap().label.as_deref(),
+            Some("Tags")
+        );
+    }
+
+    #[test]
+    fn dto_to_toml_document_omits_none_fields() {
+        let feeds = vec![FeedConfigDto {
+            name: "Minimal".into(),
+            feed_type: "shell".into(),
+            interval: None,
+            retain: None,
+            notify: None,
+            type_specific: [("command".into(), serde_json::json!("echo hi"))]
+                .into_iter()
+                .collect(),
+            fields: HashMap::new(),
+        }];
+
+        let toml_str = dto_to_toml_document(&feeds);
+        assert!(!toml_str.contains("interval"));
+        assert!(!toml_str.contains("retain"));
+        assert!(!toml_str.contains("notify"));
+        assert!(toml_str.contains("echo hi"));
+    }
+
+    #[test]
+    fn activity_to_test_activity_extracts_status() {
+        use crate::feed::{Activity, Field, FieldValue, StatusKind};
+
+        let a = Activity {
+            id: "test".to_string(),
+            title: "Test PR".to_string(),
+            fields: vec![
+                Field {
+                    name: "review".to_string(),
+                    label: "Review".to_string(),
+                    value: FieldValue::Status {
+                        value: "approved".to_string(),
+                        kind: StatusKind::AttentionPositive,
+                    },
+                },
+                Field {
+                    name: "labels".to_string(),
+                    label: "Labels".to_string(),
+                    value: FieldValue::Text {
+                        value: "wip".to_string(),
+                    },
+                },
+            ],
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+
+        let ta = activity_to_test_activity(&a);
+        assert_eq!(ta.title, "Test PR");
+        assert_eq!(ta.status.as_deref(), Some("approved"));
+    }
+
+    #[test]
+    fn activity_to_test_activity_no_status_field() {
+        use crate::feed::{Activity, Field, FieldValue};
+
+        let a = Activity {
+            id: "test".to_string(),
+            title: "Test".to_string(),
+            fields: vec![Field {
+                name: "output".to_string(),
+                label: "Output".to_string(),
+                value: FieldValue::Text {
+                    value: "hello".to_string(),
+                },
+            }],
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+
+        let ta = activity_to_test_activity(&a);
+        assert!(ta.status.is_none());
+    }
 }

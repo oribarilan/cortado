@@ -386,4 +386,288 @@ mod tests {
         assert_eq!(StatusKind::Running.human_name(), "in progress");
         assert_eq!(StatusKind::Idle.human_name(), "idle");
     }
+
+    // --- FieldValue tests ---
+
+    #[test]
+    fn field_type_returns_correct_discriminator() {
+        assert_eq!(
+            FieldValue::Text {
+                value: "x".to_string()
+            }
+            .field_type(),
+            "text"
+        );
+        assert_eq!(
+            FieldValue::Status {
+                value: "ok".to_string(),
+                kind: StatusKind::Idle,
+            }
+            .field_type(),
+            "status"
+        );
+        assert_eq!(FieldValue::Number { value: 1.0 }.field_type(), "number");
+        assert_eq!(
+            FieldValue::Url {
+                value: "https://x.com".to_string()
+            }
+            .field_type(),
+            "url"
+        );
+    }
+
+    #[test]
+    fn display_value_text_returns_clone() {
+        let fv = FieldValue::Text {
+            value: "hello world".to_string(),
+        };
+        assert_eq!(fv.display_value(), "hello world");
+    }
+
+    #[test]
+    fn display_value_status_returns_display_text() {
+        let fv = FieldValue::Status {
+            value: "approved".to_string(),
+            kind: StatusKind::AttentionPositive,
+        };
+        assert_eq!(fv.display_value(), "approved");
+    }
+
+    #[test]
+    fn display_value_number_integer_omits_decimals() {
+        let fv = FieldValue::Number { value: 42.0 };
+        assert_eq!(fv.display_value(), "42");
+    }
+
+    #[test]
+    fn display_value_number_fractional_shows_two_decimals() {
+        let fv = FieldValue::Number { value: 1.23456 };
+        assert_eq!(fv.display_value(), "1.23");
+    }
+
+    #[test]
+    fn display_value_number_zero() {
+        let fv = FieldValue::Number { value: 0.0 };
+        assert_eq!(fv.display_value(), "0");
+    }
+
+    #[test]
+    fn display_value_number_negative_fractional() {
+        let fv = FieldValue::Number { value: -7.5 };
+        assert_eq!(fv.display_value(), "-7.50");
+    }
+
+    #[test]
+    fn display_value_url_returns_clone() {
+        let fv = FieldValue::Url {
+            value: "https://example.com".to_string(),
+        };
+        assert_eq!(fv.display_value(), "https://example.com");
+    }
+
+    // --- FeedRegistry tests ---
+
+    #[test]
+    fn registry_starts_empty() {
+        let registry = FeedRegistry::new();
+        assert!(registry.active_feeds().is_empty());
+        assert!(registry.initial_snapshots().is_empty());
+    }
+
+    #[test]
+    fn registry_default_is_empty() {
+        let registry = FeedRegistry::default();
+        assert!(registry.active_feeds().is_empty());
+    }
+
+    #[test]
+    fn registry_register_error_produces_error_snapshot() {
+        let mut registry = FeedRegistry::new();
+        registry.register_error(
+            "bad-feed".to_string(),
+            "shell".to_string(),
+            "missing command".to_string(),
+        );
+
+        assert!(registry.active_feeds().is_empty());
+
+        let snapshots = registry.initial_snapshots();
+        assert_eq!(snapshots.len(), 1);
+        assert_eq!(snapshots[0].name, "bad-feed");
+        assert_eq!(snapshots[0].feed_type, "shell");
+        assert_eq!(snapshots[0].error.as_deref(), Some("missing command"));
+        assert!(snapshots[0].activities.is_empty());
+    }
+
+    #[test]
+    fn initial_snapshots_includes_feeds_then_errors() {
+        use std::sync::Arc;
+
+        struct DummyFeed;
+
+        #[async_trait::async_trait]
+        impl Feed for DummyFeed {
+            fn name(&self) -> &str {
+                "dummy"
+            }
+            fn feed_type(&self) -> &str {
+                "test"
+            }
+            fn interval(&self) -> std::time::Duration {
+                std::time::Duration::from_secs(30)
+            }
+            fn retain_for(&self) -> Option<std::time::Duration> {
+                None
+            }
+            fn provided_fields(&self) -> Vec<FieldDefinition> {
+                vec![FieldDefinition {
+                    name: "status".to_string(),
+                    label: "Status".to_string(),
+                    field_type: FieldType::Status,
+                    description: "test".to_string(),
+                }]
+            }
+            async fn poll(&self) -> anyhow::Result<Vec<Activity>> {
+                Ok(vec![])
+            }
+        }
+
+        let mut registry = FeedRegistry::new();
+        registry.register(Arc::new(DummyFeed));
+        registry.register_error(
+            "broken".to_string(),
+            "shell".to_string(),
+            "oops".to_string(),
+        );
+
+        let snapshots = registry.initial_snapshots();
+        assert_eq!(snapshots.len(), 2);
+        assert_eq!(snapshots[0].name, "dummy");
+        assert!(snapshots[0].error.is_none());
+        assert_eq!(snapshots[1].name, "broken");
+        assert!(snapshots[1].error.is_some());
+    }
+
+    // --- build_feed_registry_from_configs tests ---
+
+    #[test]
+    fn build_registry_tolerant_mode_keeps_valid_and_records_errors() {
+        use config::FeedConfig;
+        use std::collections::HashMap;
+        use toml::Table;
+
+        let configs = vec![
+            FeedConfig {
+                name: "Good".to_string(),
+                feed_type: "shell".to_string(),
+                interval: None,
+                retain: None,
+                notify: None,
+                type_specific: {
+                    let mut t = Table::new();
+                    t.insert(
+                        "command".to_string(),
+                        toml::Value::String("echo hi".to_string()),
+                    );
+                    t
+                },
+                field_overrides: HashMap::new(),
+            },
+            FeedConfig {
+                name: "Bad".to_string(),
+                feed_type: "nonexistent-type".to_string(),
+                interval: None,
+                retain: None,
+                notify: None,
+                type_specific: Table::new(),
+                field_overrides: HashMap::new(),
+            },
+        ];
+
+        let registry = build_feed_registry_from_configs(configs, RegistryBuildMode::Tolerant)
+            .expect("tolerant mode should not fail");
+
+        assert_eq!(registry.active_feeds().len(), 1);
+        assert_eq!(registry.active_feeds()[0].name(), "Good");
+
+        let snapshots = registry.initial_snapshots();
+        let error_snapshot = snapshots.iter().find(|s| s.name == "Bad").unwrap();
+        assert!(error_snapshot.error.is_some());
+    }
+
+    #[test]
+    fn build_registry_strict_mode_fails_on_first_error() {
+        use config::FeedConfig;
+        use std::collections::HashMap;
+        use toml::Table;
+
+        let configs = vec![FeedConfig {
+            name: "Bad".to_string(),
+            feed_type: "nonexistent-type".to_string(),
+            interval: None,
+            retain: None,
+            notify: None,
+            type_specific: Table::new(),
+            field_overrides: HashMap::new(),
+        }];
+
+        let err = match build_feed_registry_from_configs(configs, RegistryBuildMode::Strict) {
+            Ok(_) => panic!("strict mode should fail"),
+            Err(e) => e,
+        };
+
+        assert!(err.to_string().contains("Bad"));
+        assert!(err.to_string().contains("nonexistent-type"));
+    }
+
+    #[test]
+    fn instantiate_feed_unknown_type_returns_error() {
+        use config::FeedConfig;
+        use std::collections::HashMap;
+        use toml::Table;
+
+        let config = FeedConfig {
+            name: "X".to_string(),
+            feed_type: "foobar".to_string(),
+            interval: None,
+            retain: None,
+            notify: None,
+            type_specific: Table::new(),
+            field_overrides: HashMap::new(),
+        };
+
+        let err = match instantiate_feed(&config) {
+            Ok(_) => panic!("unknown type should fail"),
+            Err(e) => e,
+        };
+        assert!(err.to_string().contains("unknown feed type `foobar`"));
+    }
+
+    // --- rollup edge case: single highest-priority field wins ---
+
+    #[test]
+    fn rollup_single_attention_negative_beats_all() {
+        let activity = activity_with_statuses(&[
+            ("review", StatusKind::AttentionPositive),
+            ("checks", StatusKind::AttentionNegative),
+            ("merge", StatusKind::Waiting),
+        ]);
+
+        assert_eq!(
+            StatusKind::rollup_for_activity(&activity),
+            StatusKind::AttentionNegative
+        );
+    }
+
+    #[test]
+    fn rollup_empty_fields_returns_idle() {
+        let activity = Activity {
+            id: "test".to_string(),
+            title: "Test".to_string(),
+            fields: Vec::new(),
+            retained: false,
+            retained_at_unix_ms: None,
+        };
+        assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
+    }
 }

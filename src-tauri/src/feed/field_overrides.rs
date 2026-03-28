@@ -173,4 +173,68 @@ mod tests {
         assert_eq!(overridden[0].name, "labels");
         assert_eq!(overridden[0].label, "Tags");
     }
+
+    #[test]
+    fn apply_definition_overrides_explicit_only() {
+        let definitions = vec![FieldDefinition {
+            name: "output".to_string(),
+            label: "Output".to_string(),
+            field_type: FieldType::Text,
+            description: "test".to_string(),
+        }];
+
+        let explicit = HashMap::from([(
+            "output".to_string(),
+            FieldOverride {
+                visible: None,
+                label: Some("Custom".to_string()),
+            },
+        )]);
+
+        let from_config = HashMap::new();
+
+        let overridden = apply_definition_overrides(definitions, &explicit, &from_config);
+        assert_eq!(overridden[0].label, "Custom");
+    }
+
+    #[test]
+    fn apply_definition_overrides_no_overrides_preserves_defaults() {
+        let definitions = vec![FieldDefinition {
+            name: "output".to_string(),
+            label: "Output".to_string(),
+            field_type: FieldType::Text,
+            description: "test".to_string(),
+        }];
+
+        let overridden = apply_definition_overrides(definitions, &HashMap::new(), &HashMap::new());
+        assert_eq!(overridden[0].label, "Output");
+    }
+
+    #[test]
+    fn apply_activity_overrides_visible_true_keeps_field() {
+        let fields = vec![Field {
+            name: "status".to_string(),
+            label: "Status".to_string(),
+            value: FieldValue::Text {
+                value: "ok".to_string(),
+            },
+        }];
+
+        let from_config = HashMap::from([(
+            "status".to_string(),
+            FieldOverride {
+                visible: Some(true),
+                label: None,
+            },
+        )]);
+
+        let overridden = apply_activity_overrides(fields, &HashMap::new(), &from_config);
+        assert_eq!(overridden.len(), 1);
+    }
+
+    #[test]
+    fn apply_activity_overrides_empty_fields_returns_empty() {
+        let overridden = apply_activity_overrides(Vec::new(), &HashMap::new(), &HashMap::new());
+        assert!(overridden.is_empty());
+    }
 }

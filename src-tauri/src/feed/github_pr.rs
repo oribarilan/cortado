@@ -885,14 +885,7 @@ mod tests {
         };
 
         assert_eq!(value, expected_value);
-        assert!(matches!(
-            (kind, expected_kind),
-            (StatusKind::AttentionNegative, StatusKind::AttentionNegative)
-                | (StatusKind::AttentionPositive, StatusKind::AttentionPositive)
-                | (StatusKind::Waiting, StatusKind::Waiting)
-                | (StatusKind::Running, StatusKind::Running)
-                | (StatusKind::Idle, StatusKind::Idle)
-        ));
+        assert_eq!(kind, expected_kind);
     }
 
     fn base_config() -> FeedConfig {

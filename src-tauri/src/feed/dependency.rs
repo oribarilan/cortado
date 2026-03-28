@@ -159,4 +159,92 @@ mod tests {
 
         assert!(error.message.contains("timed out after 10s"));
     }
+
+    #[test]
+    fn classify_dependency_result_spawn_failure() {
+        let result = classify_dependency_result(
+            "gh --version",
+            Err(CommandError::Spawn {
+                program: "gh".to_string(),
+                message: "permission denied".to_string(),
+            }),
+        );
+
+        let DependencyCheck::InvocationError(error) = result else {
+            panic!("expected invocation error");
+        };
+
+        assert!(error.message.contains("failed invoking"));
+        assert!(error.message.contains("permission denied"));
+        assert_eq!(error.exit_code, None);
+    }
+
+    #[test]
+    fn classify_dependency_result_success() {
+        let result = classify_dependency_result(
+            "gh --version",
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+        );
+
+        let DependencyCheck::Healthy(output) = result else {
+            panic!("expected healthy");
+        };
+
+        assert!(output.succeeded());
+        assert!(output.stdout.contains("2.60.0"));
+    }
+
+    #[test]
+    fn classify_dependency_result_non_zero_exit_falls_back_to_stdout() {
+        let result = classify_dependency_result(
+            "az extension show",
+            Ok(CommandOutput {
+                exit_code: Some(1),
+                stdout: "extension not found".to_string(),
+                stderr: String::new(),
+            }),
+        );
+
+        let DependencyCheck::InvocationError(error) = result else {
+            panic!("expected invocation error");
+        };
+
+        assert!(error.message.contains("extension not found"));
+    }
+
+    #[test]
+    fn classify_dependency_result_non_zero_exit_no_output() {
+        let result = classify_dependency_result(
+            "az --version",
+            Ok(CommandOutput {
+                exit_code: Some(2),
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
+        );
+
+        let DependencyCheck::InvocationError(error) = result else {
+            panic!("expected invocation error");
+        };
+
+        assert!(error.message.contains("exit code 2"));
+        assert!(!error.message.contains(":")); // No trailing colon with empty output
+    }
+
+    #[test]
+    fn dependency_invocation_error_display_trait() {
+        let error = super::DependencyInvocationError {
+            command: "test".to_string(),
+            exit_code: Some(1),
+            stdout: String::new(),
+            stderr: String::new(),
+            message: "custom error message".to_string(),
+        };
+
+        assert_eq!(format!("{error}"), "custom error message");
+    }
 }

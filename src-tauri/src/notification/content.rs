@@ -203,5 +203,45 @@ mod tests {
         );
         let n = format_single(&e);
         assert!(n.body.len() < 200);
+        assert!(n.body.starts_with("New: "));
+    }
+
+    #[test]
+    fn truncation_preserves_valid_utf8_at_boundary() {
+        // Multi-byte character: each is 3 bytes in UTF-8
+        let multibyte_title = "\u{2603}".repeat(50); // snowman × 50 = 150 bytes
+        let e = event(
+            "Feed",
+            "pr-1",
+            &multibyte_title,
+            ChangeType::KindChanged,
+            Some(StatusKind::Idle),
+            Some(StatusKind::Running),
+        );
+        let n = format_single(&e);
+        // Should not panic and should produce valid UTF-8
+        assert!(n.body.is_char_boundary(n.body.len()));
+    }
+
+    #[test]
+    fn format_grouped_empty_events_still_works() {
+        // Edge case: empty events slice
+        let n = format_grouped("Feed", &[]);
+        assert_eq!(n.title, "Feed");
+        assert!(n.body.contains("0 activities changed"));
+    }
+
+    #[test]
+    fn format_single_url_is_preserved() {
+        let e = event(
+            "Feed",
+            "pr-1",
+            "Test PR",
+            ChangeType::KindChanged,
+            Some(StatusKind::Idle),
+            Some(StatusKind::Running),
+        );
+        let n = format_single(&e);
+        assert_eq!(n.url.as_deref(), Some("https://example.com/pr-1"));
     }
 }

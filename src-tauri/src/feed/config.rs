@@ -559,4 +559,99 @@ command = "echo hi"
 
         let _ = fs::remove_file(&path);
     }
+
+    #[test]
+    fn parse_empty_feed_array_returns_empty_list() {
+        let raw = r#"
+# Config file with no feeds yet
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        assert!(configs.is_empty());
+    }
+
+    #[test]
+    fn parse_explicit_empty_feed_table_returns_empty_list() {
+        let raw = "feed = []\n";
+        // `feed` as an empty inline array is valid TOML, should yield empty list.
+        // If it parses, it should be empty; it may also error because
+        // inline arrays aren't [[feed]] tables.
+        if let Ok(configs) = parse_feeds_config_toml(raw) {
+            assert!(configs.is_empty());
+        }
+    }
+
+    #[test]
+    fn parse_errors_on_non_bool_notify() {
+        let raw = r#"
+[[feed]]
+name = "Bad notify"
+type = "shell"
+command = "echo hi"
+notify = "yes"
+"#;
+        let err = parse_feeds_config_toml(raw).expect_err("non-bool notify should fail");
+        assert!(err.to_string().contains("notify must be a boolean"));
+    }
+
+    #[test]
+    fn parse_field_override_non_table_errors() {
+        let raw = r#"
+[[feed]]
+name = "Bad override"
+type = "shell"
+command = "echo hi"
+
+[feed.fields]
+output = "not a table"
+"#;
+        let err = parse_feeds_config_toml(raw).expect_err("non-table field override should fail");
+        assert!(err.to_string().contains("must be a table"));
+    }
+
+    #[test]
+    fn parse_field_override_non_bool_visible_errors() {
+        let raw = r#"
+[[feed]]
+name = "Bad visible"
+type = "shell"
+command = "echo hi"
+
+[feed.fields.output]
+visible = "no"
+"#;
+        let err = parse_feeds_config_toml(raw).expect_err("non-bool visible should fail");
+        assert!(err.to_string().contains("visible must be a boolean"));
+    }
+
+    #[test]
+    fn parse_field_override_non_string_label_errors() {
+        let raw = r#"
+[[feed]]
+name = "Bad label"
+type = "shell"
+command = "echo hi"
+
+[feed.fields.output]
+label = 42
+"#;
+        let err = parse_feeds_config_toml(raw).expect_err("non-string label should fail");
+        assert!(err.to_string().contains("label must be a string"));
+    }
+
+    #[test]
+    fn parse_config_with_retain_and_notify() {
+        let raw = r#"
+[[feed]]
+name = "Full"
+type = "shell"
+command = "echo hi"
+interval = "5m"
+retain = "1h"
+notify = false
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        assert_eq!(configs.len(), 1);
+        assert_eq!(configs[0].retain, Some(Duration::from_secs(3600)));
+        assert_eq!(configs[0].notify, Some(false));
+    }
 }

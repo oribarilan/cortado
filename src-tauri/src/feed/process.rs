@@ -163,3 +163,117 @@ fn printable_arg(arg: &str) -> String {
 
     format!("{arg:?}")
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+
+    #[test]
+    fn command_invocation_new_builds_correctly() {
+        let inv = CommandInvocation::new("git", ["status", "--short"], Duration::from_secs(5));
+        assert_eq!(inv.program, "git");
+        assert_eq!(inv.args, vec!["status", "--short"]);
+        assert_eq!(inv.timeout, Duration::from_secs(5));
+    }
+
+    #[test]
+    fn command_invocation_shell_wraps_in_sh_c() {
+        let inv = CommandInvocation::shell("echo hello", Duration::from_secs(10));
+        assert_eq!(inv.program, "sh");
+        assert_eq!(inv.args, vec!["-c", "echo hello"]);
+        assert_eq!(inv.timeout, Duration::from_secs(10));
+    }
+
+    #[test]
+    fn command_invocation_display_joins_args() {
+        let inv = CommandInvocation::new(
+            "gh",
+            ["pr", "list", "--repo", "org/repo"],
+            Duration::from_secs(5),
+        );
+        assert_eq!(inv.display(), "gh pr list --repo org/repo");
+    }
+
+    #[test]
+    fn command_invocation_display_quotes_special_args() {
+        let inv = CommandInvocation::new("sh", ["-c", "echo hello world"], Duration::from_secs(5));
+        let display = inv.display();
+        // "-c" contains only safe chars so it's unquoted; "echo hello world" has spaces so it's quoted
+        assert!(display.starts_with("sh -c "));
+        assert!(display.contains("echo hello world"));
+    }
+
+    #[test]
+    fn command_output_succeeded_for_zero_exit() {
+        let output = CommandOutput {
+            exit_code: Some(0),
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+        assert!(output.succeeded());
+    }
+
+    #[test]
+    fn command_output_not_succeeded_for_nonzero_exit() {
+        let output = CommandOutput {
+            exit_code: Some(1),
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+        assert!(!output.succeeded());
+    }
+
+    #[test]
+    fn command_output_not_succeeded_for_none_exit() {
+        let output = CommandOutput {
+            exit_code: None,
+            stdout: String::new(),
+            stderr: String::new(),
+        };
+        assert!(!output.succeeded());
+    }
+
+    #[test]
+    fn command_error_display_not_found() {
+        let err = CommandError::NotFound {
+            program: "gh".to_string(),
+        };
+        assert_eq!(err.to_string(), "required binary `gh` was not found");
+    }
+
+    #[test]
+    fn command_error_display_spawn() {
+        let err = CommandError::Spawn {
+            program: "gh".to_string(),
+            message: "permission denied".to_string(),
+        };
+        assert_eq!(err.to_string(), "failed spawning `gh`: permission denied");
+    }
+
+    #[test]
+    fn command_error_display_timeout() {
+        let err = CommandError::Timeout {
+            command: "gh pr list".to_string(),
+            timeout: Duration::from_secs(30),
+        };
+        assert_eq!(err.to_string(), "command `gh pr list` timed out after 30s");
+    }
+
+    #[test]
+    fn printable_arg_safe_chars_unquoted() {
+        assert_eq!(printable_arg("hello"), "hello");
+        assert_eq!(printable_arg("--repo"), "--repo");
+        assert_eq!(printable_arg("org/repo"), "org/repo");
+        assert_eq!(printable_arg("user@host"), "user@host");
+        assert_eq!(printable_arg("key=value"), "key=value");
+    }
+
+    #[test]
+    fn printable_arg_special_chars_quoted() {
+        let result = printable_arg("echo hello world");
+        assert!(result.starts_with('"'));
+        assert!(result.ends_with('"'));
+    }
+}

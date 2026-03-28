@@ -579,6 +579,106 @@ mod tests {
         assert_eq!(value, "https://example.com");
     }
 
+    #[test]
+    fn from_config_rejects_empty_command() {
+        let mut config = base_config();
+        config
+            .type_specific
+            .insert("command".to_string(), Value::String("   ".to_string()));
+
+        let err = match ShellFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        ) {
+            Ok(_) => panic!("blank command should fail"),
+            Err(e) => e,
+        };
+        assert!(err.to_string().contains("non-empty `command`"));
+    }
+
+    #[test]
+    fn from_config_rejects_empty_field_name() {
+        let mut config = base_config();
+        config
+            .type_specific
+            .insert("field_name".to_string(), Value::String("  ".to_string()));
+
+        let err = match ShellFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        ) {
+            Ok(_) => panic!("blank field_name should fail"),
+            Err(e) => e,
+        };
+        assert!(err.to_string().contains("non-empty `field_name`"));
+    }
+
+    #[test]
+    fn from_config_custom_field_name_and_label() {
+        let mut config = base_config();
+        config
+            .type_specific
+            .insert("field_name".to_string(), Value::String("disk".to_string()));
+        config
+            .type_specific
+            .insert("label".to_string(), Value::String("Disk Usage".to_string()));
+
+        let feed =
+            ShellFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
+                .expect("should build");
+
+        let defs = feed.provided_fields();
+        assert_eq!(defs[0].name, "disk");
+        assert_eq!(defs[0].label, "Disk Usage");
+    }
+
+    #[test]
+    fn from_config_default_interval_is_30s() {
+        let mut config = base_config();
+        config.interval = None;
+
+        let feed =
+            ShellFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
+                .expect("should build");
+
+        assert_eq!(feed.interval(), Duration::from_secs(30));
+    }
+
+    #[test]
+    fn from_config_retain_for_is_passed_through() {
+        let mut config = base_config();
+        config.retain = Some(Duration::from_secs(3600));
+
+        let feed =
+            ShellFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
+                .expect("should build");
+
+        assert_eq!(feed.retain_for(), Some(Duration::from_secs(3600)));
+    }
+
+    #[tokio::test]
+    async fn poll_missing_sh_binary_returns_clear_error() {
+        let runner = Arc::new(StubRunner::new(vec![Err(CommandError::NotFound {
+            program: "sh".to_string(),
+        })]));
+
+        let feed = ShellFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let error = feed.poll().await.expect_err("should fail");
+        assert!(error.to_string().contains("POSIX shell"));
+    }
+
+    #[tokio::test]
+    async fn poll_spawn_failure_returns_clear_error() {
+        let runner = Arc::new(StubRunner::new(vec![Err(CommandError::Spawn {
+            program: "sh".to_string(),
+            message: "permission denied".to_string(),
+        })]));
+
+        let feed = ShellFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let error = feed.poll().await.expect_err("should fail");
+        assert!(error.to_string().contains("spawn failed"));
+    }
+
     fn base_config() -> FeedConfig {
         let mut type_specific = Table::new();
         type_specific.insert(
