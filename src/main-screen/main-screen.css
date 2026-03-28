@@ -421,7 +421,10 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .ms-activity-row,
   .ms-dot,
-  .ms-skeleton {
+  .ms-skeleton,
+  .ms-detail-content,
+  .ms-priority-section,
+  .ms-footer-settings {
     transition: none !important;
     animation: none !important;
   }

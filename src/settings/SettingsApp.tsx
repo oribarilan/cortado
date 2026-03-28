@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
@@ -224,6 +224,15 @@ function SettingsApp() {
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
 
+  // Animation timeout cleanup
+  const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const scheduleAnim = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    animTimers.current.push(id);
+    return id;
+  }, []);
+  useEffect(() => () => { animTimers.current.forEach(clearTimeout); }, []);
+
   // General settings state
   const [showMenubar, setShowMenubar] = useState(true);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
@@ -385,11 +394,11 @@ function SettingsApp() {
 
   const closeModal = useCallback(() => {
     setModalExiting(true);
-    setTimeout(() => {
+    scheduleAnim(() => {
       setResetConfirm(false);
       setModalExiting(false);
     }, 135); // ~75% of --duration-normal (180ms)
-  }, []);
+  }, [scheduleAnim]);
 
   const handleTestNotification = useCallback(async () => {
     setTestNotifError(null);
@@ -413,11 +422,11 @@ function SettingsApp() {
     setTestLoading(false);
     setTestPreviewOpen(false);
     setFeedNavTransition("drill-in");
-    setTimeout(() => setFeedNavTransition("idle"), 180);
+    scheduleAnim(() => setFeedNavTransition("idle"), 180);
     invoke<{ installed: boolean }>("check_feed_dependency", { feedType: feeds[index].type })
       .then((r) => setDepInstalled(r.installed))
       .catch(() => setDepInstalled(null));
-  }, [feeds]);
+  }, [feeds, scheduleAnim]);
 
   const startAdd = useCallback(() => {
     setEditingIndex(feeds.length);
@@ -432,11 +441,11 @@ function SettingsApp() {
     setTestLoading(false);
     setTestPreviewOpen(false);
     setFeedNavTransition("drill-in");
-    setTimeout(() => setFeedNavTransition("idle"), 180);
+    scheduleAnim(() => setFeedNavTransition("idle"), 180);
     invoke<{ installed: boolean }>("check_feed_dependency", { feedType: "github-pr" })
       .then((r) => setDepInstalled(r.installed))
       .catch(() => setDepInstalled(null));
-  }, [feeds.length]);
+  }, [feeds.length, scheduleAnim]);
 
   const cancelEdit = useCallback(() => {
     if (editingFeed === null) {
@@ -451,8 +460,8 @@ function SettingsApp() {
     setSaveError(null);
     setSaveSuccess(false);
     setFeedNavTransition("drill-out");
-    setTimeout(() => setFeedNavTransition("idle"), 180);
-  }, [editingFeed]);
+    scheduleAnim(() => setFeedNavTransition("idle"), 180);
+  }, [editingFeed, scheduleAnim]);
 
   const saveFeed = useCallback(async () => {
     if (!editingFeed || editingIndex === null) return;
@@ -559,12 +568,11 @@ function SettingsApp() {
     if (next === section || sectionFading) return;
     cancelEdit();
     setSectionFading(true);
-    // Wait for fade-out, then swap content and fade back in
-    setTimeout(() => {
+    scheduleAnim(() => {
       setSection(next);
       setSectionFading(false);
     }, 110); // ~60% of --duration-normal
-  }, [section, sectionFading, cancelEdit]);
+  }, [section, sectionFading, cancelEdit, scheduleAnim]);
 
   const feedTypeFields = editingFeed ? FEED_TYPE_FIELDS[editingFeed.type as FeedType] ?? [] : [];
   const depInfo = editingFeed ? FEED_TYPE_DEPS[editingFeed.type as FeedType] : undefined;
