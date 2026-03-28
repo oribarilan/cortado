@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type { Activity, FeedSnapshot, Field } from "../shared/types";
+import type { Activity, FeedSnapshot } from "../shared/types";
 import { useAppearance } from "../shared/useAppearance";
 import {
   deriveActivityKind,
@@ -68,21 +68,30 @@ function buildFlatList(
   return { items: [...priorityItems, ...feedItems], priorityItems, feedItems };
 }
 
-function InlineDetail({ activity }: { activity: Activity }) {
+function DetailPane({ item }: { item: ListItem | null }) {
+  if (!item) {
+    return (
+      <div className="ms-detail">
+        <div className="ms-detail-empty">No activity selected</div>
+      </div>
+    );
+  }
+
+  const { activity } = item;
   const openUrl = supportsOpen(activity);
 
   return (
-    <div className="ms-expand">
-      <div className="ms-expand-title">{activity.title}</div>
+    <div className="ms-detail">
+      <div className="ms-detail-title">{activity.title}</div>
       {activity.fields.length > 0 ? (
-        <div className="ms-expand-fields">
-          {activity.fields.map((field: Field) => {
+        <div className="ms-detail-fields">
+          {activity.fields.map((field) => {
             const statusClass =
               field.value.type === "status" ? `status kind-${field.value.kind}` : "";
             return (
-              <div className="ms-expand-field" key={field.name}>
-                <span className="ms-expand-key">{field.label}</span>
-                <span className={`ms-expand-val ${statusClass}`}>
+              <div className="ms-detail-field" key={field.name}>
+                <span className="ms-detail-key">{field.label}</span>
+                <span className={`ms-detail-val ${statusClass}`}>
                   {formatFieldValue(field)}
                 </span>
               </div>
@@ -92,7 +101,7 @@ function InlineDetail({ activity }: { activity: Activity }) {
       ) : null}
       {openUrl ? (
         <button
-          className="ms-expand-open"
+          className="ms-detail-open"
           onClick={() => invoke("open_activity", { url: openUrl }).catch(console.error)}
         >
           ↗ Open
@@ -108,7 +117,7 @@ function MainScreenApp() {
   const [loading, setLoading] = useState(true);
   const [focusIndex, setFocusIndex] = useState(0);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
-  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const { items: flatList, priorityItems, feedItems } = useMemo(
@@ -169,8 +178,7 @@ function MainScreenApp() {
 
       const unlistenShow = await listen("main_screen_panel_will_show", () => {
         setFocusIndex(0);
-        if (bodyRef.current) bodyRef.current.scrollTop = 0;
-        // Re-read settings in case they changed while the panel was hidden.
+        if (listRef.current) listRef.current.scrollTop = 0;
         invoke<AppSettings>("get_settings")
           .then((s) => {
             if (isMounted) setShowPrioritySection(s.main_screen?.show_priority_section ?? true);
@@ -241,7 +249,7 @@ function MainScreenApp() {
 
   // Scroll focused row into view
   useEffect(() => {
-    const row = bodyRef.current?.querySelector(`[data-index="${focusIndex}"]`);
+    const row = listRef.current?.querySelector(`[data-index="${focusIndex}"]`);
     if (row) row.scrollIntoView({ block: "nearest" });
   }, [focusIndex]);
 
@@ -269,27 +277,29 @@ function MainScreenApp() {
 
   return (
     <div className="main-screen-root" ref={rootRef}>
-      <div className="ms-body" ref={bodyRef}>
-        {loading ? (
-          <div className="ms-empty-state">Loading…</div>
-        ) : feeds.length === 0 ? (
-          <div className="ms-empty-state">
-            No feeds configured. Add feeds in Settings.
-          </div>
-        ) : (
-          <>
-            {/* Priority section */}
-            {priorityItems.length > 0 ? (
-              <section className="ms-feed-section ms-priority-section">
-                <header className="ms-feed-header ms-priority-header">⚑ Needs Attention</header>
-                {priorityItems.map((item, index) => {
-                  const kind = deriveActivityKind(item.activity);
-                  const topStatus = highestStatusField(item.activity);
-                  const isFocused = index === focusIndex;
+      <div className="ms-split">
+        {/* List pane */}
+        <div className="ms-list" ref={listRef}>
+          {loading ? (
+            <div className="ms-empty-state">Loading…</div>
+          ) : feeds.length === 0 ? (
+            <div className="ms-empty-state">
+              No feeds configured. Add feeds in Settings.
+            </div>
+          ) : (
+            <>
+              {/* Priority section */}
+              {priorityItems.length > 0 ? (
+                <section className="ms-feed-section ms-priority-section">
+                  <header className="ms-feed-header ms-priority-header">⚑ Needs Attention</header>
+                  {priorityItems.map((item, index) => {
+                    const kind = deriveActivityKind(item.activity);
+                    const topStatus = highestStatusField(item.activity);
+                    const isFocused = index === focusIndex;
 
-                  return (
-                    <div key={item.key}>
+                    return (
                       <div
+                        key={item.key}
                         data-index={index}
                         className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                         onClick={() => setFocusIndex(index)}
@@ -305,31 +315,29 @@ function MainScreenApp() {
                         ) : null}
                         <span className="ms-feed-hint">{item.priorityFeedHint}</span>
                       </div>
-                      {isFocused ? <InlineDetail activity={item.activity} /> : null}
-                    </div>
-                  );
-                })}
-                <div className="ms-priority-separator" />
-              </section>
-            ) : null}
+                    );
+                  })}
+                  <div className="ms-priority-separator" />
+                </section>
+              ) : null}
 
-            {/* Feed sections */}
-            {feedSections.map(({ feed, items }) => (
-              <section className="ms-feed-section" key={`${feed.name}::${feed.feed_type}`}>
-                <header className="ms-feed-header">{feed.name}</header>
+              {/* Feed sections */}
+              {feedSections.map(({ feed, items }) => (
+                <section className="ms-feed-section" key={`${feed.name}::${feed.feed_type}`}>
+                  <header className="ms-feed-header">{feed.name}</header>
 
-                {feed.error ? (
-                  <div className="ms-feed-error">{feed.error}</div>
-                ) : items.length === 0 ? (
-                  <div className="ms-feed-empty">No activities</div>
-                ) : (
-                  items.map(({ activity, kind, key, index }) => {
-                    const isFocused = index === focusIndex;
-                    const topStatus = highestStatusField(activity);
+                  {feed.error ? (
+                    <div className="ms-feed-error">{feed.error}</div>
+                  ) : items.length === 0 ? (
+                    <div className="ms-feed-empty">No activities</div>
+                  ) : (
+                    items.map(({ activity, kind, key, index }) => {
+                      const isFocused = index === focusIndex;
+                      const topStatus = highestStatusField(activity);
 
-                    return (
-                      <div key={key}>
+                      return (
                         <div
+                          key={key}
                           data-index={index}
                           className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                           onClick={() => setFocusIndex(index)}
@@ -347,15 +355,17 @@ function MainScreenApp() {
                             <span className={`ms-chip kind-${topStatus.value.kind}`}>{topStatus.value.value}</span>
                           ) : null}
                         </div>
-                        {isFocused ? <InlineDetail activity={activity} /> : null}
-                      </div>
-                    );
-                  })
-                )}
-              </section>
-            ))}
-          </>
-        )}
+                      );
+                    })
+                  )}
+                </section>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Detail pane */}
+        <DetailPane item={focusedItem} />
       </div>
 
       {/* Footer */}

@@ -349,11 +349,11 @@ The main screen is a floating, keyboard-centric panel opened via a global hotkey
 
 ### Layout
 
-Single-pane panel (~560×440):
+Split panel (~700×480), 60/40 flex ratio:
 
-- **Activity list**: Full-width rows grouped by feed. Each row shows a status dot, title, and inline status chip. Full keyboard navigation with ↑↓.
-- **Inline detail**: The focused activity auto-expands an inline detail area below its row, showing the full un-truncated title, all field rows, and an "Open" link. Styled with a teal left-border accent.
-- Enter opens the activity URL. No separate detail pane — the full window width is used for activity titles.
+- **List pane (flex 3)**: Full-width rows grouped by feed. Each row shows a status dot, title, and inline status chip. Full keyboard navigation with ↑↓. Accent-soft highlight on focused row.
+- **Detail pane (flex 2)**: Inset background, shows the focused activity's full un-truncated title, all field rows, and an "Open" link. No feed label or status chip — the inline chip on the list row already shows status. Updates instantly as focus moves.
+- Enter opens the activity URL.
 
 ### Priority section (Needs Attention)
 

@@ -39,8 +39,8 @@
         "url": "main-screen.html",
         "fullscreen": false,
         "resizable": false,
-        "width": 560,
-        "height": 440,
+        "width": 700,
+        "height": 480,
         "decorations": false,
         "transparent": true,
         "visible": false
