@@ -468,13 +468,39 @@ body {
   }
 }
 
+.refresh-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  animation: refresh-spin 600ms linear infinite;
+  vertical-align: middle;
+  margin-right: var(--space-2);
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+.footer-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.footer-row:disabled:hover {
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .activity-row,
   .detail-region,
   .chevron,
   .footer-row,
   .skeleton,
-  .status-dot {
+  .status-dot,
+  .refresh-spinner {
     transition: none !important;
     animation: none !important;
   }

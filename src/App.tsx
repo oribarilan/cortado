@@ -45,12 +45,17 @@ function App() {
     }));
   }, [feeds]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const refreshNow = useCallback(async () => {
+    setRefreshing(true);
     try {
       await invoke("refresh_feeds");
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRefreshing(false);
     }
   }, []);
 
@@ -290,8 +295,9 @@ function App() {
             onClick={() => {
               void refreshNow();
             }}
+            disabled={refreshing}
           >
-            Refresh feeds
+            {refreshing ? <><span className="refresh-spinner" /> Refreshing…</> : "Refresh feeds"}
           </button>
           <button
             className="footer-row"
