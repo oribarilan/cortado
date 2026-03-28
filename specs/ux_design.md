@@ -112,7 +112,7 @@ Four levels covering the range of roundness in the app:
 - `--radius-lg` (10px) — root panel containers (standardized from 10px/12px to 10px).
 - `--radius-full` (999px) — pills, dots, fully rounded elements.
 
-The panel root radius was standardized to 10px (previously 10px for menubar, 12px for main screen) for visual consistency.
+The panel root radius was standardized to 10px (previously 10px for menubar, 12px for panel) for visual consistency.
 
 ## Animation System
 

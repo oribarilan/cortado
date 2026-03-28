@@ -6,19 +6,19 @@ status: pending
 
 ## Goal
 
-Make the menubar (tray icon + menubar panel) optional via a setting. Ensure the app is always reachable: launching/reactivating the app opens the main screen, and settings are accessible from the main screen.
+Make the menubar (tray icon + menubar panel) optional via a setting. Ensure the app is always reachable: launching/reactivating the app opens the panel, and settings are accessible from the panel.
 
 ## Acceptance Criteria
 
-- [ ] New setting in app settings: `show_menubar` (boolean, default: `true`)
-- [ ] When `show_menubar` is `false`: tray icon is hidden, menubar panel is not created/shown
-- [ ] When `show_menubar` is `true`: existing tray + menubar panel behavior unchanged
+- [ ] New setting in app settings: `general.show_menubar` (boolean, default: `true`)
+- [ ] When `general.show_menubar` is `false`: tray icon is hidden, menubar panel is not created/shown
+- [ ] When `general.show_menubar` is `true`: existing tray + menubar panel behavior unchanged
 - [ ] Setting is toggleable from the Settings UI (General section)
 - [ ] Toggling takes effect immediately (no app restart required)
-- [ ] When the app is launched (or re-opened via double-click / Spotlight / `open -a Cortado`), the main screen opens
+- [ ] When the app is launched (or re-opened via double-click / Spotlight / `open -a Cortado`), the panel opens
   - Handle macOS `applicationShouldHandleReopen` / `NSApplicationDelegate` reopen event
-  - This works regardless of `show_menubar` setting
-- [ ] Main screen footer (or header) includes a "Settings" action that opens the settings window
+  - This works regardless of `general.show_menubar` setting
+- [ ] Panel footer (or header) includes a "Settings" action that opens the settings window
 - [ ] When menubar is off, the global hotkey (⌘+Shift+Space) is the primary way to access the app — ensure it's always registered
 - [ ] `ActivationPolicy::Accessory` — verify that macOS reopen events (`RunEvent::Reopen` or equivalent) still fire. Accessory apps don't show in the Dock but should still receive reopen when launched from Spotlight/Finder. Test this early.
 

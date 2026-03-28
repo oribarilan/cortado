@@ -2,11 +2,11 @@
 status: done
 ---
 
-# Main screen detail pane & priority section transitions
+# Panel detail pane & priority section transitions
 
 ## Goal
 
-Add subtle content transitions to the main screen: a crossfade in the detail pane when the selected activity changes, and an enter/exit animation for the priority ("Needs Attention") section.
+Add subtle content transitions to the panel: a crossfade in the detail pane when the selected activity changes, and an enter/exit animation for the priority ("Needs Attention") section.
 
 ## Acceptance criteria
 

@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 03 — CSS Normalization: Main Screen
+# 03 — CSS Normalization: Panel
 
 ## Goal
 

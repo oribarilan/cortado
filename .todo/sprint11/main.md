@@ -24,7 +24,7 @@ Pulls in backlog item `optional-loading-animations.md`.
 Tasks are roughly ordered by dependency but most are parallelizable after task 01.
 
 1. **01-animation-tokens** — Shared CSS custom properties for durations, easings, and a reduced-motion reset. Foundation for all other tasks.
-2. **02-loading-states** — Loading/refresh animations for startup, manual refresh, and background refresh across menubar panel and main screen. (From backlog.)
+2. **02-loading-states** — Loading/refresh animations for startup, manual refresh, and background refresh across menubar panel and the panel. (From backlog.)
 3. **03-modal-animations** — Entrance/exit animations for the reset-defaults modal and delete-feed confirmation in Settings.
 4. **04-settings-section-transitions** — Crossfade transition when switching between General / Feeds / Notifications sections.
 5. **05-settings-feed-nav-transitions** — Slide/crossfade transition between the feed list and the feed edit form.
@@ -33,6 +33,6 @@ Tasks are roughly ordered by dependency but most are parallelizable after task 0
 
 ## Notes
 
-- The menubar panel already has solid animation coverage (expand/collapse, shimmer, pulse, hover). This sprint focuses more on Settings and main screen, which are currently instant-swap everywhere.
+- The menubar panel already has solid animation coverage (expand/collapse, shimmer, pulse, hover). This sprint focuses more on Settings and the panel, which are currently instant-swap everywhere.
 - Task 01 should also audit existing animation values and normalize them to the new tokens.
 - Keep bundle impact near zero — this is pure CSS + minor React state, no animation libraries.

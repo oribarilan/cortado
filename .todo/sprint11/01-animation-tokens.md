@@ -6,7 +6,7 @@ status: done
 
 ## Goal
 
-Establish shared CSS custom properties for animation durations and easings, and normalize existing animations to use them. This gives all three windows (menubar panel, main screen, settings) a consistent motion language.
+Establish shared CSS custom properties for animation durations and easings, and normalize existing animations to use them. This gives all three windows (menubar panel, panel, settings) a consistent motion language.
 
 ## Acceptance criteria
 

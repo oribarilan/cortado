@@ -25,4 +25,4 @@ Add `theme` and `text_size` fields to `AppSettings` so the frontend can read and
 ## Notes
 
 - Consider using enums instead of raw strings for type safety (`Theme::System | Light | Dark`, `TextSize::S | M | L | XL`) with serde rename to lowercase strings for TOML compat.
-- The event should be emitted to all windows so menubar panel and main screen update immediately when settings change.
+- The event should be emitted to all windows so menubar panel and panel update immediately when settings change.

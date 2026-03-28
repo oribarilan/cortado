@@ -6,12 +6,12 @@ status: pending
 
 ## Goal
 
-End-to-end verification that the main screen works correctly alongside the existing menubar panel.
+End-to-end verification that the panel works correctly alongside the existing menubar panel.
 
 ## Acceptance Criteria
 
 - [ ] `just check` passes cleanly (format + lint + test, no warnings)
-- [ ] Main screen opens/closes via ⌘+Shift+Space
+- [ ] Panel opens/closes via ⌘+Shift+Space
 - [ ] Menubar panel still works via tray click
 - [ ] Both can be opened independently without interference
 - [ ] Keyboard navigation works: ↑↓ through activities, Enter opens URL, Esc closes

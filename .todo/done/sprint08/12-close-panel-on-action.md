@@ -6,12 +6,12 @@ status: pending
 
 ## Goal
 
-When "Open App" or "Settings" is clicked in the menubar panel footer, close the panel before performing the action. This prevents the panel from lingering behind the main screen or settings window.
+When "Open App" or "Settings" is clicked in the menubar panel footer, close the menubar panel before performing the action. This prevents it from lingering behind the panel or settings window.
 
 ## Acceptance Criteria
 
-- [ ] Clicking "Open App" in the menubar panel footer closes the panel, then opens the main screen
-- [ ] Clicking "Settings" in the menubar panel footer closes the panel, then opens the settings window
+- [ ] Clicking "Open App" in the menubar panel footer closes the menubar panel, then opens the panel
+- [ ] Clicking "Settings" in the menubar panel footer closes the menubar panel, then opens the settings window
 - [ ] Other footer actions (Refresh feeds, Quit) remain unchanged
 
 ## Notes

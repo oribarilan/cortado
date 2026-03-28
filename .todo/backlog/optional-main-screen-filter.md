@@ -1,6 +1,6 @@
-# Optional: Main Screen Filter + Fuzzy Finding
+# Optional: Panel Filter + Fuzzy Finding
 
-Add a filter/search bar to the main screen for narrowing activities when the list grows large.
+Add a filter/search bar to the panel for narrowing activities when the list grows large.
 
 ## Details
 

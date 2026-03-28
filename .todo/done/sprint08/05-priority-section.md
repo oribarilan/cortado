@@ -16,13 +16,13 @@ Add an optional "Needs Attention" section at the top of the activity list that a
 - [ ] Activities in this section are NOT duplicated in their feed group below (deduplicated)
 - [ ] A separator line divides the attention section from the feed groups
 - [ ] The section is hidden when there are no attention-negative activities
-- [ ] Toggle stored in app settings: `main_screen.show_priority_section` (boolean, default: `true`)
+- [ ] Toggle stored in app settings: `panel.show_priority_section` (boolean, default: `true`)
 - [ ] Toggle accessible from Settings window (General section)
 - [ ] Keyboard navigation treats attention-section rows the same as feed-section rows
 
 ### Backend (settings schema)
 
-- [ ] Add `main_screen` section to `AppSettings` struct in `app_settings.rs` (e.g., `MainScreenSettings { show_priority_section: bool }`) with `#[serde(default)]` so existing `settings.toml` files are handled gracefully
+- [ ] Add `panel` section to `AppSettings` struct in `app_settings.rs` (e.g., `MainScreenSettings { show_priority_section: bool }`) with `#[serde(default)]` so existing `settings.toml` files are handled gracefully
 - [ ] Add Tauri commands to read/write `show_priority_section` (or reuse a generic settings update command if one exists)
 
 ## Notes

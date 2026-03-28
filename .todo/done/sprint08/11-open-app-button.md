@@ -5,7 +5,7 @@ status: pending
 # Add "Open App" button to menubar menu
 
 ## Goal
-Add an "Open App" entry to the menubar/tray menu that opens the main application window.
+Add an "Open App" entry to the menubar/tray menu that opens the panel.
 
 ## Notes
 - Scope and behavior TBD -- discuss further when this task is picked up.

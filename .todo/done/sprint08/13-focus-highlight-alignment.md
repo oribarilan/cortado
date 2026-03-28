@@ -2,11 +2,11 @@
 status: pending
 ---
 
-# 13 — Main Screen Focus Highlight Alignment
+# 13 — Panel Focus Highlight Alignment
 
 ## Goal
 
-Align the main screen's focused-row styling with the app's design language. Currently the main screen uses a filled background + hard outline, while the menubar panel and settings use subtler, outline/border-only focus states gated by keyboard activity.
+Align the panel's focused-row styling with the app's design language. Currently the panel uses a filled background + hard outline, while the menubar panel and settings use subtler, outline/border-only focus states gated by keyboard activity.
 
 ## Acceptance Criteria
 
@@ -17,5 +17,5 @@ Align the main screen's focused-row styling with the app's design language. Curr
 
 ## Notes
 
-- The menubar panel uses `.panel-root.keyboard-active :focus-visible` to gate focus outlines. The main screen uses virtual focus (state-driven `.focused` class, not native `:focus-visible`), so the gating mechanism needs to track keyboard vs mouse input via event listeners (same `keydown` → add class, `mousedown` → remove class pattern).
+- The menubar panel uses `.panel-root.keyboard-active :focus-visible` to gate focus outlines. The panel uses virtual focus (state-driven `.focused` class, not native `:focus-visible`), so the gating mechanism needs to track keyboard vs mouse input via event listeners (same `keydown` → add class, `mousedown` → remove class pattern).
 - Keep the status-colored dot and the overall row layout unchanged — this is purely about the selection/focus visual treatment.

@@ -6,7 +6,7 @@ status: pending
 
 ## Goal
 
-Create the main-screen floating panel infrastructure: a new Tauri window with its own HTML entrypoint, converted to an NSPanel at runtime, toggled via ⌘+Shift+Space, centered on the active monitor.
+Create the floating panel infrastructure: a new Tauri window with its own HTML entrypoint, converted to an NSPanel at runtime, toggled via ⌘+Shift+Space, centered on the active monitor.
 
 ## Acceptance Criteria
 
@@ -19,7 +19,7 @@ Create the main-screen floating panel infrastructure: a new Tauri window with it
 - [ ] Panel hides when it resigns key (loses focus)
 - [ ] Panel hides on Esc (frontend keydown handler)
 - [ ] Coexists with existing menubar panel — both can be used independently
-- [ ] Two-NSPanel coexistence verified: resign-key delegates are scoped to their own window label — showing/hiding the main screen does not interfere with the menubar panel's visibility, and vice versa
+- [ ] Two-NSPanel coexistence verified: resign-key delegates are scoped to their own window label — showing/hiding the panel does not interfere with the menubar panel's visibility, and vice versa
 
 ## Notes
 

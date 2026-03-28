@@ -331,14 +331,14 @@ notify = false  # Suppress notifications for this feed
 - Notification history / log.
 - Persistent storage beyond config files.
 
-## Main Screen
+## Panel
 
-The main screen is a floating, keyboard-centric panel opened via a global hotkey. It coexists with the menubar panel — both remain accessible.
+The panel is a floating, keyboard-centric window opened via a global hotkey. It coexists with the menubar panel — both remain accessible.
 
 ### Activation
 
 - **Global hotkey**: ⌘+Shift+Space toggles the panel (press again to hide).
-- **App reopen**: Launching Cortado while it's already running (via Spotlight, Finder, or `open -a`) also opens the main screen.
+- **App reopen**: Launching Cortado while it's already running (via Spotlight, Finder, or `open -a`) also opens the panel.
 
 ### Panel behavior
 
@@ -361,7 +361,7 @@ When enabled, a "⚑ Needs Attention" section appears at the top of the list, be
 
 - Activities in this section are **deduplicated** from their feed group below.
 - Hidden when there are no attention-negative activities.
-- Toggleable via `main_screen.show_priority_section` in `settings.toml` (default: `true`). Accessible from Settings > General.
+- Toggleable via `panel.show_priority_section` in `settings.toml` (default: `true`). Accessible from Settings > General.
 
 ### Keyboard shortcuts
 
@@ -379,9 +379,9 @@ Shows keyboard hints and a gear icon to open Settings.
 
 ## App Mode
 
-The menubar (tray icon + menubar panel) is optional via the `show_menubar` setting.
+The menubar (tray icon + menubar panel) is optional via the `general.show_menubar` setting.
 
-- `show_menubar = true` (default): Both tray icon and menubar panel are available. The main screen is also available via hotkey.
-- `show_menubar = false`: No tray icon. The app is accessed via the global hotkey (⌘+Shift+Space) or by re-launching from Spotlight/Finder.
+- `general.show_menubar = true` (default): Both tray icon and menubar panel are available. The panel is also available via hotkey.
+- `general.show_menubar = false`: No tray icon. The app is accessed via the global hotkey (⌘+Shift+Space) or by re-launching from Spotlight/Finder.
 
-The setting takes effect on next app launch. Settings are always accessible from the main screen footer or via ⌘, from the main screen.
+The setting takes effect on next app launch. Settings are always accessible from the panel footer or via ⌘, from the panel.

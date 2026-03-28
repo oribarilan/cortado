@@ -6,7 +6,7 @@ status: pending
 
 ## Goal
 
-Build the left-side activity list for the main screen. Feed-grouped sections with compact rows (status dot + title). Full keyboard navigation with visible focus tracking.
+Build the left-side activity list for the panel. Feed-grouped sections with compact rows (status dot + title). Full keyboard navigation with visible focus tracking.
 
 ## Acceptance Criteria
 
@@ -24,7 +24,7 @@ Build the left-side activity list for the main screen. Feed-grouped sections wit
 - [ ] Footer bar with keyboard hint legend (↑↓ navigate · ↵ open · esc close) and a small gear icon to open Settings
 - [ ] Gear icon opens settings window via `open_settings` command
 - [ ] ⌘, also opens settings (standard macOS convention)
-- [ ] ⌘Q quits the app when the main screen is focused
+- [ ] ⌘Q quits the app when the panel is focused
 
 ## Notes
 

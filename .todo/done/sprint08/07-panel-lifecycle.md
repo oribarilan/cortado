@@ -6,7 +6,7 @@ status: pending
 
 ## Goal
 
-Polish the main screen panel's show/hide behavior to feel instant and correct across all edge cases.
+Polish the panel's show/hide behavior to feel instant and correct across all edge cases.
 
 ## Acceptance Criteria
 
@@ -20,7 +20,7 @@ Polish the main screen panel's show/hide behavior to feel instant and correct ac
 - [ ] Panel appears on the monitor where the cursor is (centered)
 - [ ] Multi-monitor: correct centering when displays have different sizes/arrangements
 - [ ] Panel does not steal focus from the menubar panel (both can exist but only one is key at a time)
-- [ ] Two NSPanels coexisting: verify that resign-key events are scoped — showing/hiding the main screen must not interfere with the menubar panel's visibility, and vice versa. Each panel's delegate should check its own window label before acting.
+- [ ] Two NSPanels coexisting: verify that resign-key events are scoped — showing/hiding the panel must not interfere with the menubar panel's visibility, and vice versa. Each panel's delegate should check its own window label before acting.
 
 ## Notes
 

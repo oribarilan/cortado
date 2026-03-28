@@ -1,20 +1,20 @@
 ---
 sprint: 8
-theme: Main Screen — Floating Keyboard-Centric Panel
+theme: Panel — Floating Keyboard-Centric Window
 status: pending
 ---
 
-# Sprint 08 — Main Screen
+# Sprint 08 — Panel
 
 ## Theme
 
-Build a floating, keyboard-centric main screen that coexists with the existing menubar panel. Opened via a global hotkey (⌘+Shift+Space), it presents a split-panel UI: compact activity list on the left, live detail pane on the right. Activities are navigated with arrow keys, Enter opens the selected activity's URL, Esc dismisses.
+Build a floating, keyboard-centric panel that coexists with the existing menubar panel. Opened via a global hotkey (⌘+Shift+Space), it presents a split-panel UI: compact activity list on the left, live detail pane on the right. Activities are navigated with arrow keys, Enter opens the selected activity's URL, Esc dismisses.
 
 Design reference: **Variant 1 (Clean Split)** from `showcases/main-screen-split-drilldown-showcase.html`, with an optional **"Needs Attention" priority section** (Variant 5) that can be toggled on/off.
 
 ## Decisions
 
-- **Coexists with menubar panel** — both remain accessible. Tray click opens the menubar dropdown; ⌘+Shift+Space opens the main screen.
+- **Coexists with menubar panel** — both remain accessible. Tray click opens the menubar dropdown; ⌘+Shift+Space opens the panel.
 - **Separate Tauri window** — own HTML entrypoint (`main-screen.html`), own React root, own NSPanel lifecycle. Shares types/components with the menubar panel via imports.
 - **Global hotkey**: ⌘+Shift+Space (toggle — press again to hide).
 - **Panel positioning**: Centered on the active monitor.
@@ -33,7 +33,7 @@ Tasks 01–03 are foundational and sequential. Tasks 05–07 and 10 can be paral
 
 3. **03-detail-pane** — Build the right-side detail pane. Shows feed label, title, status chip, field rows, and "Open" link for the focused activity. Updates live as keyboard focus moves through the list.
 
-4. **05-priority-section** — Add the optional "Needs Attention" cross-feed section at the top of the list. Shows activities with `AttentionNegative` status from any feed, with a feed hint label. Toggle stored in app settings (`main_screen.show_priority_section`), accessible from Settings (General section). Includes Rust-side schema changes to `AppSettings` and new Tauri commands to read/write the setting.
+4. **05-priority-section** — Add the optional "Needs Attention" cross-feed section at the top of the list. Shows activities with `AttentionNegative` status from any feed, with a feed hint label. Toggle stored in app settings (`panel.show_priority_section`), accessible from Settings (General section). Includes Rust-side schema changes to `AppSettings` and new Tauri commands to read/write the setting.
 
 5. **06-styling-polish** — Match the Clean Split showcase styling. OKLCH color tokens, vibrancy, blur, dark/light mode, status colors, focus outlines. Ensure visual consistency with the menubar panel's design language.
 
@@ -41,15 +41,15 @@ Tasks 01–03 are foundational and sequential. Tasks 05–07 and 10 can be paral
 
 7. **08-integration** — End-to-end testing. Verify coexistence with menubar panel, hotkey toggle, keyboard nav, priority section toggle, app-mode toggle, open activity, Esc dismiss. Run `just check`.
 
-8. **09-spec-update** — Update `specs/main.md` to document the main screen: hotkey, behavior, priority section, app mode, coexistence with menubar panel.
+8. **09-spec-update** — Update `specs/main.md` to document the panel: hotkey, behavior, priority section, app mode, coexistence with menubar panel.
 
-9. **10-app-mode** — Make the menubar (tray icon + menubar panel) optional via a `show_menubar` setting. App launch/reopen (double-click, Spotlight, `open -a`) always opens the main screen. Settings accessible from the main screen footer. Global hotkey always registered regardless of menubar setting. Includes Rust-side schema changes to `AppSettings` and new Tauri commands to read/write the setting.
+9. **10-app-mode** — Make the menubar (tray icon + menubar panel) optional via a `general.show_menubar` setting. App launch/reopen (double-click, Spotlight, `open -a`) always opens the panel. Settings accessible from the panel footer. Global hotkey always registered regardless of menubar setting. Includes Rust-side schema changes to `AppSettings` and new Tauri commands to read/write the setting.
 
 10. **11-open-app-button** — Add "Open App" to tray right-click menu and menubar panel footer.
 
 11. **12-close-panel-on-action** — Close the menubar panel when "Open App" or "Settings" is clicked in its footer.
 
-12. **13-focus-highlight-alignment** — Align the main screen's focused-row styling with the app's design language (outline-only, keyboard-gated).
+12. **13-focus-highlight-alignment** — Align the panel's focused-row styling with the app's design language (outline-only, keyboard-gated).
 
 13. **15-ado-pr-url-simplify** — Replace ADO PR `org` + `project` + `repo` fields with a single repository URL. Breaking config change.
 
@@ -62,5 +62,5 @@ Tasks 01–03 are foundational and sequential. Tasks 05–07 and 10 can be paral
 - **NSPanel logic** lives in `fns.rs` (not `panel.rs`). It's hardcoded to the `"main"` window label. Needs refactoring or parallel implementation for the main-screen window.
 - **`panel.rs`** handles tray icon/menu wiring, not NSPanel conversion.
 - **Vite multi-page** is already set up (`index.html` + `settings.html`). Adding a third input is straightforward.
-- **Settings window pattern** (`settings.html` → `src/settings/main.tsx` → `SettingsApp.tsx` + CSS) should be followed for the main-screen.
+- **Settings window pattern** (`settings.html` → `src/settings/main.tsx` → `SettingsApp.tsx` + CSS) should be followed for the panel.
 - **Shared types** don't exist yet — `FeedSnapshot`/`Activity`/`StatusKind` types are duplicated across `App.tsx` and `SettingsApp.tsx`. Task 02 should extract these.

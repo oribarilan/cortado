@@ -6,17 +6,17 @@ status: pending
 
 ## Goal
 
-Document the main screen feature in the app specification.
+Document the panel feature in the app specification.
 
 ## Acceptance Criteria
 
-- [ ] `specs/main.md` updated with a Main Screen section covering:
+- [ ] `specs/main.md` updated with a Panel section covering:
   - Purpose and relationship to menubar panel
   - Global hotkey (⌘+Shift+Space)
   - Panel behavior (floating, centered, keyboard-centric)
   - UI layout (split: list + detail)
   - Priority section (optional, toggleable)
-  - App mode (`show_menubar` setting)
+  - App mode (`general.show_menubar` setting)
   - Keyboard navigation model
   - Panel lifecycle (show/hide/reset)
 - [ ] Any new terminology added to `specs/glossary.md` if needed
