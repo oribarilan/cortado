@@ -79,6 +79,9 @@ fn main() {
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,
+            app_settings::get_settings_path,
+            app_settings::open_settings_file,
+            app_settings::reveal_settings_file,
             command::open_notification_settings,
             command::send_test_notification
         ])

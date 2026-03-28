@@ -256,6 +256,7 @@ function SettingsApp() {
   const [feeds, setFeeds] = useState<FeedConfigDto[]>([]);
   const [feedsLoading, setFeedsLoading] = useState(true);
   const [configPath, setConfigPath] = useState("");
+  const [settingsPath, setSettingsPath] = useState("");
 
   // Edit state
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -311,6 +312,9 @@ function SettingsApp() {
     void loadFeeds();
     invoke<string>("get_config_path")
       .then(setConfigPath)
+      .catch(() => {});
+    invoke<string>("get_settings_path")
+      .then(setSettingsPath)
       .catch(() => {});
   }, [loadFeeds]);
 
@@ -709,6 +713,20 @@ function SettingsApp() {
                 Reset to defaults
               </button>
             </div>
+
+            {settingsPath && (
+              <div className="config-path-bar">
+                <span className="config-path-text">{settingsPath}</span>
+                <div className="config-path-actions">
+                  <button className="config-path-btn" onClick={() => { void invoke("open_settings_file"); }}>
+                    Open in editor
+                  </button>
+                  <button className="config-path-btn" onClick={() => { void invoke("reveal_settings_file"); }}>
+                    Reveal
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : section === "notifications" ? (
           <>

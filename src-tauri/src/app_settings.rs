@@ -1,6 +1,7 @@
 use std::{
     fs,
     path::{Path, PathBuf},
+    process::Command,
     sync::Arc,
 };
 
@@ -236,6 +237,56 @@ pub async fn save_settings(
     if let Err(err) = app_handle.emit("appearance-changed", &payload) {
         eprintln!("failed emitting appearance-changed event: {err}");
     }
+
+    Ok(())
+}
+
+/// Tauri command: return the app settings file path.
+#[tauri::command]
+pub fn get_settings_path() -> Result<String, String> {
+    let path = settings_path().map_err(|e| e.to_string())?;
+    Ok(path.display().to_string())
+}
+
+/// Tauri command: open the settings file in the default editor.
+#[tauri::command]
+pub fn open_settings_file() -> Result<(), String> {
+    let path = settings_path().map_err(|e| e.to_string())?;
+
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("failed creating config directory: {e}"))?;
+        }
+        fs::write(&path, "").map_err(|e| format!("failed creating settings file: {e}"))?;
+    }
+
+    Command::new("open")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("failed to open settings file: {e}"))?;
+
+    Ok(())
+}
+
+/// Tauri command: reveal the settings file in Finder.
+#[tauri::command]
+pub fn reveal_settings_file() -> Result<(), String> {
+    let path = settings_path().map_err(|e| e.to_string())?;
+
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("failed creating config directory: {e}"))?;
+        }
+        fs::write(&path, "").map_err(|e| format!("failed creating settings file: {e}"))?;
+    }
+
+    Command::new("open")
+        .arg("-R")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("failed to reveal settings file: {e}"))?;
 
     Ok(())
 }
