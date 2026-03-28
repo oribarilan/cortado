@@ -115,7 +115,7 @@ body,
 }
 
 .main-screen-root.keyboard-active .ms-activity-row.focused {
-  outline: 2px solid color-mix(in oklch, var(--status-running), white 20%);
+  outline: 2px solid color-mix(in oklch, var(--accent), white 20%);
   outline-offset: -2px;
   border-radius: var(--radius-sm);
 }
@@ -273,7 +273,7 @@ body,
   gap: var(--space-2);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
-  color: var(--status-running);
+  color: var(--accent);
   background: none;
   border: none;
   padding: 0;
@@ -363,13 +363,15 @@ body,
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
-  color: var(--text-tertiary);
-  transition: background var(--dur-hover) var(--ease-default);
+  color: var(--accent);
+  opacity: 0.7;
+  transition: background var(--dur-hover) var(--ease-default), opacity var(--dur-hover) var(--ease-default);
   line-height: 1;
 }
 
 .ms-footer-settings:hover {
   background: var(--hover);
+  opacity: 1;
 }
 
 /* ── Animations ────────────────────────────────── */
