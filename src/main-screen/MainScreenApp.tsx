@@ -234,14 +234,14 @@ function MainScreenApp() {
         return;
       }
 
-      if (e.key === "ArrowDown") {
+      if (e.key === "ArrowDown" || (e.key === "j" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
         setFocusIndex((i) => Math.min(i + 1, flatList.length - 1));
         return;
       }
 
-      if (e.key === "ArrowUp") {
+      if (e.key === "ArrowUp" || (e.key === "k" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
         setFocusIndex((i) => Math.max(i - 1, 0));
@@ -398,7 +398,7 @@ function MainScreenApp() {
           {refreshing ? (
             <><span className="ms-footer-spinner" />Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
           ) : (
-            <><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
+            <><kbd>↑</kbd><kbd>↓</kbd><kbd>j</kbd><kbd>k</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
           )}
         </span>
         <button

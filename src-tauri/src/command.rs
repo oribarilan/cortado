@@ -5,6 +5,7 @@ use tauri::{AppHandle, Emitter, Manager, WebviewWindowBuilder};
 use tauri_nspanel::ManagerExt;
 
 use crate::{
+    app_settings::{self, AppSettingsState},
     feed::{BackgroundPoller, FeedRegistry, FeedSnapshot},
     fns, main_screen, ui_snapshot,
 };
@@ -153,4 +154,39 @@ pub fn send_test_notification(app_handle: AppHandle) -> Result<(), String> {
         .body("Test notification -- notifications are working!")
         .show()
         .map_err(|err| format!("failed to send test notification: {err}"))
+}
+
+/// Updates the global hotkey registration and persists the new value.
+///
+/// `hotkey` is a Tauri shortcut string (e.g. `"super+shift+space"`)
+/// or an empty string to clear the hotkey entirely.
+#[tauri::command]
+pub async fn set_global_hotkey(
+    hotkey: String,
+    state: tauri::State<'_, AppSettingsState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    use tauri_plugin_global_shortcut::GlobalShortcutExt;
+
+    // Unregister all existing shortcuts.
+    app_handle
+        .global_shortcut()
+        .unregister_all()
+        .map_err(|e| format!("failed to unregister shortcuts: {e}"))?;
+
+    // Register the new shortcut (uses the handler set by the Builder in main.rs).
+    if !hotkey.is_empty() {
+        app_handle
+            .global_shortcut()
+            .register(hotkey.as_str())
+            .map_err(|e| format!("failed to register shortcut '{hotkey}': {e}"))?;
+    }
+
+    // Persist to settings.
+    let mut settings = state.read().await.clone();
+    settings.general.global_hotkey = hotkey;
+    app_settings::save_settings_to_file(&settings).map_err(|e| e.to_string())?;
+    state.update(settings).await;
+
+    Ok(())
 }

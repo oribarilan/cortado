@@ -27,6 +27,10 @@ fn default_text_size() -> String {
     "m".to_string()
 }
 
+fn default_global_hotkey() -> String {
+    "super+shift+space".to_string()
+}
+
 /// Global app settings persisted in `~/.config/cortado/settings.toml`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -48,6 +52,10 @@ pub struct GeneralSettings {
     pub text_size: String,
     #[serde(default = "default_true")]
     pub show_menubar: bool,
+    /// Global hotkey to toggle the panel. Empty string = disabled.
+    /// Format: Tauri shortcut string, e.g. `"super+shift+space"`.
+    #[serde(default = "default_global_hotkey")]
+    pub global_hotkey: String,
 }
 
 impl Default for GeneralSettings {
@@ -56,6 +64,7 @@ impl Default for GeneralSettings {
             theme: default_theme(),
             text_size: default_text_size(),
             show_menubar: true,
+            global_hotkey: default_global_hotkey(),
         }
     }
 }
@@ -447,6 +456,7 @@ mod tests {
                 theme: "dark".to_string(),
                 text_size: "l".to_string(),
                 show_menubar: false,
+                global_hotkey: "super+alt+KeyK".to_string(),
             },
             panel: PanelSettings {
                 show_priority_section: false,
@@ -463,7 +473,38 @@ mod tests {
         assert_eq!(loaded.general.theme, "dark");
         assert_eq!(loaded.general.text_size, "l");
         assert!(!loaded.general.show_menubar);
+        assert_eq!(loaded.general.global_hotkey.as_str(), "super+alt+KeyK");
         assert!(!loaded.panel.show_priority_section);
+
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn global_hotkey_none_round_trips() {
+        let path = temp_settings_path("hotkey-none");
+
+        let settings = AppSettings {
+            general: GeneralSettings {
+                global_hotkey: String::new(),
+                ..GeneralSettings::default()
+            },
+            ..AppSettings::default()
+        };
+
+        save_settings_to_path(&settings, &path).expect("save should succeed");
+        let loaded = load_settings_from_path(&path).expect("load should succeed");
+        assert!(loaded.general.global_hotkey.is_empty());
+
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn missing_global_hotkey_uses_default() {
+        let path = temp_settings_path("hotkey-default");
+        fs::write(&path, "[general]\ntheme = \"dark\"\n").expect("write");
+
+        let loaded = load_settings_from_path(&path).expect("should use default");
+        assert_eq!(loaded.general.global_hotkey.as_str(), "super+shift+space");
 
         let _ = fs::remove_file(&path);
     }

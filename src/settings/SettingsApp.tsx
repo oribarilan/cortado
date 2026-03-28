@@ -22,6 +22,7 @@ type GeneralSettings = {
   theme: string;
   text_size: string;
   show_menubar: boolean;
+  global_hotkey: string;
 };
 
 type PanelSettings = {
@@ -221,6 +222,60 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
   return errors;
 }
 
+/** Modifier key names in JS KeyboardEvent. */
+const MODIFIER_KEYS = new Set(["Shift", "Meta", "Alt", "Control"]);
+
+/** Maps a JS KeyboardEvent.code to a short display label. */
+function codeToDisplayKey(code: string): string {
+  if (code.startsWith("Key")) return code.slice(3);
+  if (code.startsWith("Digit")) return code.slice(5);
+  if (code === "Space") return "Space";
+  if (code === "Minus") return "-";
+  if (code === "Equal") return "=";
+  if (code === "BracketLeft") return "[";
+  if (code === "BracketRight") return "]";
+  if (code === "Backslash") return "\\";
+  if (code === "Semicolon") return ";";
+  if (code === "Quote") return "'";
+  if (code === "Comma") return ",";
+  if (code === "Period") return ".";
+  if (code === "Slash") return "/";
+  if (code === "Backquote") return "`";
+  return code;
+}
+
+/** Converts a Tauri shortcut string (e.g. "super+shift+Space") to macOS display symbols. */
+function formatShortcut(shortcut: string): string {
+  const parts = shortcut.split("+");
+  const symbols: string[] = [];
+  let key = "";
+  for (const part of parts) {
+    const upper = part.toUpperCase();
+    if (upper === "SUPER" || upper === "CMD" || upper === "COMMAND") symbols.push("\u2318");
+    else if (upper === "CONTROL" || upper === "CTRL") symbols.push("\u2303");
+    else if (upper === "ALT" || upper === "OPTION") symbols.push("\u2325");
+    else if (upper === "SHIFT") symbols.push("\u21E7");
+    else key = codeToDisplayKey(part);
+  }
+  return symbols.join("") + key;
+}
+
+/** Converts a JS KeyboardEvent to a Tauri shortcut string, or null if invalid. */
+function keyEventToShortcut(e: KeyboardEvent): string | null {
+  // Ignore modifier-only presses.
+  if (MODIFIER_KEYS.has(e.key)) return null;
+  // Require at least one modifier.
+  if (!e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) return null;
+
+  const parts: string[] = [];
+  if (e.metaKey) parts.push("super");
+  if (e.ctrlKey) parts.push("control");
+  if (e.altKey) parts.push("alt");
+  if (e.shiftKey) parts.push("shift");
+  parts.push(e.code);
+  return parts.join("+");
+}
+
 function SettingsApp() {
   useAppearance();
   const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
@@ -242,6 +297,9 @@ function SettingsApp() {
   const [showPrioritySection, setShowPrioritySection] = useState(true);
   const [theme, setTheme] = useState("system");
   const [textSize, setTextSize] = useState("m");
+  const [globalHotkey, setGlobalHotkey] = useState("super+shift+space");
+  const [hotkeyRecording, setHotkeyRecording] = useState(false);
+  const [hotkeyError, setHotkeyError] = useState<string | null>(null);
 
   // Notification settings state
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
@@ -303,6 +361,7 @@ function SettingsApp() {
         setShowPrioritySection(s.panel?.show_priority_section ?? true);
         setTheme(s.general?.theme ?? "system");
         setTextSize(s.general?.text_size ?? "m");
+        setGlobalHotkey(s.general?.global_hotkey ?? "super+shift+space");
       })
       .catch(() => {})
       .finally(() => setNotifLoading(false));
@@ -353,7 +412,7 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_menubar: showMenubar, theme, text_size: textSize },
+          general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
           panel: { show_priority_section: showPrioritySection },
           notifications: updated,
         },
@@ -362,7 +421,7 @@ function SettingsApp() {
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [showPrioritySection, showMenubar, theme, textSize, showToast]);
+  }, [showPrioritySection, showMenubar, theme, textSize, globalHotkey, showToast]);
 
   const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
@@ -378,7 +437,7 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize },
+          general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize, global_hotkey: globalHotkey },
           panel: { show_priority_section: newPriority },
           notifications: notifSettings,
         },
@@ -387,7 +446,42 @@ function SettingsApp() {
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, showToast]);
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, showToast]);
+
+  const saveHotkey = useCallback(async (hotkey: string) => {
+    setHotkeyError(null);
+    try {
+      await invoke("set_global_hotkey", { hotkey });
+      setGlobalHotkey(hotkey);
+      showToast();
+    } catch (err) {
+      setHotkeyError(err instanceof Error ? err.message : String(err));
+    }
+  }, [showToast]);
+
+  // Recording mode: capture next key combo
+  useEffect(() => {
+    if (!hotkeyRecording) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.key === "Escape") {
+        setHotkeyRecording(false);
+        return;
+      }
+
+      const shortcut = keyEventToShortcut(e);
+      if (shortcut) {
+        setHotkeyRecording(false);
+        void saveHotkey(shortcut);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, [hotkeyRecording, saveHotkey]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -669,7 +763,7 @@ function SettingsApp() {
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Show tray icon</div>
-                <div className="setting-hint">Show tray icon and tray menu. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
+                <div className="setting-hint">Show tray icon and tray menu. When off, use the global shortcut or Spotlight to access Cortado.</div>
               </div>
               <button
                 className={`toggle ${showMenubar ? "on" : ""}`}
@@ -692,6 +786,43 @@ function SettingsApp() {
                 aria-pressed={showPrioritySection}
                 aria-label="Show Needs Attention section"
               />
+            </div>
+
+            <div className="section-header">Keyboard</div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Global shortcut</div>
+                <div className="setting-hint">Toggle the panel from anywhere, even when Cortado is in the background</div>
+                {hotkeyError && <div className="hotkey-error">{hotkeyError}</div>}
+              </div>
+              <div className="hotkey-recorder">
+                <div className={`hotkey-display ${hotkeyRecording ? "recording" : ""} ${!globalHotkey && !hotkeyRecording ? "empty" : ""}`}>
+                  {hotkeyRecording
+                    ? "Press a shortcut\u2026"
+                    : globalHotkey
+                      ? formatShortcut(globalHotkey)
+                      : "Not set"}
+                </div>
+                <button
+                  className={`hotkey-record-btn ${hotkeyRecording ? "recording" : ""}`}
+                  onClick={() => {
+                    setHotkeyError(null);
+                    setHotkeyRecording(!hotkeyRecording);
+                  }}
+                >
+                  {hotkeyRecording ? "Cancel" : "Record"}
+                </button>
+                {globalHotkey && !hotkeyRecording && (
+                  <button
+                    className="hotkey-clear-btn"
+                    onClick={() => { void saveHotkey(""); }}
+                    title="Clear shortcut"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="btn-row">
@@ -1202,7 +1333,7 @@ function SettingsApp() {
             <div className="modal-title">Reset to defaults</div>
             <div className="modal-body">
               {resetConfirm === "general"
-                ? "Reset all general settings (theme, text size, behavior) to their default values?"
+                ? "Reset all general settings (theme, text size, shortcut, behavior) to their default values?"
                 : "Reset all notification settings to their default values?"}
             </div>
             <div className="modal-actions">
@@ -1222,6 +1353,7 @@ function SettingsApp() {
                     });
                   } else {
                     void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, theme: "system", textSize: "m" });
+                    void saveHotkey("super+shift+space");
                     if (autostart) void toggleAutostart();
                   }
                 }}

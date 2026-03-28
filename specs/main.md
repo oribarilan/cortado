@@ -303,6 +303,15 @@ Clicking a notification is handled by the OS. Future: open the activity's URL.
 ### `settings.toml` format
 
 ```toml
+[general]
+theme = "system"                         # "system", "light", or "dark"
+text_size = "m"                          # "s", "m", "l", or "xl"
+show_menubar = true
+global_hotkey = "super+shift+space"      # Tauri shortcut string, or omit to disable
+
+[panel]
+show_priority_section = true
+
 [notifications]
 enabled = true
 mode = "all"               # "all", "escalation_only", or "specific_kinds"
@@ -337,7 +346,7 @@ The panel is a floating, keyboard-centric window opened via a global hotkey. It 
 
 ### Activation
 
-- **Global hotkey**: ⌘+Shift+Space toggles the panel (press again to hide).
+- **Global hotkey**: Configurable shortcut (default: ⌘+Shift+Space) toggles the panel (press again to hide). The shortcut can be changed or cleared in Settings > General > Keyboard.
 - **App reopen**: Launching Cortado while it's already running (via Spotlight, Finder, or `open -a`) also opens the panel.
 
 ### Panel behavior
@@ -367,7 +376,7 @@ When enabled, a "⚑ Needs Attention" section appears at the top of the list, be
 
 | Key | Action |
 |-----|--------|
-| ↑/↓ | Navigate activities |
+| ↑/↓ or j/k | Navigate activities |
 | Enter | Open focused activity URL |
 | Esc | Close panel |
 | ⌘, | Open Settings |
@@ -382,6 +391,6 @@ Shows keyboard hints and a gear icon to open Settings.
 The menubar (tray icon + menubar panel) is optional via the `general.show_menubar` setting.
 
 - `general.show_menubar = true` (default): Both tray icon and menubar panel are available. The panel is also available via hotkey.
-- `general.show_menubar = false`: No tray icon. The app is accessed via the global hotkey (⌘+Shift+Space) or by re-launching from Spotlight/Finder.
+- `general.show_menubar = false`: No tray icon. The app is accessed via the global hotkey or by re-launching from Spotlight/Finder.
 
 The setting takes effect on next app launch. Settings are always accessible from the panel footer or via ⌘, from the panel.

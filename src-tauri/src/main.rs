@@ -46,6 +46,7 @@ fn main() {
         app_settings::AppSettings::default()
     });
     let show_menubar = initial_settings.general.show_menubar;
+    let initial_hotkey = initial_settings.general.global_hotkey.clone();
     let app_settings_state = AppSettingsState::new(initial_settings);
 
     tauri::Builder::default()
@@ -83,7 +84,8 @@ fn main() {
             app_settings::open_settings_file,
             app_settings::reveal_settings_file,
             command::open_notification_settings,
-            command::send_test_notification
+            command::send_test_notification,
+            command::set_global_hotkey
         ])
         .setup({
             let feed_registry = feed_registry.clone();
@@ -101,13 +103,13 @@ fn main() {
                     panel::create(&app_handle)?;
                 }
 
-                // Register ⌘+Shift+Space global shortcut to toggle the main screen.
+                // Register global shortcut plugin with handler; then register
+                // the user-configured hotkey (or default ⌘+Shift+Space).
                 {
-                    use tauri_plugin_global_shortcut::ShortcutState;
+                    use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
                     app.handle().plugin(
                         tauri_plugin_global_shortcut::Builder::new()
-                            .with_shortcuts(["super+shift+space"])?
                             .with_handler(|app, _shortcut, event| {
                                 if event.state == ShortcutState::Pressed {
                                     main_screen::toggle_main_screen_panel(app);
@@ -115,6 +117,12 @@ fn main() {
                             })
                             .build(),
                     )?;
+
+                    if !initial_hotkey.is_empty() {
+                        if let Err(err) = app.global_shortcut().register(initial_hotkey.as_str()) {
+                            eprintln!("failed to register global hotkey '{initial_hotkey}': {err}");
+                        }
+                    }
                 }
 
                 let updates = poller.subscribe();
