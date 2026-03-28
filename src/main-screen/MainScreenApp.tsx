@@ -109,6 +109,8 @@ function MainScreenApp() {
   const [loading, setLoading] = useState(true);
   const [focusIndex, setFocusIndex] = useState(0);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -178,6 +180,11 @@ function MainScreenApp() {
           .catch(() => {});
       });
       unlistenFns.push(unlistenShow);
+
+      const unlistenProgress = await listen<[number, number]>("refresh-progress", (event) => {
+        setRefreshProgress(event.payload);
+      });
+      unlistenFns.push(unlistenProgress);
     };
 
     void bootstrap();
@@ -194,6 +201,20 @@ function MainScreenApp() {
     const url = supportsOpen(focusedItem.activity);
     if (url) invoke("open_activity", { url }).catch(console.error);
   }, [focusedItem]);
+
+  const refreshFeeds = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setRefreshProgress(null);
+    try {
+      await invoke("refresh_feeds");
+    } catch (err) {
+      console.error("refresh failed:", err);
+    } finally {
+      setRefreshing(false);
+      setRefreshProgress(null);
+    }
+  }, [refreshing]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -233,11 +254,17 @@ function MainScreenApp() {
         openFocusedActivity();
         return;
       }
+
+      if (e.key === "r" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        void refreshFeeds();
+        return;
+      }
     };
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [flatList.length, openFocusedActivity]);
+  }, [flatList.length, openFocusedActivity, refreshFeeds]);
 
   // Scroll focused row into view
   useEffect(() => {
@@ -368,7 +395,11 @@ function MainScreenApp() {
       {/* Footer */}
       <footer className="ms-footer">
         <span className="ms-footer-hints">
-          <kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close
+          {refreshing ? (
+            <>Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
+          ) : (
+            <><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
+          )}
         </span>
         <button
           className="ms-footer-settings"
