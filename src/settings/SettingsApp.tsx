@@ -389,13 +389,13 @@ function SettingsApp() {
   }, []);
 
   const [testNotifError, setTestNotifError] = useState<string | null>(null);
-  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState<"general" | "notifications" | null>(null);
   const [modalExiting, setModalExiting] = useState(false);
 
   const closeModal = useCallback(() => {
     setModalExiting(true);
     scheduleAnim(() => {
-      setResetConfirm(false);
+      setResetConfirm(null);
       setModalExiting(false);
     }, 135); // ~75% of --duration-normal (180ms)
   }, [scheduleAnim]);
@@ -681,6 +681,16 @@ function SettingsApp() {
                 aria-label="Show Needs Attention section"
               />
             </div>
+
+            <div className="btn-row">
+              <div style={{ flex: 1 }} />
+              <button
+                className="btn-danger-sm"
+                onClick={() => setResetConfirm("general")}
+              >
+                Reset to defaults
+              </button>
+            </div>
           </>
         ) : section === "notifications" ? (
           <>
@@ -865,7 +875,7 @@ function SettingsApp() {
                   <div style={{ flex: 1 }} />
                   <button
                     className="btn-danger-sm"
-                    onClick={() => setResetConfirm(true)}
+                    onClick={() => setResetConfirm("notifications")}
                   >
                     Reset to defaults
                   </button>
@@ -1169,20 +1179,30 @@ function SettingsApp() {
         <div className={`modal-backdrop ${modalExiting ? "exiting" : ""}`} onClick={closeModal}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Reset to defaults</div>
-            <div className="modal-body">Reset all notification settings to their default values?</div>
+            <div className="modal-body">
+              {resetConfirm === "general"
+                ? "Reset all general settings (theme, text size, behavior) to their default values?"
+                : "Reset all notification settings to their default values?"}
+            </div>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={closeModal}>Cancel</button>
               <button
                 className="btn-danger-sm"
                 onClick={() => {
+                  const target = resetConfirm;
                   closeModal();
-                  void saveNotifSettings({
-                    enabled: true,
-                    mode: "all",
-                    delivery: "grouped",
-                    notify_new_activities: true,
-                    notify_removed_activities: true,
-                  }, "enable");
+                  if (target === "notifications") {
+                    void saveNotifSettings({
+                      enabled: true,
+                      mode: "all",
+                      delivery: "grouped",
+                      notify_new_activities: true,
+                      notify_removed_activities: true,
+                    }, "enable");
+                  } else {
+                    void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, theme: "system", textSize: "m" });
+                    if (autostart) void toggleAutostart();
+                  }
                 }}
               >
                 Reset
