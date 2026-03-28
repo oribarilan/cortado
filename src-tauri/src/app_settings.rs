@@ -32,6 +32,7 @@ fn default_text_size() -> String {
 #[serde(default)]
 pub struct AppSettings {
     pub general: GeneralSettings,
+    pub panel: PanelSettings,
     pub notifications: NotificationSettings,
 }
 
@@ -47,9 +48,6 @@ pub struct GeneralSettings {
     pub text_size: String,
     #[serde(default = "default_true")]
     pub show_menubar: bool,
-    /// Show the "Needs Attention" priority section in the main screen.
-    #[serde(default = "default_true")]
-    pub show_priority_section: bool,
 }
 
 impl Default for GeneralSettings {
@@ -58,6 +56,22 @@ impl Default for GeneralSettings {
             theme: default_theme(),
             text_size: default_text_size(),
             show_menubar: true,
+        }
+    }
+}
+
+/// Main screen (panel) display preferences under `[panel]` in settings.toml.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct PanelSettings {
+    /// Show the "Needs Attention" priority section at the top of the activity list.
+    #[serde(default = "default_true")]
+    pub show_priority_section: bool,
+}
+
+impl Default for PanelSettings {
+    fn default() -> Self {
+        Self {
             show_priority_section: true,
         }
     }
@@ -433,6 +447,8 @@ mod tests {
                 theme: "dark".to_string(),
                 text_size: "l".to_string(),
                 show_menubar: false,
+            },
+            panel: PanelSettings {
                 show_priority_section: false,
             },
             ..AppSettings::default()
@@ -441,16 +457,13 @@ mod tests {
         save_settings_to_path(&settings, &path).expect("save should succeed");
         let raw = fs::read_to_string(&path).unwrap();
         assert!(raw.contains("[general]"), "should have [general] section");
-        assert!(
-            !raw.contains("[main_screen]"),
-            "should not have [main_screen]"
-        );
+        assert!(raw.contains("[panel]"), "should have [panel] section");
 
         let loaded = load_settings_from_path(&path).expect("load should succeed");
         assert_eq!(loaded.general.theme, "dark");
         assert_eq!(loaded.general.text_size, "l");
         assert!(!loaded.general.show_menubar);
-        assert!(!loaded.general.show_priority_section);
+        assert!(!loaded.panel.show_priority_section);
 
         let _ = fs::remove_file(&path);
     }

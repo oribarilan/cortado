@@ -22,11 +22,15 @@ type GeneralSettings = {
   theme: string;
   text_size: string;
   show_menubar: boolean;
+};
+
+type PanelSettings = {
   show_priority_section: boolean;
 };
 
 type AppSettings = {
   general: GeneralSettings;
+  panel: PanelSettings;
   notifications: NotificationSettings;
 };
 
@@ -296,7 +300,7 @@ function SettingsApp() {
       .then((s) => {
         setNotifSettings(s.notifications);
         setShowMenubar(s.general?.show_menubar ?? true);
-        setShowPrioritySection(s.general?.show_priority_section ?? true);
+        setShowPrioritySection(s.panel?.show_priority_section ?? true);
         setTheme(s.general?.theme ?? "system");
         setTextSize(s.general?.text_size ?? "m");
       })
@@ -349,7 +353,8 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_priority_section: showPrioritySection, show_menubar: showMenubar, theme, text_size: textSize },
+          general: { show_menubar: showMenubar, theme, text_size: textSize },
+          panel: { show_priority_section: showPrioritySection },
           notifications: updated,
         },
       });
@@ -373,7 +378,8 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_priority_section: newPriority, show_menubar: newMenubar, theme: newTheme, text_size: newTextSize },
+          general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize },
+          panel: { show_priority_section: newPriority },
           notifications: notifSettings,
         },
       });
