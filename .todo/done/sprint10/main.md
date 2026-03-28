@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 ---
 
 # Sprint 10 -- Hotkeys
