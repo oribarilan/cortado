@@ -148,7 +148,7 @@
 
 /* ── Text size scaling ───────────────────────────── */
 
-[data-text-size="s"] { font-size: 13px; }
+[data-text-size="s"] { font-size: 12px; }
 /* default (m) is 14px, set on :root above */
-[data-text-size="l"] { font-size: 15px; }
-[data-text-size="xl"] { font-size: 16px; }
+[data-text-size="l"] { font-size: 16px; }
+[data-text-size="xl"] { font-size: 18px; }

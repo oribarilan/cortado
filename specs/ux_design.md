@@ -88,10 +88,10 @@ Text size is controlled by scaling the root `font-size` on `<html>`:
 
 | Level | Root size |
 |-------|-----------|
-| S | 13px |
+| S | 12px |
 | M (default) | 14px |
-| L | 15px |
-| XL | 16px |
+| L | 16px |
+| XL | 18px |
 
 Because the type scale uses `rem`, all text sizes scale proportionally. Spacing tokens remain in `px` because panel dimensions are fixed pixel values and shouldn't shift with text size.
 
