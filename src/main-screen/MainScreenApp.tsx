@@ -396,7 +396,7 @@ function MainScreenApp() {
       <footer className="ms-footer">
         <span className="ms-footer-hints">
           {refreshing ? (
-            <>Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
+            <><span className="ms-footer-spinner" />Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
           ) : (
             <><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
           )}

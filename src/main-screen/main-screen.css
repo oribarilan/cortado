@@ -304,6 +304,21 @@ body,
   min-height: 30px;
 }
 
+.ms-footer-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid color-mix(in oklch, var(--text-tertiary), transparent 60%);
+  border-top-color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  animation: ms-spin 600ms linear infinite;
+  margin-right: var(--space-2);
+}
+
+@keyframes ms-spin {
+  to { transform: rotate(360deg); }
+}
+
 .ms-footer-hints {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
@@ -424,7 +439,8 @@ body,
   .ms-skeleton,
   .ms-detail-content,
   .ms-priority-section,
-  .ms-footer-settings {
+  .ms-footer-settings,
+  .ms-footer-spinner {
     transition: none !important;
     animation: none !important;
   }
