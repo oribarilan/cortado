@@ -187,6 +187,10 @@ body,
   color: var(--status-attention-positive);
   background: color-mix(in oklch, var(--status-attention-positive), transparent 88%);
 }
+.ms-chip.kind-idle {
+  color: var(--status-idle);
+  background: color-mix(in oklch, var(--status-idle), transparent 88%);
+}
 
 /* ── Detail pane ───────────────────────────────── */
 

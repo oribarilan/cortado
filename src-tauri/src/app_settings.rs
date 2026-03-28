@@ -233,7 +233,9 @@ pub async fn save_settings(
     state.update(settings).await;
 
     // Notify all windows so they can update data-theme / data-text-size attributes.
-    let _ = app_handle.emit("appearance-changed", &payload);
+    if let Err(err) = app_handle.emit("appearance-changed", &payload) {
+        eprintln!("failed emitting appearance-changed event: {err}");
+    }
 
     Ok(())
 }

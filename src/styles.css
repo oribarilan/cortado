@@ -269,6 +269,12 @@ body {
   border-color: color-mix(in oklch, var(--status-attention-positive), transparent 80%);
 }
 
+.status-chip.kind-idle {
+  color: var(--status-idle);
+  background: color-mix(in oklch, var(--status-idle), transparent 91%);
+  border-color: color-mix(in oklch, var(--status-idle), transparent 80%);
+}
+
 .chevron {
   color: var(--text-tertiary);
   font-size: var(--text-lg);
