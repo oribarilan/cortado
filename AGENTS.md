@@ -4,6 +4,8 @@
 
 The app spec lives in `specs/main.md`. Read it before starting any work.
 
+UX design patterns, animation tokens, and feedback conventions are in `specs/ux_design.md`. Read it before any UI or UX work — it captures consistency rules (inline save feedback, reset-to-defaults, reduced-motion coverage) that are easy to miss.
+
 The spec is the source of truth. If during implementation you notice the code diverging from the spec (or vice versa), stop and ask the user whether to update the spec or the implementation. Do not silently let them drift apart.
 
 ## Terminology

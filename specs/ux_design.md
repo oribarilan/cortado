@@ -113,3 +113,83 @@ Four levels covering the range of roundness in the app:
 - `--radius-full` (999px) — pills, dots, fully rounded elements.
 
 The panel root radius was standardized to 10px (previously 10px for menubar, 12px for main screen) for visual consistency.
+
+## Animation System
+
+### Animation tokens
+
+All animation durations and easings are defined as CSS custom properties in `tokens.css`, alongside the color and spacing tokens:
+
+| Token | Value | Use |
+|-------|-------|-----|
+| `--duration-fast` | 100ms | Hover states, micro-interactions |
+| `--duration-normal` | 180ms | Most transitions — expand, crossfade, section switch |
+| `--duration-slow` | 280ms | Larger reveals, modals |
+| `--duration-none` | 0ms | Explicitly non-animated states |
+| `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | Entrances — element arriving |
+| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | State toggles — there and back |
+| `--ease-in` | `cubic-bezier(0.7, 0, 0.84, 0)` | Exits — element leaving |
+
+**No hardcoded durations or easings.** Every `transition` and `animation` property must reference these tokens. This ensures consistent motion language and makes the reduced-motion reset work automatically.
+
+### Reduced motion
+
+`prefers-reduced-motion: reduce` must disable all animations and transitions. The mechanism:
+
+- Each CSS file has a `@media (prefers-reduced-motion: reduce)` block that sets `transition-duration` and `animation-duration` to `0ms` (via `--duration-none`).
+- **Every new animated element must be added to the reduced-motion block.** This is easy to forget — treat it as a mandatory checklist item when adding animations.
+- Functional indicators (spinners for in-progress operations) may keep a slowed-down animation, but spatial movement (slides, scales) must be removed.
+
+### What to animate
+
+Only animate `transform`, `opacity`, and `grid-template-rows`. These properties don't trigger layout recalculation. Never animate `height`, `width`, `margin`, or `padding`.
+
+### Exit animations
+
+Exit animations (modal close, content fade-out) should be ~75% of the entrance duration. They use `--ease-in`, not `--ease-out`.
+
+When an element needs an animated exit before unmounting, use a brief state delay (e.g., `setTimeout` to defer `setState(false)` by the animation duration). Store timeout IDs in a `useRef` and clear them on unmount to prevent state updates on unmounted components.
+
+## Feedback Patterns
+
+### Inline "Saved" indicator
+
+Every user-facing save action that persists a setting must show transient feedback confirming the save succeeded. The established pattern:
+
+1. A `<span className="inline-saved">Saved</span>` element is always in the DOM, with `opacity: 0`.
+2. On save success, add the `.visible` class to fade it in.
+3. After 1.5s, remove `.visible` to fade it out.
+4. Use a state key (e.g., `"appearance"`, `"menubar"`) so only the relevant indicator activates.
+
+**Placement rules:**
+- For section-scoped controls (e.g., theme + text size are both "appearance"), show "Saved" next to the section header.
+- For standalone toggles (e.g., menubar icon), show "Saved" inline next to the control, using the `.control-with-status` wrapper.
+
+### Error banners
+
+Save errors use `.save-error` — a red banner that appears below the form/control area. Error banners should animate in with `feedback-fade-in` (opacity + translateY).
+
+### Consistency rule
+
+**If a feedback pattern exists in one settings section, it must exist in all sections with similar behavior.** Don't ship "Saved" feedback in Notifications but omit it in General. When adding a new settings section, audit existing sections for patterns to replicate.
+
+## Settings UX Consistency
+
+### Reset to defaults
+
+Every settings section with configurable options must have a "Reset to defaults" action. Implementation:
+
+- Place a `btn-danger-sm` button at the bottom-right of the section, inside a `.btn-row`.
+- Trigger a confirmation modal before resetting. The modal is shared — use a discriminated state (`"general" | "notifications" | null`) rather than separate booleans.
+- The modal text must specify which section is being reset.
+- After confirming, apply all default values and persist them.
+
+### Section parity checklist
+
+When adding or modifying a settings section, verify:
+
+- [ ] Inline "Saved" feedback on every save action
+- [ ] "Reset to defaults" button with confirmation modal
+- [ ] Error handling for failed saves
+- [ ] `prefers-reduced-motion` coverage for any new animations
+- [ ] Consistent spacing and layout with other sections
