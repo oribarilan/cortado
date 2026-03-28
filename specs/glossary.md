@@ -24,7 +24,7 @@ See `specs/status.md` for the full status model spec.
 
 | Term | Definition |
 |------|-----------|
-| **Menubar** | The narrow dropdown that appears from the tray icon. Shows feeds and activities in a compact list with inline disclosure. |
+| **Tray** | The menu opened by left-clicking the menubar icon. Shows feeds and activities in a compact list with inline disclosure. |
 | **Panel** | The main app window — a floating, non-activating NSPanel opened by global hotkey. Split layout: list pane + detail pane. View-specific settings live under `[panel]` in `settings.toml`. |
 | **Settings** | The standard decorated window for configuring feeds, notifications, and general preferences. Opened from the panel footer or `⌘,`. |
 
@@ -36,3 +36,4 @@ See `specs/status.md` for the full status model spec.
 | Watch | Activity |
 | Severity | Status Kind |
 | Main Screen | Panel |
+| Menubar | Tray |

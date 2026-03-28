@@ -12,15 +12,15 @@ The spec is the source of truth. If during implementation you notice the code di
 
 Canonical definitions live in `specs/glossary.md`. Read it before starting any work. Quick reference:
 
-| Term | What it is | Not to be confused with |
-|------|-----------|------------------------|
-| **Feed** | A configured data source (e.g., "GitHub PRs for repo X") | A single item — that's an Activity |
-| **Activity** | One tracked item within a feed (e.g., PR #42) | The feed itself |
-| **Field** | A typed data point on an activity (e.g., `review: awaiting`) | A config option |
-| **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` | The status value (display text like "approved") |
-| **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") | The status kind (semantic classification) |
-| **Panel** | The main app window — a floating NSPanel opened by global hotkey (⌘⇧Space). Split layout with list + detail panes. Config section: `[panel]` | The menubar dropdown — that's the **Menubar** |
-| **Menubar** | The narrow dropdown that appears when clicking the tray icon | The main app window — that's the **Panel** |
+| Term | What it is |
+|------|-----------|
+| **Feed** | A configured data source (e.g., "GitHub PRs for repo X") |
+| **Activity** | One tracked item within a feed (e.g., PR #42) |
+| **Field** | A typed data point on an activity (e.g., `review: awaiting`) |
+| **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` |
+| **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") |
+| **Panel** | The main app window — a floating NSPanel opened by global hotkey (⌘⇧Space). Split layout with list + detail panes. Config section: `[panel]` |
+| **Tray** | The menu opened by left-clicking the menubar icon. Shows feeds and activities in a compact list with inline disclosure. |
 
 ### Terminology discipline
 
