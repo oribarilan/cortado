@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::sync::Once;
 
-use tauri::{AppHandle, Manager, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindowBuilder};
 use tauri_nspanel::ManagerExt;
 
 use crate::{
@@ -70,7 +70,12 @@ pub async fn refresh_feeds(app_handle: AppHandle) -> Result<(), String> {
         .inner()
         .clone();
 
-    poller.refresh_now(registry).await;
+    let handle = app_handle.clone();
+    poller
+        .refresh_now(registry, move |completed, total| {
+            let _ = handle.emit("refresh-progress", (completed, total));
+        })
+        .await;
 
     Ok(())
 }

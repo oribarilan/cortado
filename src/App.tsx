@@ -46,9 +46,11 @@ function App() {
   }, [feeds]);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
 
   const refreshNow = useCallback(async () => {
     setRefreshing(true);
+    setRefreshProgress(null);
     try {
       await invoke("refresh_feeds");
       setLoadError(null);
@@ -56,6 +58,7 @@ function App() {
       setLoadError(error instanceof Error ? error.message : String(error));
     } finally {
       setRefreshing(false);
+      setRefreshProgress(null);
     }
   }, []);
 
@@ -147,6 +150,11 @@ function App() {
       });
 
       unlistenFns.push(unlistenPanelWillShow);
+
+      const unlistenProgress = await listen<[number, number]>("refresh-progress", (event) => {
+        setRefreshProgress(event.payload);
+      });
+      unlistenFns.push(unlistenProgress);
     };
 
     void bootstrap();
@@ -297,7 +305,9 @@ function App() {
             }}
             disabled={refreshing}
           >
-            {refreshing ? <><span className="refresh-spinner" /> Refreshing…</> : "Refresh feeds"}
+            {refreshing ? (
+              <><span className="refresh-spinner" /> Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
+            ) : "Refresh feeds"}
           </button>
           <button
             className="footer-row"

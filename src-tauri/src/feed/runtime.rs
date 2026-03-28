@@ -93,16 +93,23 @@ impl BackgroundPoller {
     }
 
     /// Runs an immediate one-shot refresh for all active feeds.
-    pub async fn refresh_now(&self, registry: Arc<FeedRegistry>) {
+    /// Calls `on_progress(completed, total)` after each feed finishes.
+    pub async fn refresh_now(
+        &self,
+        registry: Arc<FeedRegistry>,
+        on_progress: impl Fn(usize, usize),
+    ) {
         let feeds: Vec<Arc<dyn Feed>> = registry.active_feeds().to_vec();
+        let total = feeds.len();
 
         if feeds.is_empty() {
             return;
         }
 
-        for feed in feeds {
+        for (i, feed) in feeds.into_iter().enumerate() {
             let snapshot = build_snapshot_for_feed(&self.cache, feed.as_ref()).await;
             self.cache.upsert(snapshot).await;
+            on_progress(i + 1, total);
         }
 
         bump_update_counter(&self.update_tx);
@@ -479,7 +486,7 @@ mod tests {
         let poller = BackgroundPoller::new(cache.clone());
         let updates = poller.subscribe();
 
-        poller.refresh_now(registry.clone()).await;
+        poller.refresh_now(registry.clone(), |_, _| {}).await;
 
         assert!(*updates.borrow() > 0);
 
