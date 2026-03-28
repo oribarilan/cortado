@@ -329,6 +329,8 @@ function SettingsApp() {
   }, [autostart]);
 
   const notifSaveTimer = useState<ReturnType<typeof setTimeout> | null>(null);
+  const generalSaveTimer = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [generalSaveSuccess, setGeneralSaveSuccess] = useState<string | null>(null);
 
   const saveNotifSettings = useCallback(async (updated: NotificationSettings, key?: string) => {
     setNotifSettings(updated);
@@ -353,7 +355,7 @@ function SettingsApp() {
     }
   }, [notifSaveTimer, showPrioritySection, showMenubar, theme, textSize]);
 
-  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }, key?: string) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
     const newPriority = updates.showPrioritySection ?? showPrioritySection;
     const newTheme = updates.theme ?? theme;
@@ -364,6 +366,8 @@ function SettingsApp() {
     if (updates.theme !== undefined) setTheme(newTheme);
     if (updates.textSize !== undefined) setTextSize(newTextSize);
 
+    setGeneralSaveSuccess(null);
+    if (generalSaveTimer[0]) clearTimeout(generalSaveTimer[0]);
     try {
       await invoke("save_settings", {
         settings: {
@@ -374,10 +378,15 @@ function SettingsApp() {
           text_size: newTextSize,
         },
       });
+      if (key) {
+        setGeneralSaveSuccess(key);
+        const t = setTimeout(() => setGeneralSaveSuccess(null), 1500);
+        generalSaveTimer[0] = t;
+      }
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize]);
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, generalSaveTimer]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -604,7 +613,10 @@ function SettingsApp() {
           <>
             <h2 className="settings-title">General</h2>
 
-            <div className="section-header">Appearance</div>
+            <div className="section-header">
+              Appearance
+              <span className={`inline-saved ${generalSaveSuccess === "appearance" ? "visible" : ""}`}>Saved</span>
+            </div>
 
             <div className="setting-row">
               <div className="setting-info">
@@ -615,7 +627,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${theme === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ theme: opt }); }}
+                    onClick={() => { void saveGeneralSetting({ theme: opt }, "appearance"); }}
                   >
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </button>
@@ -632,7 +644,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${textSize === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ textSize: opt }); }}
+                    onClick={() => { void saveGeneralSetting({ textSize: opt }, "appearance"); }}
                   >
                     {opt.toUpperCase()}
                   </button>
@@ -661,12 +673,15 @@ function SettingsApp() {
                 <div className="setting-label">Show menubar icon</div>
                 <div className="setting-hint">Show tray icon and menubar panel. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
               </div>
-              <button
-                className={`toggle ${showMenubar ? "on" : ""}`}
-                onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }); }}
-                aria-pressed={showMenubar}
-                aria-label="Show menubar icon"
-              />
+              <div className="control-with-status">
+                <button
+                  className={`toggle ${showMenubar ? "on" : ""}`}
+                  onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }, "menubar"); }}
+                  aria-pressed={showMenubar}
+                  aria-label="Show menubar icon"
+                />
+                <span className={`inline-saved ${generalSaveSuccess === "menubar" ? "visible" : ""}`}>Saved</span>
+              </div>
             </div>
 
             <div className="setting-row">
@@ -674,12 +689,15 @@ function SettingsApp() {
                 <div className="setting-label">Needs Attention section</div>
                 <div className="setting-hint">Show a priority section in the main screen for activities that need your attention</div>
               </div>
-              <button
-                className={`toggle ${showPrioritySection ? "on" : ""}`}
-                onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }); }}
-                aria-pressed={showPrioritySection}
-                aria-label="Show Needs Attention section"
-              />
+              <div className="control-with-status">
+                <button
+                  className={`toggle ${showPrioritySection ? "on" : ""}`}
+                  onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }, "priority"); }}
+                  aria-pressed={showPrioritySection}
+                  aria-label="Show Needs Attention section"
+                />
+                <span className={`inline-saved ${generalSaveSuccess === "priority" ? "visible" : ""}`}>Saved</span>
+              </div>
             </div>
 
             <div className="btn-row">
