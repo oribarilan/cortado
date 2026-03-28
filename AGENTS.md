@@ -19,6 +19,8 @@ Canonical definitions live in `specs/glossary.md`. Read it before starting any w
 | **Field** | A typed data point on an activity (e.g., `review: awaiting`) | A config option |
 | **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` | The status value (display text like "approved") |
 | **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") | The status kind (semantic classification) |
+| **Panel** | The main app window — a floating NSPanel opened by global hotkey (⌘⇧Space). Split layout with list + detail panes. Config section: `[panel]` | The menubar dropdown — that's the **Menubar** |
+| **Menubar** | The narrow dropdown that appears when clicking the tray icon | The main app window — that's the **Panel** |
 
 ### Terminology discipline
 
