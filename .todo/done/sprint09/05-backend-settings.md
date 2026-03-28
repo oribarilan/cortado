@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 05 — Backend: Theme + Text Size Settings

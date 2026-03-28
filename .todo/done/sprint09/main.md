@@ -1,7 +1,7 @@
 ---
 sprint: 9
 theme: Style System Overhaul
-status: pending
+status: done
 ---
 
 # Sprint 09 — Style System Overhaul

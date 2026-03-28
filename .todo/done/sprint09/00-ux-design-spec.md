@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 00 — UX Design Spec

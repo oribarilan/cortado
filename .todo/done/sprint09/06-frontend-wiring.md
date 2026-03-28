@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 06 — Frontend: Theme + Text Size Wiring

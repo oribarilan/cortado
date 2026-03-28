@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # 07 — Settings UI: Theme + Text Size Controls
