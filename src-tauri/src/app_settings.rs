@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
+use tauri::Emitter;
 use tokio::sync::RwLock;
 
 use crate::feed::StatusKind;
@@ -17,6 +18,14 @@ fn default_true() -> bool {
     true
 }
 
+fn default_theme() -> String {
+    "system".to_string()
+}
+
+fn default_text_size() -> String {
+    "m".to_string()
+}
+
 /// Global app settings persisted in `~/.config/cortado/settings.toml`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -25,6 +34,12 @@ pub struct AppSettings {
     pub main_screen: MainScreenSettings,
     #[serde(default = "default_true")]
     pub show_menubar: bool,
+    /// Theme preference: `"system"`, `"light"`, or `"dark"`.
+    #[serde(default = "default_theme")]
+    pub theme: String,
+    /// Text size preference: `"s"`, `"m"`, `"l"`, or `"xl"`.
+    #[serde(default = "default_text_size")]
+    pub text_size: String,
 }
 
 impl Default for AppSettings {
@@ -33,6 +48,8 @@ impl Default for AppSettings {
             notifications: NotificationSettings::default(),
             main_screen: MainScreenSettings::default(),
             show_menubar: true,
+            theme: default_theme(),
+            text_size: default_text_size(),
         }
     }
 }
@@ -192,14 +209,32 @@ pub async fn get_settings(
     Ok(settings)
 }
 
+/// Appearance payload emitted to all windows when theme or text size changes.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppearancePayload {
+    pub theme: String,
+    pub text_size: String,
+}
+
 /// Tauri command: save app settings (persists to file and updates live state).
 #[tauri::command]
 pub async fn save_settings(
     settings: AppSettings,
     state: tauri::State<'_, AppSettingsState>,
+    app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
     save_settings_to_file(&settings).map_err(|e| e.to_string())?;
+
+    let payload = AppearancePayload {
+        theme: settings.theme.clone(),
+        text_size: settings.text_size.clone(),
+    };
+
     state.update(settings).await;
+
+    // Notify all windows so they can update data-theme / data-text-size attributes.
+    let _ = app_handle.emit("appearance-changed", &payload);
+
     Ok(())
 }
 

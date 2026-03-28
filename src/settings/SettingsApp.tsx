@@ -5,6 +5,7 @@ import {
   isPermissionGranted,
   requestPermission,
 } from "@tauri-apps/plugin-notification";
+import { useAppearance } from "../shared/useAppearance";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
@@ -25,6 +26,8 @@ type AppSettings = {
   notifications: NotificationSettings;
   main_screen: MainScreenSettings;
   show_menubar: boolean;
+  theme: string;
+  text_size: string;
 };
 
 type FieldOverrideDto = {
@@ -215,6 +218,7 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
 }
 
 function SettingsApp() {
+  useAppearance();
   const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
@@ -222,6 +226,8 @@ function SettingsApp() {
   // General settings state
   const [showMenubar, setShowMenubar] = useState(true);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
+  const [theme, setTheme] = useState("system");
+  const [textSize, setTextSize] = useState("m");
 
   // Notification settings state
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
@@ -268,6 +274,8 @@ function SettingsApp() {
         setNotifSettings(s.notifications);
         setShowMenubar(s.show_menubar);
         setShowPrioritySection(s.main_screen?.show_priority_section ?? true);
+        setTheme(s.theme ?? "system");
+        setTextSize(s.text_size ?? "m");
       })
       .catch(() => {})
       .finally(() => setNotifLoading(false));
@@ -322,6 +330,8 @@ function SettingsApp() {
           notifications: updated,
           main_screen: { show_priority_section: showPrioritySection },
           show_menubar: showMenubar,
+          theme,
+          text_size: textSize,
         },
       });
       setNotifSaveSuccess(key ?? "general");
@@ -330,14 +340,18 @@ function SettingsApp() {
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [notifSaveTimer, showPrioritySection, showMenubar]);
+  }, [notifSaveTimer, showPrioritySection, showMenubar, theme, textSize]);
 
-  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean }) => {
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
     const newPriority = updates.showPrioritySection ?? showPrioritySection;
+    const newTheme = updates.theme ?? theme;
+    const newTextSize = updates.textSize ?? textSize;
 
     if (updates.showMenubar !== undefined) setShowMenubar(newMenubar);
     if (updates.showPrioritySection !== undefined) setShowPrioritySection(newPriority);
+    if (updates.theme !== undefined) setTheme(newTheme);
+    if (updates.textSize !== undefined) setTextSize(newTextSize);
 
     try {
       await invoke("save_settings", {
@@ -345,12 +359,14 @@ function SettingsApp() {
           notifications: notifSettings,
           main_screen: { show_priority_section: newPriority },
           show_menubar: newMenubar,
+          theme: newTheme,
+          text_size: newTextSize,
         },
       });
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection]);
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -544,6 +560,45 @@ function SettingsApp() {
         {section === "general" ? (
           <>
             <h2 className="settings-title">General</h2>
+
+            <div className="section-header">Appearance</div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Theme</div>
+              </div>
+              <div className="segmented-control">
+                {(["light", "dark", "system"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    className={`segmented-option ${theme === opt ? "active" : ""}`}
+                    onClick={() => { void saveGeneralSetting({ theme: opt }); }}
+                  >
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Text size</div>
+              </div>
+              <div className="segmented-control">
+                {(["s", "m", "l", "xl"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    className={`segmented-option ${textSize === opt ? "active" : ""}`}
+                    onClick={() => { void saveGeneralSetting({ textSize: opt }); }}
+                  >
+                    {opt.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="section-header">Behavior</div>
+
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Start on system startup</div>

@@ -1,34 +1,14 @@
+/* ── Panel-specific layout tokens ─────────────────── */
+
 :root {
-  --panel-surface: oklch(97% 0.004 250 / 0.94);
-  --panel-text: oklch(20% 0.01 250);
-  --panel-text-secondary: oklch(43% 0.01 250);
-  --panel-text-tertiary: oklch(58% 0.01 250);
-  --panel-border: oklch(84% 0.01 250 / 0.78);
-  --panel-separator: oklch(82% 0.01 250 / 0.72);
-  --panel-hover: oklch(64% 0.01 250 / 0.08);
-  --panel-expanded-bg: oklch(64% 0.01 250 / 0.04);
-
-  --s-attention-negative: oklch(62% 0.24 27);
-  --s-waiting: oklch(76% 0.18 75);
-  --s-running: oklch(58% 0.2 258);
-  --s-attention-positive: oklch(73% 0.17 150);
-  --s-idle: oklch(58% 0.01 250);
-
-  --pad-x: 12px;
-  --feed-gap: 8px;
+  --pad-x: var(--space-6);
+  --feed-gap: var(--space-4);
   --feed-header-h: 24px;
   --activity-row-h: 34px;
   --row-gap: 0;
-  --row-radius: 4px;
-  --dot-size: 6px;
-  --field-indent: 20px;
-  --field-row-gap: 3px;
-
-  --fz-feed: 10px;
-  --fz-title: 13px;
-  --fz-field: 12px;
-  --fw-feed: 600;
-  --fw-title: 400;
+  --dot-size: var(--space-3);
+  --field-indent: var(--space-8);
+  --field-row-gap: var(--space-1);
 
   --dur-expand: 200ms;
   --dur-hover: 100ms;
@@ -36,38 +16,7 @@
   --ease-expand: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
 
-  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.35;
-  font-weight: 400;
-
-  color: var(--panel-text);
   background-color: transparent;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --panel-surface: oklch(22% 0.008 250 / 0.93);
-    --panel-text: oklch(92% 0.01 250);
-    --panel-text-secondary: oklch(70% 0.01 250);
-    --panel-text-tertiary: oklch(56% 0.01 250);
-    --panel-border: oklch(33% 0.01 250 / 0.78);
-    --panel-separator: oklch(36% 0.01 250 / 0.75);
-    --panel-hover: oklch(100% 0 0 / 0.08);
-    --panel-expanded-bg: oklch(100% 0 0 / 0.04);
-
-    --s-attention-negative: oklch(70% 0.2 25);
-    --s-waiting: oklch(80% 0.16 78);
-    --s-running: oklch(72% 0.16 259);
-    --s-attention-positive: oklch(80% 0.14 150);
-    --s-idle: oklch(67% 0.01 250);
-  }
 }
 
 html,
@@ -100,12 +49,12 @@ body {
   width: 100%;
   height: 100%;
   max-height: none;
-  color: var(--panel-text);
-  background: var(--panel-surface);
-  border-radius: 10px;
-  border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
   box-shadow:
-    0 0 0 0.5px color-mix(in oklch, var(--panel-border), transparent 15%),
+    0 0 0 0.5px color-mix(in oklch, var(--border), transparent 15%),
     0 10px 34px oklch(0% 0 0 / 0.16),
     0 2px 8px oklch(0% 0 0 / 0.08);
   backdrop-filter: blur(28px) saturate(160%);
@@ -118,7 +67,7 @@ body {
   height: 400px;
   max-height: 400px;
   overflow-y: auto;
-  padding: 8px 0 8px;
+  padding: var(--space-4) 0;
 }
 
 .feed-block + .feed-block {
@@ -131,16 +80,16 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--pad-x);
-  font-size: var(--fz-feed);
-  color: var(--panel-text-tertiary);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  font-weight: var(--fw-feed);
+  font-weight: var(--font-semibold);
   cursor: default;
 }
 
 .feed-name {
-  color: var(--panel-text-secondary);
+  color: var(--text-secondary);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -148,58 +97,58 @@ body {
 }
 
 .feed-count {
-  font-size: 10px;
-  color: var(--panel-text-tertiary);
-  background: color-mix(in oklch, var(--panel-text-tertiary), transparent 86%);
-  border-radius: 999px;
-  padding: 2px 6px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background: color-mix(in oklch, var(--text-tertiary), transparent 86%);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
 .feed-error {
-  margin: 0 8px 4px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   line-height: 1.35;
   cursor: default;
 }
 
 .feed-error.config {
-  color: var(--s-attention-negative);
-  background: color-mix(in oklch, var(--s-attention-negative), transparent 92%);
-  border: 1px solid color-mix(in oklch, var(--s-attention-negative), transparent 82%);
+  color: var(--status-attention-negative);
+  background: color-mix(in oklch, var(--status-attention-negative), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--status-attention-negative), transparent 82%);
 }
 
 .feed-error.poll {
-  color: var(--s-waiting);
-  background: color-mix(in oklch, var(--s-waiting), transparent 92%);
-  border: 1px solid color-mix(in oklch, var(--s-waiting), transparent 82%);
+  color: var(--status-waiting);
+  background: color-mix(in oklch, var(--status-waiting), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--status-waiting), transparent 82%);
 }
 
 .feed-empty,
 .empty-state {
-  margin: 0 8px;
-  padding: 6px 8px;
-  color: var(--panel-text-tertiary);
-  font-size: 12px;
+  margin: 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
   cursor: default;
 }
 
 .empty-state {
   margin: 0;
-  padding: 12px;
+  padding: var(--space-6);
 }
 
 .empty-state code {
   font-family: "SF Mono", ui-monospace, Menlo, monospace;
   font-size: 0.92em;
-  background: color-mix(in oklch, var(--panel-text), transparent 92%);
-  border: 1px solid color-mix(in oklch, var(--panel-text), transparent 88%);
-  border-radius: 5px;
-  padding: 1px 5px;
+  background: color-mix(in oklch, var(--text-primary), transparent 92%);
+  border: 1px solid color-mix(in oklch, var(--text-primary), transparent 88%);
+  border-radius: var(--radius-md);
+  padding: 1px var(--space-3);
 }
 
 .activity-list {
@@ -209,31 +158,31 @@ body {
 }
 
 .activity-wrap {
-  --activity-kind: var(--s-idle);
+  --activity-kind: var(--status-idle);
 }
 
 .activity-wrap.kind-attention-negative {
-  --activity-kind: var(--s-attention-negative);
+  --activity-kind: var(--status-attention-negative);
 }
 
 .activity-wrap.kind-waiting {
-  --activity-kind: var(--s-waiting);
+  --activity-kind: var(--status-waiting);
 }
 
 .activity-wrap.kind-running {
-  --activity-kind: var(--s-running);
+  --activity-kind: var(--status-running);
 }
 
 .activity-wrap.kind-attention-positive {
-  --activity-kind: var(--s-attention-positive);
+  --activity-kind: var(--status-attention-positive);
 }
 
 .activity-row {
-  width: calc(100% - 8px);
-  margin: 0 4px;
+  width: calc(100% - var(--space-4));
+  margin: 0 var(--space-2);
   min-height: var(--activity-row-h);
   border: 0;
-  border-radius: var(--row-radius);
+  border-radius: var(--radius-sm);
   padding: 0 var(--pad-x);
   background: transparent;
   color: inherit;
@@ -241,26 +190,26 @@ body {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   text-align: left;
   transition: background var(--dur-hover) var(--ease-default);
 }
 
 .activity-row:hover {
-  background: var(--panel-hover);
+  background: var(--hover);
 }
 
 .panel-root.keyboard-active .activity-row:focus-visible,
 .panel-root.keyboard-active .footer-row:focus-visible,
 .panel-root.keyboard-active .open-activity:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--s-running), white 20%);
+  outline: 2px solid color-mix(in oklch, var(--status-running), white 20%);
   outline-offset: 1px;
 }
 
 .status-dot {
   width: var(--dot-size);
   height: var(--dot-size);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--activity-kind);
   flex-shrink: 0;
 }
@@ -279,51 +228,51 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--fz-title);
-  font-weight: var(--fw-title);
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
   line-height: 1.28;
-  color: var(--panel-text);
+  color: var(--text-primary);
 }
 
 .status-chip {
   white-space: nowrap;
-  font-size: 10px;
+  font-size: var(--text-xs);
   line-height: 1;
-  padding: 4px 8px;
-  border-radius: 999px;
-  color: var(--panel-text-secondary);
-  background: color-mix(in oklch, var(--panel-text-secondary), transparent 89%);
-  border: 1px solid color-mix(in oklch, var(--panel-text-secondary), transparent 83%);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  background: color-mix(in oklch, var(--text-secondary), transparent 89%);
+  border: 1px solid color-mix(in oklch, var(--text-secondary), transparent 83%);
 }
 
 .status-chip.kind-attention-negative {
-  color: var(--s-attention-negative);
-  background: color-mix(in oklch, var(--s-attention-negative), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-attention-negative), transparent 80%);
+  color: var(--status-attention-negative);
+  background: color-mix(in oklch, var(--status-attention-negative), transparent 91%);
+  border-color: color-mix(in oklch, var(--status-attention-negative), transparent 80%);
 }
 
 .status-chip.kind-waiting {
-  color: var(--s-waiting);
-  background: color-mix(in oklch, var(--s-waiting), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-waiting), transparent 80%);
+  color: var(--status-waiting);
+  background: color-mix(in oklch, var(--status-waiting), transparent 91%);
+  border-color: color-mix(in oklch, var(--status-waiting), transparent 80%);
 }
 
 .status-chip.kind-running {
-  color: var(--s-running);
-  background: color-mix(in oklch, var(--s-running), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-running), transparent 80%);
+  color: var(--status-running);
+  background: color-mix(in oklch, var(--status-running), transparent 91%);
+  border-color: color-mix(in oklch, var(--status-running), transparent 80%);
 }
 
 .status-chip.kind-attention-positive {
-  color: var(--s-attention-positive);
-  background: color-mix(in oklch, var(--s-attention-positive), transparent 91%);
-  border-color: color-mix(in oklch, var(--s-attention-positive), transparent 80%);
+  color: var(--status-attention-positive);
+  background: color-mix(in oklch, var(--status-attention-positive), transparent 91%);
+  border-color: color-mix(in oklch, var(--status-attention-positive), transparent 80%);
 }
 
 .chevron {
-  color: var(--panel-text-tertiary);
-  font-size: 14px;
-  font-weight: 600;
+  color: var(--text-tertiary);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   line-height: 1;
   transform-origin: 48% 52%;
   transition: transform var(--dur-chevron) var(--ease-default);
@@ -335,7 +284,7 @@ body {
 }
 
 .detail-region {
-  margin: 0 4px;
+  margin: 0 var(--space-2);
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows var(--dur-expand) var(--ease-expand);
@@ -355,21 +304,21 @@ body {
 }
 
 .detail-body {
-  margin: 0 0 6px;
-  padding: 6px var(--pad-x) 8px calc(var(--pad-x) + var(--field-indent));
-  border-left: 1px solid color-mix(in oklch, var(--panel-separator), transparent 18%);
-  background: color-mix(in oklch, var(--panel-expanded-bg), transparent 30%);
-  border-radius: 0 var(--row-radius) var(--row-radius) 0;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--pad-x) var(--space-4) calc(var(--pad-x) + var(--field-indent));
+  border-left: 1px solid color-mix(in oklch, var(--separator), transparent 18%);
+  background: color-mix(in oklch, var(--expanded-bg), transparent 30%);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   display: flex;
   flex-direction: column;
   gap: var(--field-row-gap);
 }
 
 .open-activity {
-  margin: 0 0 3px;
-  font-size: 11px;
-  color: var(--s-running);
-  font-weight: 500;
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--status-running);
+  font-weight: var(--font-medium);
   cursor: pointer;
   background: transparent;
   border: 0;
@@ -383,12 +332,12 @@ body {
   grid-template-columns: auto 1fr;
   gap: 9px;
   align-items: baseline;
-  font-size: var(--fz-field);
+  font-size: var(--text-sm);
   line-height: 1.35;
 }
 
 .field-key {
-  color: var(--panel-text-tertiary);
+  color: var(--text-tertiary);
   white-space: nowrap;
 }
 
@@ -397,86 +346,86 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--panel-text-secondary);
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
 .field-value.status.kind-attention-positive {
-  color: var(--s-attention-positive);
+  color: var(--status-attention-positive);
 }
 
 .field-value.status.kind-waiting {
-  color: var(--s-waiting);
+  color: var(--status-waiting);
 }
 
 .field-value.status.kind-attention-negative {
-  color: var(--s-attention-negative);
+  color: var(--status-attention-negative);
 }
 
 .field-value.status.kind-running {
-  color: var(--s-running);
+  color: var(--status-running);
 }
 
 .field-value.status.kind-idle {
-  color: var(--s-idle);
+  color: var(--status-idle);
 }
 
 .panel-error {
-  margin: 6px 10px 0;
-  color: var(--s-attention-negative);
-  font-size: 11px;
+  margin: var(--space-3) var(--space-5) 0;
+  color: var(--status-attention-negative);
+  font-size: var(--text-sm);
   line-height: 1.4;
 }
 
 .panel-footer {
-  margin-top: 8px;
-  border-top: 1px solid var(--panel-separator);
-  padding-top: 6px;
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--separator);
+  padding-top: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: 1px;
 }
 
 .footer-row {
-  margin: 0 4px;
+  margin: 0 var(--space-2);
   min-height: 32px;
-  border-radius: var(--row-radius);
+  border-radius: var(--radius-sm);
   border: 0;
   background: transparent;
   display: flex;
   align-items: center;
   padding: 0 var(--pad-x);
-  font-size: 12px;
-  color: var(--panel-text-secondary);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background var(--dur-hover) var(--ease-default);
   text-align: left;
 }
 
 .footer-row:hover {
-  background: var(--panel-hover);
+  background: var(--hover);
 }
 
 .loading-state {
-  padding: 4px 0 10px;
+  padding: var(--space-2) 0 var(--space-5);
 }
 
 .skeleton {
-  margin: 0 8px;
-  height: 8px;
-  border-radius: 999px;
+  margin: 0 var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--radius-full);
   background: linear-gradient(
     90deg,
-    color-mix(in oklch, var(--panel-text-tertiary), transparent 90%) 25%,
-    color-mix(in oklch, var(--panel-text-tertiary), transparent 82%) 50%,
-    color-mix(in oklch, var(--panel-text-tertiary), transparent 90%) 75%
+    color-mix(in oklch, var(--text-tertiary), transparent 90%) 25%,
+    color-mix(in oklch, var(--text-tertiary), transparent 82%) 50%,
+    color-mix(in oklch, var(--text-tertiary), transparent 90%) 75%
   );
   background-size: 320px 100%;
   animation: shimmer 1.25s linear infinite;
 }
 
 .skeleton + .skeleton {
-  margin-top: 8px;
+  margin-top: var(--space-4);
 }
 
 .skeleton.w-40 {

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { Activity, FeedSnapshot } from "../shared/types";
+import { useAppearance } from "../shared/useAppearance";
 import {
   deriveActivityKind,
   highestStatusField,
@@ -68,6 +69,7 @@ function buildFlatList(
 }
 
 function MainScreenApp() {
+  useAppearance();
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [focusIndex, setFocusIndex] = useState(0);

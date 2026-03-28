@@ -1,0 +1,145 @@
+/* ═══════════════════════════════════════════════════
+   Design Tokens — Cortado
+   Single source of truth for colors, typography,
+   spacing, radii, and theme switching.
+   ═══════════════════════════════════════════════════ */
+
+/* ── Base tokens (dark) ──────────────────────────── */
+
+:root {
+  /* Surfaces */
+  --surface: oklch(22% 0.008 250 / 0.93);
+  --surface-raised: oklch(17% 0.01 250);
+  --surface-inset: oklch(20% 0.012 250);
+
+  /* Text */
+  --text-primary: oklch(92% 0.01 250);
+  --text-secondary: oklch(70% 0.01 250);
+  --text-tertiary: oklch(56% 0.01 250);
+
+  /* Borders & chrome */
+  --border: oklch(33% 0.01 250 / 0.78);
+  --separator: oklch(36% 0.01 250 / 0.75);
+  --hover: oklch(100% 0 0 / 0.08);
+  --expanded-bg: oklch(100% 0 0 / 0.04);
+
+  /* Status */
+  --status-attention-negative: oklch(70% 0.2 25);
+  --status-waiting: oklch(80% 0.16 78);
+  --status-running: oklch(72% 0.16 259);
+  --status-attention-positive: oklch(80% 0.14 150);
+  --status-idle: oklch(67% 0.01 250);
+
+  /* Accent */
+  --accent: oklch(72% 0.14 178);
+  --accent-dim: oklch(38% 0.06 178);
+  --accent-soft: oklch(22% 0.03 178);
+  --danger: oklch(70% 0.18 25);
+
+  /* ── Type scale (rem — scales with root font-size) */
+  --text-2xs: 0.692rem;   /* ~9px  at 13px root */
+  --text-xs: 0.769rem;    /* ~10px at 13px root */
+  --text-sm: 0.846rem;    /* ~11px at 13px root */
+  --text-base: 1rem;      /* 13px root */
+  --text-lg: 1.077rem;    /* ~14px at 13px root */
+
+  /* ── Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+
+  /* ── Spacing (px — fixed, not scaled) */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 16px;
+  --space-8: 20px;
+  --space-9: 24px;
+
+  /* ── Border radius */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  /* ── Font stack & base styles */
+  font-family: "Space Grotesk", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: var(--font-normal);
+  color: var(--text-primary);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── Light tokens (system preference) ────────────── */
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --surface: oklch(97% 0.004 250 / 0.94);
+    --surface-raised: oklch(96% 0.006 250);
+    --surface-inset: oklch(93% 0.008 250);
+
+    --text-primary: oklch(20% 0.01 250);
+    --text-secondary: oklch(43% 0.01 250);
+    --text-tertiary: oklch(58% 0.01 250);
+
+    --border: oklch(84% 0.01 250 / 0.78);
+    --separator: oklch(82% 0.01 250 / 0.72);
+    --hover: oklch(64% 0.01 250 / 0.08);
+    --expanded-bg: oklch(64% 0.01 250 / 0.04);
+
+    --status-attention-negative: oklch(62% 0.24 27);
+    --status-waiting: oklch(76% 0.18 75);
+    --status-running: oklch(58% 0.2 258);
+    --status-attention-positive: oklch(73% 0.17 150);
+    --status-idle: oklch(58% 0.01 250);
+
+    --accent: oklch(65% 0.12 178);
+    --accent-dim: oklch(50% 0.1 178);
+    --accent-soft: oklch(94% 0.03 178);
+    --danger: oklch(62% 0.2 25);
+  }
+}
+
+/* ── Light tokens (forced) ───────────────────────── */
+
+[data-theme="light"] {
+  --surface: oklch(97% 0.004 250 / 0.94);
+  --surface-raised: oklch(96% 0.006 250);
+  --surface-inset: oklch(93% 0.008 250);
+
+  --text-primary: oklch(20% 0.01 250);
+  --text-secondary: oklch(43% 0.01 250);
+  --text-tertiary: oklch(58% 0.01 250);
+
+  --border: oklch(84% 0.01 250 / 0.78);
+  --separator: oklch(82% 0.01 250 / 0.72);
+  --hover: oklch(64% 0.01 250 / 0.08);
+  --expanded-bg: oklch(64% 0.01 250 / 0.04);
+
+  --status-attention-negative: oklch(62% 0.24 27);
+  --status-waiting: oklch(76% 0.18 75);
+  --status-running: oklch(58% 0.2 258);
+  --status-attention-positive: oklch(73% 0.17 150);
+  --status-idle: oklch(58% 0.01 250);
+
+  --accent: oklch(65% 0.12 178);
+  --accent-dim: oklch(50% 0.1 178);
+  --accent-soft: oklch(94% 0.03 178);
+  --danger: oklch(62% 0.2 25);
+}
+
+/* ── Text size scaling ───────────────────────────── */
+
+[data-text-size="s"] { font-size: 12px; }
+/* default (m) is 13px, set on :root above */
+[data-text-size="l"] { font-size: 14px; }
+[data-text-size="xl"] { font-size: 15px; }
