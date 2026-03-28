@@ -398,7 +398,7 @@ function MainScreenApp() {
           {refreshing ? (
             <><span className="ms-footer-spinner" />Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
           ) : (
-            <><kbd>↑↓</kbd><kbd>jk</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
+            <><kbd>↑/↓</kbd><kbd>j/k</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
           )}
         </span>
         <button
