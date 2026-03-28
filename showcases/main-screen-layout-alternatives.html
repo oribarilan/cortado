@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Main Screen Layout Alternatives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SHOWCASE CHROME
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light dark;
+  --chrome-bg: #f0f0f0;
+  --chrome-fg: #1a1a1a;
+  --chrome-muted: #666;
+  --chrome-border: #d0d0d0;
+  --chrome-controls-bg: #eaeaea;
+  --chrome-btn-bg: #fff;
+  --chrome-btn-border: #c0c0c0;
+  --chrome-btn-fg: #333;
+  --chrome-btn-hover: #f2f2f2;
+  --chrome-btn-active-bg: #1d1d1f;
+  --chrome-btn-active-fg: #fff;
+  --chrome-btn-active-border: #1d1d1f;
+  --note-bg: #fffcf0;
+  --note-border: #e6d88a;
+  --note-fg: #5a4e1a;
+  --brief-bg: #f5f3ff;
+  --brief-border: #d4ccf0;
+  --brief-fg: #3b2f6e;
+}
+
+html.dark {
+  --chrome-bg: #161616;
+  --chrome-fg: #e0e0e0;
+  --chrome-muted: #888;
+  --chrome-border: #2e2e2e;
+  --chrome-controls-bg: #1e1e1e;
+  --chrome-btn-bg: #2a2a2a;
+  --chrome-btn-border: #444;
+  --chrome-btn-fg: #ccc;
+  --chrome-btn-hover: #363636;
+  --chrome-btn-active-bg: #e0e0e0;
+  --chrome-btn-active-fg: #111;
+  --chrome-btn-active-border: #e0e0e0;
+  --note-bg: #1e1c14;
+  --note-border: #3a3520;
+  --note-fg: #c4b86a;
+  --brief-bg: #1c1a28;
+  --brief-border: #3a3560;
+  --brief-fg: #b0a4e0;
+}
+
+body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  padding: 40px 48px;
+  line-height: 1.5;
+}
+
+.showcase-header { margin-bottom: 32px; }
+.showcase-header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.showcase-header p { font-size: 13px; color: var(--chrome-muted); margin-top: 6px; max-width: 680px; }
+
+.theme-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 999;
+  font-size: 11px; font-weight: 500; font-family: inherit;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  background: var(--chrome-btn-bg); color: var(--chrome-btn-fg);
+  border: 1px solid var(--chrome-btn-border);
+}
+.theme-toggle:hover { background: var(--chrome-btn-hover); }
+
+.brief {
+  background: var(--brief-bg); border: 1px solid var(--brief-border); color: var(--brief-fg);
+  border-radius: 8px; padding: 16px 20px; margin-bottom: 32px; font-size: 12px; line-height: 1.6;
+}
+.brief strong { font-weight: 600; }
+
+.note {
+  background: var(--note-bg); border: 1px solid var(--note-border); color: var(--note-fg);
+  border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-size: 11px; line-height: 1.5;
+}
+
+/* ── Variant sections ────────────────────────────── */
+.variant-section {
+  margin-bottom: 56px;
+}
+.variant-section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chrome-muted);
+  margin-bottom: 6px;
+}
+.variant-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.variant-desc {
+  font-size: 12px;
+  color: var(--chrome-muted);
+  margin-bottom: 16px;
+  max-width: 600px;
+}
+.variant-pros, .variant-cons {
+  font-size: 11px;
+  margin-bottom: 12px;
+  padding-left: 16px;
+}
+.variant-pros li { color: oklch(65% 0.14 150); }
+.variant-cons li { color: oklch(65% 0.14 25); }
+
+/* ── Shared app tokens (dark) ──────────────────── */
+.stage {
+  --surface: oklch(22% 0.008 250 / 0.93);
+  --surface-raised: oklch(17% 0.01 250);
+  --surface-inset: oklch(20% 0.012 250);
+  --text-primary: oklch(92% 0.01 250);
+  --text-secondary: oklch(70% 0.01 250);
+  --text-tertiary: oklch(56% 0.01 250);
+  --border: oklch(33% 0.01 250 / 0.78);
+  --separator: oklch(36% 0.01 250 / 0.75);
+  --hover: oklch(100% 0 0 / 0.08);
+  --accent: oklch(72% 0.14 178);
+  --accent-dim: oklch(38% 0.06 178);
+  --accent-soft: oklch(22% 0.03 178);
+  --status-attention-negative: oklch(70% 0.2 25);
+  --status-waiting: oklch(80% 0.16 78);
+  --status-running: oklch(72% 0.16 259);
+  --status-attention-positive: oklch(80% 0.14 150);
+  --status-idle: oklch(67% 0.01 250);
+
+  background: oklch(12% 0.005 250);
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+html.dark .stage {
+  background: oklch(8% 0.005 250);
+}
+
+.shell {
+  width: 560px;
+  height: 420px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 34px oklch(0% 0 0 / 0.25), 0 2px 8px oklch(0% 0 0 / 0.12);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+.shell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-top: 1px solid var(--separator);
+  min-height: 28px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.shell-footer kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 14px; height: 14px; padding: 0 3px; border-radius: 3px;
+  font-family: inherit; font-size: 9px;
+  background: oklch(100% 0 0 / 0.06);
+  border: 0.5px solid oklch(100% 0 0 / 0.12);
+  color: var(--text-secondary);
+}
+.shell-footer-gear {
+  font-size: 13px; color: var(--accent); opacity: 0.7; cursor: pointer;
+  background: none; border: none; padding: 2px 4px; border-radius: 4px;
+}
+
+/* ── Shared list-item primitives ───────────────── */
+.dot {
+  width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0;
+}
+.dot.neg { background: var(--status-attention-negative); }
+.dot.wait { background: var(--status-waiting); }
+.dot.run { background: var(--status-running); }
+.dot.pos { background: var(--status-attention-positive); }
+.dot.idle { background: var(--status-idle); }
+.dot.retained { background: transparent; border: 1.5px solid var(--status-idle); }
+
+.feed-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-tertiary); padding: 4px 10px; cursor: default;
+}
+
+.chip {
+  font-size: 9px; line-height: 1; padding: 3px 7px; border-radius: 999px; white-space: nowrap;
+}
+.chip.neg { color: var(--status-attention-negative); background: oklch(70% 0.2 25 / 0.12); }
+.chip.wait { color: var(--status-waiting); background: oklch(80% 0.16 78 / 0.12); }
+.chip.run { color: var(--status-running); background: oklch(72% 0.16 259 / 0.12); }
+.chip.pos { color: var(--status-attention-positive); background: oklch(80% 0.14 150 / 0.12); }
+
+/* ============================================================
+   VARIANT A — CURRENT (reference)
+   ============================================================ */
+.va-body { display: flex; flex: 1; min-height: 0; }
+.va-list {
+  width: 280px; min-width: 280px; background: var(--surface-raised);
+  border-right: 1px solid var(--border); overflow-y: auto; padding: 6px 0;
+}
+.va-detail { flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+.va-row {
+  display: flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 10px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.va-row:hover { background: var(--hover); }
+.va-row.focused { background: var(--accent-soft); }
+.va-row.focused .va-title { color: var(--accent); }
+
+.va-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+.va-hint {
+  flex-shrink: 0; font-size: 9px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.04em; margin-left: auto;
+}
+
+.va-detail-feed { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+.va-detail-title { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.35; word-break: break-word; margin: 6px 0 14px; }
+.va-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.35; margin-bottom: 5px; }
+.va-field-key { color: var(--text-tertiary); white-space: nowrap; }
+.va-field-val { color: var(--text-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.va-field-val.neg { color: var(--status-attention-negative); }
+.va-field-val.wait { color: var(--status-waiting); }
+.va-field-val.run { color: var(--status-running); }
+.va-field-val.pos { color: var(--status-attention-positive); }
+.va-open { font-size: 12px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
+.va-open:hover { text-decoration: underline; }
+
+/* ============================================================
+   VARIANT B — WIDER LIST, INLINE STATUS
+   ============================================================ */
+.vb-body { display: flex; flex: 1; min-height: 0; }
+.vb-list {
+  width: 340px; min-width: 340px; background: var(--surface-raised);
+  border-right: 1px solid var(--border); overflow-y: auto; padding: 6px 0;
+}
+.vb-detail { flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+.vb-row {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 10px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.vb-row:hover { background: var(--hover); }
+.vb-row.focused { background: var(--accent-soft); }
+.vb-row.focused .vb-title { color: var(--accent); }
+
+.vb-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28; flex: 1;
+}
+.vb-row-chip {
+  flex-shrink: 0;
+}
+.vb-hint {
+  flex-shrink: 0; font-size: 9px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+.vb-detail-feed { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+.vb-detail-title { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.35; word-break: break-word; margin: 6px 0 14px; }
+.vb-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.35; margin-bottom: 5px; }
+.vb-field-key { color: var(--text-tertiary); white-space: nowrap; }
+.vb-field-val { color: var(--text-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vb-open { font-size: 12px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
+
+/* ============================================================
+   VARIANT C — TWO-LINE ROWS (title + status on second line)
+   ============================================================ */
+.vc-body { display: flex; flex: 1; min-height: 0; }
+.vc-list {
+  width: 300px; min-width: 300px; background: var(--surface-raised);
+  border-right: 1px solid var(--border); overflow-y: auto; padding: 6px 0;
+}
+.vc-detail { flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+.vc-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 10px; margin: 1px 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.vc-row:hover { background: var(--hover); }
+.vc-row.focused { background: var(--accent-soft); }
+.vc-row.focused .vc-title { color: var(--accent); }
+
+.vc-dot-col { padding-top: 5px; }
+
+.vc-text-col { min-width: 0; flex: 1; }
+.vc-title {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+.vc-meta {
+  display: flex; align-items: center; gap: 6px; margin-top: 2px;
+}
+.vc-meta-text {
+  font-size: 10px; color: var(--text-tertiary);
+}
+
+.vc-detail-feed { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+.vc-detail-title { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.35; word-break: break-word; margin: 6px 0 14px; }
+.vc-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.35; margin-bottom: 5px; }
+.vc-field-key { color: var(--text-tertiary); white-space: nowrap; }
+.vc-field-val { color: var(--text-secondary); }
+.vc-open { font-size: 12px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
+
+/* ============================================================
+   VARIANT D — SINGLE PANE (no detail panel)
+   ============================================================ */
+.vd-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0; }
+
+.vd-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.vd-row:hover { background: var(--hover); }
+.vd-row.focused { background: var(--accent-soft); }
+.vd-row.focused .vd-title { color: var(--accent); }
+
+.vd-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+.vd-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.vd-status-text {
+  font-size: 10px; color: var(--text-tertiary);
+}
+.vd-hint {
+  font-size: 9px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ── Expandable detail within single pane ──── */
+.vd-detail-inline {
+  padding: 6px 14px 10px 28px;
+  margin: 0 6px 2px;
+  border-radius: 0 0 5px 5px;
+  background: oklch(100% 0 0 / 0.03);
+  border-left: 2px solid var(--accent-dim);
+}
+.vd-inline-fields { display: flex; flex-direction: column; gap: 3px; }
+.vd-inline-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+.vd-inline-key { color: var(--text-tertiary); }
+.vd-inline-val { color: var(--text-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vd-inline-open { font-size: 11px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 4px; }
+
+/* ============================================================
+   VARIANT E — RESIZABLE SPLIT (60/40 default)
+   ============================================================ */
+.ve-body { display: flex; flex: 1; min-height: 0; }
+.ve-list {
+  flex: 3; min-width: 200px; background: var(--surface-raised);
+  border-right: 1px solid var(--border); overflow-y: auto; padding: 6px 0;
+}
+.ve-detail { flex: 2; overflow-y: auto; padding: 14px 16px; min-width: 0; }
+
+.ve-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 10px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.ve-row:hover { background: var(--hover); }
+.ve-row.focused { background: var(--accent-soft); }
+.ve-row.focused .ve-title { color: var(--accent); }
+
+.ve-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+.ve-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.ve-detail-feed { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+.ve-detail-title { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.35; word-break: break-word; margin: 6px 0 14px; }
+.ve-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.35; margin-bottom: 5px; }
+.ve-field-key { color: var(--text-tertiary); white-space: nowrap; }
+.ve-field-val { color: var(--text-secondary); }
+.ve-open { font-size: 12px; font-weight: 500; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; margin-top: 10px; }
+
+/* Detail empty state */
+.detail-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary); font-size: 12px; }
+
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="document.documentElement.classList.toggle('dark')">Toggle theme</button>
+
+<div class="showcase-header">
+  <h1>Main Screen — Layout Alternatives</h1>
+  <p>The current split layout gives too little space to activity titles (which can be long PR names) while the detail pane often feels wasteful. These variants explore different approaches to balance title readability with detail access.</p>
+</div>
+
+<div class="brief">
+  <strong>Problem:</strong> Activity titles (e.g., PR names like "feat(auth): implement OAuth2 PKCE flow with token refresh and session management") get heavily truncated in the 280px list pane. The detail pane takes ~50% of the window width but often shows only a few fields. The information density is low relative to the space used.
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     VARIANT A — CURRENT
+     ════════════════════════════════════════════════════ -->
+<div class="variant-section">
+  <h2>Current Implementation</h2>
+  <h3>Fixed 280px list + detail pane</h3>
+  <p class="variant-desc">The current layout. List pane is fixed at 280px — titles truncate early, especially for PR names. Detail pane fills the remaining ~280px.</p>
+  <ul class="variant-pros"><li>Familiar split-pane pattern</li><li>Detail always visible without interaction</li></ul>
+  <ul class="variant-cons"><li>Titles heavily truncated — barely 30 characters visible</li><li>Detail pane often shows only 3-5 fields, wasting vertical and horizontal space</li><li>Fixed width doesn't adapt to content</li></ul>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="va-body">
+        <div class="va-list">
+          <div class="feed-label">⚑ Needs Attention</div>
+          <div class="va-row focused">
+            <span class="dot neg"></span>
+            <span class="va-title">feat(auth): implement OAuth2 PKCE flow with tok…</span>
+            <span class="va-hint">github</span>
+          </div>
+          <div class="va-row">
+            <span class="dot neg"></span>
+            <span class="va-title">fix: resolve deadlock in connection pool when…</span>
+            <span class="va-hint">ado</span>
+          </div>
+          <div style="margin: 4px 10px 2px; height: 1px; background: var(--separator);"></div>
+          <div class="feed-label">GitHub PRs</div>
+          <div class="va-row">
+            <span class="dot wait"></span>
+            <span class="va-title">chore(deps): bump openssl from 1.1.1 to 3.2.0…</span>
+          </div>
+          <div class="va-row">
+            <span class="dot pos"></span>
+            <span class="va-title">refactor: extract middleware chain into compos…</span>
+          </div>
+          <div class="va-row">
+            <span class="dot run"></span>
+            <span class="va-title">ci: migrate from Jenkins to GitHub Actions with…</span>
+          </div>
+          <div class="feed-label">ADO PRs</div>
+          <div class="va-row">
+            <span class="dot idle"></span>
+            <span class="va-title">docs: update API reference for v3 endpoints</span>
+          </div>
+          <div class="va-row">
+            <span class="dot retained"></span>
+            <span class="va-title">test: add integration tests for payment flow</span>
+          </div>
+        </div>
+        <div class="va-detail">
+          <span class="va-detail-feed">GitHub PRs</span>
+          <div class="va-detail-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+          <span class="chip neg">checks failing</span>
+          <div style="margin-top: 14px;">
+            <div class="va-field"><span class="va-field-key">review</span><span class="va-field-val neg">changes requested</span></div>
+            <div class="va-field"><span class="va-field-key">checks</span><span class="va-field-val neg">failing</span></div>
+            <div class="va-field"><span class="va-field-key">mergeable</span><span class="va-field-val">has conflicts</span></div>
+            <div class="va-field"><span class="va-field-key">labels</span><span class="va-field-val">auth, security</span></div>
+          </div>
+          <button class="va-open">↗ Open</button>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     VARIANT B — WIDER LIST + INLINE CHIP
+     ════════════════════════════════════════════════════ -->
+<div class="variant-section">
+  <h2>Variant B</h2>
+  <h3>Wider list (60/40) with inline status chip</h3>
+  <p class="variant-desc">List takes 60% of width (~340px). Status chip moves inline to the list row, reducing the need to open the detail pane for quick triage. Detail pane becomes a secondary reference.</p>
+  <ul class="variant-pros"><li>~50% more characters visible in title</li><li>Status chip inline means you can triage without clicking each item</li><li>Detail pane still available for deep info</li></ul>
+  <ul class="variant-cons"><li>Narrower detail pane — field values may truncate on very long content</li><li>Chip takes some horizontal space from title</li></ul>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="vb-body">
+        <div class="vb-list">
+          <div class="feed-label">⚑ Needs Attention</div>
+          <div class="vb-row focused">
+            <span class="dot neg"></span>
+            <span class="vb-title">feat(auth): implement OAuth2 PKCE flow with token refresh and…</span>
+            <span class="vb-row-chip"><span class="chip neg">failing</span></span>
+            <span class="vb-hint">github</span>
+          </div>
+          <div class="vb-row">
+            <span class="dot neg"></span>
+            <span class="vb-title">fix: resolve deadlock in connection pool when max retries exceeded</span>
+            <span class="vb-row-chip"><span class="chip neg">rejected</span></span>
+            <span class="vb-hint">ado</span>
+          </div>
+          <div style="margin: 4px 10px 2px; height: 1px; background: var(--separator);"></div>
+          <div class="feed-label">GitHub PRs</div>
+          <div class="vb-row">
+            <span class="dot wait"></span>
+            <span class="vb-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+            <span class="vb-row-chip"><span class="chip wait">awaiting</span></span>
+          </div>
+          <div class="vb-row">
+            <span class="dot pos"></span>
+            <span class="vb-title">refactor: extract middleware chain into composable pipeline</span>
+            <span class="vb-row-chip"><span class="chip pos">approved</span></span>
+          </div>
+          <div class="vb-row">
+            <span class="dot run"></span>
+            <span class="vb-title">ci: migrate from Jenkins to GitHub Actions with matrix builds</span>
+            <span class="vb-row-chip"><span class="chip run">running</span></span>
+          </div>
+          <div class="feed-label">ADO PRs</div>
+          <div class="vb-row">
+            <span class="dot idle"></span>
+            <span class="vb-title">docs: update API reference for v3 endpoints</span>
+          </div>
+        </div>
+        <div class="vb-detail">
+          <span class="vb-detail-feed">GitHub PRs</span>
+          <div class="vb-detail-title">feat(auth): implement OAuth2 PKCE flow with token refresh</div>
+          <span class="chip neg">checks failing</span>
+          <div style="margin-top: 14px;">
+            <div class="vb-field"><span class="vb-field-key">review</span><span class="vb-field-val">changes requested</span></div>
+            <div class="vb-field"><span class="vb-field-key">checks</span><span class="vb-field-val">failing</span></div>
+            <div class="vb-field"><span class="vb-field-key">mergeable</span><span class="vb-field-val">has conflicts</span></div>
+          </div>
+          <button class="vb-open">↗ Open</button>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     VARIANT C — TWO-LINE ROWS
+     ════════════════════════════════════════════════════ -->
+<div class="variant-section">
+  <h2>Variant C</h2>
+  <h3>Two-line rows with status + feed on second line</h3>
+  <p class="variant-desc">Each list row gets two lines: title on top, status chip + feed name on bottom. Gives the title the full row width while surfacing status without needing the detail pane.</p>
+  <ul class="variant-pros"><li>Title gets the full 300px width — minimal truncation</li><li>Status visible at a glance without selecting</li><li>Feels richer and more informative per row</li></ul>
+  <ul class="variant-cons"><li>Fewer rows visible (roughly half as many in view)</li><li>May feel less compact for power users who scan by dot color alone</li></ul>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="vc-body">
+        <div class="vc-list">
+          <div class="feed-label">⚑ Needs Attention</div>
+          <div class="vc-row focused">
+            <div class="vc-dot-col"><span class="dot neg"></span></div>
+            <div class="vc-text-col">
+              <div class="vc-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+              <div class="vc-meta"><span class="chip neg">failing</span><span class="vc-meta-text">github</span></div>
+            </div>
+          </div>
+          <div class="vc-row">
+            <div class="vc-dot-col"><span class="dot neg"></span></div>
+            <div class="vc-text-col">
+              <div class="vc-title">fix: resolve deadlock in connection pool when max retries exceeded</div>
+              <div class="vc-meta"><span class="chip neg">rejected</span><span class="vc-meta-text">ado</span></div>
+            </div>
+          </div>
+          <div style="margin: 4px 10px 2px; height: 1px; background: var(--separator);"></div>
+          <div class="feed-label">GitHub PRs</div>
+          <div class="vc-row">
+            <div class="vc-dot-col"><span class="dot wait"></span></div>
+            <div class="vc-text-col">
+              <div class="vc-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</div>
+              <div class="vc-meta"><span class="chip wait">awaiting</span></div>
+            </div>
+          </div>
+          <div class="vc-row">
+            <div class="vc-dot-col"><span class="dot pos"></span></div>
+            <div class="vc-text-col">
+              <div class="vc-title">refactor: extract middleware chain into composable pipeline</div>
+              <div class="vc-meta"><span class="chip pos">approved</span></div>
+            </div>
+          </div>
+          <div class="vc-row">
+            <div class="vc-dot-col"><span class="dot run"></span></div>
+            <div class="vc-text-col">
+              <div class="vc-title">ci: migrate from Jenkins to GitHub Actions with matrix builds</div>
+              <div class="vc-meta"><span class="chip run">running</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="vc-detail">
+          <span class="vc-detail-feed">GitHub PRs</span>
+          <div class="vc-detail-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+          <span class="chip neg">checks failing</span>
+          <div style="margin-top: 14px;">
+            <div class="vc-field"><span class="vc-field-key">review</span><span class="vc-field-val">changes requested</span></div>
+            <div class="vc-field"><span class="vc-field-key">checks</span><span class="vc-field-val">failing</span></div>
+            <div class="vc-field"><span class="vc-field-key">mergeable</span><span class="vc-field-val">has conflicts</span></div>
+          </div>
+          <button class="vc-open">↗ Open</button>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     VARIANT D — SINGLE PANE (expandable rows)
+     ════════════════════════════════════════════════════ -->
+<div class="variant-section">
+  <h2>Variant D</h2>
+  <h3>Single pane with expandable detail (like the menubar panel)</h3>
+  <p class="variant-desc">No split. Activity titles get the full ~540px width. Click or press Enter to expand inline detail below the row, similar to how the menubar panel works. Maximizes title readability.</p>
+  <ul class="variant-pros"><li>Titles get the full window width — essentially zero truncation</li><li>Consistent mental model with the menubar panel</li><li>Maximum information density when collapsed</li></ul>
+  <ul class="variant-cons"><li>Detail requires a click/keypress to reveal (not always-visible)</li><li>Expanding pushes other items down — context can shift</li><li>Less "app-like", more "panel-like"</li></ul>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="vd-body">
+        <div class="feed-label">⚑ Needs Attention</div>
+        <div class="vd-row focused" style="border-radius: 5px 5px 0 0;">
+          <span class="dot neg"></span>
+          <span class="vd-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</span>
+          <span class="vd-right">
+            <span class="chip neg">failing</span>
+            <span class="vd-hint">github</span>
+          </span>
+        </div>
+        <div class="vd-detail-inline">
+          <div class="vd-inline-fields">
+            <div class="vd-inline-field"><span class="vd-inline-key">review</span><span class="vd-inline-val" style="color: var(--status-attention-negative);">changes requested</span></div>
+            <div class="vd-inline-field"><span class="vd-inline-key">checks</span><span class="vd-inline-val" style="color: var(--status-attention-negative);">failing</span></div>
+            <div class="vd-inline-field"><span class="vd-inline-key">mergeable</span><span class="vd-inline-val">has conflicts</span></div>
+            <div class="vd-inline-field"><span class="vd-inline-key">labels</span><span class="vd-inline-val">auth, security</span></div>
+          </div>
+          <button class="vd-inline-open">↗ Open</button>
+        </div>
+        <div class="vd-row">
+          <span class="dot neg"></span>
+          <span class="vd-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</span>
+          <span class="vd-right"><span class="chip neg">rejected</span><span class="vd-hint">ado</span></span>
+        </div>
+        <div style="margin: 4px 14px 2px; height: 1px; background: var(--separator);"></div>
+        <div class="feed-label">GitHub PRs</div>
+        <div class="vd-row">
+          <span class="dot wait"></span>
+          <span class="vd-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+          <span class="vd-right"><span class="chip wait">awaiting</span></span>
+        </div>
+        <div class="vd-row">
+          <span class="dot pos"></span>
+          <span class="vd-title">refactor: extract middleware chain into composable pipeline architecture</span>
+          <span class="vd-right"><span class="chip pos">approved</span></span>
+        </div>
+        <div class="vd-row">
+          <span class="dot run"></span>
+          <span class="vd-title">ci: migrate from Jenkins to GitHub Actions with matrix builds and parallel test execution</span>
+          <span class="vd-right"><span class="chip run">running</span></span>
+        </div>
+        <div class="feed-label">ADO PRs</div>
+        <div class="vd-row">
+          <span class="dot idle"></span>
+          <span class="vd-title">docs: update API reference for v3 endpoints with new authentication examples</span>
+          <span class="vd-right"></span>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> expand · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     VARIANT E — FLEX SPLIT (60/40)
+     ════════════════════════════════════════════════════ -->
+<div class="variant-section">
+  <h2>Variant E</h2>
+  <h3>Flex split (60/40) with inline chip</h3>
+  <p class="variant-desc">Like Variant B but uses flex ratios instead of fixed widths, so the list grows with the window. Combines inline status chip with a proportional detail pane. A middle ground that adapts to different window sizes.</p>
+  <ul class="variant-pros"><li>Proportional — list grows if user resizes window wider</li><li>Inline chip gives at-a-glance status</li><li>Detail pane still present for deep info</li></ul>
+  <ul class="variant-cons"><li>At minimum window size, both panes are somewhat cramped</li><li>Neither pane is truly "spacious"</li></ul>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="ve-body">
+        <div class="ve-list">
+          <div class="feed-label">⚑ Needs Attention</div>
+          <div class="ve-row focused">
+            <span class="dot neg"></span>
+            <span class="ve-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session…</span>
+            <span class="ve-right"><span class="chip neg">failing</span><span class="vd-hint">github</span></span>
+          </div>
+          <div class="ve-row">
+            <span class="dot neg"></span>
+            <span class="ve-title">fix: resolve deadlock in connection pool when max retries exceeded</span>
+            <span class="ve-right"><span class="chip neg">rejected</span><span class="vd-hint">ado</span></span>
+          </div>
+          <div style="margin: 4px 10px 2px; height: 1px; background: var(--separator);"></div>
+          <div class="feed-label">GitHub PRs</div>
+          <div class="ve-row">
+            <span class="dot wait"></span>
+            <span class="ve-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+            <span class="ve-right"><span class="chip wait">awaiting</span></span>
+          </div>
+          <div class="ve-row">
+            <span class="dot pos"></span>
+            <span class="ve-title">refactor: extract middleware chain into composable pipeline</span>
+            <span class="ve-right"><span class="chip pos">approved</span></span>
+          </div>
+          <div class="ve-row">
+            <span class="dot run"></span>
+            <span class="ve-title">ci: migrate from Jenkins to GitHub Actions with matrix builds</span>
+            <span class="ve-right"><span class="chip run">running</span></span>
+          </div>
+          <div class="feed-label">ADO PRs</div>
+          <div class="ve-row">
+            <span class="dot idle"></span>
+            <span class="ve-title">docs: update API reference for v3 endpoints</span>
+            <span class="ve-right"></span>
+          </div>
+        </div>
+        <div class="ve-detail">
+          <span class="ve-detail-feed">GitHub PRs</span>
+          <div class="ve-detail-title">feat(auth): implement OAuth2 PKCE flow with token refresh</div>
+          <span class="chip neg">checks failing</span>
+          <div style="margin-top: 14px;">
+            <div class="ve-field"><span class="ve-field-key">review</span><span class="ve-field-val">changes requested</span></div>
+            <div class="ve-field"><span class="ve-field-key">checks</span><span class="ve-field-val">failing</span></div>
+            <div class="ve-field"><span class="ve-field-key">mergeable</span><span class="ve-field-val">has conflicts</span></div>
+          </div>
+          <button class="ve-open">↗ Open</button>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Recommendation:</strong> Variant C (two-line rows) or Variant D (single pane expandable) best solve the core problem. Variant C preserves the split layout but gives titles the full list width. Variant D eliminates the wasted detail pane entirely and mirrors the menubar panel's proven expand/collapse pattern. Variant B is the least disruptive change from current — just widening the ratio and adding inline chips.
+</div>
+
+<script>
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.documentElement.classList.add('dark');
+}
+</script>
+
+</body>
+</html>

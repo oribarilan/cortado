@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Variant D Subvariants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SHOWCASE CHROME
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: light dark;
+  --chrome-bg: #f0f0f0; --chrome-fg: #1a1a1a; --chrome-muted: #666;
+  --chrome-border: #d0d0d0; --chrome-controls-bg: #eaeaea;
+  --chrome-btn-bg: #fff; --chrome-btn-border: #c0c0c0; --chrome-btn-fg: #333;
+  --chrome-btn-hover: #f2f2f2;
+  --chrome-btn-active-bg: #1d1d1f; --chrome-btn-active-fg: #fff;
+  --note-bg: #fffcf0; --note-border: #e6d88a; --note-fg: #5a4e1a;
+  --brief-bg: #f5f3ff; --brief-border: #d4ccf0; --brief-fg: #3b2f6e;
+}
+html.dark {
+  --chrome-bg: #161616; --chrome-fg: #e0e0e0; --chrome-muted: #888;
+  --chrome-border: #2e2e2e; --chrome-controls-bg: #1e1e1e;
+  --chrome-btn-bg: #2a2a2a; --chrome-btn-border: #444; --chrome-btn-fg: #ccc;
+  --chrome-btn-hover: #363636;
+  --chrome-btn-active-bg: #e0e0e0; --chrome-btn-active-fg: #111;
+  --note-bg: #1e1c14; --note-border: #3a3520; --note-fg: #c4b86a;
+  --brief-bg: #1c1a28; --brief-border: #3a3560; --brief-fg: #b0a4e0;
+}
+
+body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: var(--chrome-bg); color: var(--chrome-fg);
+  padding: 40px 48px; line-height: 1.5;
+}
+
+.showcase-header { margin-bottom: 32px; }
+.showcase-header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.showcase-header p { font-size: 13px; color: var(--chrome-muted); margin-top: 6px; max-width: 680px; }
+
+.theme-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 999;
+  font-size: 11px; font-weight: 500; font-family: inherit;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  background: var(--chrome-btn-bg); color: var(--chrome-btn-fg);
+  border: 1px solid var(--chrome-btn-border);
+}
+.theme-toggle:hover { background: var(--chrome-btn-hover); }
+
+.brief {
+  background: var(--brief-bg); border: 1px solid var(--brief-border); color: var(--brief-fg);
+  border-radius: 8px; padding: 16px 20px; margin-bottom: 36px; font-size: 12px; line-height: 1.6;
+}
+.brief strong { font-weight: 600; }
+
+.note {
+  background: var(--note-bg); border: 1px solid var(--note-border); color: var(--note-fg);
+  border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-size: 11px; line-height: 1.5;
+}
+
+.variant-section { margin-bottom: 56px; }
+.variant-section h2 {
+  font-size: 14px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--chrome-muted); margin-bottom: 6px;
+}
+.variant-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.variant-desc {
+  font-size: 12px; color: var(--chrome-muted); margin-bottom: 16px; max-width: 600px;
+}
+
+/* ── App tokens (dark baseline) ──────────────── */
+.stage {
+  --surface: oklch(22% 0.008 250 / 0.93);
+  --surface-raised: oklch(17% 0.01 250);
+  --surface-inset: oklch(20% 0.012 250);
+  --text-primary: oklch(92% 0.01 250);
+  --text-secondary: oklch(70% 0.01 250);
+  --text-tertiary: oklch(56% 0.01 250);
+  --border: oklch(33% 0.01 250 / 0.78);
+  --separator: oklch(36% 0.01 250 / 0.75);
+  --hover: oklch(100% 0 0 / 0.08);
+  --accent: oklch(72% 0.14 178);
+  --accent-dim: oklch(38% 0.06 178);
+  --accent-soft: oklch(22% 0.03 178);
+  --status-neg: oklch(70% 0.2 25);
+  --status-wait: oklch(80% 0.16 78);
+  --status-run: oklch(72% 0.16 259);
+  --status-pos: oklch(80% 0.14 150);
+  --status-idle: oklch(67% 0.01 250);
+
+  background: oklch(10% 0.005 250);
+  border-radius: 12px; padding: 32px;
+  display: flex; justify-content: center;
+}
+html.dark .stage { background: oklch(8% 0.005 250); }
+
+.shell {
+  width: 560px; height: 440px;
+  border-radius: 10px; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 34px oklch(0% 0 0 / 0.25), 0 2px 8px oklch(0% 0 0 / 0.12);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 13px; color: var(--text-primary);
+  display: flex; flex-direction: column; user-select: none;
+}
+
+.shell-body { flex: 1; overflow-y: auto; padding: 6px 0; }
+
+.shell-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px; border-top: 1px solid var(--separator);
+  min-height: 28px; font-size: 10px; color: var(--text-tertiary); flex-shrink: 0;
+}
+.shell-footer kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 14px; height: 14px; padding: 0 3px; border-radius: 3px;
+  font-family: inherit; font-size: 9px;
+  background: oklch(100% 0 0 / 0.06); border: 0.5px solid oklch(100% 0 0 / 0.12);
+  color: var(--text-secondary);
+}
+.shell-footer-gear {
+  font-size: 13px; color: var(--accent); opacity: 0.7; cursor: pointer;
+  background: none; border: none; padding: 2px 4px; border-radius: 4px;
+}
+
+/* ── Shared primitives ─────────────────────────── */
+.dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
+.dot.neg { background: var(--status-neg); }
+.dot.wait { background: var(--status-wait); }
+.dot.run { background: var(--status-run); }
+.dot.pos { background: var(--status-pos); }
+.dot.idle { background: var(--status-idle); }
+.dot.retained { background: transparent; border: 1.5px solid var(--status-idle); }
+
+.feed-lbl {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-tertiary); padding: 4px 14px; cursor: default;
+}
+.feed-lbl.attn { color: var(--status-neg); }
+
+.chip {
+  font-size: 9px; line-height: 1; padding: 3px 7px; border-radius: 999px; white-space: nowrap;
+}
+.chip.neg { color: var(--status-neg); background: oklch(70% 0.2 25 / 0.12); }
+.chip.wait { color: var(--status-wait); background: oklch(80% 0.16 78 / 0.12); }
+.chip.run { color: var(--status-run); background: oklch(72% 0.16 259 / 0.12); }
+.chip.pos { color: var(--status-pos); background: oklch(80% 0.14 150 / 0.12); }
+
+.priority-sep { margin: 4px 14px 2px; height: 1px; background: var(--separator); }
+
+.detail-key { color: var(--text-tertiary); white-space: nowrap; }
+.detail-val { color: var(--text-secondary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.detail-val.neg { color: var(--status-neg); }
+.detail-val.wait { color: var(--status-wait); }
+.detail-val.run { color: var(--status-run); }
+.detail-val.pos { color: var(--status-pos); }
+
+.open-link {
+  font-size: 11px; font-weight: 500; color: var(--accent);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.open-link:hover { text-decoration: underline; }
+
+.hint {
+  flex-shrink: 0; font-size: 9px; color: var(--text-tertiary);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   D1 — LEFT BORDER ACCENT
+   Expanded detail has a teal left border, slightly inset.
+   Clean separation between row and detail.
+   ============================================================ */
+.d1-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.d1-row:hover { background: var(--hover); }
+.d1-row.focused { background: var(--accent-soft); }
+.d1-row.focused .d1-title { color: var(--accent); }
+
+.d1-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+
+.d1-expand {
+  margin: 0 6px 4px;
+  padding: 8px 14px 10px 18px;
+  border-left: 2px solid var(--accent-dim);
+  border-radius: 0 0 5px 5px;
+  background: oklch(100% 0 0 / 0.025);
+}
+.d1-fields { display: flex; flex-direction: column; gap: 4px; }
+.d1-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+
+/* ============================================================
+   D2 — INSET CARD
+   Expanded detail is a recessed card with subtle border,
+   sitting inside the row. More visual weight, cleaner containment.
+   ============================================================ */
+.d2-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.d2-row:hover { background: var(--hover); }
+.d2-row.focused { background: var(--accent-soft); border-radius: 5px 5px 0 0; }
+.d2-row.focused .d2-title { color: var(--accent); }
+
+.d2-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+
+.d2-expand {
+  margin: 0 6px 4px;
+  padding: 10px 14px 12px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+}
+.d2-expand-title {
+  font-size: 12px; font-weight: 500; color: var(--text-primary);
+  line-height: 1.35; word-break: break-word; margin-bottom: 8px;
+}
+.d2-fields { display: flex; flex-direction: column; gap: 4px; }
+.d2-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+.d2-actions { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
+
+/* ============================================================
+   D3 — FLUSH MINIMAL
+   Expanded detail is flush — no card, no border. Just indented
+   fields below the row. Ultra-clean, maximum information density.
+   ============================================================ */
+.d3-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.d3-row:hover { background: var(--hover); }
+.d3-row.focused { background: var(--accent-soft); }
+.d3-row.focused .d3-title { color: var(--accent); }
+
+.d3-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+
+.d3-expand {
+  padding: 4px 14px 8px 28px;
+  margin: 0 6px 2px;
+}
+.d3-fields { display: flex; flex-direction: column; gap: 3px; }
+.d3-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+.d3-actions { margin-top: 4px; }
+
+/* ============================================================
+   D4 — TWO-LINE ROWS + FLUSH EXPAND
+   Rows are two-line (title + chip/feed). Expanded detail shows
+   fields below. Combines Variant C and D concepts.
+   ============================================================ */
+.d4-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 14px; margin: 1px 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.d4-row:hover { background: var(--hover); }
+.d4-row.focused { background: var(--accent-soft); }
+.d4-row.focused .d4-title { color: var(--accent); }
+
+.d4-dot-col { padding-top: 5px; }
+.d4-text { min-width: 0; flex: 1; }
+.d4-title {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+.d4-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.d4-meta-text { font-size: 10px; color: var(--text-tertiary); }
+
+.d4-expand {
+  padding: 2px 14px 8px 28px;
+  margin: 0 6px 2px;
+}
+.d4-fields { display: flex; flex-direction: column; gap: 3px; }
+.d4-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+.d4-actions { margin-top: 4px; }
+
+/* ============================================================
+   D5 — COMPACT EXPAND WITH FULL TITLE
+   Single-line rows, but expanded state shows full title
+   (unwrapped) + fields. Best of both worlds for scanning
+   and reading.
+   ============================================================ */
+.d5-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px;
+  height: 30px; padding: 0 14px; margin: 0 6px; border-radius: 5px;
+  cursor: pointer; transition: background 100ms;
+}
+.d5-row:hover { background: var(--hover); }
+.d5-row.focused { background: var(--accent-soft); }
+.d5-row.focused .d5-title { color: var(--accent); }
+
+.d5-title {
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 13px; color: var(--text-primary); line-height: 1.28;
+}
+
+.d5-expand {
+  padding: 4px 14px 10px 28px;
+  margin: 0 6px 2px;
+  border-left: 1px solid color-mix(in oklch, var(--separator), transparent 30%);
+  background: oklch(100% 0 0 / 0.02);
+  border-radius: 0 5px 5px 0;
+}
+.d5-full-title {
+  font-size: 12px; font-weight: 500; color: var(--text-primary);
+  line-height: 1.4; word-break: break-word; margin-bottom: 6px;
+}
+.d5-fields { display: flex; flex-direction: column; gap: 3px; }
+.d5-field { display: grid; grid-template-columns: auto 1fr; gap: 10px; font-size: 11px; }
+.d5-actions {
+  margin-top: 6px; display: flex; align-items: center; gap: 12px;
+}
+
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="document.documentElement.classList.toggle('dark')">Toggle theme</button>
+
+<div class="showcase-header">
+  <h1>Variant D — Single Pane Subvariants</h1>
+  <p>All subvariants use the single-pane expandable pattern: full-width rows, focused item auto-expands detail inline. The design axes explored: detail containment style, row density, and how much of the title is revealed.</p>
+</div>
+
+<div class="brief">
+  <strong>Shared behavior:</strong> ↑↓ moves focus. Focused item auto-expands its detail below. Enter opens the URL. Esc closes the window. No split pane — the entire window is the list.<br><br>
+  <strong>Axes explored:</strong><br>
+  • <strong>D1</strong> — Left border accent (like menubar panel's expand)<br>
+  • <strong>D2</strong> — Inset card (stronger visual container for detail)<br>
+  • <strong>D3</strong> — Flush minimal (no decoration, maximum density)<br>
+  • <strong>D4</strong> — Two-line rows + flush expand (richer rows, compact detail)<br>
+  • <strong>D5</strong> — Compact rows + full-title reveal on expand
+</div>
+
+<!-- ═══════ D1 — LEFT BORDER ACCENT ═══════ -->
+<div class="variant-section">
+  <h2>D1</h2>
+  <h3>Left border accent</h3>
+  <p class="variant-desc">The expanded detail sits below the row with a teal left border — the same pattern as the menubar panel's expand/collapse. Familiar, clean, and gives a visual anchor for where the detail begins and ends.</p>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="shell-body">
+        <div class="feed-lbl attn">⚑ Needs Attention</div>
+        <div class="d1-row focused">
+          <span class="dot neg"></span>
+          <span class="d1-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</span>
+          <span class="chip neg">failing</span>
+        </div>
+        <div class="d1-expand">
+          <div class="d1-fields">
+            <div class="d1-field"><span class="detail-key">review</span><span class="detail-val neg">changes requested</span></div>
+            <div class="d1-field"><span class="detail-key">checks</span><span class="detail-val neg">failing</span></div>
+            <div class="d1-field"><span class="detail-key">mergeable</span><span class="detail-val">has conflicts</span></div>
+            <div class="d1-field"><span class="detail-key">labels</span><span class="detail-val">auth, security</span></div>
+          </div>
+          <div style="margin-top: 6px;"><button class="open-link">↗ Open</button></div>
+        </div>
+        <div class="d1-row">
+          <span class="dot neg"></span>
+          <span class="d1-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</span>
+          <span class="chip neg">rejected</span>
+        </div>
+        <div class="priority-sep"></div>
+        <div class="feed-lbl">GitHub PRs</div>
+        <div class="d1-row">
+          <span class="dot wait"></span>
+          <span class="d1-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+          <span class="chip wait">awaiting</span>
+        </div>
+        <div class="d1-row">
+          <span class="dot pos"></span>
+          <span class="d1-title">refactor: extract middleware chain into composable pipeline architecture</span>
+          <span class="chip pos">approved</span>
+        </div>
+        <div class="d1-row">
+          <span class="dot run"></span>
+          <span class="d1-title">ci: migrate from Jenkins to GitHub Actions with matrix builds and parallel test sharding</span>
+          <span class="chip run">running</span>
+        </div>
+        <div class="feed-lbl">ADO PRs</div>
+        <div class="d1-row">
+          <span class="dot idle"></span>
+          <span class="d1-title">docs: update API reference for v3 endpoints with authentication examples</span>
+          <span></span>
+        </div>
+        <div class="d1-row">
+          <span class="dot retained"></span>
+          <span class="d1-title">test: add integration tests for payment processing flow</span>
+          <span></span>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ D2 — INSET CARD ═══════ -->
+<div class="variant-section">
+  <h2>D2</h2>
+  <h3>Inset card</h3>
+  <p class="variant-desc">The expanded detail is a recessed card with a border, connected to the focused row. Stronger visual containment — the detail feels like a discrete object. Shows the full title unwrapped inside the card.</p>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="shell-body">
+        <div class="feed-lbl attn">⚑ Needs Attention</div>
+        <div class="d2-row focused">
+          <span class="dot neg"></span>
+          <span class="d2-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</span>
+          <span class="chip neg">failing</span>
+        </div>
+        <div class="d2-expand">
+          <div class="d2-expand-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+          <div class="d2-fields">
+            <div class="d2-field"><span class="detail-key">review</span><span class="detail-val neg">changes requested</span></div>
+            <div class="d2-field"><span class="detail-key">checks</span><span class="detail-val neg">failing</span></div>
+            <div class="d2-field"><span class="detail-key">mergeable</span><span class="detail-val">has conflicts</span></div>
+            <div class="d2-field"><span class="detail-key">labels</span><span class="detail-val">auth, security</span></div>
+          </div>
+          <div class="d2-actions"><button class="open-link">↗ Open in browser</button></div>
+        </div>
+        <div class="d2-row">
+          <span class="dot neg"></span>
+          <span class="d2-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</span>
+          <span class="chip neg">rejected</span>
+        </div>
+        <div class="priority-sep"></div>
+        <div class="feed-lbl">GitHub PRs</div>
+        <div class="d2-row">
+          <span class="dot wait"></span>
+          <span class="d2-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+          <span class="chip wait">awaiting</span>
+        </div>
+        <div class="d2-row">
+          <span class="dot pos"></span>
+          <span class="d2-title">refactor: extract middleware chain into composable pipeline architecture</span>
+          <span class="chip pos">approved</span>
+        </div>
+        <div class="d2-row">
+          <span class="dot run"></span>
+          <span class="d2-title">ci: migrate from Jenkins to GitHub Actions with matrix builds</span>
+          <span class="chip run">running</span>
+        </div>
+        <div class="feed-lbl">ADO PRs</div>
+        <div class="d2-row">
+          <span class="dot idle"></span>
+          <span class="d2-title">docs: update API reference for v3 endpoints with authentication examples</span>
+          <span></span>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ D3 — FLUSH MINIMAL ═══════ -->
+<div class="variant-section">
+  <h2>D3</h2>
+  <h3>Flush minimal</h3>
+  <p class="variant-desc">No card, no border, no background. Just indented fields below the focused row. Maximum density and the lightest visual weight. Trusts the indentation alone to communicate hierarchy.</p>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="shell-body">
+        <div class="feed-lbl attn">⚑ Needs Attention</div>
+        <div class="d3-row focused">
+          <span class="dot neg"></span>
+          <span class="d3-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</span>
+          <span class="chip neg">failing</span>
+        </div>
+        <div class="d3-expand">
+          <div class="d3-fields">
+            <div class="d3-field"><span class="detail-key">review</span><span class="detail-val neg">changes requested</span></div>
+            <div class="d3-field"><span class="detail-key">checks</span><span class="detail-val neg">failing</span></div>
+            <div class="d3-field"><span class="detail-key">mergeable</span><span class="detail-val">has conflicts</span></div>
+            <div class="d3-field"><span class="detail-key">labels</span><span class="detail-val">auth, security</span></div>
+          </div>
+          <div class="d3-actions"><button class="open-link">↗ Open</button></div>
+        </div>
+        <div class="d3-row">
+          <span class="dot neg"></span>
+          <span class="d3-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</span>
+          <span class="chip neg">rejected</span>
+        </div>
+        <div class="priority-sep"></div>
+        <div class="feed-lbl">GitHub PRs</div>
+        <div class="d3-row">
+          <span class="dot wait"></span>
+          <span class="d3-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+          <span class="chip wait">awaiting</span>
+        </div>
+        <div class="d3-row">
+          <span class="dot pos"></span>
+          <span class="d3-title">refactor: extract middleware chain into composable pipeline architecture</span>
+          <span class="chip pos">approved</span>
+        </div>
+        <div class="d3-row">
+          <span class="dot run"></span>
+          <span class="d3-title">ci: migrate from Jenkins to GitHub Actions with matrix builds and parallel test sharding</span>
+          <span class="chip run">running</span>
+        </div>
+        <div class="feed-lbl">ADO PRs</div>
+        <div class="d3-row">
+          <span class="dot idle"></span>
+          <span class="d3-title">docs: update API reference for v3 endpoints with authentication examples</span>
+          <span></span>
+        </div>
+        <div class="d3-row">
+          <span class="dot retained"></span>
+          <span class="d3-title">test: add integration tests for payment processing flow</span>
+          <span></span>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ D4 — TWO-LINE ROWS + FLUSH EXPAND ═══════ -->
+<div class="variant-section">
+  <h2>D4</h2>
+  <h3>Two-line rows with flush expand</h3>
+  <p class="variant-desc">Rows show title + chip/feed on a second line (like Variant C from the previous showcase). The expanded detail adds fields below, flush. Richer scanning — you see the status chip even without focusing.</p>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="shell-body">
+        <div class="feed-lbl attn">⚑ Needs Attention</div>
+        <div class="d4-row focused">
+          <div class="d4-dot-col"><span class="dot neg"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+            <div class="d4-meta"><span class="chip neg">failing</span><span class="d4-meta-text">github</span></div>
+          </div>
+        </div>
+        <div class="d4-expand">
+          <div class="d4-fields">
+            <div class="d4-field"><span class="detail-key">review</span><span class="detail-val neg">changes requested</span></div>
+            <div class="d4-field"><span class="detail-key">checks</span><span class="detail-val neg">failing</span></div>
+            <div class="d4-field"><span class="detail-key">mergeable</span><span class="detail-val">has conflicts</span></div>
+            <div class="d4-field"><span class="detail-key">labels</span><span class="detail-val">auth, security</span></div>
+          </div>
+          <div class="d4-actions"><button class="open-link">↗ Open</button></div>
+        </div>
+        <div class="d4-row">
+          <div class="d4-dot-col"><span class="dot neg"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</div>
+            <div class="d4-meta"><span class="chip neg">rejected</span><span class="d4-meta-text">ado</span></div>
+          </div>
+        </div>
+        <div class="priority-sep"></div>
+        <div class="feed-lbl">GitHub PRs</div>
+        <div class="d4-row">
+          <div class="d4-dot-col"><span class="dot wait"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</div>
+            <div class="d4-meta"><span class="chip wait">awaiting</span></div>
+          </div>
+        </div>
+        <div class="d4-row">
+          <div class="d4-dot-col"><span class="dot pos"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">refactor: extract middleware chain into composable pipeline architecture</div>
+            <div class="d4-meta"><span class="chip pos">approved</span></div>
+          </div>
+        </div>
+        <div class="d4-row">
+          <div class="d4-dot-col"><span class="dot run"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">ci: migrate from Jenkins to GitHub Actions with matrix builds</div>
+            <div class="d4-meta"><span class="chip run">running</span></div>
+          </div>
+        </div>
+        <div class="feed-lbl">ADO PRs</div>
+        <div class="d4-row">
+          <div class="d4-dot-col"><span class="dot idle"></span></div>
+          <div class="d4-text">
+            <div class="d4-title">docs: update API reference for v3 endpoints</div>
+            <div class="d4-meta"><span class="d4-meta-text">idle</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ D5 — COMPACT ROWS + FULL TITLE REVEAL ═══════ -->
+<div class="variant-section">
+  <h2>D5</h2>
+  <h3>Compact rows + full title reveal</h3>
+  <p class="variant-desc">Rows stay single-line and compact for fast scanning. When focused, the detail area reveals the full un-truncated title, fields, and open link. The title is shown twice — truncated in the row, full in the expand — solving readability without sacrificing scan density.</p>
+
+  <div class="stage">
+    <div class="shell">
+      <div class="shell-body">
+        <div class="feed-lbl attn">⚑ Needs Attention</div>
+        <div class="d5-row focused">
+          <span class="dot neg"></span>
+          <span class="d5-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</span>
+          <span class="chip neg">failing</span>
+        </div>
+        <div class="d5-expand">
+          <div class="d5-full-title">feat(auth): implement OAuth2 PKCE flow with token refresh and session management</div>
+          <div class="d5-fields">
+            <div class="d5-field"><span class="detail-key">review</span><span class="detail-val neg">changes requested</span></div>
+            <div class="d5-field"><span class="detail-key">checks</span><span class="detail-val neg">failing</span></div>
+            <div class="d5-field"><span class="detail-key">mergeable</span><span class="detail-val">has conflicts</span></div>
+            <div class="d5-field"><span class="detail-key">labels</span><span class="detail-val">auth, security</span></div>
+          </div>
+          <div class="d5-actions">
+            <button class="open-link">↗ Open in browser</button>
+          </div>
+        </div>
+        <div class="d5-row">
+          <span class="dot neg"></span>
+          <span class="d5-title">fix: resolve deadlock in connection pool when max retries exceeded during failover</span>
+          <span class="chip neg">rejected</span>
+        </div>
+        <div class="priority-sep"></div>
+        <div class="feed-lbl">GitHub PRs</div>
+        <div class="d5-row">
+          <span class="dot wait"></span>
+          <span class="d5-title">chore(deps): bump openssl from 1.1.1 to 3.2.0 across all services</span>
+          <span class="chip wait">awaiting</span>
+        </div>
+        <div class="d5-row">
+          <span class="dot pos"></span>
+          <span class="d5-title">refactor: extract middleware chain into composable pipeline architecture</span>
+          <span class="chip pos">approved</span>
+        </div>
+        <div class="d5-row">
+          <span class="dot run"></span>
+          <span class="d5-title">ci: migrate from Jenkins to GitHub Actions with matrix builds and parallel test sharding</span>
+          <span class="chip run">running</span>
+        </div>
+        <div class="feed-lbl">ADO PRs</div>
+        <div class="d5-row">
+          <span class="dot idle"></span>
+          <span class="d5-title">docs: update API reference for v3 endpoints with authentication examples</span>
+          <span></span>
+        </div>
+        <div class="d5-row">
+          <span class="dot retained"></span>
+          <span class="d5-title">test: add integration tests for payment processing flow</span>
+          <span></span>
+        </div>
+      </div>
+      <div class="shell-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>↵</kbd> open · <kbd>esc</kbd> close</span>
+        <button class="shell-footer-gear">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>My pick:</strong> D5 (compact rows + full title reveal) or D1 (left border accent). D5 gives the best of both worlds — maximum row density for scanning with full title readability on focus. D1 is the most consistent with the existing menubar panel pattern. D2 is the most visually "finished" but takes the most vertical space per expanded item.
+</div>
+
+<script>
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.documentElement.classList.add('dark');
+}
+</script>
+
+</body>
+</html>
