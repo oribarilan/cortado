@@ -26,5 +26,5 @@ Add loading/refresh animations to the menubar panel and main screen for all thre
 ## Notes
 
 - The menubar panel already has a shimmer skeleton (`@keyframes shimmer`). Reuse and extend rather than reinvent.
-- For the main screen, consider whether both panes should shimmer or just the list pane.
+- Main screen: only the list pane shimmers on startup. The detail pane shows its empty-state placeholder ("Select an activity") since its content depends on a selection — shimmering it would imply something is loading there when nothing is.
 - Background refresh indicator should be very restrained — the user shouldn't feel like the app is "busy" when it's just doing a routine poll.

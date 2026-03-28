@@ -23,4 +23,4 @@ Add a crossfade transition when switching between General, Feeds, and Notificati
   - CSS transition on a wrapper with a brief `opacity: 0` → `opacity: 1` cycle triggered by a key change.
   - A small React state machine: `visible → fading-out → fading-in → visible`.
 - Avoid unmounting/remounting the section content during the fade if it causes flicker. Keeping both mounted and toggling visibility+opacity may be smoother.
-- If crossfade feels too complex for the first pass, a simple fade-out-then-in (sequential, not overlapping) is fine.
+- Use a sequential fade-out-then-in (not an overlapping crossfade). Simpler to implement and avoids layout complexity from two sections being visible simultaneously.
