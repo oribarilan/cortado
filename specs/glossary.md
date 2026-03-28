@@ -20,6 +20,14 @@ See `specs/status.md` for the full status model spec.
 | **Status Kind** | Semantic classification of a status field — answers "who has the ball?" One of: `AttentionNegative`, `AttentionPositive`, `Waiting`, `Running`, `Idle`. Controls dot color and animation. In code: `StatusKind` enum, `kind` field. |
 | **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing", "awaiting"). Each feed defines its own vocabulary and maps values to status kinds in code. In code: `value` field on `FieldValue::Status`. |
 
+## UI
+
+| Term | Definition |
+|------|-----------|
+| **Menubar** | The narrow dropdown that appears from the tray icon. Shows feeds and activities in a compact list with inline disclosure. |
+| **Panel** | The main app window — a floating, non-activating NSPanel opened by global hotkey. Split layout: list pane + detail pane. View-specific settings live under `[panel]` in `settings.toml`. |
+| **Settings** | The standard decorated window for configuring feeds, notifications, and general preferences. Opened from the panel footer or `⌘,`. |
+
 ## Deprecated Terms
 
 | Old Term | Replacement |
@@ -27,3 +35,4 @@ See `specs/status.md` for the full status model spec.
 | Bean | Feed |
 | Watch | Activity |
 | Severity | Status Kind |
+| Main Screen | Panel |
