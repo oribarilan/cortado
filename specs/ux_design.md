@@ -25,7 +25,7 @@ Before sprint 09, the three CSS files (`styles.css`, `main-screen.css`, `setting
 | Chrome | `--border`, `--separator`, `--hover`, `--expanded-bg` |
 | Status | `--status-attention-negative`, `--status-waiting`, `--status-running`, `--status-attention-positive`, `--status-idle` |
 | Accent | `--accent`, `--accent-dim`, `--accent-soft`, `--danger` |
-| Type scale | `--text-2xs` (~9px), `--text-xs` (~10px), `--text-sm` (~11px), `--text-base` (~13px), `--text-lg` (~14px) |
+| Type scale | `--text-2xs` (~10px), `--text-xs` (~11px), `--text-sm` (~12px), `--text-base` (~14px), `--text-lg` (~15px) |
 | Weights | `--font-normal` (400), `--font-medium` (500), `--font-semibold` (600) |
 | Spacing | `--space-1` (2px) through `--space-9` (24px) |
 | Radii | `--radius-sm` (3px), `--radius-md` (5px), `--radius-lg` (10px), `--radius-full` (999px) |
@@ -38,7 +38,7 @@ Space Grotesk is a proportional sans-serif with a geometric, technical feel that
 
 ### Type scale
 
-The scale uses `rem` units so all text sizes scale proportionally when the user changes the text-size setting. Steps were chosen to cover the range of sizes used across the app (9px–14px at default) with minimal visual disruption when snapping existing hardcoded sizes to the nearest step.
+The scale uses `rem` units so all text sizes scale proportionally when the user changes the text-size setting. Steps were chosen to cover the range of sizes used across the app (10px–15px at default) with minimal visual disruption when snapping existing hardcoded sizes to the nearest step.
 
 ## Color Palette
 
@@ -88,10 +88,10 @@ Text size is controlled by scaling the root `font-size` on `<html>`:
 
 | Level | Root size |
 |-------|-----------|
-| S | 12px |
-| M (default) | 13px |
-| L | 14px |
-| XL | 15px |
+| S | 13px |
+| M (default) | 14px |
+| L | 15px |
+| XL | 16px |
 
 Because the type scale uses `rem`, all text sizes scale proportionally. Spacing tokens remain in `px` because panel dimensions are fixed pixel values and shouldn't shift with text size.
 

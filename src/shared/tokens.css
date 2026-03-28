@@ -37,11 +37,11 @@
   --danger: oklch(70% 0.18 25);
 
   /* ── Type scale (rem — scales with root font-size) */
-  --text-2xs: 0.692rem;   /* ~9px  at 13px root */
-  --text-xs: 0.769rem;    /* ~10px at 13px root */
-  --text-sm: 0.846rem;    /* ~11px at 13px root */
-  --text-base: 1rem;      /* 13px root */
-  --text-lg: 1.077rem;    /* ~14px at 13px root */
+  --text-2xs: 0.692rem;   /* ~10px at 14px root */
+  --text-xs: 0.769rem;    /* ~11px at 14px root */
+  --text-sm: 0.846rem;    /* ~12px at 14px root */
+  --text-base: 1rem;      /* 14px root */
+  --text-lg: 1.077rem;    /* ~15px at 14px root */
 
   /* ── Font weights */
   --font-normal: 400;
@@ -76,7 +76,7 @@
 
   /* ── Font stack & base styles */
   font-family: "Space Grotesk", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   font-weight: var(--font-normal);
   color: var(--text-primary);
@@ -148,7 +148,7 @@
 
 /* ── Text size scaling ───────────────────────────── */
 
-[data-text-size="s"] { font-size: 12px; }
-/* default (m) is 13px, set on :root above */
-[data-text-size="l"] { font-size: 14px; }
-[data-text-size="xl"] { font-size: 15px; }
+[data-text-size="s"] { font-size: 13px; }
+/* default (m) is 14px, set on :root above */
+[data-text-size="l"] { font-size: 15px; }
+[data-text-size="xl"] { font-size: 16px; }
