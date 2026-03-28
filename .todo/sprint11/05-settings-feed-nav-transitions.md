@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Settings feed list/edit navigation transitions

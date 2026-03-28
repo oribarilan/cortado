@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Animation tokens & reduced-motion foundation

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Main screen detail pane & priority section transitions
