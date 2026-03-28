@@ -668,21 +668,23 @@ function SettingsApp() {
 
             <div className="setting-row">
               <div className="setting-info">
-                <div className="setting-label">Show menubar icon</div>
-                <div className="setting-hint">Show tray icon and menubar panel. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
+                <div className="setting-label">Show tray icon</div>
+                <div className="setting-hint">Show tray icon and tray menu. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
               </div>
               <button
                 className={`toggle ${showMenubar ? "on" : ""}`}
                 onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }); }}
                 aria-pressed={showMenubar}
-                aria-label="Show menubar icon"
+                aria-label="Show tray icon"
               />
             </div>
+
+            <div className="section-header">Panel</div>
 
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Needs Attention section</div>
-                <div className="setting-hint">Show a priority section in the main screen for activities that need your attention</div>
+                <div className="setting-hint">Show a priority section at the top of the panel for activities that need your attention</div>
               </div>
               <button
                 className={`toggle ${showPrioritySection ? "on" : ""}`}

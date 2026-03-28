@@ -77,7 +77,6 @@ function DetailPane({ item }: { item: ListItem | null }) {
   }
 
   const { activity } = item;
-  const openUrl = supportsOpen(activity);
 
   return (
     <div className="ms-detail">
@@ -98,14 +97,6 @@ function DetailPane({ item }: { item: ListItem | null }) {
               );
             })}
           </div>
-        ) : null}
-        {openUrl ? (
-          <button
-            className="ms-detail-open"
-            onClick={() => invoke("open_activity", { url: openUrl }).catch(console.error)}
-          >
-            ↗ Open
-          </button>
         ) : null}
       </div>
     </div>
