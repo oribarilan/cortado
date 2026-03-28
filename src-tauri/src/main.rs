@@ -45,7 +45,7 @@ fn main() {
         eprintln!("failed to load settings, using defaults: {err}");
         app_settings::AppSettings::default()
     });
-    let show_menubar = initial_settings.show_menubar;
+    let show_menubar = initial_settings.general.show_menubar;
     let app_settings_state = AppSettingsState::new(initial_settings);
 
     tauri::Builder::default()

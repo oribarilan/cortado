@@ -28,45 +28,36 @@ fn default_text_size() -> String {
 }
 
 /// Global app settings persisted in `~/.config/cortado/settings.toml`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
+    pub general: GeneralSettings,
     pub notifications: NotificationSettings,
-    pub main_screen: MainScreenSettings,
-    #[serde(default = "default_true")]
-    pub show_menubar: bool,
+}
+
+/// General preferences under `[general]` in settings.toml.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct GeneralSettings {
     /// Theme preference: `"system"`, `"light"`, or `"dark"`.
     #[serde(default = "default_theme")]
     pub theme: String,
     /// Text size preference: `"s"`, `"m"`, `"l"`, or `"xl"`.
     #[serde(default = "default_text_size")]
     pub text_size: String,
-}
-
-impl Default for AppSettings {
-    fn default() -> Self {
-        Self {
-            notifications: NotificationSettings::default(),
-            main_screen: MainScreenSettings::default(),
-            show_menubar: true,
-            theme: default_theme(),
-            text_size: default_text_size(),
-        }
-    }
-}
-
-/// Main screen display preferences.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct MainScreenSettings {
-    /// Show the "Needs Attention" priority section at the top of the activity list.
+    #[serde(default = "default_true")]
+    pub show_menubar: bool,
+    /// Show the "Needs Attention" priority section in the main screen.
     #[serde(default = "default_true")]
     pub show_priority_section: bool,
 }
 
-impl Default for MainScreenSettings {
+impl Default for GeneralSettings {
     fn default() -> Self {
         Self {
+            theme: default_theme(),
+            text_size: default_text_size(),
+            show_menubar: true,
             show_priority_section: true,
         }
     }
@@ -227,8 +218,8 @@ pub async fn save_settings(
     save_settings_to_file(&settings).map_err(|e| e.to_string())?;
 
     let payload = AppearancePayload {
-        theme: settings.theme.clone(),
-        text_size: settings.text_size.clone(),
+        theme: settings.general.theme.clone(),
+        text_size: settings.general.text_size.clone(),
     };
 
     state.update(settings).await;
@@ -431,5 +422,36 @@ mod tests {
         state.update(updated).await;
 
         assert!(!state.read().await.notifications.enabled);
+    }
+
+    #[test]
+    fn round_trip_general_section() {
+        let path = temp_settings_path("general");
+
+        let settings = AppSettings {
+            general: GeneralSettings {
+                theme: "dark".to_string(),
+                text_size: "l".to_string(),
+                show_menubar: false,
+                show_priority_section: false,
+            },
+            ..AppSettings::default()
+        };
+
+        save_settings_to_path(&settings, &path).expect("save should succeed");
+        let raw = fs::read_to_string(&path).unwrap();
+        assert!(raw.contains("[general]"), "should have [general] section");
+        assert!(
+            !raw.contains("[main_screen]"),
+            "should not have [main_screen]"
+        );
+
+        let loaded = load_settings_from_path(&path).expect("load should succeed");
+        assert_eq!(loaded.general.theme, "dark");
+        assert_eq!(loaded.general.text_size, "l");
+        assert!(!loaded.general.show_menubar);
+        assert!(!loaded.general.show_priority_section);
+
+        let _ = fs::remove_file(&path);
     }
 }

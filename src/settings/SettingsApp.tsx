@@ -18,16 +18,16 @@ type NotificationSettings = {
   notify_removed_activities: boolean;
 };
 
-type MainScreenSettings = {
+type GeneralSettings = {
+  theme: string;
+  text_size: string;
+  show_menubar: boolean;
   show_priority_section: boolean;
 };
 
 type AppSettings = {
+  general: GeneralSettings;
   notifications: NotificationSettings;
-  main_screen: MainScreenSettings;
-  show_menubar: boolean;
-  theme: string;
-  text_size: string;
 };
 
 type FieldOverrideDto = {
@@ -248,9 +248,20 @@ function SettingsApp() {
     notify_removed_activities: true,
   });
   const [notifLoading, setNotifLoading] = useState(true);
-  const [notifSaveSuccess, setNotifSaveSuccess] = useState<string | null>(null);
   const [notifSaveError, setNotifSaveError] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<boolean | null>(null);
+
+  // Toast state
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const showToast = useCallback(() => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastVisible(true);
+    toastTimer.current = setTimeout(() => setToastVisible(false), 1500);
+  }, []);
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   // Feeds state
   const [feeds, setFeeds] = useState<FeedConfigDto[]>([]);
@@ -284,10 +295,10 @@ function SettingsApp() {
     invoke<AppSettings>("get_settings")
       .then((s) => {
         setNotifSettings(s.notifications);
-        setShowMenubar(s.show_menubar);
-        setShowPrioritySection(s.main_screen?.show_priority_section ?? true);
-        setTheme(s.theme ?? "system");
-        setTextSize(s.text_size ?? "m");
+        setShowMenubar(s.general?.show_menubar ?? true);
+        setShowPrioritySection(s.general?.show_priority_section ?? true);
+        setTheme(s.general?.theme ?? "system");
+        setTextSize(s.general?.text_size ?? "m");
       })
       .catch(() => {})
       .finally(() => setNotifLoading(false));
@@ -332,34 +343,23 @@ function SettingsApp() {
     }
   }, [autostart]);
 
-  const notifSaveTimer = useState<ReturnType<typeof setTimeout> | null>(null);
-  const generalSaveTimer = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [generalSaveSuccess, setGeneralSaveSuccess] = useState<string | null>(null);
-
-  const saveNotifSettings = useCallback(async (updated: NotificationSettings, key?: string) => {
+  const saveNotifSettings = useCallback(async (updated: NotificationSettings) => {
     setNotifSettings(updated);
-    setNotifSaveSuccess(null);
     setNotifSaveError(null);
-    if (notifSaveTimer[0]) clearTimeout(notifSaveTimer[0]);
     try {
       await invoke("save_settings", {
         settings: {
+          general: { show_priority_section: showPrioritySection, show_menubar: showMenubar, theme, text_size: textSize },
           notifications: updated,
-          main_screen: { show_priority_section: showPrioritySection },
-          show_menubar: showMenubar,
-          theme,
-          text_size: textSize,
         },
       });
-      setNotifSaveSuccess(key ?? "general");
-      const t = setTimeout(() => setNotifSaveSuccess(null), 1500);
-      notifSaveTimer[0] = t;
+      showToast();
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [notifSaveTimer, showPrioritySection, showMenubar, theme, textSize]);
+  }, [showPrioritySection, showMenubar, theme, textSize, showToast]);
 
-  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }, key?: string) => {
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
     const newPriority = updates.showPrioritySection ?? showPrioritySection;
     const newTheme = updates.theme ?? theme;
@@ -370,27 +370,18 @@ function SettingsApp() {
     if (updates.theme !== undefined) setTheme(newTheme);
     if (updates.textSize !== undefined) setTextSize(newTextSize);
 
-    setGeneralSaveSuccess(null);
-    if (generalSaveTimer[0]) clearTimeout(generalSaveTimer[0]);
     try {
       await invoke("save_settings", {
         settings: {
+          general: { show_priority_section: newPriority, show_menubar: newMenubar, theme: newTheme, text_size: newTextSize },
           notifications: notifSettings,
-          main_screen: { show_priority_section: newPriority },
-          show_menubar: newMenubar,
-          theme: newTheme,
-          text_size: newTextSize,
         },
       });
-      if (key) {
-        setGeneralSaveSuccess(key);
-        const t = setTimeout(() => setGeneralSaveSuccess(null), 1500);
-        generalSaveTimer[0] = t;
-      }
+      showToast();
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, generalSaveTimer]);
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, showToast]);
 
   const handleRequestPermission = useCallback(async () => {
     try {
@@ -617,10 +608,7 @@ function SettingsApp() {
           <>
             <h2 className="settings-title">General</h2>
 
-            <div className="section-header">
-              Appearance
-              <span className={`inline-saved ${generalSaveSuccess === "appearance" ? "visible" : ""}`}>Saved</span>
-            </div>
+            <div className="section-header">Appearance</div>
 
             <div className="setting-row">
               <div className="setting-info">
@@ -631,7 +619,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${theme === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ theme: opt }, "appearance"); }}
+                    onClick={() => { void saveGeneralSetting({ theme: opt }); }}
                   >
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </button>
@@ -648,7 +636,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${textSize === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ textSize: opt }, "appearance"); }}
+                    onClick={() => { void saveGeneralSetting({ textSize: opt }); }}
                   >
                     {opt.toUpperCase()}
                   </button>
@@ -677,15 +665,12 @@ function SettingsApp() {
                 <div className="setting-label">Show menubar icon</div>
                 <div className="setting-hint">Show tray icon and menubar panel. When off, use ⌘⇧Space or Spotlight to access Cortado.</div>
               </div>
-              <div className="control-with-status">
-                <button
-                  className={`toggle ${showMenubar ? "on" : ""}`}
-                  onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }, "menubar"); }}
-                  aria-pressed={showMenubar}
-                  aria-label="Show menubar icon"
-                />
-                <span className={`inline-saved ${generalSaveSuccess === "menubar" ? "visible" : ""}`}>Saved</span>
-              </div>
+              <button
+                className={`toggle ${showMenubar ? "on" : ""}`}
+                onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }); }}
+                aria-pressed={showMenubar}
+                aria-label="Show menubar icon"
+              />
             </div>
 
             <div className="setting-row">
@@ -693,15 +678,12 @@ function SettingsApp() {
                 <div className="setting-label">Needs Attention section</div>
                 <div className="setting-hint">Show a priority section in the main screen for activities that need your attention</div>
               </div>
-              <div className="control-with-status">
-                <button
-                  className={`toggle ${showPrioritySection ? "on" : ""}`}
-                  onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }, "priority"); }}
-                  aria-pressed={showPrioritySection}
-                  aria-label="Show Needs Attention section"
-                />
-                <span className={`inline-saved ${generalSaveSuccess === "priority" ? "visible" : ""}`}>Saved</span>
-              </div>
+              <button
+                className={`toggle ${showPrioritySection ? "on" : ""}`}
+                onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }); }}
+                aria-pressed={showPrioritySection}
+                aria-label="Show Needs Attention section"
+              />
             </div>
 
             <div className="btn-row">
@@ -745,12 +727,11 @@ function SettingsApp() {
                     <button
                       className={`toggle ${notifSettings.enabled ? "on" : ""}`}
                       onClick={() => {
-                        void saveNotifSettings({ ...notifSettings, enabled: !notifSettings.enabled }, "enable");
+                        void saveNotifSettings({ ...notifSettings, enabled: !notifSettings.enabled });
                       }}
                       aria-pressed={notifSettings.enabled}
                       aria-label="Enable notifications"
                     />
-                    <span className={`inline-saved ${notifSaveSuccess === "enable" ? "visible" : ""}`}>Saved</span>
                   </div>
                 </div>
 
@@ -769,13 +750,12 @@ function SettingsApp() {
                 <div className={!notifSettings.enabled ? "section-disabled" : ""}>
                   <div className="section-header">
                     Mode
-                    <span className={`inline-saved ${notifSaveSuccess === "mode" ? "visible" : ""}`}>Saved</span>
                   </div>
                   <div className="section-hint">Which status changes trigger notifications</div>
 
                   <div
                     className={`option-row ${notifSettings.mode === "all" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }, "mode"); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -785,7 +765,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.mode === "escalation_only" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }, "mode"); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -795,7 +775,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.mode === "specific_kinds" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }, "mode"); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -821,7 +801,7 @@ function SettingsApp() {
                             const updated = current.includes(kind)
                               ? current.filter((k) => k !== kind)
                               : [...current, kind];
-                            void saveNotifSettings({ ...notifSettings, kinds: updated }, "mode");
+                            void saveNotifSettings({ ...notifSettings, kinds: updated });
                           }}
                         >
                           {label}
@@ -832,13 +812,12 @@ function SettingsApp() {
 
                   <div className="section-header">
                     Delivery
-                    <span className={`inline-saved ${notifSaveSuccess === "delivery" ? "visible" : ""}`}>Saved</span>
                   </div>
                   <div className="section-hint">How notifications are batched</div>
 
                   <div
                     className={`option-row ${notifSettings.delivery === "grouped" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }, "delivery"); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "grouped" }); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -848,7 +827,7 @@ function SettingsApp() {
                   </div>
                   <div
                     className={`option-row ${notifSettings.delivery === "immediate" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }, "delivery"); }}
+                    onClick={() => { void saveNotifSettings({ ...notifSettings, delivery: "immediate" }); }}
                   >
                     <span className="option-indicator" />
                     <div className="option-body">
@@ -867,11 +846,10 @@ function SettingsApp() {
                     <div className="control-with-status">
                       <button
                         className={`toggle ${notifSettings.notify_new_activities ? "on" : ""}`}
-                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_new_activities: !notifSettings.notify_new_activities }, "new"); }}
+                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_new_activities: !notifSettings.notify_new_activities }); }}
                         aria-pressed={notifSettings.notify_new_activities}
                         aria-label="Notify on new activities"
                       />
-                      <span className={`inline-saved ${notifSaveSuccess === "new" ? "visible" : ""}`}>Saved</span>
                     </div>
                   </div>
                   <div className="setting-row">
@@ -882,11 +860,10 @@ function SettingsApp() {
                     <div className="control-with-status">
                       <button
                         className={`toggle ${notifSettings.notify_removed_activities ? "on" : ""}`}
-                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_removed_activities: !notifSettings.notify_removed_activities }, "removed"); }}
+                        onClick={() => { void saveNotifSettings({ ...notifSettings, notify_removed_activities: !notifSettings.notify_removed_activities }); }}
                         aria-pressed={notifSettings.notify_removed_activities}
                         aria-label="Notify on removed activities"
                       />
-                      <span className={`inline-saved ${notifSaveSuccess === "removed" ? "visible" : ""}`}>Saved</span>
                     </div>
                   </div>
                 </div>
@@ -1234,7 +1211,7 @@ function SettingsApp() {
                       delivery: "grouped",
                       notify_new_activities: true,
                       notify_removed_activities: true,
-                    }, "enable");
+                    });
                   } else {
                     void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, theme: "system", textSize: "m" });
                     if (autostart) void toggleAutostart();
@@ -1247,6 +1224,7 @@ function SettingsApp() {
           </div>
         </div>
       )}
+      <div className={`save-toast ${toastVisible ? "visible" : ""}`}>✓ Saved</div>
     </div>
   );
 }

@@ -13,8 +13,7 @@ import {
 } from "../shared/utils";
 
 type AppSettings = {
-  main_screen: { show_priority_section: boolean };
-  show_menubar: boolean;
+  general: { show_priority_section: boolean };
 };
 
 /** A flat list item for keyboard navigation. */
@@ -165,7 +164,7 @@ function MainScreenApp() {
         ]);
         if (isMounted) {
           setFeeds(initialFeeds);
-          setShowPrioritySection(settings.main_screen?.show_priority_section ?? true);
+          setShowPrioritySection(settings.general?.show_priority_section ?? true);
         }
       } catch (err) {
         console.error("failed to load feeds:", err);
@@ -183,7 +182,7 @@ function MainScreenApp() {
         if (listRef.current) listRef.current.scrollTop = 0;
         invoke<AppSettings>("get_settings")
           .then((s) => {
-            if (isMounted) setShowPrioritySection(s.main_screen?.show_priority_section ?? true);
+            if (isMounted) setShowPrioritySection(s.general?.show_priority_section ?? true);
           })
           .catch(() => {});
       });

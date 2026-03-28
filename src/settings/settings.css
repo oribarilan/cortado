@@ -1179,6 +1179,32 @@ body {
 
 /* ── Reduced motion ── */
 
+/* ===== Save toast ===== */
+.save-toast {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  padding: var(--space-3) var(--space-7);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
+  z-index: 200;
+}
+
+.save-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Reduced motion ── */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
