@@ -10,11 +10,11 @@
   --field-indent: var(--space-8);
   --field-row-gap: var(--space-1);
 
-  --dur-expand: 200ms;
-  --dur-hover: 100ms;
-  --dur-chevron: 180ms;
-  --ease-expand: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --dur-expand: var(--duration-normal);
+  --dur-hover: var(--duration-fast);
+  --dur-chevron: var(--duration-normal);
+  --ease-expand: var(--ease-out);
+  --ease-default: var(--ease-in-out);
 
   background-color: transparent;
 }

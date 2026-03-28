@@ -5,8 +5,8 @@
   --row-h: 30px;
   --pad-x: var(--space-5);
 
-  --dur-hover: 100ms;
-  --ease-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --dur-hover: var(--duration-fast);
+  --ease-default: var(--ease-in-out);
 }
 
 * {
@@ -345,6 +345,67 @@ body,
   opacity: 1;
 }
 
+/* ── Detail pane crossfade ─────────────────────── */
+
+.ms-detail-content {
+  animation: ms-detail-fade-in var(--duration-fast) var(--ease-out);
+}
+
+@keyframes ms-detail-fade-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Priority section enter/exit ──────────────── */
+
+.ms-priority-section {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--duration-slow) var(--ease-out);
+}
+
+.ms-priority-section.collapsing {
+  grid-template-rows: 0fr;
+}
+
+.ms-priority-inner {
+  overflow: hidden;
+}
+
+/* ── Loading skeleton ──────────────────────────── */
+
+.ms-loading-state {
+  padding: var(--space-3) 0 var(--space-5);
+}
+
+.ms-skeleton {
+  margin: 0 var(--space-5);
+  height: var(--space-4);
+  border-radius: var(--radius-full);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--text-tertiary), transparent 90%) 25%,
+    color-mix(in oklch, var(--text-tertiary), transparent 82%) 50%,
+    color-mix(in oklch, var(--text-tertiary), transparent 90%) 75%
+  );
+  background-size: 240px 100%;
+  animation: ms-shimmer 1.25s linear infinite;
+}
+
+.ms-skeleton + .ms-skeleton {
+  margin-top: var(--space-4);
+}
+
+.ms-skeleton.w-40 { width: 40%; }
+.ms-skeleton.w-55 { width: 55%; }
+.ms-skeleton.w-70 { width: 70%; }
+.ms-skeleton.w-85 { width: 85%; }
+
+@keyframes ms-shimmer {
+  from { background-position: -240px 0; }
+  to { background-position: 240px 0; }
+}
+
 /* ── Animations ────────────────────────────────── */
 
 @keyframes pulse {
@@ -359,7 +420,8 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .ms-activity-row,
-  .ms-dot {
+  .ms-dot,
+  .ms-skeleton {
     transition: none !important;
     animation: none !important;
   }

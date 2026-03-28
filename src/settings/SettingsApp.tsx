@@ -220,6 +220,7 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
 function SettingsApp() {
   useAppearance();
   const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
+  const [sectionFading, setSectionFading] = useState(false);
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
 
@@ -256,6 +257,7 @@ function SettingsApp() {
   const [revealedTokens, setRevealedTokens] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [feedNavTransition, setFeedNavTransition] = useState<"idle" | "drill-in" | "drill-out">("idle");
 
   // Dependency + test state
   const [depInstalled, setDepInstalled] = useState<boolean | null>(null);
@@ -379,6 +381,15 @@ function SettingsApp() {
 
   const [testNotifError, setTestNotifError] = useState<string | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [modalExiting, setModalExiting] = useState(false);
+
+  const closeModal = useCallback(() => {
+    setModalExiting(true);
+    setTimeout(() => {
+      setResetConfirm(false);
+      setModalExiting(false);
+    }, 135); // ~75% of --duration-normal (180ms)
+  }, []);
 
   const handleTestNotification = useCallback(async () => {
     setTestNotifError(null);
@@ -401,6 +412,8 @@ function SettingsApp() {
     setTestResult(null);
     setTestLoading(false);
     setTestPreviewOpen(false);
+    setFeedNavTransition("drill-in");
+    setTimeout(() => setFeedNavTransition("idle"), 180);
     invoke<{ installed: boolean }>("check_feed_dependency", { feedType: feeds[index].type })
       .then((r) => setDepInstalled(r.installed))
       .catch(() => setDepInstalled(null));
@@ -418,17 +431,28 @@ function SettingsApp() {
     setTestResult(null);
     setTestLoading(false);
     setTestPreviewOpen(false);
+    setFeedNavTransition("drill-in");
+    setTimeout(() => setFeedNavTransition("idle"), 180);
     invoke<{ installed: boolean }>("check_feed_dependency", { feedType: "github-pr" })
       .then((r) => setDepInstalled(r.installed))
       .catch(() => setDepInstalled(null));
   }, [feeds.length]);
 
   const cancelEdit = useCallback(() => {
+    if (editingFeed === null) {
+      setEditingIndex(null);
+      setEditingFeed(null);
+      setSaveError(null);
+      setSaveSuccess(false);
+      return;
+    }
     setEditingIndex(null);
     setEditingFeed(null);
     setSaveError(null);
     setSaveSuccess(false);
-  }, []);
+    setFeedNavTransition("drill-out");
+    setTimeout(() => setFeedNavTransition("idle"), 180);
+  }, [editingFeed]);
 
   const saveFeed = useCallback(async () => {
     if (!editingFeed || editingIndex === null) return;
@@ -531,6 +555,17 @@ function SettingsApp() {
     }
   }, [editingFeed]);
 
+  const switchSection = useCallback((next: "general" | "notifications" | "feeds") => {
+    if (next === section || sectionFading) return;
+    cancelEdit();
+    setSectionFading(true);
+    // Wait for fade-out, then swap content and fade back in
+    setTimeout(() => {
+      setSection(next);
+      setSectionFading(false);
+    }, 110); // ~60% of --duration-normal
+  }, [section, sectionFading, cancelEdit]);
+
   const feedTypeFields = editingFeed ? FEED_TYPE_FIELDS[editingFeed.type as FeedType] ?? [] : [];
   const depInfo = editingFeed ? FEED_TYPE_DEPS[editingFeed.type as FeedType] : undefined;
 
@@ -539,24 +574,24 @@ function SettingsApp() {
       <nav className="settings-sidebar">
         <div
           className={`settings-nav ${section === "general" ? "active" : ""}`}
-          onClick={() => { setSection("general"); cancelEdit(); }}
+          onClick={() => switchSection("general")}
         >
           <span className="settings-nav-icon">⚙</span> General
         </div>
         <div
           className={`settings-nav ${section === "feeds" ? "active" : ""}`}
-          onClick={() => { setSection("feeds"); cancelEdit(); }}
+          onClick={() => switchSection("feeds")}
         >
           <span className="settings-nav-icon">◉</span> Feeds
         </div>
         <div
           className={`settings-nav ${section === "notifications" ? "active" : ""}`}
-          onClick={() => { setSection("notifications"); cancelEdit(); }}
+          onClick={() => switchSection("notifications")}
         >
           <span className="settings-nav-icon">♪</span> Notifications
         </div>
       </nav>
-      <main className="settings-main">
+      <main className={`settings-main ${sectionFading ? "fading" : ""}`}>
         {section === "general" ? (
           <>
             <h2 className="settings-title">General</h2>
@@ -832,7 +867,7 @@ function SettingsApp() {
           </>
         ) : editingFeed !== null ? (
           /* ===== FEED EDIT FORM (F2 breadcrumb replace) ===== */
-          <>
+          <div className={`feed-edit-content ${feedNavTransition === "drill-in" ? "slide-in" : ""}`}>
             <div className="breadcrumb">
               <span className="breadcrumb-link" onClick={cancelEdit}>Feeds</span>
               <span className="breadcrumb-sep">›</span>
@@ -1004,45 +1039,49 @@ function SettingsApp() {
             </div>
 
             {/* T3 — Collapsible test results */}
-            {testLoading && !testResult && (
-              <div className="test-panel loading">
-                <span className="spinner-sm" /> Polling feed...
-              </div>
-            )}
+            <div className={`test-panel-wrap ${testLoading || testResult ? "expanded" : ""}`}>
+              <div className="test-panel-wrap-inner">
+                {testLoading && !testResult && (
+                  <div className="test-panel loading">
+                    <span className="spinner-sm" /> Polling feed...
+                  </div>
+                )}
 
-            {testResult && (
-              <div className={`test-panel ${testResult.success ? "success" : "error"}`}>
-                <div className="test-header">
-                  <span className="test-status">
-                    {testResult.success
-                      ? `✓ Connected — ${testResult.activities.length} ${testResult.activities.length === 1 ? "activity" : "activities"}`
-                      : "✕ Poll failed"}
-                  </span>
-                  <span className="test-toggle" onClick={() => setTestPreviewOpen(!testPreviewOpen)}>
-                    {testPreviewOpen ? "Hide details ▾" : "Show details ▸"}
-                  </span>
-                </div>
-                {testPreviewOpen && (
-                  <div className="test-details">
-                    {testResult.success ? (
-                      testResult.activities.length > 0 ? (
-                        testResult.activities.slice(0, 5).map((a, i) => (
-                          <div className="test-activity" key={i}>
-                            <span className="test-dot" />
-                            <span className="test-activity-name">{a.title}</span>
-                            {a.status && <span className="test-activity-status">{a.status}</span>}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="test-empty">No activities returned (the feed is working but has no items).</div>
-                      )
-                    ) : (
-                      <div className="test-error-detail">{testResult.error}</div>
+                {testResult && (
+                  <div className={`test-panel ${testResult.success ? "success" : "error"}`}>
+                    <div className="test-header">
+                      <span className="test-status">
+                        {testResult.success
+                          ? `✓ Connected — ${testResult.activities.length} ${testResult.activities.length === 1 ? "activity" : "activities"}`
+                          : "✕ Poll failed"}
+                      </span>
+                      <span className="test-toggle" onClick={() => setTestPreviewOpen(!testPreviewOpen)}>
+                        {testPreviewOpen ? "Hide details ▾" : "Show details ▸"}
+                      </span>
+                    </div>
+                    {testPreviewOpen && (
+                      <div className="test-details">
+                        {testResult.success ? (
+                          testResult.activities.length > 0 ? (
+                            testResult.activities.slice(0, 5).map((a, i) => (
+                              <div className="test-activity" key={i}>
+                                <span className="test-dot" />
+                                <span className="test-activity-name">{a.title}</span>
+                                {a.status && <span className="test-activity-status">{a.status}</span>}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="test-empty">No activities returned (the feed is working but has no items).</div>
+                          )
+                        ) : (
+                          <div className="test-error-detail">{testResult.error}</div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
             {/* D4 — Footer dep note (when CLI is installed) */}
             {depInfo && depInstalled !== false && (
@@ -1058,10 +1097,10 @@ function SettingsApp() {
                 <a className="ext-link" onClick={() => { void invoke("open_activity", { url: depInfo.installUrl }); }}>Install guide →</a>
               </div>
             )}
-          </>
+          </div>
         ) : (
           /* ===== FEED LIST ===== */
-          <>
+          <div className={`feed-list-content ${feedNavTransition === "drill-out" ? "slide-in" : ""}`}>
             <div className="toolbar">
               <h2 className="settings-title" style={{ margin: 0 }}>Feeds</h2>
               <button className="add-btn" onClick={startAdd}>+ New feed</button>
@@ -1115,20 +1154,20 @@ function SettingsApp() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
       {resetConfirm && (
-        <div className="modal-backdrop" onClick={() => setResetConfirm(false)}>
+        <div className={`modal-backdrop ${modalExiting ? "exiting" : ""}`} onClick={closeModal}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">Reset to defaults</div>
             <div className="modal-body">Reset all notification settings to their default values?</div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setResetConfirm(false)}>Cancel</button>
+              <button className="btn-secondary" onClick={closeModal}>Cancel</button>
               <button
                 className="btn-danger-sm"
                 onClick={() => {
-                  setResetConfirm(false);
+                  closeModal();
                   void saveNotifSettings({
                     enabled: true,
                     mode: "all",

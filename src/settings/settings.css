@@ -44,7 +44,7 @@ body {
   align-items: center;
   gap: var(--space-4);
   font-weight: 450;
-  transition: background 80ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
   user-select: none;
 }
 
@@ -72,6 +72,11 @@ body {
 .settings-main {
   padding: 22px var(--space-9);
   overflow-y: auto;
+  transition: opacity calc(var(--duration-normal) * 0.6) var(--ease-in);
+}
+
+.settings-main.fading {
+  opacity: 0;
 }
 
 .settings-title {
@@ -107,11 +112,30 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .add-btn:hover {
   background: var(--accent-dim);
+}
+
+/* ===== Feed nav transition ===== */
+.feed-edit-content.slide-in {
+  animation: feed-slide-in-right var(--duration-normal) var(--ease-out);
+}
+
+.feed-list-content.slide-in {
+  animation: feed-slide-in-left var(--duration-normal) var(--ease-out);
+}
+
+@keyframes feed-slide-in-right {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes feed-slide-in-left {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* ===== Feed cards (L5b) ===== */
@@ -131,7 +155,7 @@ body {
   gap: var(--space-6);
   align-items: center;
   cursor: pointer;
-  transition: border-color 100ms ease, background 100ms ease;
+  transition: border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
 }
 
 .feed-card:hover {
@@ -260,7 +284,7 @@ body {
   background: var(--surface);
   color: var(--text-primary);
   outline: none;
-  transition: border-color 150ms ease;
+  transition: border-color var(--duration-normal) var(--ease-out);
 }
 
 .form-input:focus {
@@ -359,7 +383,7 @@ body {
   background: var(--accent-dim);
   color: var(--accent);
   cursor: pointer;
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .btn-primary:hover {
@@ -377,7 +401,7 @@ body {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .btn-secondary:hover {
@@ -404,7 +428,7 @@ body {
   background: transparent;
   color: var(--danger);
   cursor: pointer;
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .btn-danger-sm:hover {
@@ -422,7 +446,7 @@ body {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .btn-secondary-sm:hover {
@@ -453,7 +477,7 @@ body {
   color: var(--accent);
   margin-left: var(--space-5);
   opacity: 0;
-  transition: opacity 250ms ease;
+  transition: opacity var(--duration-slow) var(--ease-out);
   white-space: nowrap;
 }
 
@@ -477,6 +501,16 @@ body {
   background: var(--accent-soft);
   border: 1px solid var(--accent-dim);
   line-height: 1.4;
+  animation: feedback-fade-in var(--duration-normal) var(--ease-out);
+}
+
+.save-error {
+  animation: feedback-fade-in var(--duration-normal) var(--ease-out);
+}
+
+@keyframes feedback-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== Config path bar ===== */
@@ -517,7 +551,7 @@ body {
   color: var(--text-tertiary);
   cursor: pointer;
   border: 1px solid var(--border);
-  transition: color 80ms ease, border-color 80ms ease;
+  transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
 }
 
 .config-path-btn:hover {
@@ -541,7 +575,7 @@ body {
   background: var(--surface);
   color: var(--text-primary);
   outline: none;
-  transition: border-color 150ms ease;
+  transition: border-color var(--duration-normal) var(--ease-out);
   -moz-appearance: textfield;
 }
 
@@ -625,7 +659,7 @@ body {
   border: 1px solid var(--border);
   position: relative;
   cursor: pointer;
-  transition: background 180ms ease, border-color 180ms ease;
+  transition: background var(--duration-normal) var(--ease-in-out), border-color var(--duration-normal) var(--ease-in-out);
   flex-shrink: 0;
   padding: 0;
 }
@@ -645,7 +679,7 @@ body {
   position: absolute;
   top: 1px;
   left: 1px;
-  transition: transform 180ms ease, background 180ms ease;
+  transition: transform var(--duration-normal) var(--ease-in-out), background var(--duration-normal) var(--ease-in-out);
 }
 
 .toggle.on::after {
@@ -752,7 +786,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: border-color 100ms ease, color 100ms ease;
+  transition: border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
 .btn-test:hover {
@@ -770,12 +804,33 @@ body {
 }
 
 /* ===== Test results panel (T3) ===== */
+.test-panel-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-slow) var(--ease-out);
+  margin-top: var(--space-3);
+}
+
+.test-panel-wrap.expanded {
+  grid-template-rows: 1fr;
+}
+
+.test-panel-wrap-inner {
+  overflow: hidden;
+}
+
 .test-panel {
-  margin-top: var(--space-5);
+  margin-top: var(--space-2);
   border-radius: var(--radius-md);
   padding: var(--space-4) var(--space-6);
   font-size: var(--text-sm);
   line-height: 1.45;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.test-panel-wrap.expanded .test-panel {
+  opacity: 1;
 }
 
 .test-panel.loading {
@@ -925,7 +980,7 @@ body {
   margin: 3px 0;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out);
   border: 1px solid transparent;
 }
 
@@ -944,7 +999,7 @@ body {
   border-radius: var(--radius-full);
   border: 1.5px solid var(--text-tertiary);
   flex-shrink: 0;
-  transition: background 140ms ease, border-color 140ms ease;
+  transition: background var(--duration-normal) var(--ease-in-out), border-color var(--duration-normal) var(--ease-in-out);
 }
 
 .option-row.selected .option-indicator {
@@ -991,7 +1046,7 @@ body {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .kind-chip:hover {
@@ -1015,6 +1070,22 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  opacity: 0;
+  animation: modal-backdrop-in var(--duration-normal) var(--ease-out) forwards;
+}
+
+.modal-backdrop.exiting {
+  animation: modal-backdrop-out calc(var(--duration-normal) * 0.75) var(--ease-in) forwards;
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .modal-dialog {
@@ -1025,6 +1096,23 @@ body {
   min-width: 320px;
   max-width: 400px;
   box-shadow: 0 8px 32px oklch(0% 0 0 / 0.3);
+  transform: scale(0.97);
+  opacity: 0;
+  animation: modal-dialog-in var(--duration-slow) var(--ease-out) forwards;
+}
+
+.modal-backdrop.exiting .modal-dialog {
+  animation: modal-dialog-out calc(var(--duration-normal) * 0.75) var(--ease-in) forwards;
+}
+
+@keyframes modal-dialog-in {
+  from { transform: scale(0.97); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes modal-dialog-out {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.97); opacity: 0; }
 }
 
 .modal-title {
@@ -1067,7 +1155,7 @@ body {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 100ms ease, color 100ms ease;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   white-space: nowrap;
 }
 
@@ -1083,4 +1171,15 @@ body {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: var(--font-semibold);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: var(--duration-none) !important;
+    animation-duration: var(--duration-none) !important;
+  }
 }

@@ -82,31 +82,33 @@ function DetailPane({ item }: { item: ListItem | null }) {
 
   return (
     <div className="ms-detail">
-      <div className="ms-detail-title">{activity.title}</div>
-      {activity.fields.length > 0 ? (
-        <div className="ms-detail-fields">
-          {activity.fields.map((field) => {
-            const statusClass =
-              field.value.type === "status" ? `status kind-${field.value.kind}` : "";
-            return (
-              <div className="ms-detail-field" key={field.name}>
-                <span className="ms-detail-key">{field.label}</span>
-                <span className={`ms-detail-val ${statusClass}`}>
-                  {formatFieldValue(field)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-      {openUrl ? (
-        <button
-          className="ms-detail-open"
-          onClick={() => invoke("open_activity", { url: openUrl }).catch(console.error)}
-        >
-          ↗ Open
-        </button>
-      ) : null}
+      <div className="ms-detail-content" key={item.key}>
+        <div className="ms-detail-title">{activity.title}</div>
+        {activity.fields.length > 0 ? (
+          <div className="ms-detail-fields">
+            {activity.fields.map((field) => {
+              const statusClass =
+                field.value.type === "status" ? `status kind-${field.value.kind}` : "";
+              return (
+                <div className="ms-detail-field" key={field.name}>
+                  <span className="ms-detail-key">{field.label}</span>
+                  <span className={`ms-detail-val ${statusClass}`}>
+                    {formatFieldValue(field)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+        {openUrl ? (
+          <button
+            className="ms-detail-open"
+            onClick={() => invoke("open_activity", { url: openUrl }).catch(console.error)}
+          >
+            ↗ Open
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -281,7 +283,12 @@ function MainScreenApp() {
         {/* List pane */}
         <div className="ms-list" ref={listRef}>
           {loading ? (
-            <div className="ms-empty-state">Loading…</div>
+            <div className="ms-loading-state">
+              <div className="ms-skeleton w-55" />
+              <div className="ms-skeleton w-85" />
+              <div className="ms-skeleton w-70" />
+              <div className="ms-skeleton w-40" />
+            </div>
           ) : feeds.length === 0 ? (
             <div className="ms-empty-state">
               No feeds configured. Add feeds in Settings.
@@ -289,8 +296,8 @@ function MainScreenApp() {
           ) : (
             <>
               {/* Priority section */}
-              {priorityItems.length > 0 ? (
-                <section className="ms-feed-section ms-priority-section">
+              <section className={`ms-feed-section ms-priority-section ${priorityItems.length === 0 ? "collapsing" : ""}`}>
+                <div className="ms-priority-inner">
                   <header className="ms-feed-header ms-priority-header">⚑ Needs Attention</header>
                   {priorityItems.map((item, index) => {
                     const kind = deriveActivityKind(item.activity);
@@ -318,8 +325,8 @@ function MainScreenApp() {
                     );
                   })}
                   <div className="ms-priority-separator" />
-                </section>
-              ) : null}
+                </div>
+              </section>
 
               {/* Feed sections */}
               {feedSections.map(({ feed, items }) => (

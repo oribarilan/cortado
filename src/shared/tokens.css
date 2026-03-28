@@ -65,6 +65,15 @@
   --radius-lg: 10px;
   --radius-full: 999px;
 
+  /* ── Animation tokens */
+  --duration-fast: 100ms;
+  --duration-normal: 180ms;
+  --duration-slow: 280ms;
+  --duration-none: 0ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+
   /* ── Font stack & base styles */
   font-family: "Space Grotesk", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 13px;
