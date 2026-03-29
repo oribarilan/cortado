@@ -53,14 +53,24 @@ scrollbar-color: <thumb> <track>;
 
 Since Tauri uses WebKit on macOS, the `::-webkit-scrollbar` approach is likely the primary one. The standard properties should be included as well for forward-compatibility.
 
-## Workflow
+## Failed attempt (2026-03-29)
 
-1. **Reproduce** -- build a standalone HTML page that mimics the app's dark theme (using the actual design tokens) with scrollable content, showing the default ugly scrollbar.
-2. **Variations** -- create multiple scrollbar styling alternatives in the HTML page:
-   - A: Thin subtle (near-invisible track, muted thumb)
-   - B: Standard dark (visible track, contrasting thumb)
-   - C: Overlay-style (transparent track, thumb appears on hover only)
-   - D: Accent-tinted (thumb uses `--accent` color family)
-3. **Test with Playwright** -- open the HTML page, take screenshots of each variation to verify rendering.
-4. **Showcase** -- use the `showcase` skill to present the alternatives side by side for user to pick.
-5. **Implement** -- apply the chosen style to `src/shared/tokens.css` (so it's shared across all views) targeting the scrollable containers.
+Applied variation A (thin subtle, 6px, transparent track, muted thumb) to `src/shared/tokens.css` using `*::-webkit-scrollbar` selectors with hardcoded oklch values. Both `scrollbar-width: thin` / `scrollbar-color` (standard) and `::-webkit-scrollbar` pseudo-elements (WebKit) were used.
+
+**What was tried:**
+1. First attempt used CSS custom properties (`var(--scrollbar-thumb)`) -- did not work because `var()` is silently ignored inside `::-webkit-scrollbar` pseudo-elements in WebKit/WKWebView.
+2. Second attempt used hardcoded oklch color literals -- still did not produce a visible scrollbar in the actual Tauri app.
+
+**Possible explanations to investigate next:**
+- Tauri's WKWebView may not support `::-webkit-scrollbar` pseudo-elements at all (some WKWebView configurations strip them).
+- macOS system-level "Show scroll bars" preference (System Settings > Appearance) may override CSS scrollbar styling in WKWebView.
+- The `backdrop-filter` / vibrancy layer on the panel may interfere with scrollbar rendering.
+- May need a Tauri plugin or native Swift/ObjC approach to style scrollbars in WKWebView.
+- May need to use a JS-based scrollbar library (e.g., OverlayScrollbars, SimpleBar) instead of pure CSS.
+
+## Workflow (for next attempt)
+
+1. Investigate whether WKWebView in Tauri actually respects `::-webkit-scrollbar` -- test with a minimal Tauri app or check Tauri/WebKit issue trackers.
+2. If CSS approach is dead, evaluate JS scrollbar libraries (ask user before adding deps).
+3. If native approach is needed, look into NSScrollView styling via Tauri's native API access.
+4. Test the chosen approach in-app before considering done.
