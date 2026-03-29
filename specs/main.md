@@ -138,15 +138,15 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | Feed type | Activities | Key fields |
 |-----------|-----------|------------|
 | `github-pr` | Open PRs per user/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
+| `github-actions` | CI workflow runs per repo | status (status), branch (text), workflow (text), event (text) |
 | `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
+| `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
 | `shell` | Single activity (the command output) | User-defined |
 
 Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.
 
-### Future feed types (not in Phase 1)
+### Future feed types
 
-- `github-actions` — CI workflow runs. Fields: status, duration, branch, trigger.
-- `http-health` — endpoint monitoring. Fields: healthy (status), status_code (number), response_time (text).
 - `docker` — running containers. Fields: state (status), health (status), uptime (text), image (text).
 
 ## Configuration
@@ -176,6 +176,23 @@ interval = "120s"
 # Optional: override field display
 [feed.fields.labels]
 visible = false
+
+[[feed]]
+name = "my ci"
+type = "github-actions"
+repo = "owner/repo"
+branch = "main"           # Optional: only runs on this branch
+workflow = "ci.yml"        # Optional: only this workflow file
+interval = "120s"
+
+[[feed]]
+name = "api health"
+type = "http-health"
+url = "https://api.example.com/health"
+method = "GET"             # Optional: GET (default) or HEAD
+timeout = "10s"            # Optional: per-request timeout (default: 10s)
+expected_status = 200      # Optional: expected HTTP status code (default: 200)
+interval = "60s"
 
 [[feed]]
 name = "Disk usage"
@@ -230,6 +247,70 @@ Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — 
 - unknown/unexpected states are ignored in rollup; if all non-`notApplicable` policies are unknown, the result is `<state> (unknown)` (idle)
 - per-PR policy-call failures produce `unknown` (idle) without failing the whole feed poll
 - policy calls use bounded concurrency (max 5 in flight) with the same per-call timeout as the main poll (30s)
+
+### `github-actions` field mapping contract
+
+Uses the `gh` CLI (`gh run list`). Auth and preflight checks are shared with `github-pr` via a common `ensure_gh_available()` helper.
+
+Config fields:
+
+- `repo` (required) — `owner/repo`
+- `branch` (optional) — filter to runs on this branch
+- `workflow` (optional) — filter to this workflow file
+- `event` (optional) — filter by trigger event (push, pull_request, etc.)
+- `user` (optional) — filter by triggering user (`@me` or a login)
+
+Default interval: `120s`.
+
+Activity identity: run URL. Activity title: `{workflowName} #{number}` (e.g., `CI #482`).
+
+Provided fields:
+
+| Field      | Type   | Label    | Description      |
+|-----------|--------|----------|------------------|
+| `status`  | status | Status   | Run status       |
+| `branch`  | text   | Branch   | Head branch      |
+| `workflow`| text   | Workflow | Workflow name    |
+| `event`   | text   | Event    | Trigger event    |
+
+Status mapping from `gh` JSON `status` and `conclusion`:
+
+- `conclusion` in {`failure`, `timed_out`, `startup_failure`} → `failing` (attention-negative)
+- `conclusion` = `cancelled` → `cancelled` (attention-negative)
+- `status` = `in_progress` → `running` (running)
+- `status` in {`queued`, `waiting`, `requested`, `pending`} → `queued` (waiting)
+- `conclusion` = `success` → `passing` (idle)
+- `conclusion` in {`skipped`, `neutral`} → `skipped` (idle)
+- fallback → `unknown` (idle)
+
+### `http-health` field mapping contract
+
+Pure Rust HTTP monitoring using `reqwest` (with `rustls-tls`). No external CLI dependency.
+
+Config fields:
+
+- `url` (required) — HTTP or HTTPS endpoint URL
+- `method` (optional) — `GET` (default) or `HEAD`
+- `timeout` (optional) — per-request timeout, default `10s`
+- `expected_status` (optional) — expected HTTP status code (100-599), default `200`
+
+Default interval: `60s`.
+
+Activity identity: the URL. Activity title: hostname + path (e.g., `api.example.com/health`).
+
+Provided fields:
+
+| Field           | Type   | Label         | Description                    |
+|----------------|--------|---------------|--------------------------------|
+| `status`       | status | Status        | Endpoint health status         |
+| `response_time`| number | Response Time | Response time in milliseconds  |
+| `status_code`  | number | Status Code   | HTTP response status code      |
+
+Status mapping:
+
+- Request error (timeout, DNS, connection) → `down` (attention-negative)
+- HTTP status != `expected_status` → `unhealthy` (attention-negative)
+- HTTP status = `expected_status` → `healthy` (idle)
 
 ## Tech stack
 

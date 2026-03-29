@@ -6,20 +6,17 @@ use toml::Value;
 
 use crate::feed::{
     config::{FeedConfig, FieldOverride},
-    dependency::{classify_dependency_result, DependencyCheck},
     field_overrides::{apply_activity_overrides, apply_definition_overrides},
+    github_common::{
+        ensure_gh_available, looks_like_gh_auth_error, non_zero_exit_context, GH_COMMAND_TIMEOUT,
+        GH_UNAUTHENTICATED_MESSAGE,
+    },
     process::{CommandInvocation, ProcessRunner, TokioProcessRunner},
     Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
 };
 
 const DEFAULT_INTERVAL_SECONDS: u64 = 120;
-const GH_COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_ACTIVITIES_PER_FEED: usize = 20;
-
-const GH_MISSING_MESSAGE: &str =
-    "GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`.";
-const GH_UNAUTHENTICATED_MESSAGE: &str =
-    "GitHub feed requires `gh` authentication. Run `gh auth login` and retry.";
 
 /// Feed that polls GitHub pull requests via `gh pr list`.
 pub struct GithubPrFeed {
@@ -91,44 +88,6 @@ impl GithubPrFeed {
             process_runner,
         })
     }
-
-    async fn ensure_gh_available(&self) -> Result<()> {
-        let version_invocation = CommandInvocation::new("gh", ["--version"], GH_COMMAND_TIMEOUT);
-        let version_display = version_invocation.display();
-        let version_check = classify_dependency_result(
-            &version_display,
-            self.process_runner.run(version_invocation).await,
-        );
-
-        match version_check {
-            DependencyCheck::MissingBinary => {
-                bail!(GH_MISSING_MESSAGE);
-            }
-            DependencyCheck::InvocationError(error) => {
-                bail!("{error}");
-            }
-            DependencyCheck::Healthy(_) => {}
-        }
-
-        let auth_invocation = CommandInvocation::new("gh", ["auth", "status"], GH_COMMAND_TIMEOUT);
-        let auth_display = auth_invocation.display();
-        let auth_check = classify_dependency_result(
-            &auth_display,
-            self.process_runner.run(auth_invocation).await,
-        );
-
-        match auth_check {
-            DependencyCheck::MissingBinary => bail!(GH_MISSING_MESSAGE),
-            DependencyCheck::Healthy(_) => Ok(()),
-            DependencyCheck::InvocationError(error) => {
-                if looks_like_gh_auth_error(&error.stdout, &error.stderr) {
-                    bail!(GH_UNAUTHENTICATED_MESSAGE);
-                }
-
-                bail!("{error}");
-            }
-        }
-    }
 }
 
 #[async_trait::async_trait]
@@ -158,7 +117,7 @@ impl Feed for GithubPrFeed {
     }
 
     async fn poll(&self) -> Result<Vec<Activity>> {
-        self.ensure_gh_available().await?;
+        ensure_gh_available(self.process_runner.as_ref()).await?;
 
         let invocation = CommandInvocation::new(
             "gh",
@@ -432,34 +391,6 @@ fn status_field(value: &str, kind: StatusKind) -> FieldValue {
     }
 }
 
-fn looks_like_gh_auth_error(stdout: &str, stderr: &str) -> bool {
-    let combined = format!("{}\n{}", stdout, stderr).to_ascii_lowercase();
-
-    combined.contains("gh auth login")
-        || combined.contains("not logged into")
-        || combined.contains("authentication") && combined.contains("required")
-        || combined.contains("log in to github")
-}
-
-fn non_zero_exit_context(exit_code: Option<i32>, stdout: &str, stderr: &str) -> String {
-    let exit = match exit_code {
-        Some(code) => format!("exit code {code}"),
-        None => "unknown exit status".to_string(),
-    };
-
-    let stderr = stderr.trim();
-    if !stderr.is_empty() {
-        return format!("{exit}: {stderr}");
-    }
-
-    let stdout = stdout.trim();
-    if !stdout.is_empty() {
-        return format!("{exit}: {stdout}");
-    }
-
-    exit
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct GhPullRequest {
@@ -537,8 +468,9 @@ mod tests {
 
     use super::{
         map_checks_status, map_labels, map_mergeable_state, map_review_decision, GithubPrFeed,
-        GH_MISSING_MESSAGE, GH_UNAUTHENTICATED_MESSAGE,
     };
+
+    use crate::feed::github_common::{GH_MISSING_MESSAGE, GH_UNAUTHENTICATED_MESSAGE};
 
     #[derive(Clone)]
     struct StubRunner {

@@ -5,14 +5,20 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use self::{ado_pr::AdoPrFeed, config::FeedConfig, github_pr::GithubPrFeed, shell::ShellFeed};
+use self::{
+    ado_pr::AdoPrFeed, config::FeedConfig, github_actions::GithubActionsFeed,
+    github_pr::GithubPrFeed, http_health::HttpHealthFeed, shell::ShellFeed,
+};
 
 pub mod ado_pr;
 pub mod concurrent;
 pub mod config;
 pub mod dependency;
 pub mod field_overrides;
+pub mod github_actions;
+pub mod github_common;
 pub mod github_pr;
+pub mod http_health;
 pub mod process;
 pub mod runtime;
 pub mod shell;
@@ -290,6 +296,12 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
         }
         "ado-pr" => AdoPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
         "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        "http-health" => {
+            HttpHealthFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
+        "github-actions" => {
+            GithubActionsFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
         unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }
 }
