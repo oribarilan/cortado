@@ -120,6 +120,7 @@ All Copilot-specific parsing logic lives in `copilot.rs`. The shared types in `m
 - [ ] All parsing is resilient: unknown events -> `Unknown`, missing fields -> skip, malformed files -> skip
 - [ ] Unit tests: YAML parsing (valid, missing fields, malformed), event type mapping (all types), last-line reading, PID extraction
 - [ ] Add `serde-saphyr` to `Cargo.toml` — approved for `workspace.yaml` parsing (pure Rust, panic-free, no C deps)
+- [ ] Add `libc` to `Cargo.toml` — needed for `kill(pid, 0)` PID liveness check
 - [ ] `just check` passes
 
 ## Notes
@@ -132,5 +133,5 @@ All Copilot-specific parsing logic lives in `copilot.rs`. The shared types in `m
 
 - `src-tauri/src/feed/harness/mod.rs` — new (trait + shared types)
 - `src-tauri/src/feed/harness/copilot.rs` — new (Copilot provider)
-- `src-tauri/Cargo.toml` — add `serde-saphyr`
+- `src-tauri/Cargo.toml` — add `serde-saphyr`, `libc`
 

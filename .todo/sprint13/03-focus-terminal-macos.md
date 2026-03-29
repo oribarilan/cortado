@@ -110,7 +110,7 @@ Frontend: add a parallel action path so `copilot-session` activities call `focus
 
 ## Notes
 
-- **New dependency**: `libc` — needed for `kill(pid, 0)` PID liveness and `sysctl(KERN_PROC_PID)` ancestry walk. Not currently in `Cargo.toml`.
+- **`libc`** — already added in task 01 (used here for `sysctl(KERN_PROC_PID)` ancestry walk).
 - `cocoa`/`objc` via `tauri_nspanel` (already used in `fns.rs`).
 - The resolver is the integration point — individual strategies are separate tasks.
 - The `app_activation` fallback strategy (just `NSRunningApplication.activate()`) is trivial and implemented directly in this task — no separate task file needed. It activates the terminal app without targeting a specific window/pane.

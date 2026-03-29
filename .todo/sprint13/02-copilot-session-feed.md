@@ -48,8 +48,6 @@ None required. If the session state directory doesn't exist, the provider return
 | `repo`   | text   | Repo   | Repository name (e.g. `oribarilan/cortado`)          |
 | `branch` | text   | Branch | Git branch name                                      |
 
-| `pid`    | number | PID    | Owning process PID (hidden, used by focus terminal) |
-
 ## Status kind mapping
 
 | SessionStatus | Status value  | StatusKind        |
@@ -79,9 +77,9 @@ Format: `{short_repo} @ {branch}`
 - [ ] `src-tauri/src/feed/harness/feed.rs` with `HarnessFeed` implementing `Feed`
 - [ ] `HarnessFeed::from_config(config, provider)` constructor
 - [ ] `poll()` calls `provider.discover_sessions()` and maps to `Vec<Activity>`
+- [ ] `poll()` caches last `Vec<SessionInfo>` for `focus_session` lookup
 - [ ] All status values mapped to StatusKind per table above
 - [ ] Activity title formatted as `{short_repo} @ {branch}`
-- [ ] PID exposed as hidden `FieldValue::Number` field (`visible: false` override)
 - [ ] Field overrides supported
 - [ ] Registered in `instantiate_feed()` in `mod.rs` as `"copilot-session"` -> `HarnessFeed` with `CopilotProvider`
 - [ ] Returns empty activities (not error) when provider finds nothing
@@ -123,8 +121,9 @@ Also update:
 
 - The `HarnessFeed` knows nothing about Copilot, YAML, events.jsonl, or lock files. It only knows `SessionInfo`.
 - Adding a new harness (e.g., Claude Code) means: write a new provider, register a new feed type in `instantiate_feed()`. Zero changes to `HarnessFeed`.
-- The PID from `SessionInfo` needs to be plumbed to the frontend for the focus terminal feature. Use a hidden `FieldValue::Number` field named `pid` with an explicit override setting `visible: false`. The frontend extracts it when triggering `focus_session`. This avoids changing the shared `Activity` model.
-- `serde_yaml` dependency will need to be added to `Cargo.toml` for `workspace.yaml` parsing → replaced by `serde-saphyr` (pure Rust, panic-free).
+- `poll()` caches the last `Vec<SessionInfo>` so `focus_session(session_id)` can look up session details between polls. The frontend uses the activity `id` (= session UUID) to call `focus_session`, and the backend resolves it to a `SessionInfo` from the cache.
+- No retention (`retain_for: None`). When a session's lock file disappears, the activity vanishes on the next poll.
+- `serde-saphyr` dependency is added in task 01.
 - Add "Harness" to `specs/glossary.md` during implementation.
 
 ## Relevant files
