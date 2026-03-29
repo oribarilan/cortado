@@ -130,14 +130,30 @@ Release name, falling back to tag name.
 
 This means GitHub Release works even without the full dismiss-until-update mechanism -- old releases naturally scroll out as new ones appear, and the 20-activity cap keeps the list fresh. Dismiss-until-update is a nice-to-have for manually clearing noise, not a hard requirement.
 
-## Other potential FYI feeds
+## Two categories of event feeds
 
-Feeds that would benefit from this pattern in the future:
+Event feeds fall into two buckets depending on whether they need persistent state:
 
+### Stateful monitors
+
+These track an external source and surface *new* occurrences. They need state to know what's already been seen.
+
+- **GitHub Release** -- new releases of a repo (detailed above)
 - **RSS/Atom** -- new blog posts, changelogs, security advisories
 - **GitHub Notifications** -- unread notifications (dismiss = mark as read equivalent)
 - **Dependency updates** -- new versions available (Renovate/Dependabot PRs, npm outdated)
 - **Changelog/Release notes** -- similar to GitHub Release but for non-GitHub sources
+
+### Configured goals / milestones
+
+These check a metric against a user-defined threshold. No history tracking needed -- just poll, compare, and surface when the goal is met.
+
+- **GitHub stars milestone** -- e.g., "notify me when repo X hits 10k stars"
+- **YouTube subscribers** -- e.g., "notify me when channel Y reaches 1M subscribers"
+- **npm downloads** -- e.g., "weekly downloads exceed 100k"
+- **Follower/subscriber counts** on any platform with a public API
+
+These are interesting because they're purely declarative: the user configures a target, and the feed fires once (or periodically reminds) when the condition is true. Open question: once a milestone is reached, does the activity persist, auto-dismiss, or get removed? Does the user want to set a *new* target afterward?
 
 ## Open questions
 
