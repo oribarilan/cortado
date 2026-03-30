@@ -6,8 +6,13 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use self::{
-    ado_pr::AdoPrFeed, config::FeedConfig, github_actions::GithubActionsFeed,
-    github_pr::GithubPrFeed, http_health::HttpHealthFeed, shell::ShellFeed,
+    ado_pr::AdoPrFeed,
+    config::FeedConfig,
+    github_actions::GithubActionsFeed,
+    github_pr::GithubPrFeed,
+    harness::{copilot::CopilotProvider, feed::HarnessFeed},
+    http_health::HttpHealthFeed,
+    shell::ShellFeed,
 };
 
 pub mod ado_pr;
@@ -18,6 +23,7 @@ pub mod field_overrides;
 pub mod github_actions;
 pub mod github_common;
 pub mod github_pr;
+pub mod harness;
 pub mod http_health;
 pub mod process;
 pub mod runtime;
@@ -204,6 +210,8 @@ pub trait Feed: Send + Sync {
 pub struct FeedRegistry {
     feeds: Vec<Arc<dyn Feed>>,
     errored: Vec<FeedSnapshot>,
+    /// References to harness feeds for session lookup (focus_session).
+    harness_feeds: Vec<Arc<harness::feed::HarnessFeed>>,
 }
 
 impl FeedRegistry {
@@ -212,12 +220,19 @@ impl FeedRegistry {
         Self {
             feeds: Vec::new(),
             errored: Vec::new(),
+            harness_feeds: Vec::new(),
         }
     }
 
     /// Registers a feed implementation.
     pub fn register(&mut self, feed: Arc<dyn Feed>) {
         self.feeds.push(feed);
+    }
+
+    /// Registers a harness feed (also registers it as a normal feed).
+    pub fn register_harness(&mut self, feed: Arc<harness::feed::HarnessFeed>) {
+        self.feeds.push(feed.clone() as Arc<dyn Feed>);
+        self.harness_feeds.push(feed);
     }
 
     /// Registers a feed-shaped config error so it can be rendered in the UI.
@@ -234,6 +249,26 @@ impl FeedRegistry {
     /// Returns active feed implementations in registration order.
     pub fn active_feeds(&self) -> &[Arc<dyn Feed>] {
         &self.feeds
+    }
+
+    /// Finds a harness session by ID across all harness feeds.
+    pub fn find_harness_session(&self, session_id: &str) -> Option<harness::SessionInfo> {
+        for feed in &self.harness_feeds {
+            if let Some(session) = feed.find_session(session_id) {
+                return Some(session);
+            }
+        }
+        None
+    }
+
+    /// Returns any cached harness session (for capabilities detection).
+    pub fn any_harness_session(&self) -> Option<harness::SessionInfo> {
+        for feed in &self.harness_feeds {
+            if let Some(session) = feed.any_cached_session() {
+                return Some(session);
+            }
+        }
+        None
     }
 
     /// Returns cache seed snapshots in registration order.
@@ -272,16 +307,29 @@ pub fn build_feed_registry_from_configs(
         let feed_name = config.name.clone();
         let feed_type = config.feed_type.clone();
 
-        match instantiate_feed(&config) {
-            Ok(feed) => registry.register(feed),
-            Err(error) => {
-                if mode == RegistryBuildMode::Strict {
-                    return Err(anyhow::anyhow!(
-                        "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
-                    ));
+        if feed_type == "copilot-session" {
+            match instantiate_harness_feed(&config) {
+                Ok(feed) => registry.register_harness(feed),
+                Err(error) => {
+                    if mode == RegistryBuildMode::Strict {
+                        return Err(anyhow::anyhow!(
+                            "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                        ));
+                    }
+                    registry.register_error(feed_name, feed_type, error.to_string());
                 }
-
-                registry.register_error(feed_name, feed_type, error.to_string());
+            }
+        } else {
+            match instantiate_feed(&config) {
+                Ok(feed) => registry.register(feed),
+                Err(error) => {
+                    if mode == RegistryBuildMode::Strict {
+                        return Err(anyhow::anyhow!(
+                            "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                        ));
+                    }
+                    registry.register_error(feed_name, feed_type, error.to_string());
+                }
             }
         }
     }
@@ -303,6 +351,16 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
             GithubActionsFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
         unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
+    }
+}
+
+pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>> {
+    match config.feed_type.as_str() {
+        "copilot-session" => {
+            let provider = Box::new(CopilotProvider::new()?);
+            HarnessFeed::from_config(config, provider).map(Arc::new)
+        }
+        other => Err(anyhow::anyhow!("unknown harness feed type `{other}`")),
     }
 }
 

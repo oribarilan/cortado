@@ -33,6 +33,7 @@ type AppSettings = {
   general: GeneralSettings;
   panel: PanelSettings;
   notifications: NotificationSettings;
+  focus: { accessibility_enabled: boolean };
 };
 
 type FieldOverrideDto = {
@@ -50,7 +51,7 @@ type FeedConfigDto = {
   fields: Record<string, FieldOverrideDto>;
 };
 
-type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "shell";
+type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "shell" | "copilot-session";
 
 const FEED_TYPE_LABELS: Record<FeedType, string> = {
   "github-pr": "GitHub PR",
@@ -58,6 +59,7 @@ const FEED_TYPE_LABELS: Record<FeedType, string> = {
   "ado-pr": "Azure DevOps PR",
   "http-health": "HTTP Health Check",
   "shell": "Shell",
+  "copilot-session": "Copilot Session",
 };
 
 const FEED_TYPE_FIELDS: Record<FeedType, { key: string; label: string; placeholder: string; hint?: string; mono?: boolean; required?: boolean; sensitive?: boolean }[]> = {
@@ -86,6 +88,7 @@ const FEED_TYPE_FIELDS: Record<FeedType, { key: string; label: string; placehold
     { key: "field_name", label: "Field name", placeholder: "output", hint: "Name for the output field (default: output)", mono: true },
     { key: "field_type", label: "Field type", placeholder: "text", hint: "text, status, number, or url (default: text)", mono: true },
   ],
+  "copilot-session": [],
 };
 
 function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
@@ -206,6 +209,20 @@ const FEED_CATALOG: CatalogProvider[] = [
         name: "Custom Command",
         description: "Run any shell command and track its output",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
+        defaultInterval: "30s",
+      },
+    ],
+  },
+  {
+    id: "coding-agents",
+    name: "Coding Agents",
+    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="12" y1="14" x2="17" y2="14"/></svg>`,
+    types: [
+      {
+        feedType: "copilot-session" as FeedType,
+        name: "Copilot Sessions",
+        description: "Track active GitHub Copilot CLI sessions",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6 2 10.5c0 2.49 1.13 4.71 3 6.24V20l3.5-2C9.62 18.32 10.78 18.5 12 18.5c5.52 0 10-3.98 10-8.5S17.52 2 12 2z"/><circle cx="8.5" cy="10.5" r="1.5"/><circle cx="15.5" cy="10.5" r="1.5"/></svg>`,
         defaultInterval: "30s",
       },
     ],
@@ -386,7 +403,7 @@ function keyEventToShortcut(e: KeyboardEvent): string | null {
 
 function SettingsApp() {
   useAppearance();
-  const [section, setSection] = useState<"general" | "notifications" | "feeds">("general");
+  const [section, setSection] = useState<"general" | "notifications" | "feeds" | "focus">("general");
   const [sectionFading, setSectionFading] = useState(false);
   const [autostart, setAutostart] = useState(false);
   const [autostartLoading, setAutostartLoading] = useState(true);
@@ -425,6 +442,17 @@ function SettingsApp() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
 
+  // Focus capabilities state
+  type FocusCaps = {
+    has_active_session: boolean;
+    tmux_detected: boolean;
+    terminal_app: string | null;
+    terminal_scriptable: boolean;
+    accessibility_permitted: boolean;
+  };
+  const [focusCaps, setFocusCaps] = useState<FocusCaps | null>(null);
+  const [focusLoading, setFocusLoading] = useState(false);
+
   const showToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToastVisible(true);
@@ -432,6 +460,16 @@ function SettingsApp() {
   }, []);
 
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+
+  // Load focus capabilities when focus section is viewed.
+  useEffect(() => {
+    if (section !== "focus") return;
+    setFocusLoading(true);
+    invoke<FocusCaps>("get_focus_capabilities")
+      .then(setFocusCaps)
+      .catch(console.error)
+      .finally(() => setFocusLoading(false));
+  }, [section]);
 
   // Feeds state
   const [feeds, setFeeds] = useState<FeedConfigDto[]>([]);
@@ -827,7 +865,7 @@ function SettingsApp() {
     }
   }, [editingFeed]);
 
-  const switchSection = useCallback((next: "general" | "notifications" | "feeds") => {
+  const switchSection = useCallback((next: "general" | "notifications" | "feeds" | "focus") => {
     if (next === section || sectionFading) return;
     cancelEdit();
     setSectionFading(true);
@@ -860,6 +898,12 @@ function SettingsApp() {
           onClick={() => switchSection("notifications")}
         >
           <span className="settings-nav-icon">♪</span> Notifications
+        </div>
+        <div
+          className={`settings-nav ${section === "focus" ? "active" : ""}`}
+          onClick={() => switchSection("focus")}
+        >
+          <span className="settings-nav-icon">▸</span> Focus
         </div>
       </nav>
       <main className={`settings-main ${sectionFading ? "fading" : ""}`}>
@@ -1190,6 +1234,103 @@ function SettingsApp() {
                   >
                     Reset to defaults
                   </button>
+                </div>
+              </>
+            )}
+          </>
+        ) : section === "focus" ? (
+          <>
+            <h2 className="settings-title">Focus</h2>
+            <p className="settings-hint" style={{ marginBottom: 16 }}>
+              How cortado focuses your terminal when you open a Copilot session.
+            </p>
+
+            {focusLoading ? (
+              <p className="settings-placeholder">Loading...</p>
+            ) : !focusCaps || !focusCaps.has_active_session ? (
+              <div className="settings-placeholder" style={{ textAlign: "left" }}>
+                <p>No active sessions — start a Copilot session to detect capabilities.</p>
+                <p className="settings-hint">Terminal and tmux are detected from session processes.</p>
+              </div>
+            ) : (
+              <>
+                <div className="section-header">Current capability</div>
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">
+                      Detected: {focusCaps.terminal_app ?? "Unknown terminal"}
+                      {focusCaps.tmux_detected ? " + tmux" : ""}
+                    </div>
+                    <div className="setting-hint">
+                      Best strategy: {
+                        focusCaps.tmux_detected ? "tmux pane switching (exact)"
+                        : focusCaps.terminal_scriptable ? "terminal scripting (tab-level)"
+                        : focusCaps.accessibility_permitted ? "accessibility window focus"
+                        : "app activation (fallback)"
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section-header">Strategies</div>
+                <p className="settings-hint" style={{ marginBottom: 8 }}>Ordered by precision. Top = best.</p>
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">1. tmux pane switching</div>
+                    <div className="setting-hint">Switches to the exact tmux pane. Detected automatically when tmux is in use.</div>
+                  </div>
+                  <span className={`status-badge ${focusCaps.tmux_detected ? "active" : "unavailable"}`}>
+                    {focusCaps.tmux_detected ? "Active" : "Not detected"}
+                  </span>
+                </div>
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">2. Terminal-specific scripting</div>
+                    <div className="setting-hint">
+                      Focuses the specific tab/window. Supported: Terminal.app, iTerm2, Ghostty 1.3+
+                    </div>
+                  </div>
+                  <span className={`status-badge ${focusCaps.terminal_scriptable ? "active" : "unavailable"}`}>
+                    {focusCaps.terminal_scriptable ? "Available" : "Not available"}
+                  </span>
+                </div>
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">3. Accessibility window focus</div>
+                    <div className="setting-hint">
+                      Raises the specific window by matching its title. Works with any terminal but less precise.
+                      {!focusCaps.accessibility_permitted ? " Requires Accessibility permission." : ""}
+                    </div>
+                  </div>
+                  <span className={`status-badge ${focusCaps.accessibility_permitted ? "active" : "unavailable"}`}>
+                    {focusCaps.accessibility_permitted ? "Permitted" : "Not enabled"}
+                  </span>
+                </div>
+
+                {!focusCaps.accessibility_permitted ? (
+                  <div style={{ marginTop: 4, marginBottom: 12 }}>
+                    <button
+                      className="config-path-btn"
+                      onClick={() => {
+                        void invoke("open_activity", { url: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" });
+                      }}
+                    >
+                      Open System Settings...
+                    </button>
+                  </div>
+                ) : null}
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">4. App activation (fallback)</div>
+                    <div className="setting-hint">
+                      Brings the terminal app to front. Always available. May focus the wrong window if multiple are open.
+                    </div>
+                  </div>
+                  <span className="status-badge active">Active</span>
                 </div>
               </>
             )}

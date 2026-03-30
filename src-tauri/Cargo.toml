@@ -36,6 +36,8 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2.3.3"
+serde-saphyr = "0.0"
+libc = "0.2"
 
 [features]
 # Used for production builds and when `devPath` points to the filesystem.
@@ -43,3 +45,6 @@ custom-protocol = ["tauri/custom-protocol"]
 # Old objc/sel_impl macros emitted by some transitive deps reference
 # `feature = "cargo-clippy"`; declaring it here keeps check-cfg quiet.
 cargo-clippy = []
+
+[dev-dependencies]
+tempfile = "3"

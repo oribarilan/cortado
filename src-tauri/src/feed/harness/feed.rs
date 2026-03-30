@@ -1,0 +1,519 @@
+use std::{collections::HashMap, sync::Mutex, time::Duration};
+
+use anyhow::Result;
+
+use crate::{
+    feed::{
+        config::{FeedConfig, FieldOverride},
+        field_overrides::{apply_activity_overrides, apply_definition_overrides},
+        Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
+    },
+    terminal_focus,
+};
+
+use super::{HarnessProvider, SessionInfo, SessionStatus};
+
+const DEFAULT_INTERVAL_SECONDS: u64 = 30;
+
+/// Generic feed that delegates session discovery to a `HarnessProvider`.
+///
+/// Maps provider-agnostic `SessionInfo` into `Activity` for the UI.
+/// Adding a new harness requires only a new `HarnessProvider` implementation —
+/// zero changes to this struct.
+pub struct HarnessFeed {
+    name: String,
+    provider: Box<dyn HarnessProvider>,
+    interval: Duration,
+    explicit_overrides: HashMap<String, FieldOverride>,
+    config_overrides: HashMap<String, FieldOverride>,
+    /// Cached sessions from last poll (for focus_session lookup).
+    cached_sessions: Mutex<Vec<SessionInfo>>,
+    /// Cached focus labels per session ID (resolved once, stable for session lifetime).
+    cached_focus_labels: Mutex<HashMap<String, String>>,
+}
+
+impl HarnessFeed {
+    /// Builds a harness feed from parsed feed config and a provider.
+    pub fn from_config(config: &FeedConfig, provider: Box<dyn HarnessProvider>) -> Result<Self> {
+        Ok(Self {
+            name: config.name.clone(),
+            provider,
+            interval: config
+                .interval
+                .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
+            explicit_overrides: HashMap::new(),
+            config_overrides: config.field_overrides.clone(),
+            cached_sessions: Mutex::new(Vec::new()),
+            cached_focus_labels: Mutex::new(HashMap::new()),
+        })
+    }
+
+    /// Returns a cached `SessionInfo` by session ID (for focus_session lookup).
+    #[allow(dead_code)] // Used by focus_session command (task 03).
+    pub fn find_session(&self, session_id: &str) -> Option<SessionInfo> {
+        self.cached_sessions
+            .lock()
+            .ok()?
+            .iter()
+            .find(|s| s.id == session_id)
+            .cloned()
+    }
+
+    /// Returns any cached session (for capabilities detection).
+    pub fn any_cached_session(&self) -> Option<SessionInfo> {
+        self.cached_sessions.lock().ok()?.first().cloned()
+    }
+
+    fn base_field_definitions() -> Vec<FieldDefinition> {
+        vec![
+            FieldDefinition {
+                name: "status".to_string(),
+                label: "Status".to_string(),
+                field_type: FieldType::Status,
+                description: "Session status (working, idle, question, etc)".to_string(),
+            },
+            FieldDefinition {
+                name: "summary".to_string(),
+                label: "Summary".to_string(),
+                field_type: FieldType::Text,
+                description: "Agent-generated session summary".to_string(),
+            },
+            FieldDefinition {
+                name: "last_active".to_string(),
+                label: "Last active".to_string(),
+                field_type: FieldType::Text,
+                description: "Timestamp of last session activity".to_string(),
+            },
+            FieldDefinition {
+                name: "repo".to_string(),
+                label: "Repo".to_string(),
+                field_type: FieldType::Text,
+                description: "Repository name".to_string(),
+            },
+            FieldDefinition {
+                name: "branch".to_string(),
+                label: "Branch".to_string(),
+                field_type: FieldType::Text,
+                description: "Git branch name".to_string(),
+            },
+            FieldDefinition {
+                name: "focus_label".to_string(),
+                label: "Focus".to_string(),
+                field_type: FieldType::Text,
+                description: "Terminal focus action label".to_string(),
+            },
+        ]
+    }
+
+    /// Resolves or retrieves a cached focus label for a session.
+    fn resolve_focus_label(&self, session: &SessionInfo) -> String {
+        // Check cache first.
+        if let Ok(cache) = self.cached_focus_labels.lock() {
+            if let Some(label) = cache.get(&session.id) {
+                return label.clone();
+            }
+        }
+
+        // Resolve via PID ancestry walk.
+        let label = build_focus_label(session);
+
+        // Cache the result.
+        if let Ok(mut cache) = self.cached_focus_labels.lock() {
+            cache.insert(session.id.clone(), label.clone());
+        }
+
+        label
+    }
+}
+
+#[async_trait::async_trait]
+impl Feed for HarnessFeed {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn feed_type(&self) -> &str {
+        self.provider.feed_type()
+    }
+
+    fn interval(&self) -> Duration {
+        self.interval
+    }
+
+    fn retain_for(&self) -> Option<Duration> {
+        None
+    }
+
+    fn provided_fields(&self) -> Vec<FieldDefinition> {
+        apply_definition_overrides(
+            Self::base_field_definitions(),
+            &self.explicit_overrides,
+            &self.config_overrides,
+        )
+    }
+
+    async fn poll(&self) -> Result<Vec<Activity>> {
+        let sessions = self.provider.discover_sessions()?;
+
+        // Cache for focus_session lookup.
+        if let Ok(mut cache) = self.cached_sessions.lock() {
+            *cache = sessions.clone();
+        }
+
+        // Prune cached focus labels for sessions no longer present.
+        if let Ok(mut label_cache) = self.cached_focus_labels.lock() {
+            let active_ids: std::collections::HashSet<&str> =
+                sessions.iter().map(|s| s.id.as_str()).collect();
+            label_cache.retain(|id, _| active_ids.contains(id.as_str()));
+        }
+
+        let activities = sessions
+            .iter()
+            .map(|session| {
+                let focus_label = self.resolve_focus_label(session);
+                session_to_activity(
+                    session,
+                    &focus_label,
+                    &self.explicit_overrides,
+                    &self.config_overrides,
+                )
+            })
+            .collect();
+
+        Ok(activities)
+    }
+}
+
+/// Converts a `SessionInfo` into an `Activity`.
+fn session_to_activity(
+    session: &SessionInfo,
+    focus_label: &str,
+    explicit_overrides: &HashMap<String, FieldOverride>,
+    config_overrides: &HashMap<String, FieldOverride>,
+) -> Activity {
+    let (status_value, status_kind) = status_to_value_and_kind(session.status);
+    let title = format_activity_title(session);
+
+    let mut fields = vec![Field {
+        name: "status".to_string(),
+        label: "Status".to_string(),
+        value: FieldValue::Status {
+            value: status_value,
+            kind: status_kind,
+        },
+    }];
+
+    if let Some(summary) = &session.summary {
+        fields.push(Field {
+            name: "summary".to_string(),
+            label: "Summary".to_string(),
+            value: FieldValue::Text {
+                value: summary.clone(),
+            },
+        });
+    }
+
+    if let Some(last_active) = &session.last_active_at {
+        fields.push(Field {
+            name: "last_active".to_string(),
+            label: "Last active".to_string(),
+            value: FieldValue::Text {
+                value: format_relative_time(last_active),
+            },
+        });
+    }
+
+    if let Some(repo) = &session.repository {
+        fields.push(Field {
+            name: "repo".to_string(),
+            label: "Repo".to_string(),
+            value: FieldValue::Text {
+                value: repo.clone(),
+            },
+        });
+    }
+
+    if let Some(branch) = &session.branch {
+        fields.push(Field {
+            name: "branch".to_string(),
+            label: "Branch".to_string(),
+            value: FieldValue::Text {
+                value: branch.clone(),
+            },
+        });
+    }
+
+    fields.push(Field {
+        name: "focus_label".to_string(),
+        label: "Focus".to_string(),
+        value: FieldValue::Text {
+            value: focus_label.to_string(),
+        },
+    });
+
+    let fields = apply_activity_overrides(fields, explicit_overrides, config_overrides);
+
+    Activity {
+        id: session.id.clone(),
+        title,
+        fields,
+        retained: false,
+        retained_at_unix_ms: None,
+    }
+}
+
+/// Maps `SessionStatus` to (status value string, StatusKind).
+fn status_to_value_and_kind(status: SessionStatus) -> (String, StatusKind) {
+    match status {
+        SessionStatus::Working => ("working".to_string(), StatusKind::Running),
+        SessionStatus::Question => ("question".to_string(), StatusKind::AttentionPositive),
+        SessionStatus::Approval => ("approval".to_string(), StatusKind::AttentionPositive),
+        SessionStatus::Idle => ("idle".to_string(), StatusKind::Idle),
+        SessionStatus::Unknown => ("unknown".to_string(), StatusKind::Idle),
+    }
+}
+
+/// Formats activity title as `{short_repo} @ {branch}`.
+///
+/// `short_repo` is the repo name without owner (e.g., `cortado` from `oribarilan/cortado`).
+/// Falls back to last path component of `cwd` if repo is unknown.
+/// Omits `@ {branch}` if branch is unknown.
+fn format_activity_title(session: &SessionInfo) -> String {
+    let short_name = session
+        .repository
+        .as_deref()
+        .and_then(|repo| repo.rsplit('/').next())
+        .unwrap_or_else(|| {
+            session
+                .cwd
+                .rsplit('/')
+                .find(|s| !s.is_empty())
+                .unwrap_or("session")
+        });
+
+    match &session.branch {
+        Some(branch) => format!("{short_name} @ {branch}"),
+        None => short_name.to_string(),
+    }
+}
+
+/// Builds a user-facing focus label like "Open in Ghostty (via tmux)".
+fn build_focus_label(session: &SessionInfo) -> String {
+    let ctx = match terminal_focus::build_context_for_label(session) {
+        Some(ctx) => ctx,
+        None => return "Focus terminal".to_string(),
+    };
+
+    let app_name = ctx.terminal_app_name.as_deref().unwrap_or("terminal");
+
+    if ctx.tmux_server_pid.is_some() {
+        format!("Open in {app_name} (via tmux)")
+    } else {
+        format!("Open in {app_name}")
+    }
+}
+
+/// Formats an ISO 8601 timestamp as a relative time string (e.g., "2m ago").
+fn format_relative_time(iso_timestamp: &str) -> String {
+    let Ok(ts) = jiff::Timestamp::from_str(iso_timestamp) else {
+        return iso_timestamp.to_string();
+    };
+
+    let now = jiff::Timestamp::now();
+    let diff = now.since(ts);
+
+    let Ok(span) = diff else {
+        return iso_timestamp.to_string();
+    };
+
+    let total_secs = span.get_seconds();
+
+    if total_secs < 60 {
+        "just now".to_string()
+    } else if total_secs < 3600 {
+        let mins = total_secs / 60;
+        format!("{mins}m ago")
+    } else if total_secs < 86400 {
+        let hours = total_secs / 3600;
+        format!("{hours}h ago")
+    } else {
+        let days = total_secs / 86400;
+        format!("{days}d ago")
+    }
+}
+
+use std::str::FromStr;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn status_mapping_working() {
+        let (value, kind) = status_to_value_and_kind(SessionStatus::Working);
+        assert_eq!(value, "working");
+        assert_eq!(kind, StatusKind::Running);
+    }
+
+    #[test]
+    fn status_mapping_question() {
+        let (value, kind) = status_to_value_and_kind(SessionStatus::Question);
+        assert_eq!(value, "question");
+        assert_eq!(kind, StatusKind::AttentionPositive);
+    }
+
+    #[test]
+    fn status_mapping_approval() {
+        let (value, kind) = status_to_value_and_kind(SessionStatus::Approval);
+        assert_eq!(value, "approval");
+        assert_eq!(kind, StatusKind::AttentionPositive);
+    }
+
+    #[test]
+    fn status_mapping_idle() {
+        let (value, kind) = status_to_value_and_kind(SessionStatus::Idle);
+        assert_eq!(value, "idle");
+        assert_eq!(kind, StatusKind::Idle);
+    }
+
+    #[test]
+    fn status_mapping_unknown() {
+        let (value, kind) = status_to_value_and_kind(SessionStatus::Unknown);
+        assert_eq!(value, "unknown");
+        assert_eq!(kind, StatusKind::Idle);
+    }
+
+    #[test]
+    fn title_with_repo_and_branch() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/home/user/repos/cortado".to_string(),
+            repository: Some("oribarilan/cortado".to_string()),
+            branch: Some("main".to_string()),
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "cortado @ main");
+    }
+
+    #[test]
+    fn title_with_repo_no_branch() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/home/user/repos/cortado".to_string(),
+            repository: Some("oribarilan/cortado".to_string()),
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "cortado");
+    }
+
+    #[test]
+    fn title_no_repo_uses_cwd() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/home/user/repos/my-project".to_string(),
+            repository: None,
+            branch: Some("feature".to_string()),
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "my-project @ feature");
+    }
+
+    #[test]
+    fn title_no_repo_no_branch() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/home/user/repos/my-project".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "my-project");
+    }
+
+    #[test]
+    fn title_trailing_slash_in_cwd() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/home/user/repos/my-project/".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "my-project");
+    }
+
+    #[test]
+    fn session_to_activity_maps_all_fields() {
+        let session = SessionInfo {
+            id: "test-id".to_string(),
+            cwd: "/tmp/project".to_string(),
+            repository: Some("user/repo".to_string()),
+            branch: Some("main".to_string()),
+            status: SessionStatus::Working,
+            pid: 123,
+            summary: None,
+            last_active_at: None,
+        };
+
+        let activity = session_to_activity(
+            &session,
+            "Open in terminal",
+            &HashMap::new(),
+            &HashMap::new(),
+        );
+
+        assert_eq!(activity.id, "test-id");
+        assert_eq!(activity.title, "repo @ main");
+        assert!(!activity.retained);
+
+        // Should have status, repo, branch, focus_label fields.
+        assert_eq!(activity.fields.len(), 4);
+
+        let status_field = &activity.fields[0];
+        assert_eq!(status_field.name, "status");
+        match &status_field.value {
+            FieldValue::Status { value, kind } => {
+                assert_eq!(value, "working");
+                assert_eq!(*kind, StatusKind::Running);
+            }
+            _ => panic!("expected Status field"),
+        }
+    }
+
+    #[test]
+    fn session_to_activity_omits_missing_optional_fields() {
+        let session = SessionInfo {
+            id: "minimal".to_string(),
+            cwd: "/tmp".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Unknown,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+
+        let activity =
+            session_to_activity(&session, "Focus terminal", &HashMap::new(), &HashMap::new());
+
+        // status + focus_label (no repo/branch/summary/last_active).
+        assert_eq!(activity.fields.len(), 2);
+        assert_eq!(activity.fields[0].name, "status");
+    }
+}

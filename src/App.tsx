@@ -9,6 +9,7 @@ import {
   deriveActivityKind,
   highestStatusField,
   supportsOpen,
+  supportsFocus,
   formatFieldValue,
   activityKey,
 } from "./shared/utils";
@@ -62,7 +63,21 @@ function App() {
     }
   }, []);
 
-  const openActivity = useCallback(async (activity: Activity) => {
+  const openActivity = useCallback(async (activity: Activity, feed?: FeedSnapshot) => {
+    // Try focus action first (copilot-session feeds).
+    if (feed) {
+      const focus = supportsFocus(feed, activity);
+      if (focus) {
+        try {
+          await invoke("focus_session", { sessionId: focus.sessionId });
+          setLoadError(null);
+        } catch (error) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+        return;
+      }
+    }
+
     const url = supportsOpen(activity);
     if (!url) {
       return;
@@ -216,6 +231,8 @@ function App() {
                         const expanded = expandedActivityKey === key;
                         const firstStatus = highestStatusField(activity);
                         const openUrl = supportsOpen(activity);
+                        const focus = supportsFocus(feed, activity);
+                        const canOpen = openUrl || focus;
 
                         return (
                           <div
@@ -242,14 +259,14 @@ function App() {
                             <div className="detail-region" role="region" aria-label={`${activity.title} details`}>
                               <div className="detail-inner">
                                 <div className="detail-body">
-                                  {openUrl ? (
+                                  {canOpen ? (
                                     <button
                                       className="open-activity"
                                       onClick={() => {
-                                        void openActivity(activity);
+                                        void openActivity(activity, feed);
                                       }}
                                     >
-                                      ↗ Open Activity
+                                      {focus ? `↗ ${focus.label}` : "↗ Open Activity"}
                                     </button>
                                   ) : null}
 

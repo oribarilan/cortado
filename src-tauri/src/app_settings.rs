@@ -38,6 +38,7 @@ pub struct AppSettings {
     pub general: GeneralSettings,
     pub panel: PanelSettings,
     pub notifications: NotificationSettings,
+    pub focus: FocusSettings,
 }
 
 /// General preferences under `[general]` in settings.toml.
@@ -135,6 +136,15 @@ impl Default for NotificationSettings {
             notify_removed_activities: true,
         }
     }
+}
+
+/// Focus settings under `[focus]` in settings.toml.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct FocusSettings {
+    /// Whether to attempt the accessibility strategy (user opt-in).
+    /// Even if true, requires OS-level permission to actually work.
+    pub accessibility_enabled: bool,
 }
 
 /// Thread-safe handle to live app settings.

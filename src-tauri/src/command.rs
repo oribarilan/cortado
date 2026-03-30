@@ -7,7 +7,7 @@ use tauri_nspanel::ManagerExt;
 use crate::{
     app_settings::{self, AppSettingsState},
     feed::{BackgroundPoller, FeedRegistry, FeedSnapshot},
-    fns, main_screen, ui_snapshot,
+    fns, main_screen, terminal_focus, ui_snapshot,
 };
 static PANEL_INIT: Once = Once::new();
 static MAIN_SCREEN_INIT: Once = Once::new();
@@ -189,4 +189,26 @@ pub async fn set_global_hotkey(
     state.update(settings).await;
 
     Ok(())
+}
+
+/// Focuses the terminal containing a copilot session, identified by session ID.
+#[tauri::command]
+pub fn focus_session(
+    session_id: String,
+    registry: tauri::State<'_, std::sync::Arc<FeedRegistry>>,
+) -> Result<(), String> {
+    let session = registry
+        .find_harness_session(&session_id)
+        .ok_or_else(|| format!("session '{session_id}' not found"))?;
+
+    terminal_focus::focus_terminal(&session)
+}
+
+/// Returns current focus capabilities for the settings UI.
+#[tauri::command]
+pub fn get_focus_capabilities(
+    registry: tauri::State<'_, std::sync::Arc<FeedRegistry>>,
+) -> terminal_focus::FocusCapabilities {
+    let session = registry.any_harness_session();
+    terminal_focus::get_capabilities(session.as_ref())
 }

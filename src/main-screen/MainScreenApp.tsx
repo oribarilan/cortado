@@ -8,6 +8,7 @@ import {
   deriveActivityKind,
   highestStatusField,
   supportsOpen,
+  supportsFocus,
   formatFieldValue,
   activityKey,
 } from "../shared/utils";
@@ -198,6 +199,11 @@ function MainScreenApp() {
   // Keyboard navigation
   const openFocusedActivity = useCallback(() => {
     if (!focusedItem) return;
+    const focus = supportsFocus(focusedItem.feed, focusedItem.activity);
+    if (focus) {
+      invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error);
+      return;
+    }
     const url = supportsOpen(focusedItem.activity);
     if (url) invoke("open_activity", { url }).catch(console.error);
   }, [focusedItem]);
@@ -328,6 +334,8 @@ function MainScreenApp() {
                         className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                         onClick={() => setFocusIndex(index)}
                         onDoubleClick={() => {
+                          const focus = supportsFocus(item.feed, item.activity);
+                          if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
                           const url = supportsOpen(item.activity);
                           if (url) invoke("open_activity", { url }).catch(console.error);
                         }}
@@ -366,6 +374,8 @@ function MainScreenApp() {
                           className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                           onClick={() => setFocusIndex(index)}
                           onDoubleClick={() => {
+                            const focus = supportsFocus(feed, activity);
+                            if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
                             const url = supportsOpen(activity);
                             if (url) invoke("open_activity", { url }).catch(console.error);
                           }}

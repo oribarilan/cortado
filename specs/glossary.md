@@ -10,6 +10,7 @@ Canonical definitions for project terminology. When introducing a new term, defi
 | **Activity** | An individual tracked item within a feed, discovered and managed by the feed's lifecycle. Example: PR #42 "Add feed scaffold". |
 | **Field** | A typed, structured piece of data on an activity. Fields have a name, label, value, and field type. Example: `review: awaiting` (a status field). |
 | **Retained Activity** | An activity no longer returned by a feed's latest poll, kept visible for a configured retention duration. |
+| **Harness** | A terminal-based AI coding agent (e.g., GitHub Copilot CLI, Claude Code). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. Adding a new harness = new provider file + registration in `instantiate_feed()`. |
 
 ## Status Model
 

@@ -94,6 +94,7 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | `github-pr` | `"120s"` |
 | `ado-pr` | `"120s"` |
 | `shell` | `"30s"` |
+| `copilot-session` | `"30s"` |
 
 Intervals use duration strings parsed by `jiff` (for example: `"30s"`, `"5m"`, `"1.5m"`, `"2h"`). Integer seconds are not supported.
 
@@ -142,6 +143,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
 | `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
 | `shell` | Single activity (the command output) | User-defined |
+| `copilot-session` | Active GitHub Copilot CLI sessions | status (status), repo (text), branch (text) |
 
 Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.
 

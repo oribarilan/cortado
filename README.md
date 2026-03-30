@@ -2,14 +2,45 @@
 
 Cortado is a cross-platform extensible watcher that lives in the macOS menubar.
 
-Users configure **feeds** (data sources like "GitHub PRs for repo X"), and each feed automatically discovers and tracks **activities** (e.g., individual PRs). Each activity has structured **fields** showing its current state.
+Users configure **feeds** (data sources like "GitHub PRs for repo X"), and each feed automatically discovers and tracks **activities** (e.g., individual PRs). Each activity has structured **fields** showing its current state — review status, CI results, health checks — all glanceable from the menubar.
 
-Phase 1 focuses on:
+## Feeds
 
-- macOS menubar + panel experience
-- Developer-focused workflows
-- GitHub PR feed (first curated feed type)
-- Shell feed (user-defined commands as an escape hatch)
+Cortado ships with curated feed types for common developer workflows:
+
+| Feed type | What it tracks |
+|-----------|---------------|
+| `github-pr` | Open pull requests with review status, checks, and mergeability |
+| `github-actions` | CI/CD workflow runs |
+| `ado-pr` | Azure DevOps pull requests |
+| `http-health` | Endpoint availability and response time |
+| `shell` | Any shell command — the escape hatch for custom data sources |
+| `copilot-session` | Active AI coding agent sessions (see below) |
+
+All feeds are configured in `~/.config/cortado/feeds.toml`. See [Feed configuration](#feed-configuration-configcortadofeedstoml) for details.
+
+### Coding agent sessions
+
+The `copilot-session` feed tracks active GitHub Copilot CLI sessions as activities. It reads local session state files — no CLI dependency, no network calls.
+
+Each session shows:
+
+- **Status** — working, idle, waiting for your input (question/approval)
+- **Summary** — what the agent is working on
+- **Last active** — how recently the session had activity
+
+#### Terminal focus
+
+Opening a copilot-session activity focuses the terminal containing that session — not just the app, but the exact tmux pane if you're using tmux.
+
+Cortado walks the process tree from the copilot PID to discover your terminal setup, then picks the best strategy:
+
+1. **tmux pane switching** — switches to the exact pane (when tmux is detected)
+2. **App activation** — brings the terminal app to front (fallback)
+
+The action button shows what will happen: *Open in Ghostty (via tmux)*, *Open in Terminal*, etc.
+
+See `specs/feeds.md` for the full harness architecture and implementation details.
 
 ## Core terms
 
@@ -60,7 +91,7 @@ type = "github-pr" # or "shell"
 | Key | Required | Type | Notes |
 |---|---|---|---|
 | `name` | Yes | string | Feed display name; must be unique across all feeds |
-| `type` | Yes | string | Supported: `"github-pr"`, `"ado-pr"`, `"shell"` |
+| `type` | Yes | string | Supported: `"github-pr"`, `"github-actions"`, `"ado-pr"`, `"http-health"`, `"shell"`, `"copilot-session"` |
 | `interval` | No | duration string | Poll interval parsed by `jiff` (examples: `"30s"`, `"5m"`, `"1.5m"`); must be > 0 |
 | `retain` | No | duration string | Retain disappeared activities for this long; omitted = no retention |
 
@@ -69,8 +100,11 @@ Duration strings must be strings (not integers). Example: use `"60s"`, not `60`.
 Default `interval` values when omitted:
 
 - `github-pr`: `"120s"`
+- `github-actions`: `"120s"`
 - `ado-pr`: `"120s"`
+- `http-health`: `"60s"`
 - `shell`: `"30s"`
+- `copilot-session`: `"30s"`
 
 Retention is currently in-memory only (retained activities are cleared on app restart).
 
@@ -172,6 +206,20 @@ Current limits:
 - one activity per shell feed poll
 - single primary output field model
 - no built-in JSON/object extraction pipeline yet (use command-line tools to shape output)
+
+### `copilot-session` feed
+
+Tracks active GitHub Copilot CLI sessions. No required keys — it discovers sessions automatically from `~/.copilot/session-state/`.
+
+Example:
+
+```toml
+[[feed]]
+name = "copilot sessions"
+type = "copilot-session"
+```
+
+See `specs/feeds.md` for the full harness architecture and terminal focus documentation.
 
 ### Field overrides (optional)
 

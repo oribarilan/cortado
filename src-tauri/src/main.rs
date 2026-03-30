@@ -9,6 +9,7 @@ mod main_screen;
 mod notification;
 mod panel;
 mod settings_config;
+mod terminal_focus;
 mod ui_snapshot;
 
 use std::sync::Arc;
@@ -85,7 +86,9 @@ fn main() {
             app_settings::reveal_settings_file,
             command::open_notification_settings,
             command::send_test_notification,
-            command::set_global_hotkey
+            command::set_global_hotkey,
+            command::focus_session,
+            command::get_focus_capabilities
         ])
         .setup({
             let feed_registry = feed_registry.clone();

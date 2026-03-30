@@ -317,13 +317,26 @@ pub async fn test_feed(feed_dto: FeedConfigDto) -> TestFeedResult {
         }
     };
 
-    let feed = match feed::instantiate_feed(&feed_config) {
-        Ok(f) => f,
-        Err(e) => {
-            return TestFeedResult {
-                success: false,
-                error: Some(e.to_string()),
-                activities: Vec::new(),
+    let feed: std::sync::Arc<dyn feed::Feed> = if feed_config.feed_type == "copilot-session" {
+        match feed::instantiate_harness_feed(&feed_config) {
+            Ok(f) => f as std::sync::Arc<dyn feed::Feed>,
+            Err(e) => {
+                return TestFeedResult {
+                    success: false,
+                    error: Some(e.to_string()),
+                    activities: Vec::new(),
+                }
+            }
+        }
+    } else {
+        match feed::instantiate_feed(&feed_config) {
+            Ok(f) => f,
+            Err(e) => {
+                return TestFeedResult {
+                    success: false,
+                    error: Some(e.to_string()),
+                    activities: Vec::new(),
+                }
             }
         }
     };
