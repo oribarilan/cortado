@@ -1558,6 +1558,17 @@ function SettingsApp() {
                 <a className="ext-link" onClick={() => { void invoke("open_activity", { url: depInfo.installUrl }); }}>Install guide →</a>
               </div>
             )}
+
+            {/* Copilot session feed info */}
+            {editingFeed.type === "copilot-session" && (
+              <div className="dep-footer">
+                Discovers active sessions automatically from <code>~/.copilot/session-state/</code>. No CLI or authentication required.
+                <ul className="dep-steps">
+                  <li>Shows one activity per working directory (multiple resumed sessions are deduplicated)</li>
+                  <li>Opening an activity focuses the terminal — exact tmux pane when available</li>
+                </ul>
+              </div>
+            )}
           </div>
         ) : catalogStep !== "hidden" ? (
           /* ===== FEED CATALOG ===== */

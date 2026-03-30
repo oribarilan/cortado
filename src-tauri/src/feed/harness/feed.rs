@@ -154,6 +154,7 @@ impl Feed for HarnessFeed {
 
     async fn poll(&self) -> Result<Vec<Activity>> {
         let sessions = self.provider.discover_sessions()?;
+        let sessions = deduplicate_sessions(sessions);
 
         // Cache for focus_session lookup.
         if let Ok(mut cache) = self.cached_sessions.lock() {
@@ -182,6 +183,33 @@ impl Feed for HarnessFeed {
 
         Ok(activities)
     }
+}
+
+/// Deduplicates sessions by working directory.
+///
+/// Multiple sessions can exist for the same cwd (e.g., from Copilot CLI's `/resume`).
+/// We keep only the most recently active session per cwd — determined by `last_active_at`
+/// timestamp, falling back to session ID for deterministic ordering.
+fn deduplicate_sessions(sessions: Vec<SessionInfo>) -> Vec<SessionInfo> {
+    let mut best_by_cwd: HashMap<String, SessionInfo> = HashMap::new();
+
+    for session in sessions {
+        let key = session.cwd.clone();
+
+        let dominated = match best_by_cwd.get(&key) {
+            None => false,
+            Some(existing) => {
+                // Keep the one with the more recent last_active_at.
+                existing.last_active_at >= session.last_active_at
+            }
+        };
+
+        if !dominated {
+            best_by_cwd.insert(key, session);
+        }
+    }
+
+    best_by_cwd.into_values().collect()
 }
 
 /// Converts a `SessionInfo` into an `Activity`.
@@ -522,5 +550,64 @@ mod tests {
         // status + focus_label (no repo/branch/summary/last_active).
         assert_eq!(activity.fields.len(), 2);
         assert_eq!(activity.fields[0].name, "status");
+    }
+
+    #[test]
+    fn deduplicate_keeps_most_recent_per_cwd() {
+        let sessions = vec![
+            SessionInfo {
+                id: "old".to_string(),
+                cwd: "/home/user/project".to_string(),
+                repository: Some("user/project".to_string()),
+                branch: Some("main".to_string()),
+                status: SessionStatus::Idle,
+                pid: 1,
+                summary: Some("old session".to_string()),
+                last_active_at: Some("2026-01-01T00:00:00Z".to_string()),
+            },
+            SessionInfo {
+                id: "new".to_string(),
+                cwd: "/home/user/project".to_string(),
+                repository: Some("user/project".to_string()),
+                branch: Some("main".to_string()),
+                status: SessionStatus::Working,
+                pid: 1,
+                summary: Some("new session".to_string()),
+                last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].id, "new");
+    }
+
+    #[test]
+    fn deduplicate_keeps_different_cwds() {
+        let sessions = vec![
+            SessionInfo {
+                id: "a".to_string(),
+                cwd: "/home/user/project-a".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Idle,
+                pid: 1,
+                summary: None,
+                last_active_at: None,
+            },
+            SessionInfo {
+                id: "b".to_string(),
+                cwd: "/home/user/project-b".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Idle,
+                pid: 1,
+                summary: None,
+                last_active_at: None,
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 2);
     }
 }

@@ -61,6 +61,8 @@ No type-specific config keys. No external CLI dependency — reads local files o
 
 **Activity identity**: Session UUID from `workspace.yaml`. Globally unique and stable.
 
+**Deduplication**: Multiple sessions can exist for the same working directory (e.g., from Copilot CLI's `/resume`). The feed deduplicates by cwd, keeping only the most recently active session per directory.
+
 ### Status inference
 
 Status is inferred from the last event in `events.jsonl`:
