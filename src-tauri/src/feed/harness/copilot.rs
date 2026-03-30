@@ -154,21 +154,39 @@ fn parse_workspace(path: &Path) -> Option<WorkspaceYaml> {
     serde_saphyr::from_str(&content).ok()
 }
 
-/// Reads the last non-empty line of `events.jsonl` and infers session status + timestamp.
+/// Reads the last events from `events.jsonl` and infers session status + timestamp.
+///
+/// Checks both the last line and the penultimate line. When the last event is
+/// `tool.execution_start`, the preceding `assistant.message` may carry a more
+/// accurate status (e.g., Approval for pending tool requests). The CLI emits
+/// both events at the same instant, so the last line alone can be misleading.
 fn infer_status_from_last_event(path: &Path) -> (SessionStatus, Option<String>) {
-    let last_line = match read_last_line(path) {
-        Some(line) => line,
-        None => return (SessionStatus::Unknown, None),
+    let lines = match read_last_lines(path, 2) {
+        Some(lines) if !lines.is_empty() => lines,
+        _ => return (SessionStatus::Unknown, None),
     };
 
-    let status = parse_event_status(&last_line);
-    let timestamp = extract_event_timestamp(&last_line);
+    let last = &lines[lines.len() - 1];
+    let timestamp = extract_event_timestamp(last);
+    let last_status = parse_event_status(last);
 
-    (status, timestamp)
+    // If last event is tool.execution_start (Working), check if the preceding
+    // assistant.message gives a more specific status (Question or Approval).
+    if last_status == SessionStatus::Working && lines.len() == 2 {
+        let prev_status = parse_event_status(&lines[0]);
+        if matches!(
+            prev_status,
+            SessionStatus::Question | SessionStatus::Approval
+        ) {
+            return (prev_status, timestamp);
+        }
+    }
+
+    (last_status, timestamp)
 }
 
-/// Reads the last non-empty line of a file via reverse seek.
-fn read_last_line(path: &Path) -> Option<String> {
+/// Reads the last N non-empty lines of a file via reverse seek.
+fn read_last_lines(path: &Path, n: usize) -> Option<Vec<String>> {
     let mut file = fs::File::open(path).ok()?;
     let file_len = file.metadata().ok()?.len();
 
@@ -176,7 +194,7 @@ fn read_last_line(path: &Path) -> Option<String> {
         return None;
     }
 
-    // Read up to last 64KB to find the last complete line.
+    // Read up to last 64KB to find the last complete lines.
     let read_size = file_len.min(65_536);
     let start = file_len - read_size;
 
@@ -184,10 +202,22 @@ fn read_last_line(path: &Path) -> Option<String> {
     let mut buf = String::with_capacity(read_size as usize);
     file.read_to_string(&mut buf).ok()?;
 
-    buf.lines()
+    let lines: Vec<String> = buf
+        .lines()
         .rev()
-        .find(|line| !line.trim().is_empty())
+        .filter(|line| !line.trim().is_empty())
+        .take(n)
         .map(String::from)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+
+    if lines.is_empty() {
+        None
+    } else {
+        Some(lines)
+    }
 }
 
 /// Parses a JSON event line and maps the event type to a `SessionStatus`.
@@ -203,7 +233,8 @@ fn parse_event_status(json_line: &str) -> SessionStatus {
     };
 
     match event_type {
-        "assistant.turn_start" | "tool.execution_start" | "user.message" => SessionStatus::Working,
+        "assistant.turn_start" | "user.message" => SessionStatus::Working,
+        "tool.execution_start" => classify_tool_execution(&event),
         "assistant.message" => classify_assistant_message(&event),
         "assistant.turn_end" | "tool.execution_complete" => SessionStatus::Idle,
         "session.shutdown" | "abort" => SessionStatus::Idle,
@@ -218,6 +249,20 @@ fn extract_event_timestamp(json_line: &str) -> Option<String> {
         .get("timestamp")
         .and_then(|v| v.as_str())
         .map(String::from)
+}
+
+/// Classifies a `tool.execution_start` event.
+/// `ask_user` tool means the agent is waiting for user input (Question).
+fn classify_tool_execution(event: &serde_json::Value) -> SessionStatus {
+    let tool_name = event
+        .get("data")
+        .and_then(|d| d.get("toolName"))
+        .and_then(|n| n.as_str());
+
+    match tool_name {
+        Some("ask_user") => SessionStatus::Question,
+        _ => SessionStatus::Working,
+    }
 }
 
 /// Classifies an `assistant.message` event by checking `data.toolRequests`.
@@ -338,6 +383,7 @@ summary: some summary
     fn event_status_working_events() {
         let events = [
             r#"{"type":"assistant.turn_start","data":{}}"#,
+            r#"{"type":"tool.execution_start","data":{"toolName":"bash"}}"#,
             r#"{"type":"tool.execution_start","data":{}}"#,
             r#"{"type":"user.message","data":{}}"#,
         ];
@@ -374,6 +420,13 @@ summary: some summary
     }
 
     #[test]
+    fn event_status_question_from_tool_execution() {
+        let event =
+            r#"{"type":"tool.execution_start","data":{"toolName":"ask_user","arguments":{}}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Question);
+    }
+
+    #[test]
     fn event_status_approval() {
         let event = r#"{"type":"assistant.message","data":{"toolRequests":[{"name":"bash","arguments":{}}]}}"#;
         assert_eq!(parse_event_status(event), SessionStatus::Approval);
@@ -404,7 +457,7 @@ summary: some summary
     }
 
     #[test]
-    fn read_last_line_finds_final_event() {
+    fn read_last_lines_finds_final_events() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("events.jsonl");
 
@@ -417,28 +470,65 @@ summary: some summary
         )
         .unwrap();
 
-        let last = read_last_line(&path).unwrap();
-        assert!(last.contains("assistant.turn_end"));
+        let lines = read_last_lines(&path, 2).unwrap();
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("user.message"));
+        assert!(lines[1].contains("assistant.turn_end"));
     }
 
     #[test]
-    fn read_last_line_handles_trailing_newlines() {
+    fn read_last_lines_handles_trailing_newlines() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("events.jsonl");
 
         fs::write(&path, "{\"type\":\"idle\"}\n\n\n").unwrap();
 
-        let last = read_last_line(&path).unwrap();
-        assert!(last.contains("idle"));
+        let lines = read_last_lines(&path, 1).unwrap();
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains("idle"));
     }
 
     #[test]
-    fn read_last_line_empty_file() {
+    fn read_last_lines_empty_file() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("events.jsonl");
 
         fs::write(&path, "").unwrap();
-        assert!(read_last_line(&path).is_none());
+        assert!(read_last_lines(&path, 1).is_none());
+    }
+
+    #[test]
+    fn tool_execution_start_preceded_by_approval_resolves_to_approval() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.jsonl");
+
+        fs::write(
+            &path,
+            r#"{"type":"assistant.message","data":{"toolRequests":[{"name":"bash","arguments":{}}]}}
+{"type":"tool.execution_start","data":{"toolName":"bash"}}
+"#,
+        )
+        .unwrap();
+
+        let (status, _) = infer_status_from_last_event(&path);
+        assert_eq!(status, SessionStatus::Approval);
+    }
+
+    #[test]
+    fn tool_execution_start_preceded_by_question_resolves_to_question() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.jsonl");
+
+        fs::write(
+            &path,
+            r#"{"type":"assistant.message","data":{"toolRequests":[{"name":"ask_user","arguments":{}}]}}
+{"type":"tool.execution_start","data":{"toolName":"ask_user"}}
+"#,
+        )
+        .unwrap();
+
+        let (status, _) = infer_status_from_last_event(&path);
+        assert_eq!(status, SessionStatus::Question);
     }
 
     #[test]

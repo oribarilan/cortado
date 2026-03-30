@@ -39,7 +39,7 @@ function buildFlatList(
       for (const activity of feed.activities) {
         if (activity.retained) continue;
         const kind = deriveActivityKind(activity);
-        if (kind === "attention-negative") {
+        if (kind === "attention-negative" || kind === "attention-positive") {
           const key = activityKey(feed, activity);
           priorityItems.push({
             feed,

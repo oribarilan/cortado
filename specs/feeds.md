@@ -69,7 +69,9 @@ Status is inferred from the last event in `events.jsonl`:
 
 | Last event | Status value | StatusKind |
 |------------|-------------|------------|
-| `assistant.turn_start` / `tool.execution_start` / `user.message` | working | Running |
+| `assistant.turn_start` / `user.message` | working | Running |
+| `tool.execution_start` (non-`ask_user`) | working | Running |
+| `tool.execution_start` with `toolName: "ask_user"` | question | AttentionPositive |
 | `assistant.message` with `ask_user` tool request | question | AttentionPositive |
 | `assistant.message` with other tool requests | approval | AttentionPositive |
 | `assistant.message` with no tool requests | idle | Idle |
