@@ -644,7 +644,7 @@ body {
 }
 
 .setting-hint {
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   color: var(--text-tertiary);
   margin-top: 1px;
 }
@@ -1465,4 +1465,38 @@ body {
   color: var(--text-muted);
   background: transparent;
   border: 1px solid var(--border);
+}
+
+/* Help toggle (?) and expandable detail */
+.help-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 0;
+  vertical-align: middle;
+  transition: color var(--duration-normal), border-color var(--duration-normal);
+}
+
+.help-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.help-detail {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+  padding: 8px 12px;
+  margin: -4px 0 8px;
+  border-left: 2px solid var(--border);
 }

@@ -48,7 +48,7 @@ pub struct GeneralSettings {
     /// Theme preference: `"system"`, `"light"`, or `"dark"`.
     #[serde(default = "default_theme")]
     pub theme: String,
-    /// Text size preference: `"s"`, `"m"`, `"l"`, or `"xl"`.
+    /// Text size preference: `"xs"`, `"s"`, `"m"`, `"l"`, or `"xl"`.
     #[serde(default = "default_text_size")]
     pub text_size: String,
     #[serde(default = "default_true")]
@@ -139,12 +139,23 @@ impl Default for NotificationSettings {
 }
 
 /// Focus settings under `[focus]` in settings.toml.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct FocusSettings {
+    /// Whether to use tmux pane switching when tmux is detected.
+    pub tmux_enabled: bool,
     /// Whether to attempt the accessibility strategy (user opt-in).
     /// Even if true, requires OS-level permission to actually work.
     pub accessibility_enabled: bool,
+}
+
+impl Default for FocusSettings {
+    fn default() -> Self {
+        Self {
+            tmux_enabled: true,
+            accessibility_enabled: false,
+        }
+    }
 }
 
 /// Thread-safe handle to live app settings.

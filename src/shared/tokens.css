@@ -15,7 +15,7 @@
   /* Text */
   --text-primary: oklch(92% 0.01 250);
   --text-secondary: oklch(70% 0.01 250);
-  --text-tertiary: oklch(56% 0.01 250);
+  --text-tertiary: oklch(62% 0.01 250);
 
   /* Borders & chrome */
   --border: oklch(33% 0.01 250 / 0.78);
@@ -36,12 +36,12 @@
   --accent-soft: oklch(22% 0.03 178);
   --danger: oklch(70% 0.18 25);
 
-  /* ── Type scale (rem — scales with root font-size) */
-  --text-2xs: 0.692rem;   /* ~10px at 14px root */
-  --text-xs: 0.769rem;    /* ~11px at 14px root */
-  --text-sm: 0.846rem;    /* ~12px at 14px root */
-  --text-base: 1rem;      /* 14px root */
-  --text-lg: 1.077rem;    /* ~15px at 14px root */
+  /* ── Type scale (px — explicit per size preset for crisp rendering) */
+  --text-2xs: 12px;
+  --text-xs: 13px;
+  --text-sm: 13px;
+  --text-base: 16px;
+  --text-lg: 17px;
 
   /* ── Font weights */
   --font-normal: 400;
@@ -76,7 +76,7 @@
 
   /* ── Font stack & base styles */
   font-family: "Space Grotesk", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
   font-weight: var(--font-normal);
   color: var(--text-primary);
@@ -148,7 +148,32 @@
 
 /* ── Text size scaling ───────────────────────────── */
 
-[data-text-size="s"] { font-size: 12px; }
-/* default (m) is 14px, set on :root above */
-[data-text-size="l"] { font-size: 16px; }
-[data-text-size="xl"] { font-size: 18px; }
+[data-text-size="xs"] {
+  --text-2xs: 9px;
+  --text-xs: 10px;
+  --text-sm: 10px;
+  --text-base: 12px;
+  --text-lg: 13px;
+}
+[data-text-size="s"] {
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 15px;
+}
+/* default (m) is set on :root above */
+[data-text-size="l"] {
+  --text-2xs: 13px;
+  --text-xs: 14px;
+  --text-sm: 14px;
+  --text-base: 18px;
+  --text-lg: 19px;
+}
+[data-text-size="xl"] {
+  --text-2xs: 14px;
+  --text-xs: 15px;
+  --text-sm: 15px;
+  --text-base: 20px;
+  --text-lg: 21px;
+}

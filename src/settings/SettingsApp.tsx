@@ -33,7 +33,7 @@ type AppSettings = {
   general: GeneralSettings;
   panel: PanelSettings;
   notifications: NotificationSettings;
-  focus: { accessibility_enabled: boolean };
+  focus: { tmux_enabled: boolean; accessibility_enabled: boolean };
 };
 
 type FieldOverrideDto = {
@@ -445,6 +445,7 @@ function SettingsApp() {
   // Focus capabilities state
   type FocusCaps = {
     has_active_session: boolean;
+    tmux_installed: boolean;
     tmux_detected: boolean;
     terminal_app: string | null;
     terminal_scriptable: boolean;
@@ -452,6 +453,10 @@ function SettingsApp() {
   };
   const [focusCaps, setFocusCaps] = useState<FocusCaps | null>(null);
   const [focusLoading, setFocusLoading] = useState(false);
+  const [tmuxEnabled, setTmuxEnabled] = useState(true);
+  const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
+  const [showTmuxHelp, setShowTmuxHelp] = useState(false);
+  const [showAccessibilityHelp, setShowAccessibilityHelp] = useState(false);
 
   const showToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -512,6 +517,8 @@ function SettingsApp() {
         setTheme(s.general?.theme ?? "system");
         setTextSize(s.general?.text_size ?? "m");
         setGlobalHotkey(s.general?.global_hotkey ?? "super+shift+space");
+        setTmuxEnabled(s.focus?.tmux_enabled ?? true);
+        setAccessibilityEnabled(s.focus?.accessibility_enabled ?? false);
       })
       .catch(() => {})
       .finally(() => setNotifLoading(false));
@@ -565,13 +572,14 @@ function SettingsApp() {
           general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
           panel: { show_priority_section: showPrioritySection },
           notifications: updated,
+          focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
       showToast();
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [showPrioritySection, showMenubar, theme, textSize, globalHotkey, showToast]);
+  }, [showPrioritySection, showMenubar, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
 
   const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
@@ -590,13 +598,36 @@ function SettingsApp() {
           general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize, global_hotkey: globalHotkey },
           panel: { show_priority_section: newPriority },
           notifications: notifSettings,
+          focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
       showToast();
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, showToast]);
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+
+  const saveFocusSetting = useCallback(async (updates: { tmuxEnabled?: boolean; accessibilityEnabled?: boolean }) => {
+    const newTmux = updates.tmuxEnabled ?? tmuxEnabled;
+    const newAccessibility = updates.accessibilityEnabled ?? accessibilityEnabled;
+
+    if (updates.tmuxEnabled !== undefined) setTmuxEnabled(newTmux);
+    if (updates.accessibilityEnabled !== undefined) setAccessibilityEnabled(newAccessibility);
+
+    try {
+      await invoke("save_settings", {
+        settings: {
+          general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
+          panel: { show_priority_section: showPrioritySection },
+          notifications: notifSettings,
+          focus: { tmux_enabled: newTmux, accessibility_enabled: newAccessibility },
+        },
+      });
+      showToast();
+    } catch (err) {
+      console.error("failed saving focus setting:", err);
+    }
+  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
 
   const saveHotkey = useCallback(async (hotkey: string) => {
     setHotkeyError(null);
@@ -903,7 +934,7 @@ function SettingsApp() {
           className={`settings-nav ${section === "focus" ? "active" : ""}`}
           onClick={() => switchSection("focus")}
         >
-          <span className="settings-nav-icon">▸</span> Focus
+          <span className="settings-nav-icon">▸</span> Agents
         </div>
       </nav>
       <main className={`settings-main ${sectionFading ? "fading" : ""}`}>
@@ -935,7 +966,7 @@ function SettingsApp() {
                 <div className="setting-label">Text size</div>
               </div>
               <div className="segmented-control">
-                {(["s", "m", "l", "xl"] as const).map((opt) => (
+                {(["xs", "s", "m", "l", "xl"] as const).map((opt) => (
                   <button
                     key={opt}
                     className={`segmented-option ${textSize === opt ? "active" : ""}`}
@@ -1240,78 +1271,91 @@ function SettingsApp() {
           </>
         ) : section === "focus" ? (
           <>
-            <h2 className="settings-title">Focus</h2>
+            <h2 className="settings-title">Coding Agents</h2>
             <p className="settings-hint" style={{ marginBottom: 16 }}>
-              How cortado focuses your terminal when you open a Copilot session.
+              How cortado tracks and navigates to your coding agent sessions.
             </p>
 
             {focusLoading ? (
               <p className="settings-placeholder">Loading...</p>
-            ) : !focusCaps || !focusCaps.has_active_session ? (
-              <div className="settings-placeholder" style={{ textAlign: "left" }}>
-                <p>No active sessions — start a Copilot session to detect capabilities.</p>
-                <p className="settings-hint">Terminal and tmux are detected from session processes.</p>
-              </div>
             ) : (
               <>
-                <div className="section-header">Current capability</div>
+                <div className="section-header">tmux integration</div>
+
                 <div className="setting-row">
                   <div className="setting-info">
                     <div className="setting-label">
-                      Detected: {focusCaps.terminal_app ?? "Unknown terminal"}
-                      {focusCaps.tmux_detected ? " + tmux" : ""}
+                      Enable tmux pane switching
+                      <button
+                        className="help-toggle"
+                        onClick={() => setShowTmuxHelp((v) => !v)}
+                      >
+                        ?
+                      </button>
                     </div>
-                    <div className="setting-hint">
-                      Best strategy: {
-                        focusCaps.tmux_detected ? "tmux pane switching (exact)"
-                        : focusCaps.terminal_scriptable ? "terminal scripting (tab-level)"
-                        : focusCaps.accessibility_permitted ? "accessibility window focus"
-                        : "app activation (fallback)"
-                      }
-                    </div>
+                    <div className="setting-hint">Navigate to the exact tmux pane running an agent session.</div>
                   </div>
+                  <button
+                    className={`toggle ${tmuxEnabled ? "on" : ""}`}
+                    onClick={() => { void saveFocusSetting({ tmuxEnabled: !tmuxEnabled }); }}
+                  />
                 </div>
 
-                <div className="section-header">Strategies</div>
-                <p className="settings-hint" style={{ marginBottom: 8 }}>Ordered by precision. Top = best.</p>
+                {showTmuxHelp ? (
+                  <div className="help-detail">
+                    When you open an agent activity, cortado navigates to the exact pane
+                    running that session. If the session already has a terminal tab,
+                    cortado selects the right window and pane without disrupting your other tabs.
+                    If the session is detached, cortado switches an existing client to show it.
+                  </div>
+                ) : null}
+
+                {focusCaps ? (
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <div className="setting-hint">
+                        {focusCaps.tmux_installed ? "tmux detected" : "tmux is not available"}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="section-header">Accessibility</div>
 
                 <div className="setting-row">
                   <div className="setting-info">
-                    <div className="setting-label">1. tmux pane switching</div>
-                    <div className="setting-hint">Switches to the exact tmux pane. Detected automatically when tmux is in use.</div>
-                  </div>
-                  <span className={`status-badge ${focusCaps.tmux_detected ? "active" : "unavailable"}`}>
-                    {focusCaps.tmux_detected ? "Active" : "Not detected"}
-                  </span>
-                </div>
-
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">2. Terminal-specific scripting</div>
-                    <div className="setting-hint">
-                      Focuses the specific tab/window. Supported: Terminal.app, iTerm2, Ghostty 1.3+
+                    <div className="setting-label">
+                      Enable window focus
+                      <button
+                        className="help-toggle"
+                        onClick={() => setShowAccessibilityHelp((v) => !v)}
+                      >
+                        ?
+                      </button>
                     </div>
+                    <div className="setting-hint">Raise the specific terminal window by matching its title.</div>
                   </div>
-                  <span className={`status-badge ${focusCaps.terminal_scriptable ? "active" : "unavailable"}`}>
-                    {focusCaps.terminal_scriptable ? "Available" : "Not available"}
-                  </span>
+                  <button
+                    className={`toggle ${accessibilityEnabled ? "on" : ""}`}
+                    onClick={() => { void saveFocusSetting({ accessibilityEnabled: !accessibilityEnabled }); }}
+                  />
                 </div>
 
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">3. Accessibility window focus</div>
-                    <div className="setting-hint">
-                      Raises the specific window by matching its title. Works with any terminal but less precise.
-                      {!focusCaps.accessibility_permitted ? " Requires Accessibility permission." : ""}
+                {showAccessibilityHelp ? (
+                  <div className="help-detail">
+                    With Accessibility permission, cortado can find and raise the specific terminal
+                    window containing your agent session. Works with any terminal but less precise
+                    than tmux — matches by window title, which depends on your shell and terminal config.
+                  </div>
+                ) : null}
+
+                {accessibilityEnabled && !focusCaps?.accessibility_permitted ? (
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <div className="setting-hint">
+                        Accessibility permission not granted.
+                      </div>
                     </div>
-                  </div>
-                  <span className={`status-badge ${focusCaps.accessibility_permitted ? "active" : "unavailable"}`}>
-                    {focusCaps.accessibility_permitted ? "Permitted" : "Not enabled"}
-                  </span>
-                </div>
-
-                {!focusCaps.accessibility_permitted ? (
-                  <div style={{ marginTop: 4, marginBottom: 12 }}>
                     <button
                       className="config-path-btn"
                       onClick={() => {
@@ -1322,16 +1366,6 @@ function SettingsApp() {
                     </button>
                   </div>
                 ) : null}
-
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">4. App activation (fallback)</div>
-                    <div className="setting-hint">
-                      Brings the terminal app to front. Always available. May focus the wrong window if multiple are open.
-                    </div>
-                  </div>
-                  <span className="status-badge active">Active</span>
-                </div>
               </>
             )}
           </>

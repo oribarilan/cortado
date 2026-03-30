@@ -265,6 +265,7 @@ impl FeedRegistry {
     }
 
     /// Returns any cached harness session (for capabilities detection).
+    #[allow(dead_code)] // Available for future use.
     pub fn any_harness_session(&self) -> Option<harness::SessionInfo> {
         for feed in &self.harness_feeds {
             if let Some(session) = feed.any_cached_session() {

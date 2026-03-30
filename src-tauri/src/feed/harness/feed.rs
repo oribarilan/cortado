@@ -60,6 +60,7 @@ impl HarnessFeed {
     }
 
     /// Returns any cached session (for capabilities detection).
+    #[allow(dead_code)] // Available for future use.
     pub fn any_cached_session(&self) -> Option<SessionInfo> {
         self.cached_sessions.lock().ok()?.first().cloned()
     }

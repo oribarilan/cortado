@@ -228,7 +228,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-normal);
   line-height: 1.28;
   color: var(--text-primary);

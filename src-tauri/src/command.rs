@@ -193,22 +193,25 @@ pub async fn set_global_hotkey(
 
 /// Focuses the terminal containing a copilot session, identified by session ID.
 #[tauri::command]
-pub fn focus_session(
+pub async fn focus_session(
     session_id: String,
     registry: tauri::State<'_, std::sync::Arc<FeedRegistry>>,
+    settings_state: tauri::State<'_, AppSettingsState>,
 ) -> Result<(), String> {
     let session = registry
         .find_harness_session(&session_id)
         .ok_or_else(|| format!("session '{session_id}' not found"))?;
 
-    terminal_focus::focus_terminal(&session)
+    let settings = settings_state.read().await;
+    terminal_focus::focus_terminal(
+        &session,
+        settings.focus.tmux_enabled,
+        settings.focus.accessibility_enabled,
+    )
 }
 
 /// Returns current focus capabilities for the settings UI.
 #[tauri::command]
-pub fn get_focus_capabilities(
-    registry: tauri::State<'_, std::sync::Arc<FeedRegistry>>,
-) -> terminal_focus::FocusCapabilities {
-    let session = registry.any_harness_session();
-    terminal_focus::get_capabilities(session.as_ref())
+pub fn get_focus_capabilities() -> terminal_focus::FocusCapabilities {
+    terminal_focus::get_capabilities()
 }

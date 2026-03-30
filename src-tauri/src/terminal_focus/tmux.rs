@@ -2,14 +2,16 @@ use std::process::Command;
 
 use super::{FocusContext, FocusResult};
 
-/// tmux focus strategy: switches the tmux client to the exact pane
-/// containing the copilot session.
+/// tmux focus strategy: navigates to the exact pane containing the copilot session.
+///
+/// When the target session already has a client attached, uses select-window + select-pane
+/// to navigate within it (non-destructive). Only uses switch-client when the target session
+/// has no attached client.
 pub fn try_focus(ctx: &FocusContext) -> FocusResult {
     if ctx.tmux_server_pid.is_none() {
         return FocusResult::NotApplicable;
     }
 
-    // Find the pane containing an ancestor of the copilot process.
     let panes = match list_panes() {
         Ok(panes) => panes,
         Err(e) => return FocusResult::Failed(e),
@@ -20,7 +22,6 @@ pub fn try_focus(ctx: &FocusContext) -> FocusResult {
         None => return FocusResult::Failed("no tmux pane matches copilot process ancestry".into()),
     };
 
-    // Find a client to switch.
     let clients = match list_clients() {
         Ok(clients) => clients,
         Err(e) => return FocusResult::Failed(e),
@@ -31,11 +32,19 @@ pub fn try_focus(ctx: &FocusContext) -> FocusResult {
     }
 
     let target_session = target_pane.pane_id.split(':').next().unwrap_or("");
-    let client = pick_best_client(&clients, target_session);
+    let has_own_client = clients.iter().any(|c| c.client_session == target_session);
 
-    // Switch client to the target pane.
-    if let Err(e) = switch_to_pane(&client.client_tty, &target_pane.pane_id) {
-        return FocusResult::Failed(e);
+    if has_own_client {
+        // Target session already has a client viewing it — just navigate within it.
+        if let Err(e) = select_within_session(&target_pane.pane_id) {
+            return FocusResult::Failed(e);
+        }
+    } else {
+        // No client on this session — switch an existing client to it.
+        let client = &clients[0];
+        if let Err(e) = switch_client_to_pane(&client.client_tty, &target_pane.pane_id) {
+            return FocusResult::Failed(e);
+        }
     }
 
     // Activate the terminal app.
@@ -149,34 +158,32 @@ fn find_target_pane(panes: &[TmuxPane], ancestors: &[u32], copilot_pid: u32) -> 
     None
 }
 
-/// Picks the best client: prefer one already attached to the target session.
-fn pick_best_client<'a>(clients: &'a [TmuxClient], target_session: &str) -> &'a TmuxClient {
-    clients
-        .iter()
-        .find(|c| c.client_session == target_session)
-        .unwrap_or(&clients[0])
+/// Navigates within a session that already has a client: select window + pane.
+fn select_within_session(pane_id: &str) -> Result<(), String> {
+    // Extract session:window from the full pane_id (e.g., "main:0.1" -> "main:0").
+    let window_id = pane_id.rsplit_once('.').map(|(w, _)| w).unwrap_or(pane_id);
+
+    run_tmux(&["select-window", "-t", window_id])?;
+    run_tmux(&["select-pane", "-t", pane_id])?;
+    Ok(())
 }
 
-/// Switches a tmux client to the given pane.
-fn switch_to_pane(client_tty: &str, pane_id: &str) -> Result<(), String> {
-    let switch = Command::new("tmux")
-        .args(["switch-client", "-c", client_tty, "-t", pane_id])
+/// Switches a client to a different session/pane (used when target has no client).
+fn switch_client_to_pane(client_tty: &str, pane_id: &str) -> Result<(), String> {
+    run_tmux(&["switch-client", "-c", client_tty, "-t", pane_id])?;
+    run_tmux(&["select-pane", "-t", pane_id])?;
+    Ok(())
+}
+
+fn run_tmux(args: &[&str]) -> Result<(), String> {
+    let output = Command::new("tmux")
+        .args(args)
         .output()
-        .map_err(|e| format!("failed to run tmux switch-client: {e}"))?;
+        .map_err(|e| format!("failed to run tmux {}: {e}", args[0]))?;
 
-    if !switch.status.success() {
-        let stderr = String::from_utf8_lossy(&switch.stderr);
-        return Err(format!("tmux switch-client failed: {}", stderr.trim()));
-    }
-
-    let select = Command::new("tmux")
-        .args(["select-pane", "-t", pane_id])
-        .output()
-        .map_err(|e| format!("failed to run tmux select-pane: {e}"))?;
-
-    if !select.status.success() {
-        let stderr = String::from_utf8_lossy(&select.stderr);
-        return Err(format!("tmux select-pane failed: {}", stderr.trim()));
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("tmux {} failed: {}", args[0], stderr.trim()));
     }
 
     Ok(())
@@ -268,34 +275,6 @@ mod tests {
 
         let result = find_target_pane(&panes, &[200, 300], 400);
         assert!(result.is_none());
-    }
-
-    #[test]
-    fn pick_best_client_prefers_target_session() {
-        let clients = vec![
-            TmuxClient {
-                client_tty: "/dev/ttys001".to_string(),
-                client_session: "work".to_string(),
-            },
-            TmuxClient {
-                client_tty: "/dev/ttys002".to_string(),
-                client_session: "main".to_string(),
-            },
-        ];
-
-        let best = pick_best_client(&clients, "main");
-        assert_eq!(best.client_tty, "/dev/ttys002");
-    }
-
-    #[test]
-    fn pick_best_client_falls_back_to_first() {
-        let clients = vec![TmuxClient {
-            client_tty: "/dev/ttys001".to_string(),
-            client_session: "work".to_string(),
-        }];
-
-        let best = pick_best_client(&clients, "nonexistent");
-        assert_eq!(best.client_tty, "/dev/ttys001");
     }
 
     #[test]
