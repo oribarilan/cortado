@@ -4,6 +4,12 @@ mod ghostty;
 mod pid_ancestry;
 pub(crate) mod tmux;
 
+/// Escapes a string for safe interpolation into an AppleScript double-quoted string.
+/// Handles backslashes and double quotes — the two special characters in AppleScript strings.
+pub(crate) fn escape_applescript(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
 /// Context gathered during PID ancestry walk, shared by all strategies.
 #[derive(Debug)]
 #[allow(dead_code)] // Fields used by focus strategies (tasks 04-06).
@@ -47,6 +53,11 @@ pub fn focus_terminal(
     let ctx = pid_ancestry::build_focus_context(session)
         .map_err(|e| format!("failed to build focus context: {e}"))?;
 
+    eprintln!(
+        "focus: context for session {} — terminal={:?} bundle={:?} tmux={:?}",
+        session.id, ctx.terminal_app_name, ctx.terminal_app_bundle, ctx.tmux_server_pid
+    );
+
     type Strategy = fn(&FocusContext) -> FocusResult;
 
     let strategies: &[(&str, Strategy, bool)] = &[
@@ -59,6 +70,7 @@ pub fn focus_terminal(
 
     for (name, strategy, enabled) in strategies {
         if !enabled {
+            eprintln!("focus: {name} skipped (disabled)");
             continue;
         }
         match strategy(&ctx) {
@@ -66,7 +78,10 @@ pub fn focus_terminal(
                 eprintln!("focus: {name} succeeded");
                 return Ok(());
             }
-            FocusResult::NotApplicable => continue,
+            FocusResult::NotApplicable => {
+                eprintln!("focus: {name} not applicable");
+                continue;
+            }
             FocusResult::Failed(reason) => {
                 eprintln!("focus: {name} failed: {reason}");
                 continue;
@@ -133,7 +148,8 @@ end tell"#
 fn activate_app_by_name(name: &str) -> Result<(), String> {
     use std::process::Command;
 
-    let script = format!(r#"tell application "{name}" to activate"#);
+    let safe_name = escape_applescript(name);
+    let script = format!(r#"tell application "{safe_name}" to activate"#);
 
     let output = Command::new("osascript")
         .args(["-e", &script])
@@ -213,32 +229,76 @@ fn check_accessibility_permission() -> bool {
 }
 
 #[cfg(test)]
+mod e2e;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    fn mock_context(terminal_pid: Option<u32>) -> FocusContext {
+    fn ctx_with(
+        terminal_pid: Option<u32>,
+        terminal_name: Option<&str>,
+        terminal_bundle: Option<&str>,
+        tmux: bool,
+    ) -> FocusContext {
         FocusContext {
             copilot_pid: 1,
-            cwd: "/tmp".to_string(),
-            ancestors: vec![],
-            tmux_server_pid: None,
+            cwd: "/home/user/project".to_string(),
+            ancestors: vec![2, 3, 4],
+            tmux_server_pid: if tmux { Some(100) } else { None },
             terminal_app_pid: terminal_pid,
-            terminal_app_name: None,
-            terminal_app_bundle: None,
+            terminal_app_name: terminal_name.map(String::from),
+            terminal_app_bundle: terminal_bundle.map(String::from),
         }
     }
 
+    // --- AppleScript escaping ---
+
     #[test]
-    fn stub_returns_not_applicable() {
-        let ctx = mock_context(None);
-        assert_eq!(stub_not_applicable(&ctx), FocusResult::NotApplicable);
+    fn escape_applescript_no_special_chars() {
+        assert_eq!(escape_applescript("hello world"), "hello world");
     }
 
     #[test]
-    fn app_activation_not_applicable_without_terminal_pid() {
-        let ctx = mock_context(None);
+    fn escape_applescript_quotes() {
+        assert_eq!(escape_applescript(r#"say "hi""#), r#"say \"hi\""#);
+    }
+
+    #[test]
+    fn escape_applescript_backslashes() {
+        assert_eq!(escape_applescript(r"path\to\file"), r"path\\to\\file");
+    }
+
+    #[test]
+    fn escape_applescript_injection_attempt() {
+        let malicious = "foo\" then do shell script \"rm -rf ~";
+        let escaped = escape_applescript(malicious);
+        assert_eq!(escaped, "foo\\\" then do shell script \\\"rm -rf ~");
+    }
+
+    // --- Stub strategy ---
+
+    #[test]
+    fn stub_returns_not_applicable() {
+        let ctx = ctx_with(None, None, None, false);
+        assert_eq!(stub_not_applicable(&ctx), FocusResult::NotApplicable);
+    }
+
+    // --- App activation fallback ---
+
+    #[test]
+    fn app_activation_not_applicable_without_terminal() {
+        let ctx = ctx_with(None, None, None, false);
         assert_eq!(try_app_activation(&ctx), FocusResult::NotApplicable);
     }
+
+    #[test]
+    fn app_activation_not_applicable_without_pid_or_name() {
+        let ctx = ctx_with(None, None, None, true);
+        assert_eq!(try_app_activation(&ctx), FocusResult::NotApplicable);
+    }
+
+    // --- Terminal detection ---
 
     #[test]
     fn is_scriptable_terminal_known_apps() {
@@ -251,5 +311,123 @@ mod tests {
     fn is_scriptable_terminal_unknown_app() {
         assert!(!is_scriptable_terminal(Some("com.unknown.app")));
         assert!(!is_scriptable_terminal(None));
+    }
+
+    // --- Waterfall logic ---
+
+    #[test]
+    fn waterfall_skips_disabled_strategies() {
+        // Verify the strategy array respects enabled flags.
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("disabled", stub_not_applicable, false),
+            ("also_disabled", stub_not_applicable, false),
+        ];
+
+        let mut ran = Vec::new();
+        for (name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            ran.push(*name);
+            let _ = strategy(&ctx);
+        }
+        assert!(ran.is_empty(), "no strategies should run when all disabled");
+    }
+
+    #[test]
+    fn waterfall_stops_at_first_focused() {
+        fn always_focused(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Focused
+        }
+        fn should_not_run(_ctx: &FocusContext) -> FocusResult {
+            panic!("should not be called");
+        }
+
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("first", always_focused, true),
+            ("second", should_not_run, true),
+        ];
+
+        for (_name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            match strategy(&ctx) {
+                FocusResult::Focused => break,
+                _ => continue,
+            }
+        }
+    }
+
+    #[test]
+    fn waterfall_continues_on_not_applicable() {
+        fn not_applicable(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::NotApplicable
+        }
+        fn fallback_focused(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Focused
+        }
+
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("skip", not_applicable, true),
+            ("fallback", fallback_focused, true),
+        ];
+
+        let mut result = FocusResult::NotApplicable;
+        for (_name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            match strategy(&ctx) {
+                FocusResult::Focused => {
+                    result = FocusResult::Focused;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+        assert_eq!(result, FocusResult::Focused);
+    }
+
+    #[test]
+    fn waterfall_continues_on_failed() {
+        fn failed(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Failed("broken".into())
+        }
+        fn fallback_focused(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Focused
+        }
+
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("broken", failed, true),
+            ("fallback", fallback_focused, true),
+        ];
+
+        let mut result = FocusResult::NotApplicable;
+        for (_name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            match strategy(&ctx) {
+                FocusResult::Focused => {
+                    result = FocusResult::Focused;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+        assert_eq!(result, FocusResult::Focused);
     }
 }

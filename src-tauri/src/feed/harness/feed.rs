@@ -35,7 +35,8 @@ pub struct HarnessFeed {
     config_overrides: HashMap<String, FieldOverride>,
     /// Cached sessions from last poll (for focus_session lookup).
     cached_sessions: Mutex<Vec<SessionInfo>>,
-    /// Cached focus info per session ID (resolved once, stable for session lifetime).
+    /// Cached focus info per session ID. Resolved once per session lifetime
+    /// (terminal app doesn't change for a given PID tree).
     cached_focus_info: Mutex<HashMap<String, FocusInfo>>,
 }
 
@@ -70,6 +71,25 @@ impl HarnessFeed {
     #[allow(dead_code)] // Available for future use.
     pub fn any_cached_session(&self) -> Option<SessionInfo> {
         self.cached_sessions.lock().ok()?.first().cloned()
+    }
+
+    /// Resolves focus info for a session, caching the result.
+    /// The PID ancestry walk only runs once per session — the terminal app
+    /// doesn't change for a given process tree.
+    fn resolve_focus_info(&self, session: &SessionInfo) -> FocusInfo {
+        if let Ok(cache) = self.cached_focus_info.lock() {
+            if let Some(info) = cache.get(&session.id) {
+                return info.clone();
+            }
+        }
+
+        let info = build_focus_info(session);
+
+        if let Ok(mut cache) = self.cached_focus_info.lock() {
+            cache.insert(session.id.clone(), info.clone());
+        }
+
+        info
     }
 
     fn base_field_definitions() -> Vec<FieldDefinition> {
@@ -117,23 +137,6 @@ impl HarnessFeed {
                 description: "Whether tmux was detected in process ancestry".to_string(),
             },
         ]
-    }
-
-    /// Resolves or retrieves cached focus info for a session.
-    fn resolve_focus_info(&self, session: &SessionInfo) -> FocusInfo {
-        if let Ok(cache) = self.cached_focus_info.lock() {
-            if let Some(info) = cache.get(&session.id) {
-                return info.clone();
-            }
-        }
-
-        let info = build_focus_info(session);
-
-        if let Ok(mut cache) = self.cached_focus_info.lock() {
-            cache.insert(session.id.clone(), info.clone());
-        }
-
-        info
     }
 }
 
@@ -640,5 +643,164 @@ mod tests {
 
         let deduped = deduplicate_sessions(sessions);
         assert_eq!(deduped.len(), 2);
+    }
+
+    #[test]
+    fn deduplicate_single_session_unchanged() {
+        let sessions = vec![SessionInfo {
+            id: "only".to_string(),
+            cwd: "/tmp".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        }];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].id, "only");
+    }
+
+    #[test]
+    fn deduplicate_empty_list() {
+        let deduped = deduplicate_sessions(Vec::new());
+        assert!(deduped.is_empty());
+    }
+
+    #[test]
+    fn deduplicate_no_last_active_keeps_last_seen() {
+        // Both have None for last_active_at — should keep one deterministically.
+        let sessions = vec![
+            SessionInfo {
+                id: "first".to_string(),
+                cwd: "/tmp/same".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Idle,
+                pid: 1,
+                summary: None,
+                last_active_at: None,
+            },
+            SessionInfo {
+                id: "second".to_string(),
+                cwd: "/tmp/same".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Working,
+                pid: 2,
+                summary: None,
+                last_active_at: None,
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+    }
+
+    #[test]
+    fn title_empty_cwd_fallback() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        assert_eq!(format_activity_title(&session), "session");
+    }
+
+    #[test]
+    fn title_root_cwd() {
+        let session = SessionInfo {
+            id: "abc".to_string(),
+            cwd: "/".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        };
+        // "/" has no non-empty path component — should fall back to "session".
+        assert_eq!(format_activity_title(&session), "session");
+    }
+
+    #[test]
+    fn relative_time_just_now() {
+        let now = jiff::Timestamp::now();
+        let iso = now.to_string();
+        let result = format_relative_time(&iso);
+        assert_eq!(result, "just now");
+    }
+
+    #[test]
+    fn relative_time_minutes_ago() {
+        use jiff::SignedDuration;
+        let ts = jiff::Timestamp::now() - SignedDuration::from_mins(5);
+        let result = format_relative_time(&ts.to_string());
+        assert_eq!(result, "5m ago");
+    }
+
+    #[test]
+    fn relative_time_hours_ago() {
+        use jiff::SignedDuration;
+        let ts = jiff::Timestamp::now() - SignedDuration::from_hours(3);
+        let result = format_relative_time(&ts.to_string());
+        assert_eq!(result, "3h ago");
+    }
+
+    #[test]
+    fn relative_time_invalid_timestamp() {
+        let result = format_relative_time("not-a-timestamp");
+        assert_eq!(result, "not-a-timestamp");
+    }
+
+    #[test]
+    fn parse_iso_to_unix_ms_valid() {
+        let ms = parse_iso_to_unix_ms(Some("2026-01-01T00:00:00Z"));
+        assert!(ms.is_some());
+        assert!(ms.unwrap() > 0);
+    }
+
+    #[test]
+    fn parse_iso_to_unix_ms_none() {
+        assert!(parse_iso_to_unix_ms(None).is_none());
+    }
+
+    #[test]
+    fn parse_iso_to_unix_ms_invalid() {
+        assert!(parse_iso_to_unix_ms(Some("garbage")).is_none());
+    }
+
+    #[test]
+    fn session_with_summary_includes_field() {
+        let session = SessionInfo {
+            id: "s".to_string(),
+            cwd: "/tmp".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: Some("doing things".to_string()),
+            last_active_at: None,
+        };
+
+        let focus = FocusInfo {
+            app_name: "t".to_string(),
+            has_tmux: false,
+        };
+        let activity = session_to_activity(&session, &focus, &HashMap::new(), &HashMap::new());
+
+        let summary_field = activity.fields.iter().find(|f| f.name == "summary");
+        assert!(summary_field.is_some());
+        match &summary_field.unwrap().value {
+            FieldValue::Text { value } => assert_eq!(value, "doing things"),
+            _ => panic!("expected Text field"),
+        }
     }
 }

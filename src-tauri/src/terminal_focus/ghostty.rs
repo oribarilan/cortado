@@ -80,11 +80,12 @@ fn find_tmux_session_for_context(ctx: &FocusContext) -> Option<String> {
 
 /// Uses Ghostty AppleScript to find a tab by exact name and focus its terminal.
 fn focus_ghostty_tab_by_name(tab_name: &str) -> Result<bool, String> {
+    let safe_name = super::escape_applescript(tab_name);
     let script = format!(
         r#"tell application "Ghostty"
     repeat with w in every window
         repeat with t in every tab of w
-            if name of t is "{tab_name}" then
+            if name of t is "{safe_name}" then
                 focus (focused terminal of t)
                 activate
                 return true
@@ -99,11 +100,12 @@ end tell"#
 
 /// Uses Ghostty AppleScript to find a tab whose name contains a substring.
 fn focus_ghostty_tab_by_substring(substring: &str) -> Result<bool, String> {
+    let safe_sub = super::escape_applescript(substring);
     let script = format!(
         r#"tell application "Ghostty"
     repeat with w in every window
         repeat with t in every tab of w
-            if name of t contains "{substring}" then
+            if name of t contains "{safe_sub}" then
                 focus (focused terminal of t)
                 activate
                 return true
@@ -178,6 +180,18 @@ pub fn is_available() -> bool {
 mod tests {
     use super::*;
 
+    fn ghostty_ctx(tmux: bool, cwd: &str) -> FocusContext {
+        FocusContext {
+            copilot_pid: 1,
+            cwd: cwd.to_string(),
+            ancestors: vec![2, 3],
+            tmux_server_pid: if tmux { Some(100) } else { None },
+            terminal_app_pid: Some(200),
+            terminal_app_name: Some("Ghostty".to_string()),
+            terminal_app_bundle: Some("com.mitchellh.ghostty".to_string()),
+        }
+    }
+
     #[test]
     fn not_applicable_for_non_ghostty() {
         let ctx = FocusContext {
@@ -204,5 +218,50 @@ mod tests {
             terminal_app_bundle: None,
         };
         assert_eq!(try_focus(&ctx), FocusResult::NotApplicable);
+    }
+
+    #[test]
+    fn not_applicable_for_iterm2() {
+        let ctx = FocusContext {
+            copilot_pid: 1,
+            cwd: "/tmp".to_string(),
+            ancestors: vec![],
+            tmux_server_pid: None,
+            terminal_app_pid: Some(500),
+            terminal_app_name: Some("iTerm2".to_string()),
+            terminal_app_bundle: Some("com.googlecode.iterm2".to_string()),
+        };
+        assert_eq!(try_focus(&ctx), FocusResult::NotApplicable);
+    }
+
+    #[test]
+    fn version_parsing() {
+        assert!((1, 3) >= (1, 3));
+        assert!((1, 4) >= (1, 3));
+        assert!((2, 0) >= (1, 3));
+        assert!((1, 2) < (1, 3));
+        assert!((0, 9) < (1, 3));
+    }
+
+    #[test]
+    fn cwd_fallback_extracts_directory_name() {
+        let ctx = ghostty_ctx(false, "/home/user/repos/my-project");
+        let cwd_name = ctx
+            .cwd
+            .rsplit('/')
+            .find(|s| !s.is_empty())
+            .unwrap_or(&ctx.cwd);
+        assert_eq!(cwd_name, "my-project");
+    }
+
+    #[test]
+    fn cwd_fallback_handles_trailing_slash() {
+        let ctx = ghostty_ctx(false, "/home/user/repos/my-project/");
+        let cwd_name = ctx
+            .cwd
+            .rsplit('/')
+            .find(|s| !s.is_empty())
+            .unwrap_or(&ctx.cwd);
+        assert_eq!(cwd_name, "my-project");
     }
 }

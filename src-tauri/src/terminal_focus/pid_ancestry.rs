@@ -56,9 +56,9 @@ pub fn build_focus_context(session: &SessionInfo) -> Result<FocusContext, String
     }
 
     // If tmux was detected but no terminal app found via direct ancestry,
-    // try finding a tmux client and walking its ancestry for the terminal app.
+    // find the tmux client attached to the copilot's session and walk its ancestry.
     if tmux_server_pid.is_some() && terminal_app_pid.is_none() {
-        if let Some(client_pid) = find_tmux_client_pid() {
+        if let Some(client_pid) = find_tmux_client_for_session(session.pid, &ancestors) {
             let mut pid = client_pid;
             for _ in 0..32 {
                 let parent = match get_parent_pid(pid) {
@@ -140,8 +140,8 @@ const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
     ("Terminal", "Terminal", "com.apple.Terminal"),
     ("Alacritty", "Alacritty", "io.alacritty"),
     ("kitty", "kitty", "net.kovidgoyal.kitty"),
-    ("WezTerm", "WezTerm", "org.wezfurlong.wezterm"),
-    ("wezterm-gui", "WezTerm", "org.wezfurlong.wezterm"),
+    ("WezTerm", "WezTerm", "com.github.wez.wezterm"),
+    ("wezterm-gui", "WezTerm", "com.github.wez.wezterm"),
 ];
 
 /// Checks if a process name matches a known terminal app.
@@ -153,23 +153,62 @@ fn is_terminal_app(process_name: &str) -> Option<(&'static str, &'static str)> {
         .map(|(_, display, bundle)| (*display, *bundle))
 }
 
-/// Finds the PID of a tmux client process (for terminal resolution via tmux).
-fn find_tmux_client_pid() -> Option<u32> {
+/// Finds the PID of the tmux client attached to the session containing `copilot_pid`.
+fn find_tmux_client_for_session(copilot_pid: u32, ancestors: &[u32]) -> Option<u32> {
     use std::process::Command;
 
-    let output = Command::new("tmux")
-        .args(["list-clients", "-F", "#{client_pid}"])
+    // First, find which tmux session contains the copilot process.
+    let panes_output = Command::new("tmux")
+        .args(["list-panes", "-a", "-F", "#{session_name} #{pane_pid}"])
         .output()
         .ok()?;
 
-    if !output.status.success() {
+    if !panes_output.status.success() {
         return None;
     }
 
-    String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .next()
-        .and_then(|line| line.trim().parse::<u32>().ok())
+    let panes_stdout = String::from_utf8_lossy(&panes_output.stdout);
+    let target_session = panes_stdout.lines().find_map(|line| {
+        let (session, pid_str) = line.rsplit_once(' ')?;
+        let pid: u32 = pid_str.parse().ok()?;
+        if pid == copilot_pid || ancestors.contains(&pid) {
+            Some(session.to_string())
+        } else {
+            None
+        }
+    })?;
+
+    // Find the client attached to that session, falling back to any client.
+    let clients_output = Command::new("tmux")
+        .args(["list-clients", "-F", "#{client_pid} #{client_session}"])
+        .output()
+        .ok()?;
+
+    if !clients_output.status.success() {
+        return None;
+    }
+
+    let clients_stdout = String::from_utf8_lossy(&clients_output.stdout);
+
+    // Prefer the client attached to the target session.
+    let exact_match = clients_stdout.lines().find_map(|line| {
+        let (pid_str, session) = line.split_once(' ')?;
+        if session == target_session {
+            pid_str.parse().ok()
+        } else {
+            None
+        }
+    });
+
+    if exact_match.is_some() {
+        return exact_match;
+    }
+
+    // Fallback: any client (so we can at least detect the terminal app).
+    clients_stdout.lines().find_map(|line| {
+        let (pid_str, _session) = line.split_once(' ')?;
+        pid_str.parse().ok()
+    })
 }
 
 #[cfg(test)]
@@ -220,5 +259,72 @@ mod tests {
         assert_eq!(ctx.copilot_pid, std::process::id());
         assert_eq!(ctx.cwd, "/tmp");
         assert!(!ctx.ancestors.is_empty());
+    }
+
+    // --- Known terminal detection ---
+
+    #[test]
+    fn is_terminal_app_ghostty() {
+        let result = is_terminal_app("ghostty");
+        assert!(result.is_some());
+        let (name, bundle) = result.unwrap();
+        assert_eq!(name, "Ghostty");
+        assert_eq!(bundle, "com.mitchellh.ghostty");
+    }
+
+    #[test]
+    fn is_terminal_app_ghostty_capitalized() {
+        assert!(is_terminal_app("Ghostty").is_some());
+    }
+
+    #[test]
+    fn is_terminal_app_iterm2() {
+        let result = is_terminal_app("iTerm2");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().1, "com.googlecode.iterm2");
+    }
+
+    #[test]
+    fn is_terminal_app_macos_terminal() {
+        let result = is_terminal_app("Terminal");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().1, "com.apple.Terminal");
+    }
+
+    #[test]
+    fn is_terminal_app_alacritty() {
+        assert!(is_terminal_app("Alacritty").is_some());
+    }
+
+    #[test]
+    fn is_terminal_app_kitty() {
+        assert!(is_terminal_app("kitty").is_some());
+    }
+
+    #[test]
+    fn is_terminal_app_wezterm() {
+        assert!(is_terminal_app("WezTerm").is_some());
+        assert!(is_terminal_app("wezterm-gui").is_some());
+    }
+
+    #[test]
+    fn is_terminal_app_unknown() {
+        assert!(is_terminal_app("vim").is_none());
+        assert!(is_terminal_app("zsh").is_none());
+        assert!(is_terminal_app("tmux").is_none());
+        assert!(is_terminal_app("node").is_none());
+        assert!(is_terminal_app("").is_none());
+    }
+
+    // --- Process name extraction ---
+
+    #[test]
+    fn get_process_name_extracts_basename() {
+        // ps returns paths for some processes; we extract the basename.
+        let pid = std::process::id();
+        let name = get_process_name(pid);
+        assert!(name.is_some());
+        // The test binary name won't contain '/'.
+        assert!(!name.unwrap().contains('/'));
     }
 }

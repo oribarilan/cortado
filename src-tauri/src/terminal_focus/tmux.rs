@@ -278,6 +278,51 @@ mod tests {
     }
 
     #[test]
+    fn find_target_pane_prefers_direct_over_ancestor() {
+        let panes = vec![
+            TmuxPane {
+                pane_id: "main:0.0".to_string(),
+                pane_pid: 100, // ancestor
+            },
+            TmuxPane {
+                pane_id: "main:0.1".to_string(),
+                pane_pid: 300, // direct match
+            },
+        ];
+
+        let result = find_target_pane(&panes, &[100], 300);
+        assert_eq!(result.unwrap().pane_id, "main:0.1");
+    }
+
+    #[test]
+    fn find_target_pane_ancestor_priority_order() {
+        // First ancestor in the list should match first.
+        let panes = vec![
+            TmuxPane {
+                pane_id: "a:0.0".to_string(),
+                pane_pid: 50,
+            },
+            TmuxPane {
+                pane_id: "b:0.0".to_string(),
+                pane_pid: 60,
+            },
+        ];
+
+        // ancestors: [60, 50] — 60 comes first, should match first.
+        let result = find_target_pane(&panes, &[60, 50], 999);
+        assert_eq!(result.unwrap().pane_pid, 60);
+    }
+
+    #[test]
+    fn parse_clients_with_named_sessions() {
+        let output = "/dev/ttys001 my-project\n/dev/ttys002 dotfiles\n";
+        let clients = parse_clients_output(output);
+        assert_eq!(clients.len(), 2);
+        assert_eq!(clients[0].client_session, "my-project");
+        assert_eq!(clients[1].client_session, "dotfiles");
+    }
+
+    #[test]
     fn try_focus_not_applicable_without_tmux() {
         let ctx = FocusContext {
             copilot_pid: 1,
@@ -289,5 +334,60 @@ mod tests {
             terminal_app_bundle: None,
         };
         assert_eq!(try_focus(&ctx), FocusResult::NotApplicable);
+    }
+
+    #[test]
+    fn has_own_client_detection() {
+        let clients = [
+            TmuxClient {
+                client_tty: "/dev/ttys001".to_string(),
+                client_session: "work".to_string(),
+            },
+            TmuxClient {
+                client_tty: "/dev/ttys002".to_string(),
+                client_session: "personal".to_string(),
+            },
+        ];
+
+        assert!(clients.iter().any(|c| c.client_session == "work"));
+        assert!(clients.iter().any(|c| c.client_session == "personal"));
+        assert!(!clients.iter().any(|c| c.client_session == "nonexistent"));
+    }
+
+    #[test]
+    fn parse_panes_with_named_sessions() {
+        let output = "my-project:0.0 12345\ndotfiles:0.0 67890\n";
+        let panes = parse_panes_output(output);
+        assert_eq!(panes.len(), 2);
+        assert_eq!(panes[0].pane_id, "my-project:0.0");
+        assert_eq!(panes[1].pane_id, "dotfiles:0.0");
+    }
+
+    #[test]
+    fn parse_panes_with_spaces_in_session_name() {
+        // Session names with spaces shouldn't happen in practice,
+        // but our parser splits on last space so it should still work.
+        let output = "my project:0.0 12345\n";
+        let panes = parse_panes_output(output);
+        assert_eq!(panes.len(), 1);
+        assert_eq!(panes[0].pane_id, "my project:0.0");
+        assert_eq!(panes[0].pane_pid, 12345);
+    }
+
+    #[test]
+    fn find_target_pane_empty_panes() {
+        let result = find_target_pane(&[], &[100, 200], 300);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn find_target_pane_empty_ancestors() {
+        let panes = [TmuxPane {
+            pane_id: "main:0.0".to_string(),
+            pane_pid: 100,
+        }];
+        // No direct match, no ancestors to check.
+        let result = find_target_pane(&panes, &[], 999);
+        assert!(result.is_none());
     }
 }

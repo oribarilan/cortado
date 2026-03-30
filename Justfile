@@ -23,3 +23,6 @@ check:
 	just format
 	just lint
 	just test
+
+local-e2e:
+	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features -- --ignored terminal_focus::e2e 2>&1

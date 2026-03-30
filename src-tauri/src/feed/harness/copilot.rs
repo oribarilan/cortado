@@ -660,4 +660,92 @@ summary: some summary
         let sessions = provider.discover_sessions().unwrap();
         assert_eq!(sessions.len(), 2);
     }
+
+    #[test]
+    fn event_status_session_start() {
+        let event = r#"{"type":"session.start","data":{}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Unknown);
+    }
+
+    #[test]
+    fn event_status_missing_type_field() {
+        let event = r#"{"data":{}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Unknown);
+    }
+
+    #[test]
+    fn classify_tool_execution_non_ask_user() {
+        let event = r#"{"type":"tool.execution_start","data":{"toolName":"edit"}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Working);
+    }
+
+    #[test]
+    fn classify_assistant_message_multiple_tools_with_ask_user() {
+        // ask_user among other tools should still be Question
+        let event = r#"{"type":"assistant.message","data":{"toolRequests":[{"name":"bash","arguments":{}},{"name":"ask_user","arguments":{}}]}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Question);
+    }
+
+    #[test]
+    fn classify_assistant_message_multiple_tools_without_ask_user() {
+        let event = r#"{"type":"assistant.message","data":{"toolRequests":[{"name":"bash","arguments":{}},{"name":"edit","arguments":{}}]}}"#;
+        assert_eq!(parse_event_status(event), SessionStatus::Approval);
+    }
+
+    #[test]
+    fn read_last_lines_single_line_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.jsonl");
+        fs::write(&path, r#"{"type":"idle"}"#).unwrap();
+
+        let lines = read_last_lines(&path, 2).unwrap();
+        assert_eq!(lines.len(), 1);
+        assert!(lines[0].contains("idle"));
+    }
+
+    #[test]
+    fn read_last_lines_requests_more_than_available() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.jsonl");
+        fs::write(&path, "{\"type\":\"a\"}\n{\"type\":\"b\"}\n").unwrap();
+
+        let lines = read_last_lines(&path, 10).unwrap();
+        assert_eq!(lines.len(), 2);
+    }
+
+    #[test]
+    fn infer_status_tool_start_after_idle_stays_working() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("events.jsonl");
+        // assistant.turn_end (Idle) followed by tool.execution_start (Working)
+        // The prev is Idle, not Question/Approval, so result stays Working
+        fs::write(
+            &path,
+            r#"{"type":"assistant.turn_end","data":{}}
+{"type":"tool.execution_start","data":{"toolName":"bash"}}
+"#,
+        )
+        .unwrap();
+
+        let (status, _) = infer_status_from_last_event(&path);
+        assert_eq!(status, SessionStatus::Working);
+    }
+
+    #[test]
+    fn workspace_yaml_extra_fields_ignored() {
+        let yaml = "id: test\ncwd: /tmp\nsummary: hello\nextra_field: ignored\nanother: 42\n";
+        let ws: WorkspaceYaml = serde_saphyr::from_str(yaml).unwrap();
+        assert_eq!(ws.id, "test");
+        assert_eq!(ws.summary.as_deref(), Some("hello"));
+    }
+
+    #[test]
+    fn workspace_yaml_empty_summary_filtered() {
+        // Empty summary should become None in SessionInfo
+        let yaml = "id: test\ncwd: /tmp\nsummary: \n";
+        let ws: WorkspaceYaml = serde_saphyr::from_str(yaml).unwrap();
+        // The YAML parser may return Some("") or None for empty value
+        let filtered = ws.summary.filter(|s| !s.is_empty());
+        assert!(filtered.is_none());
+    }
 }

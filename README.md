@@ -31,16 +31,19 @@ Each session shows:
 
 #### Terminal focus
 
-Opening a copilot-session activity focuses the terminal containing that session — not just the app, but the exact tmux pane if you're using tmux.
+Opening a copilot-session activity focuses the terminal containing that session. Cortado detects your terminal and picks the best focus strategy automatically:
 
-Cortado walks the process tree from the copilot PID to discover your terminal setup, then picks the best strategy:
+| Setup | What happens |
+|-------|-------------|
+| **tmux** (any terminal) | Switches to the exact pane — even reattaches detached sessions. Best experience. |
+| **Ghostty** 1.3+ | Switches to the correct tab via AppleScript. |
+| **Terminal.app** | Tab focus via TTY matching (planned). |
+| **iTerm2** | Session focus via TTY matching (planned). |
+| **kitty** | Window focus via remote control (planned). |
+| **WezTerm** | Pane focus via CLI (planned). |
+| **Other terminals** | Brings the app to front. |
 
-1. **tmux pane switching** — switches to the exact pane (when tmux is detected)
-2. **App activation** — brings the terminal app to front (fallback)
-
-The action button shows what will happen: *Open in Ghostty (via tmux)*, *Open in Terminal*, etc.
-
-See `specs/feeds.md` for the full harness architecture and implementation details.
+tmux works with any terminal and gives pane-level precision. Without tmux, terminal-specific strategies provide tab-level focus. See `specs/terminal_integration.md` for the full architecture.
 
 ## Core terms
 
