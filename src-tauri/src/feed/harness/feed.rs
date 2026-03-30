@@ -331,7 +331,7 @@ fn format_activity_title(session: &SessionInfo) -> String {
 fn build_focus_label(session: &SessionInfo) -> String {
     let ctx = match terminal_focus::build_context_for_label(session) {
         Some(ctx) => ctx,
-        None => return "Focus terminal".to_string(),
+        None => return "Open in terminal".to_string(),
     };
 
     let app_name = ctx.terminal_app_name.as_deref().unwrap_or("terminal");

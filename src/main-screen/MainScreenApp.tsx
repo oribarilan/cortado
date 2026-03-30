@@ -74,15 +74,31 @@ function DetailPane({ item }: { item: ListItem | null }) {
     );
   }
 
-  const { activity } = item;
+  const { activity, feed } = item;
+  const focus = supportsFocus(feed, activity);
+  const openUrl = supportsOpen(activity);
+  const canOpen = focus || openUrl;
+
+  const handleOpen = () => {
+    if (focus) {
+      invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error);
+    } else if (openUrl) {
+      invoke("open_activity", { url: openUrl }).catch(console.error);
+    }
+  };
 
   return (
     <div className="ms-detail">
       <div className="ms-detail-content" key={item.key}>
         <div className="ms-detail-title">{activity.title}</div>
+        {canOpen ? (
+          <button className="ms-detail-open" onClick={handleOpen}>
+            ↗ {focus ? focus.label : "Open Activity"}
+          </button>
+        ) : null}
         {activity.fields.length > 0 ? (
           <div className="ms-detail-fields">
-            {activity.fields.map((field) => {
+            {activity.fields.filter((f) => f.name !== "focus_label").map((field) => {
               const statusClass =
                 field.value.type === "status" ? `status kind-${field.value.kind}` : "";
               return (

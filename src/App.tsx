@@ -265,7 +265,7 @@ function App() {
                                     </button>
                                   ) : null}
 
-                                  {activity.fields.map((field) => {
+                                  {activity.fields.filter((f) => f.name !== "focus_label").map((field) => {
                                     const statusClass =
                                       field.value.type === "status"
                                         ? `status kind-${field.value.kind}`
