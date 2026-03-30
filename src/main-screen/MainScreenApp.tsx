@@ -54,10 +54,7 @@ function buildFlatList(
   }
 
   for (const feed of feeds) {
-    const sorted = [...feed.activities].sort(
-      (a, b) => Number(a.retained) - Number(b.retained)
-    );
-    for (const activity of sorted) {
+    for (const activity of feed.activities) {
       const key = activityKey(feed, activity);
       if (!priorityKeys.has(key)) {
         feedItems.push({ feed, activity, key });
@@ -285,10 +282,7 @@ function MainScreenApp() {
     let globalIndex = priorityCount;
 
     return feeds.map((feed) => {
-      const sorted = [...feed.activities].sort(
-        (a, b) => Number(a.retained) - Number(b.retained)
-      );
-      const items = sorted
+      const items = feed.activities
         .filter((activity) => feedKeySet.has(activityKey(feed, activity)))
         .map((activity) => ({
           activity,

@@ -259,6 +259,7 @@ fn session_to_activity(
         fields,
         retained: false,
         retained_at_unix_ms: None,
+        sort_ts: parse_iso_to_unix_ms(session.last_active_at.as_deref()),
     }
 }
 
@@ -343,6 +344,12 @@ fn format_relative_time(iso_timestamp: &str) -> String {
 }
 
 use std::str::FromStr;
+
+/// Parses an ISO 8601 timestamp to unix milliseconds.
+fn parse_iso_to_unix_ms(iso: Option<&str>) -> Option<u64> {
+    let ts = jiff::Timestamp::from_str(iso?).ok()?;
+    Some(ts.as_millisecond() as u64)
+}
 
 #[cfg(test)]
 mod tests {

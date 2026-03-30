@@ -7,7 +7,7 @@ use std::{
 use tokio::sync::{watch, RwLock};
 
 use crate::app_settings::AppSettingsState;
-use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot};
+use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot, StatusKind};
 use crate::notification;
 
 const MAX_ACTIVITIES_PER_FEED: usize = 20;
@@ -231,7 +231,19 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
                 feed.retain_for(),
             );
             activities.extend(retained);
-            activities.sort_by_key(|activity| activity.retained);
+            activities.sort_by(|a, b| {
+                a.retained
+                    .cmp(&b.retained)
+                    .then_with(|| {
+                        let a_priority = StatusKind::rollup_for_activity(a).priority();
+                        let b_priority = StatusKind::rollup_for_activity(b).priority();
+                        b_priority.cmp(&a_priority)
+                    })
+                    .then_with(|| {
+                        // Within the same kind, most recently active first.
+                        b.sort_ts.cmp(&a.sort_ts)
+                    })
+            });
             activities.truncate(MAX_ACTIVITIES_PER_FEED);
 
             FeedSnapshot {
@@ -328,6 +340,7 @@ mod tests {
             fields: Vec::new(),
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         }
     }
 

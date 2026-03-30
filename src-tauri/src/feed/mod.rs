@@ -70,7 +70,6 @@ pub enum StatusKind {
     Idle,
 }
 
-#[allow(dead_code)] // Used by notification subsystem (tasks 05-07).
 impl StatusKind {
     /// Priority rank for rollup: higher value wins.
     ///
@@ -183,6 +182,10 @@ pub struct Activity {
     pub retained: bool,
     #[serde(skip)]
     pub retained_at_unix_ms: Option<u64>,
+    /// Optional sort hint: unix millis of last activity (most recent = highest).
+    /// Used as tiebreaker within the same status kind. Not serialized to frontend.
+    #[serde(skip)]
+    pub sort_ts: Option<u64>,
 }
 
 /// Poll result for one feed, including optional feed-level error.
@@ -393,6 +396,7 @@ mod tests {
             fields,
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         }
     }
 
@@ -432,6 +436,7 @@ mod tests {
             }],
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
 
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
@@ -737,6 +742,7 @@ mod tests {
             fields: Vec::new(),
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
     }

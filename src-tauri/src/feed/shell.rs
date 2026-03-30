@@ -175,6 +175,7 @@ impl Feed for ShellFeed {
             fields,
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         }])
     }
 }

@@ -543,6 +543,7 @@ mod tests {
             ],
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
 
         let ta = activity_to_test_activity(&a);
@@ -566,6 +567,7 @@ mod tests {
             }],
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
 
         let ta = activity_to_test_activity(&a);

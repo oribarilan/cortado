@@ -146,6 +146,7 @@ mod tests {
             fields,
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         }
     }
 
@@ -352,6 +353,7 @@ mod tests {
             ],
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
 
         let prev = snapshot("Feed", vec![]);
@@ -379,6 +381,7 @@ mod tests {
             }],
             retained: false,
             retained_at_unix_ms: None,
+            sort_ts: None,
         };
 
         let prev = snapshot("Feed", vec![]);

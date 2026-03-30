@@ -280,6 +280,7 @@ fn map_run_to_activity(
         fields,
         retained: false,
         retained_at_unix_ms: None,
+        sort_ts: None,
     }
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -39,12 +39,7 @@ function App() {
     };
   }, []);
 
-  const sortedFeeds = useMemo(() => {
-    return feeds.map((feed) => ({
-      ...feed,
-      activities: [...feed.activities].sort((a, b) => Number(a.retained) - Number(b.retained)),
-    }));
-  }, [feeds]);
+  const sortedFeeds = feeds;
 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
