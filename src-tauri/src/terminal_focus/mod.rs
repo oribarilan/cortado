@@ -82,14 +82,24 @@ fn stub_not_applicable(_ctx: &FocusContext) -> FocusResult {
 
 /// Fallback strategy: activate the terminal app without targeting a specific window.
 fn try_app_activation(ctx: &FocusContext) -> FocusResult {
-    let Some(pid) = ctx.terminal_app_pid else {
-        return FocusResult::NotApplicable;
-    };
-
-    match activate_app_by_pid(pid) {
-        Ok(()) => FocusResult::Focused,
-        Err(e) => FocusResult::Failed(e),
+    if let Some(pid) = ctx.terminal_app_pid {
+        match activate_app_by_pid(pid) {
+            Ok(()) => return FocusResult::Focused,
+            Err(e) => {
+                eprintln!("focus: app activation by PID failed: {e}");
+            }
+        }
     }
+
+    // Fallback: activate by app name if we know it.
+    if let Some(name) = &ctx.terminal_app_name {
+        match activate_app_by_name(name) {
+            Ok(()) => return FocusResult::Focused,
+            Err(e) => return FocusResult::Failed(e),
+        }
+    }
+
+    FocusResult::NotApplicable
 }
 
 /// Activates a macOS app by PID using NSRunningApplication.
@@ -103,6 +113,25 @@ pub(crate) fn activate_app_by_pid(pid: u32) -> Result<(), String> {
     set frontmost of targetProcess to true
 end tell"#
     );
+
+    let output = Command::new("osascript")
+        .args(["-e", &script])
+        .output()
+        .map_err(|e| format!("failed to run osascript: {e}"))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("osascript failed: {}", stderr.trim()))
+    }
+}
+
+/// Activates a macOS app by name.
+fn activate_app_by_name(name: &str) -> Result<(), String> {
+    use std::process::Command;
+
+    let script = format!(r#"tell application "{name}" to activate"#);
 
     let output = Command::new("osascript")
         .args(["-e", &script])
