@@ -86,18 +86,17 @@ export function activityKey(feed: FeedSnapshot, activity: Activity): string {
 }
 
 /// Returns focus info if this activity supports terminal focus (copilot-session feeds).
-/// Returns { sessionId, label } or null.
+/// Label is built from focus_app and focus_has_tmux fields.
 export function supportsFocus(
   feed: FeedSnapshot,
   activity: Activity
 ): { sessionId: string; label: string } | null {
   if (feed.feed_type === "copilot-session") {
-    const focusField = activity.fields.find((f) => f.name === "focus_label");
-    const label =
-      focusField && focusField.value.type === "text"
-        ? focusField.value.value
-        : "Focus terminal";
-    return { sessionId: activity.id, label };
+    const appField = activity.fields.find((f) => f.name === "focus_app");
+    const appName =
+      appField && appField.value.type === "text" ? appField.value.value : "terminal";
+
+    return { sessionId: activity.id, label: `Open in ${appName}` };
   }
   return null;
 }

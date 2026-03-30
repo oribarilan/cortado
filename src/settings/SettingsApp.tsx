@@ -449,6 +449,8 @@ function SettingsApp() {
     tmux_detected: boolean;
     terminal_app: string | null;
     terminal_scriptable: boolean;
+    ghostty_scriptable: boolean;
+    ghostty_version: string | null;
     accessibility_permitted: boolean;
   };
   const [focusCaps, setFocusCaps] = useState<FocusCaps | null>(null);
@@ -456,6 +458,7 @@ function SettingsApp() {
   const [tmuxEnabled, setTmuxEnabled] = useState(true);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
   const [showTmuxHelp, setShowTmuxHelp] = useState(false);
+  const [showGhosttyHelp, setShowGhosttyHelp] = useState(false);
   const [showAccessibilityHelp, setShowAccessibilityHelp] = useState(false);
 
   const showToast = useCallback(() => {
@@ -1315,6 +1318,51 @@ function SettingsApp() {
                     <div className="setting-info">
                       <div className="setting-hint">
                         {focusCaps.tmux_installed ? "tmux detected" : "tmux is not available"}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="section-header">Ghostty tab switching</div>
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">
+                      Tab-level focus
+                      <button
+                        className="help-toggle"
+                        onClick={() => setShowGhosttyHelp((v) => !v)}
+                      >
+                        ?
+                      </button>
+                    </div>
+                    <div className="setting-hint">
+                      Switch to the Ghostty tab running the agent session. Requires Ghostty 1.3+.
+                    </div>
+                  </div>
+                  <span className={`status-badge ${focusCaps?.ghostty_scriptable ? "active" : "unavailable"}`}>
+                    {focusCaps?.ghostty_scriptable ? "Available" : "Not available"}
+                  </span>
+                </div>
+
+                {showGhosttyHelp ? (
+                  <div className="help-detail">
+                    Uses Ghostty's AppleScript API to switch to the correct tab. With tmux, matches
+                    precisely by tmux session name. Without tmux, matches by working directory in the tab title
+                    (best-effort, depends on shell config). Ghostty does not yet expose PID or TTY on terminal
+                    objects, so precise matching without tmux is not possible.
+                  </div>
+                ) : null}
+
+                {focusCaps ? (
+                  <div className="setting-row">
+                    <div className="setting-info">
+                      <div className="setting-hint">
+                        {focusCaps.ghostty_scriptable
+                          ? `Ghostty ${focusCaps.ghostty_version ?? ""} -- scripting supported`
+                          : focusCaps.ghostty_version
+                            ? `Ghostty ${focusCaps.ghostty_version} -- requires 1.3+`
+                            : "Ghostty not detected"}
                       </div>
                     </div>
                   </div>

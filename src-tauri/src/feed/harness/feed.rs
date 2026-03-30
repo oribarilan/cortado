@@ -15,6 +15,13 @@ use super::{HarnessProvider, SessionInfo, SessionStatus};
 
 const DEFAULT_INTERVAL_SECONDS: u64 = 30;
 
+/// Resolved terminal focus info for a session, cached per session ID.
+#[derive(Debug, Clone)]
+struct FocusInfo {
+    app_name: String,
+    has_tmux: bool,
+}
+
 /// Generic feed that delegates session discovery to a `HarnessProvider`.
 ///
 /// Maps provider-agnostic `SessionInfo` into `Activity` for the UI.
@@ -28,8 +35,8 @@ pub struct HarnessFeed {
     config_overrides: HashMap<String, FieldOverride>,
     /// Cached sessions from last poll (for focus_session lookup).
     cached_sessions: Mutex<Vec<SessionInfo>>,
-    /// Cached focus labels per session ID (resolved once, stable for session lifetime).
-    cached_focus_labels: Mutex<HashMap<String, String>>,
+    /// Cached focus info per session ID (resolved once, stable for session lifetime).
+    cached_focus_info: Mutex<HashMap<String, FocusInfo>>,
 }
 
 impl HarnessFeed {
@@ -44,7 +51,7 @@ impl HarnessFeed {
             explicit_overrides: HashMap::new(),
             config_overrides: config.field_overrides.clone(),
             cached_sessions: Mutex::new(Vec::new()),
-            cached_focus_labels: Mutex::new(HashMap::new()),
+            cached_focus_info: Mutex::new(HashMap::new()),
         })
     }
 
@@ -98,32 +105,35 @@ impl HarnessFeed {
                 description: "Git branch name".to_string(),
             },
             FieldDefinition {
-                name: "focus_label".to_string(),
-                label: "Focus".to_string(),
+                name: "focus_app".to_string(),
+                label: "Terminal".to_string(),
                 field_type: FieldType::Text,
-                description: "Terminal focus action label".to_string(),
+                description: "Detected terminal app name".to_string(),
+            },
+            FieldDefinition {
+                name: "focus_has_tmux".to_string(),
+                label: "tmux".to_string(),
+                field_type: FieldType::Text,
+                description: "Whether tmux was detected in process ancestry".to_string(),
             },
         ]
     }
 
-    /// Resolves or retrieves a cached focus label for a session.
-    fn resolve_focus_label(&self, session: &SessionInfo) -> String {
-        // Check cache first.
-        if let Ok(cache) = self.cached_focus_labels.lock() {
-            if let Some(label) = cache.get(&session.id) {
-                return label.clone();
+    /// Resolves or retrieves cached focus info for a session.
+    fn resolve_focus_info(&self, session: &SessionInfo) -> FocusInfo {
+        if let Ok(cache) = self.cached_focus_info.lock() {
+            if let Some(info) = cache.get(&session.id) {
+                return info.clone();
             }
         }
 
-        // Resolve via PID ancestry walk.
-        let label = build_focus_label(session);
+        let info = build_focus_info(session);
 
-        // Cache the result.
-        if let Ok(mut cache) = self.cached_focus_labels.lock() {
-            cache.insert(session.id.clone(), label.clone());
+        if let Ok(mut cache) = self.cached_focus_info.lock() {
+            cache.insert(session.id.clone(), info.clone());
         }
 
-        label
+        info
     }
 }
 
@@ -162,20 +172,20 @@ impl Feed for HarnessFeed {
             *cache = sessions.clone();
         }
 
-        // Prune cached focus labels for sessions no longer present.
-        if let Ok(mut label_cache) = self.cached_focus_labels.lock() {
+        // Prune cached focus info for sessions no longer present.
+        if let Ok(mut info_cache) = self.cached_focus_info.lock() {
             let active_ids: std::collections::HashSet<&str> =
                 sessions.iter().map(|s| s.id.as_str()).collect();
-            label_cache.retain(|id, _| active_ids.contains(id.as_str()));
+            info_cache.retain(|id, _| active_ids.contains(id.as_str()));
         }
 
         let activities = sessions
             .iter()
             .map(|session| {
-                let focus_label = self.resolve_focus_label(session);
+                let focus_info = self.resolve_focus_info(session);
                 session_to_activity(
                     session,
-                    &focus_label,
+                    &focus_info,
                     &self.explicit_overrides,
                     &self.config_overrides,
                 )
@@ -216,7 +226,7 @@ fn deduplicate_sessions(sessions: Vec<SessionInfo>) -> Vec<SessionInfo> {
 /// Converts a `SessionInfo` into an `Activity`.
 fn session_to_activity(
     session: &SessionInfo,
-    focus_label: &str,
+    focus_info: &FocusInfo,
     explicit_overrides: &HashMap<String, FieldOverride>,
     config_overrides: &HashMap<String, FieldOverride>,
 ) -> Activity {
@@ -273,10 +283,22 @@ fn session_to_activity(
     }
 
     fields.push(Field {
-        name: "focus_label".to_string(),
-        label: "Focus".to_string(),
+        name: "focus_app".to_string(),
+        label: "Terminal".to_string(),
         value: FieldValue::Text {
-            value: focus_label.to_string(),
+            value: focus_info.app_name.clone(),
+        },
+    });
+
+    fields.push(Field {
+        name: "focus_has_tmux".to_string(),
+        label: "tmux".to_string(),
+        value: FieldValue::Text {
+            value: if focus_info.has_tmux {
+                "yes".to_string()
+            } else {
+                "no".to_string()
+            },
         },
     });
 
@@ -327,19 +349,23 @@ fn format_activity_title(session: &SessionInfo) -> String {
     }
 }
 
-/// Builds a user-facing focus label like "Open in Ghostty (via tmux)".
-fn build_focus_label(session: &SessionInfo) -> String {
+/// Resolves terminal focus info for a session via PID ancestry walk.
+fn build_focus_info(session: &SessionInfo) -> FocusInfo {
     let ctx = match terminal_focus::build_context_for_label(session) {
         Some(ctx) => ctx,
-        None => return "Open in terminal".to_string(),
+        None => {
+            return FocusInfo {
+                app_name: "terminal".to_string(),
+                has_tmux: false,
+            }
+        }
     };
 
-    let app_name = ctx.terminal_app_name.as_deref().unwrap_or("terminal");
-
-    if ctx.tmux_server_pid.is_some() {
-        format!("Open in {app_name} (via tmux)")
-    } else {
-        format!("Open in {app_name}")
+    FocusInfo {
+        app_name: ctx
+            .terminal_app_name
+            .unwrap_or_else(|| "terminal".to_string()),
+        has_tmux: ctx.tmux_server_pid.is_some(),
     }
 }
 
@@ -507,19 +533,19 @@ mod tests {
             last_active_at: None,
         };
 
-        let activity = session_to_activity(
-            &session,
-            "Open in terminal",
-            &HashMap::new(),
-            &HashMap::new(),
-        );
+        let test_focus = FocusInfo {
+            app_name: "TestTerminal".to_string(),
+            has_tmux: false,
+        };
+
+        let activity = session_to_activity(&session, &test_focus, &HashMap::new(), &HashMap::new());
 
         assert_eq!(activity.id, "test-id");
         assert_eq!(activity.title, "repo @ main");
         assert!(!activity.retained);
 
-        // Should have status, repo, branch, focus_label fields.
-        assert_eq!(activity.fields.len(), 4);
+        // Should have status, repo, branch, focus_app, focus_has_tmux fields.
+        assert_eq!(activity.fields.len(), 5);
 
         let status_field = &activity.fields[0];
         assert_eq!(status_field.name, "status");
@@ -545,11 +571,15 @@ mod tests {
             last_active_at: None,
         };
 
-        let activity =
-            session_to_activity(&session, "Focus terminal", &HashMap::new(), &HashMap::new());
+        let test_focus = FocusInfo {
+            app_name: "terminal".to_string(),
+            has_tmux: false,
+        };
 
-        // status + focus_label (no repo/branch/summary/last_active).
-        assert_eq!(activity.fields.len(), 2);
+        let activity = session_to_activity(&session, &test_focus, &HashMap::new(), &HashMap::new());
+
+        // status + focus_app + focus_has_tmux (no repo/branch/summary/last_active).
+        assert_eq!(activity.fields.len(), 3);
         assert_eq!(activity.fields[0].name, "status");
     }
 

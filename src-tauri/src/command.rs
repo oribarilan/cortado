@@ -198,16 +198,26 @@ pub async fn focus_session(
     registry: tauri::State<'_, std::sync::Arc<FeedRegistry>>,
     settings_state: tauri::State<'_, AppSettingsState>,
 ) -> Result<(), String> {
-    let session = registry
-        .find_harness_session(&session_id)
-        .ok_or_else(|| format!("session '{session_id}' not found"))?;
+    eprintln!("focus_session called for session_id={session_id}");
+
+    let session = registry.find_harness_session(&session_id).ok_or_else(|| {
+        let msg = format!("session '{session_id}' not found");
+        eprintln!("focus_session error: {msg}");
+        msg
+    })?;
 
     let settings = settings_state.read().await;
-    terminal_focus::focus_terminal(
+    let result = terminal_focus::focus_terminal(
         &session,
         settings.focus.tmux_enabled,
         settings.focus.accessibility_enabled,
-    )
+    );
+
+    if let Err(ref e) = result {
+        eprintln!("focus_session error: {e}");
+    }
+
+    result
 }
 
 /// Returns current focus capabilities for the settings UI.

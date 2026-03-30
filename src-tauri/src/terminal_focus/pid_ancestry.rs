@@ -27,15 +27,24 @@ pub fn build_focus_context(session: &SessionInfo) -> Result<FocusContext, String
                 if name == "tmux: server" || name.starts_with("tmux") {
                     tmux_server_pid = Some(parent);
                 }
-            }
-        }
 
-        // Detect GUI terminal app.
-        if terminal_app_pid.is_none() {
-            if let Some((app_name, bundle_id)) = is_gui_app(parent) {
-                terminal_app_pid = Some(parent);
-                terminal_app_name = Some(app_name);
-                terminal_app_bundle = Some(bundle_id);
+                // Detect terminal app by process name.
+                if terminal_app_pid.is_none() {
+                    if let Some((display, bundle)) = is_terminal_app(&name) {
+                        terminal_app_pid = Some(parent);
+                        terminal_app_name = Some(display.to_string());
+                        terminal_app_bundle = Some(bundle.to_string());
+                    }
+                }
+            }
+        } else if terminal_app_pid.is_none() {
+            // Already past tmux — still look for terminal.
+            if let Some(name) = get_process_name(parent) {
+                if let Some((display, bundle)) = is_terminal_app(&name) {
+                    terminal_app_pid = Some(parent);
+                    terminal_app_name = Some(display.to_string());
+                    terminal_app_bundle = Some(bundle.to_string());
+                }
             }
         }
 
@@ -57,11 +66,13 @@ pub fn build_focus_context(session: &SessionInfo) -> Result<FocusContext, String
                     _ => break,
                 };
 
-                if let Some((app_name, bundle_id)) = is_gui_app(parent) {
-                    terminal_app_pid = Some(parent);
-                    terminal_app_name = Some(app_name);
-                    terminal_app_bundle = Some(bundle_id);
-                    break;
+                if let Some(name) = get_process_name(parent) {
+                    if let Some((display, bundle)) = is_terminal_app(&name) {
+                        terminal_app_pid = Some(parent);
+                        terminal_app_name = Some(display.to_string());
+                        terminal_app_bundle = Some(bundle.to_string());
+                        break;
+                    }
                 }
 
                 if parent == 1 {
@@ -121,41 +132,25 @@ fn get_process_name(pid: u32) -> Option<String> {
     }
 }
 
-/// Checks if a PID is a regular GUI app via NSRunningApplication.
-/// Returns (localized name, bundle identifier) if it is.
-fn is_gui_app(pid: u32) -> Option<(String, String)> {
-    use std::process::Command;
+/// Known terminal app process names and their display names / bundle IDs.
+const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
+    ("ghostty", "Ghostty", "com.mitchellh.ghostty"),
+    ("Ghostty", "Ghostty", "com.mitchellh.ghostty"),
+    ("iTerm2", "iTerm2", "com.googlecode.iterm2"),
+    ("Terminal", "Terminal", "com.apple.Terminal"),
+    ("Alacritty", "Alacritty", "io.alacritty"),
+    ("kitty", "kitty", "net.kovidgoyal.kitty"),
+    ("WezTerm", "WezTerm", "org.wezfurlong.wezterm"),
+    ("wezterm-gui", "WezTerm", "org.wezfurlong.wezterm"),
+];
 
-    let script = format!(
-        r#"use framework "AppKit"
-set app to current application's NSRunningApplication's runningApplicationWithProcessIdentifier:{}
-if app is missing value then return ""
-set appName to (app's localizedName()) as text
-set bundleId to (app's bundleIdentifier()) as text
-return appName & "|" & bundleId"#,
-        pid
-    );
-
-    let output = Command::new("osascript")
-        .args(["-l", "AppleScript", "-e", &script])
-        .output()
-        .ok()?;
-
-    if !output.status.success() {
-        return None;
-    }
-
-    let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if result.is_empty() {
-        return None;
-    }
-
-    let parts: Vec<&str> = result.splitn(2, '|').collect();
-    if parts.len() == 2 && !parts[0].is_empty() && !parts[1].is_empty() {
-        Some((parts[0].to_string(), parts[1].to_string()))
-    } else {
-        None
-    }
+/// Checks if a process name matches a known terminal app.
+/// Returns (display name, bundle ID) if it matches.
+fn is_terminal_app(process_name: &str) -> Option<(&'static str, &'static str)> {
+    KNOWN_TERMINALS
+        .iter()
+        .find(|(name, _, _)| *name == process_name)
+        .map(|(_, display, bundle)| (*display, *bundle))
 }
 
 /// Finds the PID of a tmux client process (for terminal resolution via tmux).

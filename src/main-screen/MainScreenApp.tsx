@@ -98,7 +98,7 @@ function DetailPane({ item }: { item: ListItem | null }) {
         ) : null}
         {activity.fields.length > 0 ? (
           <div className="ms-detail-fields">
-            {activity.fields.filter((f) => f.name !== "focus_label").map((field) => {
+            {activity.fields.filter((f) => !f.name.startsWith("focus_")).map((field) => {
               const statusClass =
                 field.value.type === "status" ? `status kind-${field.value.kind}` : "";
               return (

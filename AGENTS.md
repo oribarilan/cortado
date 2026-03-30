@@ -29,42 +29,41 @@ Canonical definitions live in `specs/glossary.md`. Read it before starting any w
 
 ## Task Management
 
-Work is organized in **sprints**. Active sprint work lives in `.todo/sprintNN/`.
+Work is organized in **user stories**. Each user story is a directory under `.todo/` named `US-<story-name>/`. Active work lives directly in `.todo/US-<name>/`. Completed work is moved to `.todo/done/US-<name>/`.
 
-Completed sprint work lives in `.todo/done/sprintNN/`.
+Legacy sprints (`sprint01`–`sprint13`) live in `.todo/done/` and follow the old naming convention.
 
-### Sprint structure
+### User story structure
 
 ```
 .todo/
   backlog/
-    optional-some-idea.md  # Ideas and optional work, not tied to a sprint
+    optional-some-idea.md  # Ideas and optional work, not tied to a story
   done/
-    sprint01/
+    US-some-story/         # Completed user stories
       main.md
-      01-feed-trait.md
+      01-first-task.md
       ...
-  sprint01/
-    main.md              # Sprint overview: theme, sequencing, cross-task notes
-    01-feed-trait.md      # Individual task
-    02-config-parsing.md  # Individual task
-    ...
-  sprint02/
-    main.md
+    sprint01/              # Legacy completed sprints
+      ...
+  US-active-story/
+    main.md                # Story overview: theme, sequencing, cross-task notes
+    01-first-task.md       # Individual task
+    02-second-task.md      # Individual task
     ...
 ```
 
 ### Backlog
 
-`.todo/backlog/` holds ideas and optional work not yet assigned to a sprint. Prefix optional items with `optional-`. These can be pulled into a sprint when relevant.
+`.todo/backlog/` holds ideas and optional work not yet assigned to a story. Prefix optional items with `optional-`. These can be pulled into a story when relevant.
 
-### Sprint workflow
+### User story workflow
 
-1. Before starting a sprint, read `.todo/sprintNN/main.md` to understand the theme and sequencing.
-2. Tasks within a sprint are numbered for suggested ordering but may be parallelizable — `main.md` clarifies.
+1. Before starting a story, read `.todo/US-<name>/main.md` to understand the theme and sequencing.
+2. Tasks within a story are numbered for suggested ordering but may be parallelizable — `main.md` clarifies.
 3. Each task file describes the goal, acceptance criteria, and relevant files.
-4. Mark tasks done by adding `status: done` to the task frontmatter, then move completed sprint files to `.todo/done/sprintNN/`.
-5. Do not skip ahead to the next sprint without completing (or explicitly deferring) the current one.
+4. Mark tasks done by adding `status: done` to the task frontmatter, then move completed story files to `.todo/done/US-<name>/`.
+5. Do not skip ahead to the next story without completing (or explicitly deferring) the current one.
 
 ### Task file format
 

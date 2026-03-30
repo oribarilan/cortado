@@ -1,5 +1,6 @@
 use crate::feed::harness::SessionInfo;
 
+mod ghostty;
 mod pid_ancestry;
 pub(crate) mod tmux;
 
@@ -50,8 +51,9 @@ pub fn focus_terminal(
 
     let strategies: &[(&str, Strategy, bool)] = &[
         ("tmux", tmux::try_focus, tmux_enabled),
-        ("terminal_script", stub_not_applicable, true), // Task 05 (stretch).
-        ("accessibility", stub_not_applicable, accessibility_enabled), // Task 06 (stretch).
+        ("ghostty", ghostty::try_focus, true),
+        ("terminal_script", stub_not_applicable, true), // Future: iTerm2, Terminal.app.
+        ("accessibility", stub_not_applicable, accessibility_enabled),
         ("app_activation", try_app_activation, true),
     ];
 
@@ -163,6 +165,8 @@ pub fn get_capabilities() -> FocusCapabilities {
         tmux_detected: false,
         terminal_app: None,
         terminal_scriptable: false,
+        ghostty_scriptable: ghostty::is_available(),
+        ghostty_version: ghostty::ghostty_version_string(),
         accessibility_permitted: check_accessibility_permission(),
     }
 }
@@ -175,6 +179,8 @@ pub struct FocusCapabilities {
     pub tmux_detected: bool,
     pub terminal_app: Option<String>,
     pub terminal_scriptable: bool,
+    pub ghostty_scriptable: bool,
+    pub ghostty_version: Option<String>,
     pub accessibility_permitted: bool,
 }
 
