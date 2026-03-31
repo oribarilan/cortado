@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "../shared/types";
 import { useAppearance } from "../shared/useAppearance";
@@ -127,6 +128,7 @@ function MainScreenApp() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
   const [isDev, setIsDev] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -159,6 +161,7 @@ function MainScreenApp() {
       console.error("failed to init main screen panel:", err);
     });
     invoke<boolean>("is_dev_mode").then(setIsDev).catch(() => {});
+    getVersion().then(setAppVersion).catch(() => {});
   }, []);
 
   // Load data + subscribe to updates
@@ -435,13 +438,16 @@ function MainScreenApp() {
             <><kbd>↑/↓</kbd><kbd>j/k</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
           )}
         </span>
-        <button
-          className="ms-footer-settings"
-          onClick={() => invoke("open_settings").catch(console.error)}
-          title="Settings"
-        >
-          ⚙
-        </button>
+        <span className="ms-footer-right">
+          {appVersion ? <span className="ms-footer-version">v{appVersion}</span> : null}
+          <button
+            className="ms-footer-settings"
+            onClick={() => invoke("open_settings").catch(console.error)}
+            title="Settings"
+          >
+            ⚙
+          </button>
+        </span>
       </footer>
     </div>
   );

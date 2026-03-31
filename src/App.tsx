@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "./shared/types";
 import { useAppearance } from "./shared/useAppearance";
@@ -22,6 +23,7 @@ function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
   const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
   const panelContentRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,6 +105,8 @@ function App() {
           setLoadError(error instanceof Error ? error.message : String(error));
         }
       }
+
+      getVersion().then(v => { if (isMounted) setAppVersion(v); }).catch(() => {});
 
       try {
         const initialFeeds = await invoke<FeedSnapshot[]>("list_feeds");
@@ -339,6 +343,7 @@ function App() {
           >
             Quit Cortado
           </button>
+          {appVersion ? <span className="footer-version">v{appVersion}</span> : null}
         </footer>
       </div>
     </div>

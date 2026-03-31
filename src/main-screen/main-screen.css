@@ -379,6 +379,18 @@ body,
   opacity: 1;
 }
 
+.ms-footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ms-footer-version {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
 /* ── Detail pane crossfade ─────────────────────── */
 
 .ms-detail-content {
