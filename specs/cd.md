@@ -9,9 +9,11 @@ The CD pipeline runs when a version tag (`v*`) is pushed to the repository.
 ## What it does
 
 1. **Check** — runs `just check` (same as CI, ensures the tagged commit is clean)
-2. **Build** — runs `just build` (release DMG for macOS aarch64)
-3. **Release notes** — extracts the relevant section from `CHANGELOG.md`
-4. **Publish** — creates a GitHub Release with the DMG attached
+2. **Sign** — imports the Apple Developer ID certificate into a temporary keychain
+3. **Notarize** — writes the App Store Connect API key for Apple notarization
+4. **Build** — runs `just build` with signing and notarization env vars set. Tauri handles code signing and notarization automatically during the build.
+5. **Release notes** — extracts the relevant section from `CHANGELOG.md`
+6. **Publish** — creates a GitHub Release with the signed, notarized DMG attached
 
 ## Trigger
 
@@ -21,7 +23,19 @@ Push a tag matching `v*` (e.g., `v0.3.0`). See `CONTRIBUTING.md` for the full re
 
 The release includes:
 
-- `Cortado_X.Y.Z_aarch64.dmg` — macOS Apple Silicon disk image
+- `Cortado_X.Y.Z_aarch64.dmg` — signed, notarized macOS Apple Silicon disk image
+
+## Required GitHub Actions secrets
+
+| Secret | Description |
+|--------|-------------|
+| `APPLE_CERTIFICATE` | Base64-encoded `.p12` Developer ID Application certificate |
+| `APPLE_CERTIFICATE_PASSWORD` | Password for the `.p12` export |
+| `APPLE_SIGNING_IDENTITY` | e.g., `Developer ID Application: Name (TEAMID)` |
+| `APPLE_API_ISSUER` | App Store Connect API issuer ID |
+| `APPLE_API_KEY` | App Store Connect API key ID |
+| `APPLE_API_KEY_PATH` | Base64-encoded `.p8` private key file |
+| `KEYCHAIN_PASSWORD` | Any strong password for the CI-only temporary keychain |
 
 ## Runner
 
@@ -29,5 +43,4 @@ macOS ARM (`macos-latest`) — same as CI.
 
 ## Future additions (US-distribution-part2)
 
-- Code signing + notarization (Gatekeeper-clean installs)
 - Tauri updater artifacts (`.app.tar.gz`, `.app.tar.gz.sig`, `latest.json`)

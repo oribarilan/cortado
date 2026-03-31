@@ -137,10 +137,10 @@
   }
   .menubar-strip.light .tray-icon-container svg { color: #1d1d1f; }
   .menubar-strip.dark .tray-icon-container svg { color: #f5f5f7; }
-  .tray-icon-container svg path,
-  .tray-icon-container svg rect,
-  .tray-icon-container svg circle,
-  .tray-icon-container svg polygon {
+  .tray-icon-container svg > path,
+  .tray-icon-container svg > rect,
+  .tray-icon-container svg > circle,
+  .tray-icon-container svg > polygon {
     fill: currentColor;
   }
 
@@ -197,10 +197,10 @@
   .preview-frame.on-dark svg {
     color: #f5f5f7;
   }
-  .preview-frame svg path,
-  .preview-frame svg rect,
-  .preview-frame svg circle,
-  .preview-frame svg polygon {
+  .preview-frame svg > path,
+  .preview-frame svg > rect,
+  .preview-frame svg > circle,
+  .preview-frame svg > polygon {
     fill: currentColor;
   }
   .preview-frame.large svg { width: 56px; height: 56px; }
@@ -275,7 +275,7 @@
 </p>
 
 <h2 class="section-title">Variants</h2>
-<p class="section-desc">Six directions for the cortado glass silhouette. Each row simulates macOS light &amp; dark menu bars.</p>
+<p class="section-desc">B5 (your pick) alongside variations on the "C with layer cut" concept — different weights, styles, and takes on the monogram.</p>
 
 <div class="grid" id="variant-grid"></div>
 
@@ -291,65 +291,91 @@
 <script>
 const variants = [
   {
-    name: "A — Classic Tumbler",
-    desc: "Tapered rocks glass with clean horizontal layer line. The obvious, literal read.",
+    name: "B5 — Your Pick",
+    desc: "Short squat rounded glass, layer line near the top. The current favorite.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mA"><rect width="88" height="88" fill="white"/>
-        <line x1="25" y1="46" x2="63" y2="46" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      <defs><mask id="m0"><rect width="88" height="88" fill="white"/>
+        <line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/>
       </mask></defs>
-      <path mask="url(#mA)" d="M20 14 Q20 10,24 10 L64 10 Q68 10,68 14 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+      <path mask="url(#m0)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/>
     </svg>`
   },
   {
-    name: "B — Rounded Cortado",
-    desc: "Softer, rounder glass with a wider mouth. Friendlier feel, still clearly a glass.",
+    name: "C1 — Bold Stroke",
+    desc: "Thick C with a clean horizontal cut. Heavy, confident, reads well at tiny sizes.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mB"><rect width="88" height="88" fill="white"/>
-        <line x1="26" y1="46" x2="62" y2="46" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      <defs><mask id="mc1"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="40" width="88" height="6" fill="black"/>
       </mask></defs>
-      <path mask="url(#mB)" d="M18 16 Q18 10,26 10 L62 10 Q70 10,70 16 L64 66 Q62 78,50 78 L38 78 Q26 78,24 66 Z"/>
+      <path mask="url(#mc1)" d="M62 16 Q44 4,24 16 Q8 28,8 44 Q8 60,24 72 Q44 84,62 72" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "C — Minimal Trapezoid",
-    desc: "Pared down to pure geometry. Strong taper, no curves. Bold and modern.",
+    name: "C2 — Thin Elegant",
+    desc: "Lighter weight C, wider cut. More refined and airy, like a typographic mark.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mC"><rect width="88" height="88" fill="white"/>
-        <line x1="28" y1="46" x2="60" y2="46" stroke="black" stroke-width="4"/>
+      <defs><mask id="mc2"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="41" width="88" height="5" fill="black"/>
       </mask></defs>
-      <polygon mask="url(#mC)" points="18,10 70,10 62,78 26,78"/>
+      <path mask="url(#mc2)" d="M62 14 Q44 2,22 14 Q6 28,6 44 Q6 60,22 74 Q44 86,62 74" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "D — Stemless Wine",
-    desc: "Curvy tulip shape — wider in the middle, narrowing at the base. Elegant, less literal.",
+    name: "C3 — Filled C",
+    desc: "Solid filled C shape with transparent cut. Heavier presence, more like an app icon glyph.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mD"><rect width="88" height="88" fill="white"/>
-        <line x1="24" y1="44" x2="64" y2="44" stroke="black" stroke-width="4" stroke-linecap="round"/>
-      </mask></defs>
-      <path mask="url(#mD)" d="M24 12 Q20 12,20 16 L18 36 Q18 52,22 60 L26 70 Q28 76,34 76 L54 76 Q60 76,62 70 L66 60 Q70 52,70 36 L68 16 Q68 12,64 12 Z"/>
+      <defs>
+        <mask id="mc3"><rect width="88" height="88" fill="white"/>
+          <rect x="0" y="40" width="88" height="6" fill="black"/>
+          <circle cx="44" cy="44" r="22" fill="black"/>
+        </mask>
+      </defs>
+      <circle mask="url(#mc3)" cx="44" cy="44" r="38"/>
+      <rect x="54" y="8" width="30" height="72" fill="black" opacity="0"/>
+      <path d="M58 10 L58 78" stroke="black" stroke-width="0"/>
     </svg>`
   },
   {
-    name: "E — Double Layer",
-    desc: "Two subtle layer lines — espresso, crema, milk. More detail but still reads at small sizes.",
+    name: "C3b — Filled Crescent",
+    desc: "Solid crescent C with a transparent gap. Bold silhouette, clearly a C.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mE"><rect width="88" height="88" fill="white"/>
-        <line x1="24" y1="38" x2="64" y2="38" stroke="black" stroke-width="3.5" stroke-linecap="round"/>
-        <line x1="26" y1="52" x2="62" y2="52" stroke="black" stroke-width="3.5" stroke-linecap="round"/>
-      </mask></defs>
-      <path mask="url(#mE)" d="M20 14 Q20 10,24 10 L64 10 Q68 10,68 14 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+      <defs>
+        <mask id="mc3b"><rect width="88" height="88" fill="white"/>
+          <rect x="0" y="39" width="88" height="7" fill="black"/>
+          <ellipse cx="58" cy="44" rx="26" ry="36" fill="black"/>
+        </mask>
+      </defs>
+      <circle mask="url(#mc3b)" cx="44" cy="44" r="36"/>
     </svg>`
   },
   {
-    name: "F — Thick Rim Glass",
-    desc: "Prominent rim detail at the top. Reads as a physical glass even at tiny sizes.",
+    name: "C4 — Off-Center Cut",
+    desc: "Layer line sits higher — the cortado ratio is roughly 1:1 espresso to milk, so the cut is above center.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mF"><rect width="88" height="88" fill="white"/>
-        <line x1="24" y1="48" x2="62" y2="48" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      <defs><mask id="mc4"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="34" width="88" height="6" fill="black"/>
       </mask></defs>
-      <rect x="14" y="8" width="60" height="8" rx="4"/>
-      <path mask="url(#mF)" d="M20 16 L68 16 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+      <path mask="url(#mc4)" d="M62 16 Q44 4,24 16 Q8 28,8 44 Q8 60,24 72 Q44 84,62 72" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "C5 — Square C",
+    desc: "Geometric squared-off C with sharp corners. Modern, technical, less organic.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mc5"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="40" width="88" height="6" fill="black"/>
+      </mask></defs>
+      <path mask="url(#mc5)" d="M66 10 L18 10 Q10 10,10 18 L10 70 Q10 78,18 78 L66 78" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "C6 — Glass + C Hybrid",
+    desc: "The glass from B5, but the opening flares into a C shape. Best of both worlds?",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mc6"><rect width="88" height="88" fill="white"/>
+        <line x1="22" y1="30" x2="68" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      </mask></defs>
+      <path mask="url(#mc6)" d="M68 14 Q68 10,64 10 L24 10 Q16 10,16 18 L16 22 L24 68 Q26 78,38 78 L50 78 Q62 78,64 68 L68 36"/>
     </svg>`
   }
 ];
