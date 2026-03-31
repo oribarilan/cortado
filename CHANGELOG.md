@@ -5,6 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+## [0.3.0] - 2026-03-31
+
+### Added
+- Signed and notarized DMG — no more Gatekeeper warnings
+- CD pipeline: push a version tag to auto-publish a GitHub Release
+- Version shown in tray menu
+- Panels close when opening Settings (Cmd+,)
+
+### Fixed
+- CLI tools (az, gh) not found in packaged app (PATH resolution from login shell)
+
 ## [0.2.0] - 2026-03-31
 
 ### Added
