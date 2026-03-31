@@ -1,5 +1,7 @@
 # Cortado
 
+[![CI](https://github.com/oribarilan/cortado/actions/workflows/ci.yml/badge.svg)](https://github.com/oribarilan/cortado/actions/workflows/ci.yml)
+
 Cortado is a cross-platform extensible watcher that lives in the macOS menubar.
 
 Users configure **feeds** (data sources like "GitHub PRs for repo X"), and each feed automatically discovers and tracks **activities** (e.g., individual PRs). Each activity has structured **fields** showing its current state — review status, CI results, health checks — all glanceable from the menubar.
