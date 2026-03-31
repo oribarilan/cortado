@@ -12,7 +12,7 @@ Auto-update (Tauri updater, install script, update feed) is deferred to US-distr
 
 ## Context
 
-- **Current state:** No CI, no CD, no release process. Version is 0.2.0 in Cargo.toml, 0.0.0 in tauri.conf.json (mismatch). No GitHub Actions workflows exist. Bundle config is active with `targets: "all"`.
+- **Current state:** Bundle config fixed (`sh.oribi.cortado`, version `0.2.0`), `just build` produces DMG, dev isolation set up. No CI, no CD, no release process. No GitHub Actions workflows exist.
 - **Target:** Users can download a signed, notarized DMG from GitHub Releases, open it, and drag Cortado to Applications. No Gatekeeper warnings.
 
 ## Sequencing
@@ -47,9 +47,8 @@ Tasks 01–04 are sequential. Task 05 is independent — can start anytime.
 
 ## Cross-cutting notes
 
-### Bundle ID + Version mismatch
-- The current bundle ID is `com.cortado.app` — must be changed to `sh.oribi.cortado` as part of this story. Dev builds use `sh.oribi.cortado.dev`.
-- Cargo.toml says `0.2.0`, tauri.conf.json says `0.0.0`. These must be aligned as part of task 02.
+### Bundle ID + Version
+- Already aligned in US-distribution-local: `sh.oribi.cortado`, version `0.2.0`. Dev builds use `sh.oribi.cortado.dev`.
 
 ### Nix removal
 - `flake.nix`, `flake.lock`, `.envrc`, `.direnv/` are not used. Remove them to simplify the repo.

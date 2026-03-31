@@ -191,7 +191,7 @@ specs/                   # App specification
 
 ### Prerequisites
 
-Nix flake provides the dev shell (Rust toolchain, Node.js, cargo-tauri). Activate with `direnv allow` or `nix develop`.
+See `CONTRIBUTING.md` for prerequisites (Rust, Node.js, pnpm, just).
 
 ### Commands
 

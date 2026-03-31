@@ -23,7 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-.direnv/*
 .agent/
 .agents/
 skills-lock.json
