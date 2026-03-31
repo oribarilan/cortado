@@ -10,7 +10,7 @@ Establish a single source of truth for the app version, align existing mismatche
 
 ## Acceptance criteria
 
-- [ ] Version aligned between `src-tauri/Cargo.toml` (currently `0.2.0`) and `src-tauri/tauri.conf.json` (currently `0.0.0`)
+- [ ] Version alignment already handled in US-distribution-local (both files at `0.2.0`)
 - [ ] `just release <patch|minor|major>` command that:
   1. Bumps version in both `Cargo.toml` and `tauri.conf.json`
   2. Updates `CHANGELOG.md` header (moves "Unreleased" to the new version with date)
