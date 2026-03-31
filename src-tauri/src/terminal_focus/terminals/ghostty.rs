@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use super::{FocusContext, FocusResult};
+use crate::terminal_focus::{FocusContext, FocusResult};
 
 /// Ghostty tab focus strategy: uses Ghostty AppleScript to switch to the
 /// tab running the session that contains the copilot process.
@@ -80,7 +80,7 @@ fn find_tmux_session_for_context(ctx: &FocusContext) -> Option<String> {
 
 /// Uses Ghostty AppleScript to find a tab by exact name and focus its terminal.
 fn focus_ghostty_tab_by_name(tab_name: &str) -> Result<bool, String> {
-    let safe_name = super::escape_applescript(tab_name);
+    let safe_name = crate::terminal_focus::escape_applescript(tab_name);
     let script = format!(
         r#"tell application "Ghostty"
     repeat with w in every window
@@ -100,7 +100,7 @@ end tell"#
 
 /// Uses Ghostty AppleScript to find a tab whose name contains a substring.
 fn focus_ghostty_tab_by_substring(substring: &str) -> Result<bool, String> {
-    let safe_sub = super::escape_applescript(substring);
+    let safe_sub = crate::terminal_focus::escape_applescript(substring);
     let script = format!(
         r#"tell application "Ghostty"
     repeat with w in every window

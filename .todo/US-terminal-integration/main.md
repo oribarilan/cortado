@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Terminal Integration
@@ -40,6 +40,16 @@ Task 01 is prerequisite — restructures existing code into the extensible patte
 | 04 | `04-wezterm.md` | WezTerm: CLI-based pane focusing |
 | 05 | `05-kitty.md` | kitty: remote control PID matching |
 | 06 | `06-tests.md` | Comprehensive unit + integration tests |
+
+## Cross-cutting notes
+
+- **`KNOWN_TERMINALS`** in `pid_ancestry.rs` already includes process names for all planned terminals. No changes needed for detection — only for focus strategies.
+- **`escape_applescript()`** in `mod.rs` is shared by Ghostty, Terminal.app, and iTerm2. Already handles quotes and backslashes.
+- **Settings UI**: the Agents tab currently shows tmux toggle, Ghostty detection, and accessibility. As strategies are added, consider showing detection status per terminal (auto-detected, no user config needed). Not a blocker — can be done after all strategies ship.
+- **`focus_label` field**: the "Open in {app}" button label is built from cached `FocusInfo` (app name, tmux status). New strategies don't need to change this — the label comes from terminal detection, not the strategy.
+- **E2E tests**: `src-tauri/src/terminal_focus/e2e.rs` has API verification tests for each terminal. As strategies are implemented, extend these to test actual focus behavior (open tab → defocus → run strategy → assert refocused).
+- **Bundle IDs**: Warp is `dev.warp.Warp-Stable`. Alacritty is `org.alacritty`. Both already in `KNOWN_TERMINALS`. iTerm2 may appear as `iTerm.app` (not `iTerm2.app`) on some systems — the AppleScript app name should handle both.
+- **README**: after implementation, update the terminal support table. tmux and Ghostty are stable — all other terminal strategies should be marked **(experimental)** until validated by broader usage.
 
 ## Out of scope (researched — no viable API)
 

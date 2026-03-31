@@ -1,7 +1,7 @@
 use crate::feed::harness::SessionInfo;
 
-mod ghostty;
 mod pid_ancestry;
+mod terminals;
 pub(crate) mod tmux;
 
 /// Escapes a string for safe interpolation into an AppleScript double-quoted string.
@@ -12,7 +12,6 @@ pub(crate) fn escape_applescript(s: &str) -> String {
 
 /// Context gathered during PID ancestry walk, shared by all strategies.
 #[derive(Debug)]
-#[allow(dead_code)] // Fields used by focus strategies (tasks 04-06).
 pub struct FocusContext {
     /// The session's copilot process PID.
     pub copilot_pid: u32,
@@ -62,8 +61,7 @@ pub fn focus_terminal(
 
     let strategies: &[(&str, Strategy, bool)] = &[
         ("tmux", tmux::try_focus, tmux_enabled),
-        ("ghostty", ghostty::try_focus, true),
-        ("terminal_script", stub_not_applicable, true), // Future: iTerm2, Terminal.app.
+        ("terminals", terminals::try_focus, true),
         ("accessibility", stub_not_applicable, accessibility_enabled),
         ("app_activation", try_app_activation, true),
     ];
@@ -181,8 +179,8 @@ pub fn get_capabilities() -> FocusCapabilities {
         tmux_detected: false,
         terminal_app: None,
         terminal_scriptable: false,
-        ghostty_scriptable: ghostty::is_available(),
-        ghostty_version: ghostty::ghostty_version_string(),
+        ghostty_scriptable: terminals::ghostty::is_available(),
+        ghostty_version: terminals::ghostty::ghostty_version_string(),
         accessibility_permitted: check_accessibility_permission(),
     }
 }
@@ -201,7 +199,7 @@ pub struct FocusCapabilities {
 }
 
 /// Checks whether the terminal app supports AppleScript-based focus.
-#[allow(dead_code)] // Used when terminal scripting strategy is implemented (task 05).
+#[cfg(test)]
 fn is_scriptable_terminal(bundle_id: Option<&str>) -> bool {
     matches!(
         bundle_id,
@@ -429,5 +427,141 @@ mod tests {
             }
         }
         assert_eq!(result, FocusResult::Focused);
+    }
+
+    // --- Mixed waterfall scenarios ---
+
+    #[test]
+    fn waterfall_mixed_disabled_failed_then_success() {
+        fn failed(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Failed("nope".into())
+        }
+        fn focused(_ctx: &FocusContext) -> FocusResult {
+            FocusResult::Focused
+        }
+
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("disabled", stub_not_applicable, false),
+            ("failed", failed, true),
+            ("na", stub_not_applicable, true),
+            ("success", focused, true),
+        ];
+
+        let mut result = FocusResult::NotApplicable;
+        let mut ran = Vec::new();
+        for (name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            ran.push(*name);
+            match strategy(&ctx) {
+                FocusResult::Focused => {
+                    result = FocusResult::Focused;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+        assert_eq!(result, FocusResult::Focused);
+        assert_eq!(ran, vec!["failed", "na", "success"]);
+    }
+
+    #[test]
+    fn waterfall_all_not_applicable_yields_no_success() {
+        type Strategy = fn(&FocusContext) -> FocusResult;
+
+        let ctx = ctx_with(None, None, None, false);
+        let strategies: &[(&str, Strategy, bool)] = &[
+            ("a", stub_not_applicable, true),
+            ("b", stub_not_applicable, true),
+            ("c", stub_not_applicable, true),
+        ];
+
+        let mut result = FocusResult::NotApplicable;
+        for (_name, strategy, enabled) in strategies {
+            if !enabled {
+                continue;
+            }
+            match strategy(&ctx) {
+                FocusResult::Focused => {
+                    result = FocusResult::Focused;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+        assert_eq!(result, FocusResult::NotApplicable);
+    }
+
+    // --- FocusResult equality ---
+
+    #[test]
+    fn focus_result_equality() {
+        assert_eq!(FocusResult::Focused, FocusResult::Focused);
+        assert_eq!(FocusResult::NotApplicable, FocusResult::NotApplicable);
+        assert_eq!(
+            FocusResult::Failed("a".into()),
+            FocusResult::Failed("a".into())
+        );
+        assert_ne!(FocusResult::Focused, FocusResult::NotApplicable);
+        assert_ne!(
+            FocusResult::Failed("a".into()),
+            FocusResult::Failed("b".into())
+        );
+    }
+
+    // --- AppleScript escaping edge cases ---
+
+    #[test]
+    fn escape_applescript_empty_string() {
+        assert_eq!(escape_applescript(""), "");
+    }
+
+    #[test]
+    fn escape_applescript_mixed_special_chars() {
+        let input = r#"path\to\"file""#;
+        let escaped = escape_applescript(input);
+        assert_eq!(escaped, r#"path\\to\\\"file\""#);
+    }
+
+    #[test]
+    fn escape_applescript_only_backslashes() {
+        assert_eq!(escape_applescript(r"\\"), r"\\\\");
+    }
+
+    // --- Scriptable terminal exhaustive check ---
+
+    #[test]
+    fn is_scriptable_terminal_all_scriptable_bundles() {
+        let scriptable = [
+            "com.apple.Terminal",
+            "com.googlecode.iterm2",
+            "com.mitchellh.ghostty",
+        ];
+        for bundle in &scriptable {
+            assert!(
+                is_scriptable_terminal(Some(bundle)),
+                "{bundle} should be scriptable"
+            );
+        }
+    }
+
+    #[test]
+    fn is_scriptable_terminal_non_scriptable_bundles() {
+        let non_scriptable = [
+            "io.alacritty",
+            "net.kovidgoyal.kitty",
+            "com.github.wez.wezterm",
+            "dev.warp.Warp-Stable",
+        ];
+        for bundle in &non_scriptable {
+            assert!(
+                !is_scriptable_terminal(Some(bundle)),
+                "{bundle} should NOT be scriptable"
+            );
+        }
     }
 }

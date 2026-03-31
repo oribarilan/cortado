@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # iTerm2 focus strategy
@@ -100,3 +100,4 @@ The correct order for reliable focus:
 - iTerm2's session model naturally handles split panes — `select` on a session activates the correct pane.
 - TTY matching only works without tmux. With tmux, the copilot TTY is a tmux PTY.
 - iTerm2 also has a Python API, but AppleScript is sufficient and requires no setup.
+- **App name caveat**: the macOS app may be installed as `iTerm.app` (not `iTerm2.app`). The AppleScript application name is `"iTerm"` or `"iTerm2"` depending on version — test both. The E2E test in `e2e.rs` already handles this with a fallback check.

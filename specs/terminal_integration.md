@@ -128,11 +128,6 @@ Focus info (terminal name, tmux detection) is cached per session ID. The PID anc
 |----------|----------|----------|-----------|-------|
 | **Any (via tmux)** | `tmux select-window/select-pane` | PID ancestry → tmux pane | Exact pane | Terminal-agnostic. Best experience. |
 | **Ghostty** | AppleScript `focus` | tmux session name (exact) or CWD substring | Tab-level | Requires 1.3+. No PID/TTY exposed yet. |
-
-### Planned
-
-| Terminal | Strategy | Matching | Precision | Notes |
-|----------|----------|----------|-----------|-------|
 | **Terminal.app** | AppleScript `tty of tab` | TTY | Exact tab | Most mature AppleScript API. No config needed. |
 | **iTerm2** | AppleScript `tty of session` | TTY | Exact pane | Handles split panes. `select` on window/tab/session. |
 | **WezTerm** | `wezterm cli list --format json` | CWD/TTY | Pane-level | No PID in list output. CWD matching with URL parsing. |
@@ -226,8 +221,14 @@ src-tauri/src/terminal_focus/
   mod.rs              # FocusContext, FocusResult, waterfall, app_activation, escape_applescript
   pid_ancestry.rs     # PID walk, tmux client resolution, terminal detection
   tmux.rs             # Layer 1: tmux pane switching (terminal-agnostic)
-  ghostty.rs          # Ghostty 1.3+ AppleScript tab switching
   e2e.rs              # E2E tests (ignored, run via `just local-e2e`)
+  terminals/
+    mod.rs            # Strategy registry, shared TTY resolution helper
+    ghostty.rs        # Ghostty 1.3+ AppleScript tab switching
+    terminal_app.rs   # macOS Terminal.app AppleScript TTY matching
+    iterm2.rs         # iTerm2 AppleScript TTY matching (split pane support)
+    wezterm.rs        # WezTerm CLI-based pane focusing (CWD/TTY matching)
+    kitty.rs          # kitty remote control PID matching
 ```
 
 ## Settings

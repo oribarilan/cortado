@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Terminal.app focus strategy
