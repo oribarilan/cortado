@@ -225,3 +225,9 @@ pub async fn focus_session(
 pub fn get_focus_capabilities() -> terminal_focus::FocusCapabilities {
     terminal_focus::get_capabilities()
 }
+
+/// Returns whether this is a dev build.
+#[tauri::command]
+pub fn is_dev_mode() -> bool {
+    crate::app_env::is_dev()
+}

@@ -195,7 +195,7 @@ function App() {
         ) : null}
 
         {!loading && sortedFeeds.length === 0 ? (
-          <p className="empty-state">No feeds configured. Add a Feed in <code>~/.config/cortado/feeds.toml</code>.</p>
+          <p className="empty-state">No feeds configured. Add a Feed in your <code>feeds.toml</code> config file.</p>
         ) : null}
 
         {!loading && sortedFeeds.length > 0

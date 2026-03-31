@@ -1,6 +1,7 @@
 // Prevent additional console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_env;
 mod app_settings;
 mod command;
 mod feed;
@@ -26,6 +27,9 @@ use crate::feed::{
 };
 
 fn main() {
+    let context = tauri::generate_context!();
+    app_env::init(&context.config().identifier);
+
     let feed_configs = config::load_feeds_config().unwrap_or_default();
     let feed_notify_map: std::collections::HashMap<String, bool> = feed_configs
         .iter()
@@ -52,6 +56,10 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_nspanel::init())
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {
+            // Another instance with the same bundle ID tried to launch.
+            // The first instance keeps running; the duplicate exits.
+        }))
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
@@ -88,7 +96,8 @@ fn main() {
             command::send_test_notification,
             command::set_global_hotkey,
             command::focus_session,
-            command::get_focus_capabilities
+            command::get_focus_capabilities,
+            command::is_dev_mode
         ])
         .setup({
             let feed_registry = feed_registry.clone();
@@ -107,7 +116,8 @@ fn main() {
                 }
 
                 // Register global shortcut plugin with handler; then register
-                // the user-configured hotkey (or default ⌘+Shift+Space).
+                // the user-configured hotkey — but only in production mode
+                // to avoid stealing the hotkey from a running release build.
                 {
                     use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -121,7 +131,7 @@ fn main() {
                             .build(),
                     )?;
 
-                    if !initial_hotkey.is_empty() {
+                    if !app_env::is_dev() && !initial_hotkey.is_empty() {
                         if let Err(err) = app.global_shortcut().register(initial_hotkey.as_str()) {
                             eprintln!("failed to register global hotkey '{initial_hotkey}': {err}");
                         }
@@ -152,7 +162,7 @@ fn main() {
                 Ok(())
             }
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building tauri application")
         .run(|_app_handle, event| {
             if let tauri::RunEvent::Reopen { .. } = event {

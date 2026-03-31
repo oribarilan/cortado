@@ -6,7 +6,7 @@ install:
 
 dev:
 	@if [ ! -d node_modules ]; then just install; fi
-	pnpm exec tauri dev
+	pnpm exec tauri dev --config src-tauri/tauri.dev.conf.json
 
 lint:
 	@if [ ! -d node_modules ]; then just install; fi
@@ -23,6 +23,10 @@ check:
 	just format
 	just lint
 	just test
+
+build:
+	@if [ ! -d node_modules ]; then just install; fi
+	pnpm exec tauri build
 
 local-e2e:
 	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features -- --ignored terminal_focus::e2e 2>&1

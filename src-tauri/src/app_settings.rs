@@ -5,14 +5,13 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tauri::Emitter;
 use tokio::sync::RwLock;
 
 use crate::feed::StatusKind;
 
-const CONFIG_DIR: &str = ".config/cortado";
 const SETTINGS_FILE: &str = "settings.toml";
 
 fn default_true() -> bool {
@@ -183,10 +182,9 @@ impl AppSettingsState {
     }
 }
 
-/// Returns the canonical settings file path (`~/.config/cortado/settings.toml`).
+/// Returns the canonical settings file path.
 pub fn settings_path() -> Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| anyhow!("could not resolve home directory"))?;
-    Ok(home_dir.join(CONFIG_DIR).join(SETTINGS_FILE))
+    Ok(crate::app_env::config_dir().join(SETTINGS_FILE))
 }
 
 /// Loads settings from `~/.config/cortado/settings.toml`, using defaults if absent.

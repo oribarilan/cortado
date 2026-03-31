@@ -125,6 +125,7 @@ function MainScreenApp() {
   const [showPrioritySection, setShowPrioritySection] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
+  const [isDev, setIsDev] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -156,6 +157,7 @@ function MainScreenApp() {
     invoke("init_main_screen_panel").catch((err) => {
       console.error("failed to init main screen panel:", err);
     });
+    invoke<boolean>("is_dev_mode").then(setIsDev).catch(() => {});
   }, []);
 
   // Load data + subscribe to updates
@@ -312,6 +314,7 @@ function MainScreenApp() {
 
   return (
     <div className="main-screen-root" ref={rootRef}>
+      {isDev ? <div className="dev-badge">DEV</div> : null}
       <div className="ms-split">
         {/* List pane */}
         <div className="ms-list" ref={listRef}>

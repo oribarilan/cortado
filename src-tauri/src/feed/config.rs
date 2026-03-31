@@ -10,7 +10,6 @@ use jiff::SignedDuration;
 use tokio::sync::RwLock;
 use toml::{Table, Value};
 
-const CONFIG_DIR: &str = ".config/cortado";
 const CONFIG_FILE: &str = "feeds.toml";
 
 /// Optional display overrides for a specific field.
@@ -110,11 +109,9 @@ fn fingerprint_for_path(path: &Path) -> Result<ConfigFingerprint> {
     }
 }
 
-/// Returns the canonical config file path (`~/.config/cortado/feeds.toml`).
+/// Returns the canonical config file path.
 pub fn feeds_config_path() -> Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| anyhow!("could not resolve home directory"))?;
-
-    Ok(home_dir.join(CONFIG_DIR).join(CONFIG_FILE))
+    Ok(crate::app_env::config_dir().join(CONFIG_FILE))
 }
 
 /// Loads feed configuration entries from the user config file.
