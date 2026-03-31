@@ -14,7 +14,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "dmg": {
+        "background": "icons/dmg-background.png",
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 200, "y": 240 },
+        "applicationFolderPosition": { "x": 450, "y": 240 }
+      }
+    }
   },
   "productName": "Cortado",
   "version": "0.3.0",

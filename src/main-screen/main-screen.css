@@ -412,32 +412,51 @@ body,
   padding: var(--space-3) 0 var(--space-5);
 }
 
-.ms-skeleton {
-  margin: 0 var(--space-5);
+.ms-skel-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--pad-x);
+  height: var(--row-h);
+  margin: 0 var(--space-3);
+}
+
+.ms-skel-dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--text-tertiary), transparent 80%);
+  animation: ms-skel-pulse 1.6s ease-in-out infinite;
+}
+
+.ms-skel-title {
   height: var(--space-4);
   border-radius: var(--radius-full);
   background: linear-gradient(
     90deg,
-    color-mix(in oklch, var(--text-tertiary), transparent 90%) 25%,
-    color-mix(in oklch, var(--text-tertiary), transparent 82%) 50%,
-    color-mix(in oklch, var(--text-tertiary), transparent 90%) 75%
+    color-mix(in oklch, var(--text-tertiary), transparent 92%) 25%,
+    color-mix(in oklch, var(--text-tertiary), transparent 80%) 50%,
+    color-mix(in oklch, var(--text-tertiary), transparent 92%) 75%
   );
-  background-size: 240px 100%;
-  animation: ms-shimmer 1.25s linear infinite;
+  background-size: 280px 100%;
+  animation: ms-shimmer 1.4s ease-in-out infinite;
 }
 
-.ms-skeleton + .ms-skeleton {
-  margin-top: var(--space-4);
-}
-
-.ms-skeleton.w-40 { width: 40%; }
-.ms-skeleton.w-55 { width: 55%; }
-.ms-skeleton.w-70 { width: 70%; }
-.ms-skeleton.w-85 { width: 85%; }
+.stagger-0 .ms-skel-dot, .stagger-0 .ms-skel-title { animation-delay: 0s; }
+.stagger-1 .ms-skel-dot, .stagger-1 .ms-skel-title { animation-delay: 0.08s; }
+.stagger-2 .ms-skel-dot, .stagger-2 .ms-skel-title { animation-delay: 0.16s; }
+.stagger-3 .ms-skel-dot, .stagger-3 .ms-skel-title { animation-delay: 0.24s; }
+.stagger-4 .ms-skel-dot, .stagger-4 .ms-skel-title { animation-delay: 0.32s; }
 
 @keyframes ms-shimmer {
   from { background-position: -240px 0; }
   to { background-position: 240px 0; }
+}
+
+@keyframes ms-skel-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
 }
 
 /* ── Animations ────────────────────────────────── */
@@ -455,7 +474,8 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .ms-activity-row,
   .ms-dot,
-  .ms-skeleton,
+  .ms-skel-dot,
+  .ms-skel-title,
   .ms-detail-content,
   .ms-priority-section,
   .ms-footer-settings,

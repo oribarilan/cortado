@@ -121,6 +121,7 @@ function MainScreenApp() {
   useAppearance();
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seeded, setSeeded] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -183,6 +184,7 @@ function MainScreenApp() {
 
       const unlisten = await listen<FeedSnapshot[]>("feeds-updated", (event) => {
         setFeeds(event.payload);
+        setSeeded(true);
       });
       unlistenFns.push(unlisten);
 
@@ -320,14 +322,23 @@ function MainScreenApp() {
         <div className="ms-list" ref={listRef}>
           {loading ? (
             <div className="ms-loading-state">
-              <div className="ms-skeleton w-55" />
-              <div className="ms-skeleton w-85" />
-              <div className="ms-skeleton w-70" />
-              <div className="ms-skeleton w-40" />
+              <div className="ms-skel-row stagger-0"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "65%" }} /></div>
+              <div className="ms-skel-row stagger-1"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "80%" }} /></div>
+              <div className="ms-skel-row stagger-2"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "50%" }} /></div>
+              <div className="ms-skel-row stagger-3"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "72%" }} /></div>
+              <div className="ms-skel-row stagger-4"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "58%" }} /></div>
             </div>
           ) : feeds.length === 0 ? (
             <div className="ms-empty-state">
               No feeds configured. Add feeds in Settings.
+            </div>
+          ) : !seeded && flatList.length === 0 ? (
+            <div className="ms-loading-state">
+              <div className="ms-skel-row stagger-0"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "65%" }} /></div>
+              <div className="ms-skel-row stagger-1"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "80%" }} /></div>
+              <div className="ms-skel-row stagger-2"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "50%" }} /></div>
+              <div className="ms-skel-row stagger-3"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "72%" }} /></div>
+              <div className="ms-skel-row stagger-4"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "58%" }} /></div>
             </div>
           ) : (
             <>

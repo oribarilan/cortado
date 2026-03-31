@@ -416,47 +416,51 @@ body {
   padding: var(--space-2) 0 var(--space-5);
 }
 
-.skeleton {
-  margin: 0 var(--space-4);
+.skel-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0 var(--pad-x);
+  height: var(--activity-row-h);
+  margin: 0 var(--space-2);
+}
+
+.skel-dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: var(--radius-full);
+  background: color-mix(in oklch, var(--text-tertiary), transparent 80%);
+  animation: skel-pulse 1.6s ease-in-out infinite;
+}
+
+.skel-title {
   height: var(--space-4);
   border-radius: var(--radius-full);
   background: linear-gradient(
     90deg,
-    color-mix(in oklch, var(--text-tertiary), transparent 90%) 25%,
-    color-mix(in oklch, var(--text-tertiary), transparent 82%) 50%,
-    color-mix(in oklch, var(--text-tertiary), transparent 90%) 75%
+    color-mix(in oklch, var(--text-tertiary), transparent 92%) 25%,
+    color-mix(in oklch, var(--text-tertiary), transparent 80%) 50%,
+    color-mix(in oklch, var(--text-tertiary), transparent 92%) 75%
   );
-  background-size: 320px 100%;
-  animation: shimmer 1.25s linear infinite;
+  background-size: 280px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
-.skeleton + .skeleton {
-  margin-top: var(--space-4);
-}
-
-.skeleton.w-40 {
-  width: 40%;
-}
-
-.skeleton.w-55 {
-  width: 55%;
-}
-
-.skeleton.w-70 {
-  width: 70%;
-}
-
-.skeleton.w-85 {
-  width: 85%;
-}
+.stagger-0 .skel-dot, .stagger-0 .skel-title { animation-delay: 0s; }
+.stagger-1 .skel-dot, .stagger-1 .skel-title { animation-delay: 0.08s; }
+.stagger-2 .skel-dot, .stagger-2 .skel-title { animation-delay: 0.16s; }
+.stagger-3 .skel-dot, .stagger-3 .skel-title { animation-delay: 0.24s; }
+.stagger-4 .skel-dot, .stagger-4 .skel-title { animation-delay: 0.32s; }
 
 @keyframes shimmer {
-  from {
-    background-position: -240px 0;
-  }
-  to {
-    background-position: 240px 0;
-  }
+  from { background-position: -240px 0; }
+  to { background-position: 240px 0; }
+}
+
+@keyframes skel-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
 }
 
 @keyframes pulse {
@@ -498,7 +502,8 @@ body {
   .detail-region,
   .chevron,
   .footer-row,
-  .skeleton,
+  .skel-dot,
+  .skel-title,
   .status-dot,
   .refresh-spinner {
     transition: none !important;

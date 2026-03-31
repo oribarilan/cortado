@@ -18,6 +18,7 @@ function App() {
   useAppearance();
   const [feeds, setFeeds] = useState<FeedSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seeded, setSeeded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
   const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
@@ -122,6 +123,7 @@ function App() {
       const unlisten = await listen<FeedSnapshot[]>("feeds-updated", (event) => {
         setFeeds(event.payload);
         setLoadError(null);
+        setSeeded(true);
 
         setExpandedActivityKey((current) => {
           if (!current) {
@@ -214,8 +216,16 @@ function App() {
                     <p className={`feed-error ${isConfigWarning ? "config" : "poll"}`}>{feed.error}</p>
                   ) : null}
 
-                  {!hasError && feed.activities.length === 0 ? (
+                  {!hasError && feed.activities.length === 0 && seeded ? (
                     <p className="feed-empty">No activities</p>
+                  ) : null}
+
+                  {!hasError && feed.activities.length === 0 && !seeded ? (
+                    <div className="loading-state">
+                      <div className="skel-row stagger-0"><div className="skel-dot" /><div className="skel-title" style={{ width: "65%" }} /></div>
+                      <div className="skel-row stagger-1"><div className="skel-dot" /><div className="skel-title" style={{ width: "80%" }} /></div>
+                      <div className="skel-row stagger-2"><div className="skel-dot" /><div className="skel-title" style={{ width: "50%" }} /></div>
+                    </div>
                   ) : null}
 
                   {feed.activities.length > 0 ? (
