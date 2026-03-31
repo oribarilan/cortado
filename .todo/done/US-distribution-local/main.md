@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # US: Local Distribution (Build & Install)
