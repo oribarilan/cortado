@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Tray Icon Showcase</title>
+<style>
+  :root {
+    --menubar-light: #ebebeb;
+    --menubar-dark: #2a2a2a;
+    --label-color: #888;
+    --bg: #1a1a1a;
+    --surface: #262626;
+    --text: #e0e0e0;
+    --text-dim: #999;
+    --accent: #c8956a;
+    --border: #333;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 40px 48px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 40px;
+    line-height: 1.5;
+    max-width: 700px;
+  }
+
+  .subtitle code {
+    background: #333;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 28px;
+    margin-bottom: 48px;
+  }
+
+  .variant-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .variant-card:hover {
+    border-color: #555;
+  }
+
+  .variant-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .variant-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .variant-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  .menubar-strip {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding: 0 16px;
+    position: relative;
+  }
+  .menubar-strip.light {
+    background: var(--menubar-light);
+  }
+  .menubar-strip.dark {
+    background: var(--menubar-dark);
+  }
+  .menubar-label {
+    position: absolute;
+    right: 16px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.45;
+    font-weight: 500;
+  }
+  .menubar-strip.light .menubar-label { color: #000; }
+  .menubar-strip.dark .menubar-label { color: #fff; }
+
+  .menubar-items {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-left: auto;
+    margin-right: 70px;
+  }
+
+  .menubar-fake-item {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    opacity: 0.25;
+  }
+  .menubar-strip.light .menubar-fake-item { background: #000; }
+  .menubar-strip.dark .menubar-fake-item { background: #fff; }
+
+  .tray-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+  }
+  .tray-icon-container svg {
+    width: 18px;
+    height: 18px;
+  }
+  .menubar-strip.light .tray-icon-container svg { color: #1d1d1f; }
+  .menubar-strip.dark .tray-icon-container svg { color: #f5f5f7; }
+  .tray-icon-container svg path,
+  .tray-icon-container svg rect,
+  .tray-icon-container svg circle,
+  .tray-icon-container svg polygon {
+    fill: currentColor;
+  }
+
+  .preview-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    justify-content: center;
+  }
+
+  .preview-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .preview-box .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .preview-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .preview-frame.large {
+    width: 80px;
+    height: 80px;
+  }
+  .preview-frame.medium {
+    width: 44px;
+    height: 44px;
+  }
+  .preview-frame.actual {
+    width: 28px;
+    height: 28px;
+  }
+  .preview-frame.on-light {
+    background: var(--menubar-light);
+  }
+  .preview-frame.on-dark {
+    background: var(--menubar-dark);
+  }
+
+  .preview-frame svg {
+    color: #1d1d1f;
+  }
+  .preview-frame.on-dark svg {
+    color: #f5f5f7;
+  }
+  .preview-frame svg path,
+  .preview-frame svg rect,
+  .preview-frame svg circle,
+  .preview-frame svg polygon {
+    fill: currentColor;
+  }
+  .preview-frame.large svg { width: 56px; height: 56px; }
+  .preview-frame.medium svg { width: 30px; height: 30px; }
+  .preview-frame.actual svg { width: 18px; height: 18px; }
+
+  /* Vote buttons */
+  .vote-row {
+    display: flex;
+    justify-content: center;
+    padding: 0 20px 16px;
+    gap: 8px;
+  }
+  .vote-btn {
+    font-size: 11px;
+    padding: 4px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .vote-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .vote-btn.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .notes {
+    margin-top: 12px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .notes strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cortado Tray Icon</h1>
+<p class="subtitle">
+  Menubar icon variations for Cortado. Each is a macOS <strong>template image</strong> —
+  the OS tints it automatically (dark on light bar, light on dark bar).
+  Shown at actual size (18px within 22pt) and enlarged for detail.
+</p>
+
+<h2 class="section-title">Variants</h2>
+<p class="section-desc">Six directions for the cortado glass silhouette. Each row simulates macOS light &amp; dark menu bars.</p>
+
+<div class="grid" id="variant-grid"></div>
+
+<div class="notes">
+  <strong>How template images work:</strong> macOS ignores the RGB channels entirely and uses only the alpha channel.
+  Opaque pixels get tinted to match the menu bar style; transparent pixels are invisible. The white "cut" lines
+  in these SVGs create transparent gaps in the silhouette, forming the espresso/milk layer line — the signature cortado look.
+  <br><br>
+  <strong>Sizing:</strong> macOS tray icons are 22x22 points (44x44 px on Retina). The icon art itself is typically ~18px
+  tall with 2px padding. These previews show the art at 18px (actual), 30px (2x), and 56px (detail).
+</div>
+
+<script>
+const variants = [
+  {
+    name: "A — Classic Tumbler",
+    desc: "Tapered rocks glass with clean horizontal layer line. The obvious, literal read.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mA"><rect width="88" height="88" fill="white"/>
+        <line x1="25" y1="46" x2="63" y2="46" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      </mask></defs>
+      <path mask="url(#mA)" d="M20 14 Q20 10,24 10 L64 10 Q68 10,68 14 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+    </svg>`
+  },
+  {
+    name: "B — Rounded Cortado",
+    desc: "Softer, rounder glass with a wider mouth. Friendlier feel, still clearly a glass.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mB"><rect width="88" height="88" fill="white"/>
+        <line x1="26" y1="46" x2="62" y2="46" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      </mask></defs>
+      <path mask="url(#mB)" d="M18 16 Q18 10,26 10 L62 10 Q70 10,70 16 L64 66 Q62 78,50 78 L38 78 Q26 78,24 66 Z"/>
+    </svg>`
+  },
+  {
+    name: "C — Minimal Trapezoid",
+    desc: "Pared down to pure geometry. Strong taper, no curves. Bold and modern.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mC"><rect width="88" height="88" fill="white"/>
+        <line x1="28" y1="46" x2="60" y2="46" stroke="black" stroke-width="4"/>
+      </mask></defs>
+      <polygon mask="url(#mC)" points="18,10 70,10 62,78 26,78"/>
+    </svg>`
+  },
+  {
+    name: "D — Stemless Wine",
+    desc: "Curvy tulip shape — wider in the middle, narrowing at the base. Elegant, less literal.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mD"><rect width="88" height="88" fill="white"/>
+        <line x1="24" y1="44" x2="64" y2="44" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      </mask></defs>
+      <path mask="url(#mD)" d="M24 12 Q20 12,20 16 L18 36 Q18 52,22 60 L26 70 Q28 76,34 76 L54 76 Q60 76,62 70 L66 60 Q70 52,70 36 L68 16 Q68 12,64 12 Z"/>
+    </svg>`
+  },
+  {
+    name: "E — Double Layer",
+    desc: "Two subtle layer lines — espresso, crema, milk. More detail but still reads at small sizes.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mE"><rect width="88" height="88" fill="white"/>
+        <line x1="24" y1="38" x2="64" y2="38" stroke="black" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="26" y1="52" x2="62" y2="52" stroke="black" stroke-width="3.5" stroke-linecap="round"/>
+      </mask></defs>
+      <path mask="url(#mE)" d="M20 14 Q20 10,24 10 L64 10 Q68 10,68 14 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+    </svg>`
+  },
+  {
+    name: "F — Thick Rim Glass",
+    desc: "Prominent rim detail at the top. Reads as a physical glass even at tiny sizes.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mF"><rect width="88" height="88" fill="white"/>
+        <line x1="24" y1="48" x2="62" y2="48" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      </mask></defs>
+      <rect x="14" y="8" width="60" height="8" rx="4"/>
+      <path mask="url(#mF)" d="M20 16 L68 16 L62 70 Q61 76,55 76 L33 76 Q27 76,26 70 Z"/>
+    </svg>`
+  }
+];
+
+const grid = document.getElementById('variant-grid');
+
+variants.forEach((v, i) => {
+  const card = document.createElement('div');
+  card.className = 'variant-card';
+
+  // inject unique mask IDs to avoid collisions when all are on the page
+  let svg = v.svg;
+
+  card.innerHTML = `
+    <div class="variant-header">
+      <div class="variant-name">${v.name}</div>
+      <div class="variant-desc">${v.desc}</div>
+    </div>
+    <div class="menubar-strip light">
+      <div class="menubar-items">
+        <div class="menubar-fake-item"></div>
+        <div class="menubar-fake-item"></div>
+        <div class="tray-icon-container">${svg}</div>
+        <div class="menubar-fake-item"></div>
+      </div>
+      <span class="menubar-label">Light</span>
+    </div>
+    <div class="menubar-strip dark">
+      <div class="menubar-items">
+        <div class="menubar-fake-item"></div>
+        <div class="menubar-fake-item"></div>
+        <div class="tray-icon-container">${svg}</div>
+        <div class="menubar-fake-item"></div>
+      </div>
+      <span class="menubar-label">Dark</span>
+    </div>
+    <div class="preview-row">
+      <div class="preview-box">
+        <div class="preview-frame large on-light">${svg}</div>
+        <span class="label">Detail</span>
+      </div>
+      <div class="preview-box">
+        <div class="preview-frame medium on-light">${svg}</div>
+        <span class="label">2x</span>
+      </div>
+      <div class="preview-box">
+        <div class="preview-frame actual on-light">${svg}</div>
+        <span class="label">1x</span>
+      </div>
+      <div style="width:1px;height:40px;background:var(--border)"></div>
+      <div class="preview-box">
+        <div class="preview-frame large on-dark">${svg}</div>
+        <span class="label">Detail</span>
+      </div>
+      <div class="preview-box">
+        <div class="preview-frame medium on-dark">${svg}</div>
+        <span class="label">2x</span>
+      </div>
+      <div class="preview-box">
+        <div class="preview-frame actual on-dark">${svg}</div>
+        <span class="label">1x</span>
+      </div>
+    </div>
+    <div class="vote-row">
+      <button class="vote-btn" onclick="vote(this, ${i}, 'yes')">Pick this one</button>
+      <button class="vote-btn" onclick="vote(this, ${i}, 'maybe')">Maybe</button>
+    </div>
+  `;
+
+  grid.appendChild(card);
+});
+
+function vote(btn, idx, type) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+</script>
+</body>
+</html>
