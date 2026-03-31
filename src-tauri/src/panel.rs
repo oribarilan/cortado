@@ -14,17 +14,28 @@ const PANEL_PADDING_TOP: f64 = 6.0;
 pub fn create(app_handle: &AppHandle) -> tauri::Result<TrayIcon> {
     let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?;
 
+    let version = app_handle.config().version.as_deref().unwrap_or("unknown");
+    let version_label = if crate::app_env::is_dev() {
+        format!("Cortado Dev v{version}")
+    } else {
+        format!("Cortado v{version}")
+    };
+    let version_item =
+        MenuItem::with_id(app_handle, "version", &version_label, false, None::<&str>)?;
     let open_app_item =
         MenuItem::with_id(app_handle, MENU_ID_OPEN_APP, "Open App", true, None::<&str>)?;
     let settings_item =
         MenuItem::with_id(app_handle, MENU_ID_SETTINGS, "Settings", true, None::<&str>)?;
     let quit_item =
         MenuItem::with_id(app_handle, MENU_ID_QUIT, "Quit Cortado", true, None::<&str>)?;
+    let separator0 = PredefinedMenuItem::separator(app_handle)?;
     let separator = PredefinedMenuItem::separator(app_handle)?;
     let separator2 = PredefinedMenuItem::separator(app_handle)?;
     let tray_menu = tauri::menu::Menu::with_items(
         app_handle,
         &[
+            &version_item,
+            &separator0,
             &open_app_item,
             &separator,
             &settings_item,

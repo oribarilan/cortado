@@ -18,6 +18,13 @@ fn hide_menubar_panel(app_handle: &AppHandle) {
     }
 }
 
+fn hide_all_panels(app_handle: &AppHandle) {
+    hide_menubar_panel(app_handle);
+    if let Ok(panel) = app_handle.get_webview_panel("main-screen") {
+        panel.order_out(None);
+    }
+}
+
 /// Tauri command: one-time NSPanel setup for the main screen window.
 /// Called from the frontend on first mount.
 #[tauri::command]
@@ -102,7 +109,7 @@ pub fn quit_app(app_handle: AppHandle) {
 
 #[tauri::command]
 pub fn open_settings(app_handle: AppHandle) -> Result<(), String> {
-    hide_menubar_panel(&app_handle);
+    hide_all_panels(&app_handle);
     if let Some(window) = app_handle.get_webview_window("settings") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;

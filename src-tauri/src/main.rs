@@ -27,6 +27,22 @@ use crate::feed::{
 };
 
 fn main() {
+    // Packaged macOS apps launched from Finder inherit a minimal PATH.
+    // Resolve the user's login shell PATH to find tools like az, gh, etc.
+    let path_before = std::env::var("PATH").unwrap_or_default();
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+    if let Ok(output) = std::process::Command::new(&shell)
+        .args(["-l", "-c", "printf '%s' \"$PATH\""])
+        .output()
+    {
+        if output.status.success() {
+            let resolved = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !resolved.is_empty() && resolved != path_before {
+                std::env::set_var("PATH", &resolved);
+            }
+        }
+    }
+
     let context = tauri::generate_context!();
     app_env::init(&context.config().identifier);
 

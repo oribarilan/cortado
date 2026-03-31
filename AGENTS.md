@@ -261,6 +261,20 @@ Never use `tauri::async_runtime::block_on()` inside the `setup()` closure. Tauri
 
 **Instead**, use `tauri::async_runtime::spawn()` for any async work in setup. If the UI depends on the result (e.g., populating the tray), set up a watch channel or callback so the spawned task can notify the UI when data is ready, rather than blocking the main thread to wait for it.
 
+### Packaged apps get a minimal PATH
+
+macOS apps launched from Finder/Spotlight/Raycast inherit PATH from `launchd`, which only includes `/usr/bin:/bin:/usr/sbin:/sbin`. Tools installed via Homebrew, cargo, pyenv, etc. are missing. This breaks any feed that shells out to a CLI (`az`, `gh`, etc.).
+
+**Fix:** At startup (before any feed polling), resolve the user's login shell PATH with `$SHELL -l -c 'printf "%s" "$PATH"'` and apply it via `std::env::set_var`. This runs in `main()` before Tauri is initialized.
+
+**Do NOT use the `-i` (interactive) flag.** Packaged apps have no TTY, and `-i` causes zsh to fail with "not a terminal". The `-l` (login) flag is sufficient — it sources `/etc/zprofile`, `~/.zprofile`, and `~/.zshrc` on zsh.
+
+**Do NOT use `fix-path-env-rs`.** The Tauri crate `fix-path-env` uses `-ilc` (interactive + login) which fails for the same reason. Our hand-rolled approach with `-l` only works correctly.
+
+### Installing packaged builds over a running app
+
+`cp -R` over a running `.app` bundle **silently fails** to replace the binary — macOS locks the running executable. Always quit the app first, `rm -rf` the old bundle, then copy the new one. The `just build` output goes to `src-tauri/target/release/bundle/`, not `/Applications/`.
+
 ## Known Quirks
 
 - `src-tauri/gen/schemas/` files contain "template" and "example" in Tauri's own doc strings — don't try to rename them.
