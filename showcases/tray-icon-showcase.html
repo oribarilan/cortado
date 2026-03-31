@@ -275,7 +275,7 @@
 </p>
 
 <h2 class="section-title">Variants</h2>
-<p class="section-desc">B5 (your pick) alongside variations on the "C with layer cut" concept — different weights, styles, and takes on the monogram.</p>
+<p class="section-desc">B5 (your pick) vs the letter C rotated 90 degrees left — so it reads as a cup with the opening facing up. Layer line cuts through to show the cortado layers.</p>
 
 <div class="grid" id="variant-grid"></div>
 
@@ -301,81 +301,63 @@ const variants = [
     </svg>`
   },
   {
-    name: "C1 — Bold Stroke",
-    desc: "Thick C with a clean horizontal cut. Heavy, confident, reads well at tiny sizes.",
+    name: "R1 — Rotated C, Medium",
+    desc: "C rotated 90 left. Medium stroke weight, layer line near the top. Clean cup read.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mc1"><rect width="88" height="88" fill="white"/>
-        <rect x="0" y="40" width="88" height="6" fill="black"/>
+      <defs><mask id="mr1"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="30" width="88" height="5" fill="black"/>
       </mask></defs>
-      <path mask="url(#mc1)" d="M62 16 Q44 4,24 16 Q8 28,8 44 Q8 60,24 72 Q44 84,62 72" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round"/>
+      <path mask="url(#mr1)" d="M14 18 Q4 44,14 70 Q24 84,44 84 Q64 84,74 70 Q84 44,74 18" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "C2 — Thin Elegant",
-    desc: "Lighter weight C, wider cut. More refined and airy, like a typographic mark.",
+    name: "R2 — Rotated C, Bold",
+    desc: "Heavier stroke. More presence in the menu bar, reads strongly at small sizes.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mc2"><rect width="88" height="88" fill="white"/>
-        <rect x="0" y="41" width="88" height="5" fill="black"/>
+      <defs><mask id="mr2"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="28" width="88" height="6" fill="black"/>
       </mask></defs>
-      <path mask="url(#mc2)" d="M62 14 Q44 2,22 14 Q6 28,6 44 Q6 60,22 74 Q44 86,62 74" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+      <path mask="url(#mr2)" d="M14 16 Q4 44,14 72 Q24 84,44 84 Q64 84,74 72 Q84 44,74 16" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "C3 — Filled C",
-    desc: "Solid filled C shape with transparent cut. Heavier presence, more like an app icon glyph.",
+    name: "R3 — Rotated C, Thin",
+    desc: "Light weight. Elegant and minimal, more like a typographic accent.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <mask id="mc3"><rect width="88" height="88" fill="white"/>
-          <rect x="0" y="40" width="88" height="6" fill="black"/>
-          <circle cx="44" cy="44" r="22" fill="black"/>
-        </mask>
-      </defs>
-      <circle mask="url(#mc3)" cx="44" cy="44" r="38"/>
-      <rect x="54" y="8" width="30" height="72" fill="black" opacity="0"/>
-      <path d="M58 10 L58 78" stroke="black" stroke-width="0"/>
-    </svg>`
-  },
-  {
-    name: "C3b — Filled Crescent",
-    desc: "Solid crescent C with a transparent gap. Bold silhouette, clearly a C.",
-    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <mask id="mc3b"><rect width="88" height="88" fill="white"/>
-          <rect x="0" y="39" width="88" height="7" fill="black"/>
-          <ellipse cx="58" cy="44" rx="26" ry="36" fill="black"/>
-        </mask>
-      </defs>
-      <circle mask="url(#mc3b)" cx="44" cy="44" r="36"/>
-    </svg>`
-  },
-  {
-    name: "C4 — Off-Center Cut",
-    desc: "Layer line sits higher — the cortado ratio is roughly 1:1 espresso to milk, so the cut is above center.",
-    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mc4"><rect width="88" height="88" fill="white"/>
-        <rect x="0" y="34" width="88" height="6" fill="black"/>
+      <defs><mask id="mr3"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="30" width="88" height="4" fill="black"/>
       </mask></defs>
-      <path mask="url(#mc4)" d="M62 16 Q44 4,24 16 Q8 28,8 44 Q8 60,24 72 Q44 84,62 72" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+      <path mask="url(#mr3)" d="M14 16 Q4 44,14 72 Q24 86,44 86 Q64 86,74 72 Q84 44,74 16" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "C5 — Square C",
-    desc: "Geometric squared-off C with sharp corners. Modern, technical, less organic.",
+    name: "R4 — Shallow Cup",
+    desc: "Wider, shallower arc — more like a bowl or wide cup. Cozy, grounded feel.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mc5"><rect width="88" height="88" fill="white"/>
-        <rect x="0" y="40" width="88" height="6" fill="black"/>
+      <defs><mask id="mr4"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="34" width="88" height="5" fill="black"/>
       </mask></defs>
-      <path mask="url(#mc5)" d="M66 10 L18 10 Q10 10,10 18 L10 70 Q10 78,18 78 L66 78" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+      <path mask="url(#mr4)" d="M8 22 Q4 54,18 72 Q30 84,44 84 Q58 84,70 72 Q84 54,80 22" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
     </svg>`
   },
   {
-    name: "C6 — Glass + C Hybrid",
-    desc: "The glass from B5, but the opening flares into a C shape. Best of both worlds?",
+    name: "R5 — Deep Cup",
+    desc: "Taller, deeper arc — the arms extend higher. More dramatic, cup is clearly deep.",
     svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <defs><mask id="mc6"><rect width="88" height="88" fill="white"/>
-        <line x1="22" y1="30" x2="68" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/>
+      <defs><mask id="mr5"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="24" width="88" height="5" fill="black"/>
       </mask></defs>
-      <path mask="url(#mc6)" d="M68 14 Q68 10,64 10 L24 10 Q16 10,16 18 L16 22 L24 68 Q26 78,38 78 L50 78 Q62 78,64 68 L68 36"/>
+      <path mask="url(#mr5)" d="M12 8 Q2 44,12 72 Q22 86,44 86 Q66 86,76 72 Q86 44,76 8" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
+    name: "R6 — Squared Cup",
+    desc: "Straighter sides with a rounded bottom. More like an actual cup silhouette.",
+    svg: `<svg viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <defs><mask id="mr6"><rect width="88" height="88" fill="white"/>
+        <rect x="0" y="28" width="88" height="5" fill="black"/>
+      </mask></defs>
+      <path mask="url(#mr6)" d="M14 12 L10 64 Q10 82,28 82 L60 82 Q78 82,78 64 L74 12" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"/>
     </svg>`
   }
 ];

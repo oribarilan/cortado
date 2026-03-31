@@ -1,5 +1,5 @@
 ---
-status: done
+status: in-progress
 ---
 
 # Apple Notarization
@@ -10,28 +10,58 @@ Code-sign and notarize the macOS app bundle so users can install without Gatekee
 
 ## Acceptance criteria
 
-- [ ] App is signed with a valid Apple Developer ID certificate
-- [ ] App is notarized with Apple's notary service
-- [ ] Signed + notarized app passes `spctl --assess --verbose` and `codesign --verify --deep`
-- [ ] CI/CD pipeline handles signing and notarization automatically
-- [ ] Install script downloads a notarized build — no `xattr -cr` needed
+- [x] CD workflow handles signing and notarization automatically (workflow code done)
+- [x] Documented in `specs/cd.md`
+- [ ] GitHub Actions secrets configured
+- [ ] Test release verifies signed + notarized DMG
 
-## Notes
+## Setup steps
 
-- Requires an Apple Developer account ($99/year) and a "Developer ID Application" certificate.
-- Notarization submits the app to Apple's servers for malware scanning. Typically takes 1-5 minutes.
-- In CI, the signing identity and credentials are stored as GitHub Actions secrets:
-  - `APPLE_CERTIFICATE` — base64-encoded `.p12` certificate
-  - `APPLE_CERTIFICATE_PASSWORD` — certificate password
-  - `APPLE_ID` — Apple ID email
-  - `APPLE_TEAM_ID` — Apple Developer team ID
-  - `APPLE_PASSWORD` — app-specific password for notarization
-- Tauri's build system supports notarization natively via environment variables. See [Tauri code signing docs](https://v2.tauri.app/distribute/sign/macos/).
-- This task integrates into the CD workflow (task 03) — the signing and notarization steps happen during the release build.
-- Consider: should the dev build (`just dev`) also be signed, or only release builds?
+### Step 1: Create the signing certificate
 
-## Relevant files
+1. On your Mac, open **Keychain Access** > Certificate Assistant > Request a Certificate from a Certificate Authority (save to disk)
+2. Go to [Apple Developer > Certificates](https://developer.apple.com/account/resources/certificates/list)
+3. Click **+** > choose **Developer ID Application** > upload your CSR
+4. Download the `.cer` file and double-click to install it in your keychain
 
-- `.github/workflows/cd.yml` — add signing/notarization steps
-- `src-tauri/tauri.conf.json` — signing identity config
-- `specs/cd.md` — document the signing/notarization process
+### Step 2: Export the certificate as `.p12`
+
+1. In Keychain Access, click **My Certificates** tab
+2. Find your **Developer ID Application** entry, expand it
+3. Right-click the **private key** underneath > Export
+4. Save as `.p12`, set a strong password
+5. Convert to base64: `base64 -A -in certificate.p12 | pbcopy`
+
+### Step 3: Find your signing identity
+
+Run:
+```
+security find-identity -v -p codesigning
+```
+Copy the full string like: `Developer ID Application: Your Name (XXXXXXXXXX)`
+
+### Step 4: Create an App Store Connect API key
+
+1. Go to [App Store Connect > Users and Access > Integrations > Keys](https://appstoreconnect.apple.com/access/integrations/api)
+2. Click **+**, name it (e.g., "Cortado CI"), select **Admin** or **App Manager** role
+3. Note the **Issuer ID** (above the table) and **Key ID** (in the table)
+4. Download the `.p8` private key (can only be downloaded once!)
+5. Convert to base64: `base64 -A -in AuthKey_XXXXXXXX.p8 | pbcopy`
+
+### Step 5: Add GitHub Actions secrets
+
+Go to [github.com/oribarilan/cortado/settings/secrets/actions](https://github.com/oribarilan/cortado/settings/secrets/actions) and add:
+
+| Secret | Value |
+|--------|-------|
+| `APPLE_CERTIFICATE` | Base64 of your `.p12` file (from step 2) |
+| `APPLE_CERTIFICATE_PASSWORD` | Password you set when exporting the `.p12` |
+| `APPLE_SIGNING_IDENTITY` | Full identity string (from step 3) |
+| `APPLE_API_ISSUER` | Issuer ID from App Store Connect (from step 4) |
+| `APPLE_API_KEY` | Key ID from App Store Connect (from step 4) |
+| `APPLE_API_KEY_PATH` | Base64 of the `.p8` file (from step 4) |
+| `KEYCHAIN_PASSWORD` | Any strong password (e.g., generate with `openssl rand -base64 32`) |
+
+### Step 6: Test with a release
+
+After secrets are set, do a test release to verify the full pipeline end-to-end.
