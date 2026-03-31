@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+## [0.4.0] - 2026-03-31
+
+### Added
+- Shimmer loading placeholders while feeds are polling for the first time
+- Version shown in tray and panel footers
+- Branded DMG installer with drag-to-Applications guide
+- New app icon
+
 ## [0.3.0] - 2026-03-31
 
 ### Added
