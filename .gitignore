@@ -25,4 +25,5 @@ dist-ssr
 
 .agent/
 .agents/
+.certs/
 skills-lock.json
