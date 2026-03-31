@@ -1,10 +1,20 @@
-# Cortado
+<p align="center">
+  <img src="art/cortado-128.png" width="96" alt="Cortado icon" />
+</p>
 
-[![CI](https://github.com/oribarilan/cortado/actions/workflows/ci.yml/badge.svg)](https://github.com/oribarilan/cortado/actions/workflows/ci.yml)
+<h1 align="center">Cortado</h1>
 
-Cortado is a cross-platform extensible watcher that lives in the macOS menubar.
+<p align="center">
+  <em>A feed for the busy builder</em>
+</p>
 
-Users configure **feeds** (data sources like "GitHub PRs for repo X"), and each feed automatically discovers and tracks **activities** (e.g., individual PRs). Each activity has structured **fields** showing its current state — review status, CI results, health checks — all glanceable from the menubar.
+<p align="center">
+  <a href="https://github.com/oribarilan/cortado/actions/workflows/ci.yml">
+    <img src="https://github.com/oribarilan/cortado/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+</p>
+
+Cortado is a menubar companion that keeps you in the know. Configure **feeds** — GitHub PRs, CI runs, health checks, shell commands — and glance at their status without leaving your flow.
 
 ## Feeds
 
