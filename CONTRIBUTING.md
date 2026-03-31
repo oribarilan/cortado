@@ -66,7 +66,23 @@ The version lives in two files and must be kept in sync:
 - `src-tauri/Cargo.toml` — `version` under `[package]`
 - `src-tauri/tauri.conf.json` — `version` at the top level
 
-Automated version bumping is planned (`just release` command).
+### Releasing
+
+To release a new version:
+
+1. Bump version in both `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`
+2. Move `## Unreleased` entries in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section
+3. Commit: `release: vX.Y.Z`
+4. Tag: `git tag vX.Y.Z`
+5. Push: `git push && git push origin vX.Y.Z`
+
+The tag push triggers the CD workflow to build and publish the release.
+
+Version levels: MAJOR (breaking), MINOR (features), PATCH (fixes). Pre-1.0, MINOR may include breaking changes.
+
+### Changelog
+
+Maintain `CHANGELOG.md` incrementally using [Keep a Changelog](https://keepachangelog.com/) format. Add entries under `## Unreleased` as you work. The release script promotes them to a versioned section.
 
 ## Code quality
 
