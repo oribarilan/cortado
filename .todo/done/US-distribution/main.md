@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # US: App Distribution (Part 1 — DMG Release)

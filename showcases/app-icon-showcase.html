@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — App Icon Showcase</title>
+<style>
+  :root {
+    --bg: #1a1a1a;
+    --surface: #262626;
+    --text: #e0e0e0;
+    --text-dim: #999;
+    --accent: #c8956a;
+    --border: #333;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 40px 48px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .subtitle {
+    color: var(--text-dim); font-size: 14px; margin-bottom: 40px; line-height: 1.5; max-width: 700px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 28px;
+    margin-bottom: 48px;
+  }
+  .variant-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .variant-card:hover { border-color: #555; }
+  .variant-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .variant-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .variant-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+  .preview-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 28px 20px;
+  }
+
+  .icon-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-preview .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* macOS squircle mask */
+  .squircle {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0C22.4 0 12.2 0 6.1 6.1S0 22.4 0 50s0 37.8 6.1 43.9S22.4 100 50 100s37.8 0 43.9-6.1S100 77.6 100 50s0-37.8-6.1-43.9S77.6 0 50 0z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0C22.4 0 12.2 0 6.1 6.1S0 22.4 0 50s0 37.8 6.1 43.9S22.4 100 50 100s37.8 0 43.9-6.1S100 77.6 100 50s0-37.8-6.1-43.9S77.6 0 50 0z'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+
+  .icon-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .icon-frame svg { width: 100%; height: 100%; }
+  .icon-frame.xl { width: 180px; height: 180px; }
+  .icon-frame.lg { width: 128px; height: 128px; }
+  .icon-frame.md { width: 64px; height: 64px; }
+  .icon-frame.sm { width: 32px; height: 32px; }
+  .icon-frame.xs { width: 16px; height: 16px; }
+
+  /* Dock simulation */
+  .dock-strip {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 20px 12px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.03) 100%);
+    border-top: 1px solid var(--border);
+  }
+  .dock-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #444;
+    opacity: 0.3;
+  }
+  .dock-icon.app {
+    opacity: 1;
+    background: transparent;
+    overflow: hidden;
+  }
+  .dock-icon.app svg { width: 100%; height: 100%; }
+  .dock-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 3px;
+    opacity: 0.5;
+  }
+
+  .vote-row {
+    display: flex; justify-content: center; padding: 0 20px 16px; gap: 8px;
+  }
+  .vote-btn {
+    font-size: 11px; padding: 4px 14px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-dim); cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .vote-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .vote-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .notes {
+    margin-top: 12px; padding: 24px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; color: var(--text-dim); line-height: 1.7;
+  }
+  .notes strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Cortado App Icon</h1>
+<p class="subtitle">
+  Full-color app icon variants for Cortado. Shown at multiple sizes with macOS squircle mask applied.
+  This icon appears in Finder, Spotlight, Activity Monitor, the About dialog, and DMG.
+</p>
+
+<div class="grid" id="variant-grid"></div>
+
+<div class="notes">
+  <strong>How macOS app icons work:</strong> macOS automatically applies a squircle (superellipse) mask to app icons.
+  The source image should be a full 1024x1024 square — the OS crops it. The icon design should be centered
+  with some padding from the edges so nothing important gets clipped by the mask.
+  <br><br>
+  <strong>Sizes:</strong> The icon is used from 1024px (App Store) down to 16px (Finder list view).
+  The design must remain legible and recognizable at all sizes — avoid fine details that disappear at 32px.
+</div>
+
+<script>
+// The B5 glass path (shared across variants)
+const glassPath = `M 210 256 Q 210 186, 302 186 L 722 186 Q 814 186, 814 256 L 744 791 Q 722 907, 581 907 L 443 907 Q 302 907, 280 791 Z`;
+
+const variants = [
+  {
+    name: "A — Warm Naturals",
+    desc: "Dark espresso over warm cream. Subtle crema line, gentle glass highlight. Understated and warm.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcA"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="espA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c1810"/><stop offset="100%" stop-color="#4a2818"/></linearGradient>
+        <linearGradient id="milkA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0e0cc"/><stop offset="100%" stop-color="#e8d0b4"/></linearGradient>
+        <linearGradient id="hlA" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.18"/><stop offset="35%" stop-color="white" stop-opacity="0.03"/><stop offset="100%" stop-color="white" stop-opacity="0.08"/></linearGradient>
+        <radialGradient id="shA" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#000" stop-opacity="0.25"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="512" cy="920" rx="260" ry="30" fill="url(#shA)"/>
+      <rect clip-path="url(#gcA)" x="180" y="380" width="664" height="560" fill="url(#milkA)"/>
+      <rect clip-path="url(#gcA)" x="180" y="140" width="664" height="248" fill="url(#espA)"/>
+      <rect clip-path="url(#gcA)" x="180" y="378" width="664" height="12" fill="#c89060" opacity="0.6"/>
+      <path d="${glassPath}" fill="none" stroke="#3a2015" stroke-width="10" opacity="0.25"/>
+      <path d="${glassPath}" fill="url(#hlA)"/>
+    </svg>`
+  },
+  {
+    name: "B — Deep Mocha",
+    desc: "Richer, darker palette. Deep chocolate espresso, warm tan milk. More contrast and depth.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcB"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="espB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a0e08"/><stop offset="100%" stop-color="#3d1f0e"/></linearGradient>
+        <linearGradient id="milkB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8d4b8"/><stop offset="100%" stop-color="#d4b896"/></linearGradient>
+        <linearGradient id="hlB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.22"/><stop offset="40%" stop-color="white" stop-opacity="0.02"/><stop offset="100%" stop-color="white" stop-opacity="0.1"/></linearGradient>
+        <radialGradient id="shB" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#000" stop-opacity="0.3"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="512" cy="920" rx="260" ry="30" fill="url(#shB)"/>
+      <rect clip-path="url(#gcB)" x="180" y="380" width="664" height="560" fill="url(#milkB)"/>
+      <rect clip-path="url(#gcB)" x="180" y="140" width="664" height="248" fill="url(#espB)"/>
+      <rect clip-path="url(#gcB)" x="180" y="376" width="664" height="8" fill="#b87840" opacity="0.5"/>
+      <path d="${glassPath}" fill="none" stroke="#1a0e08" stroke-width="12" opacity="0.2"/>
+      <path d="${glassPath}" fill="url(#hlB)"/>
+    </svg>`
+  },
+  {
+    name: "C — Soft Latte",
+    desc: "Lighter, softer tones. Gentle brown espresso, almost-white milk. Friendly and approachable.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcC"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="espC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5a3520"/><stop offset="100%" stop-color="#7a4a30"/></linearGradient>
+        <linearGradient id="milkC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#faf3ea"/><stop offset="100%" stop-color="#f0e6d8"/></linearGradient>
+        <linearGradient id="hlC" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.25"/><stop offset="30%" stop-color="white" stop-opacity="0.05"/><stop offset="100%" stop-color="white" stop-opacity="0.12"/></linearGradient>
+        <radialGradient id="shC" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#000" stop-opacity="0.15"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="512" cy="920" rx="260" ry="30" fill="url(#shC)"/>
+      <rect clip-path="url(#gcC)" x="180" y="380" width="664" height="560" fill="url(#milkC)"/>
+      <rect clip-path="url(#gcC)" x="180" y="140" width="664" height="248" fill="url(#espC)"/>
+      <rect clip-path="url(#gcC)" x="180" y="378" width="664" height="10" fill="#d4a070" opacity="0.5"/>
+      <path d="${glassPath}" fill="none" stroke="#5a3520" stroke-width="8" opacity="0.15"/>
+      <path d="${glassPath}" fill="url(#hlC)"/>
+    </svg>`
+  },
+  {
+    name: "D — On a Background",
+    desc: "Same warm glass but on a rich dark brown circle background. More presence at small sizes.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcD"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="bgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3d2418"/><stop offset="100%" stop-color="#2a1810"/></linearGradient>
+        <linearGradient id="espD" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a0e06"/><stop offset="100%" stop-color="#301a0c"/></linearGradient>
+        <linearGradient id="milkD" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0e0cc"/><stop offset="100%" stop-color="#e0ccb0"/></linearGradient>
+        <linearGradient id="hlD" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.2"/><stop offset="35%" stop-color="white" stop-opacity="0.03"/><stop offset="100%" stop-color="white" stop-opacity="0.1"/></linearGradient>
+      </defs>
+      <rect width="1024" height="1024" rx="0" fill="url(#bgD)"/>
+      <rect clip-path="url(#gcD)" x="180" y="380" width="664" height="560" fill="url(#milkD)"/>
+      <rect clip-path="url(#gcD)" x="180" y="140" width="664" height="248" fill="url(#espD)"/>
+      <rect clip-path="url(#gcD)" x="180" y="376" width="664" height="10" fill="#b87840" opacity="0.5"/>
+      <path d="${glassPath}" fill="none" stroke="white" stroke-width="6" opacity="0.08"/>
+      <path d="${glassPath}" fill="url(#hlD)"/>
+    </svg>`
+  },
+  {
+    name: "E — Slate Background",
+    desc: "Glass on a cool dark slate. The warm coffee tones pop against the neutral background.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcE"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="bgE" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#383842"/><stop offset="100%" stop-color="#28282e"/></linearGradient>
+        <linearGradient id="espE" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2c1810"/><stop offset="100%" stop-color="#4a2818"/></linearGradient>
+        <linearGradient id="milkE" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0e0cc"/><stop offset="100%" stop-color="#e8d0b4"/></linearGradient>
+        <linearGradient id="hlE" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.2"/><stop offset="35%" stop-color="white" stop-opacity="0.03"/><stop offset="100%" stop-color="white" stop-opacity="0.1"/></linearGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#bgE)"/>
+      <ellipse cx="512" cy="910" rx="240" ry="22" fill="black" opacity="0.3"/>
+      <rect clip-path="url(#gcE)" x="180" y="380" width="664" height="560" fill="url(#milkE)"/>
+      <rect clip-path="url(#gcE)" x="180" y="140" width="664" height="248" fill="url(#espE)"/>
+      <rect clip-path="url(#gcE)" x="180" y="378" width="664" height="10" fill="#c89060" opacity="0.6"/>
+      <path d="${glassPath}" fill="none" stroke="white" stroke-width="6" opacity="0.06"/>
+      <path d="${glassPath}" fill="url(#hlE)"/>
+    </svg>`
+  },
+  {
+    name: "F — Gradient Background",
+    desc: "Warm-to-cool gradient background. The glass floats on an atmospheric wash.",
+    svg: `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="gcF"><path d="${glassPath}"/></clipPath>
+        <linearGradient id="bgF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a3028"/><stop offset="100%" stop-color="#1e2430"/></linearGradient>
+        <linearGradient id="espF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1c0e08"/><stop offset="100%" stop-color="#3a1e10"/></linearGradient>
+        <linearGradient id="milkF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f2e4d0"/><stop offset="100%" stop-color="#e6d2b8"/></linearGradient>
+        <linearGradient id="hlF" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="white" stop-opacity="0.22"/><stop offset="30%" stop-color="white" stop-opacity="0.04"/><stop offset="100%" stop-color="white" stop-opacity="0.1"/></linearGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#bgF)"/>
+      <ellipse cx="512" cy="912" rx="240" ry="22" fill="black" opacity="0.25"/>
+      <rect clip-path="url(#gcF)" x="180" y="380" width="664" height="560" fill="url(#milkF)"/>
+      <rect clip-path="url(#gcF)" x="180" y="140" width="664" height="248" fill="url(#espF)"/>
+      <rect clip-path="url(#gcF)" x="180" y="376" width="664" height="10" fill="#c08050" opacity="0.5"/>
+      <path d="${glassPath}" fill="none" stroke="white" stroke-width="6" opacity="0.07"/>
+      <path d="${glassPath}" fill="url(#hlF)"/>
+    </svg>`
+  }
+];
+
+const grid = document.getElementById('variant-grid');
+
+variants.forEach((v, i) => {
+  const card = document.createElement('div');
+  card.className = 'variant-card';
+
+  card.innerHTML = `
+    <div class="variant-header">
+      <div class="variant-name">${v.name}</div>
+      <div class="variant-desc">${v.desc}</div>
+    </div>
+    <div class="preview-area">
+      <div class="icon-preview">
+        <div class="icon-frame xl squircle">${v.svg}</div>
+        <span class="label">180px</span>
+      </div>
+      <div class="icon-preview">
+        <div class="icon-frame lg squircle">${v.svg}</div>
+        <span class="label">128px</span>
+      </div>
+      <div class="icon-preview">
+        <div class="icon-frame md squircle">${v.svg}</div>
+        <span class="label">64px</span>
+      </div>
+      <div class="icon-preview">
+        <div class="icon-frame sm squircle">${v.svg}</div>
+        <span class="label">32px</span>
+      </div>
+      <div class="icon-preview">
+        <div class="icon-frame xs squircle">${v.svg}</div>
+        <span class="label">16px</span>
+      </div>
+    </div>
+    <div class="dock-strip">
+      <div><div class="dock-icon"></div></div>
+      <div><div class="dock-icon"></div></div>
+      <div><div class="dock-icon app squircle">${v.svg}</div><div class="dock-label">Cortado</div></div>
+      <div><div class="dock-icon"></div></div>
+      <div><div class="dock-icon"></div></div>
+    </div>
+    <div class="vote-row">
+      <button class="vote-btn" onclick="vote(this)">Pick this one</button>
+      <button class="vote-btn" onclick="vote(this)">Maybe</button>
+    </div>
+  `;
+
+  grid.appendChild(card);
+});
+
+function vote(btn) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+</script>
+</body>
+</html>

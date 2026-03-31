@@ -1,19 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" width="88" height="88">
   <!-- Cortado glass silhouette - macOS template image (black on transparent) -->
-
-  <!-- Glass body: tapered tumbler, wider at top, narrower at bottom -->
-  <path d="
-    M 18 16
-    Q 18 12, 22 12
-    L 66 12
-    Q 70 12, 70 16
-    L 64 70
-    Q 63 76, 57 76
-    L 31 76
-    Q 25 76, 24 70
-    Z
-  " fill="#000000"/>
-
-  <!-- Layer line: transparent cut showing the cortado espresso/milk boundary -->
-  <line x1="25" y1="44" x2="63" y2="44" stroke="white" stroke-width="3.5"/>
+  <!-- B5: Short squat rounded glass, layer line near top -->
+  <defs>
+    <mask id="layer-cut">
+      <rect width="88" height="88" fill="white"/>
+      <line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <path mask="url(#layer-cut)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z" fill="#000000"/>
 </svg>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Cortado app icon — warm coffee-themed glass with espresso/milk layers -->
+  <defs>
+    <!-- Glass clipping shape (same B5 proportions, scaled to 1024) -->
+    <clipPath id="glass-clip">
+      <path d="
+        M 210 256
+        Q 210 186, 302 186
+        L 722 186
+        Q 814 186, 814 256
+        L 744 791
+        Q 722 907, 581 907
+        L 443 907
+        Q 302 907, 280 791
+        Z
+      "/>
+    </clipPath>
+
+    <!-- Subtle glass highlight gradient -->
+    <linearGradient id="glass-highlight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="white" stop-opacity="0.18"/>
+      <stop offset="30%" stop-color="white" stop-opacity="0.04"/>
+      <stop offset="70%" stop-color="white" stop-opacity="0"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0.08"/>
+    </linearGradient>
+
+    <!-- Espresso layer gradient (dark brown) -->
+    <linearGradient id="espresso" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2c1810"/>
+      <stop offset="100%" stop-color="#4a2818"/>
+    </linearGradient>
+
+    <!-- Milk layer gradient (warm cream) -->
+    <linearGradient id="milk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0e0cc"/>
+      <stop offset="100%" stop-color="#e8d0b4"/>
+    </linearGradient>
+
+    <!-- Shadow under the glass -->
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Soft shadow beneath glass -->
+  <ellipse cx="512" cy="920" rx="260" ry="30" fill="url(#shadow)"/>
+
+  <!-- Milk layer (lower portion of glass) -->
+  <rect clip-path="url(#glass-clip)" x="180" y="380" width="664" height="560" fill="url(#milk)"/>
+
+  <!-- Espresso layer (upper portion of glass) -->
+  <rect clip-path="url(#glass-clip)" x="180" y="140" width="664" height="240" fill="url(#espresso)"/>
+
+  <!-- Thin crema line at the boundary -->
+  <rect clip-path="url(#glass-clip)" x="180" y="370" width="664" height="16" fill="#c89060" opacity="0.7"/>
+
+  <!-- Glass outline -->
+  <path d="
+    M 210 256
+    Q 210 186, 302 186
+    L 722 186
+    Q 814 186, 814 256
+    L 744 791
+    Q 722 907, 581 907
+    L 443 907
+    Q 302 907, 280 791
+    Z
+  " fill="none" stroke="#3a2015" stroke-width="12" stroke-linejoin="round" opacity="0.3"/>
+
+  <!-- Glass highlight overlay -->
+  <path d="
+    M 210 256
+    Q 210 186, 302 186
+    L 722 186
+    Q 814 186, 814 256
+    L 744 791
+    Q 722 907, 581 907
+    L 443 907
+    Q 302 907, 280 791
+    Z
+  " fill="url(#glass-highlight)"/>
+</svg>
