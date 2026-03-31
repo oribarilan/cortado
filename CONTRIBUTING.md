@@ -82,7 +82,12 @@ Version levels: MAJOR (breaking), MINOR (features), PATCH (fixes). Pre-1.0, MINO
 
 ### Changelog
 
-Maintain `CHANGELOG.md` incrementally using [Keep a Changelog](https://keepachangelog.com/) format. Add entries under `## Unreleased` as you work. The release script promotes them to a versioned section.
+Maintain `CHANGELOG.md` incrementally using [Keep a Changelog](https://keepachangelog.com/) format. Add entries under `## Unreleased` as you work. The release process promotes them to a versioned section.
+
+Changelog entries should be:
+- **1 line per feature, 2 lines max.** Concise and user-focused, not implementation details.
+- Written from the user's perspective — what changed for them, not how it was built.
+- When in doubt, ask the developer to phrase the entry before writing it.
 
 ## Code quality
 
