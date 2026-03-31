@@ -12,6 +12,10 @@
   <a href="https://github.com/oribarilan/cortado/actions/workflows/ci.yml">
     <img src="https://github.com/oribarilan/cortado/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/oribarilan/cortado/releases/latest">
+    <img src="https://img.shields.io/badge/Download_for_macOS-blue?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" />
+  </a>
 </p>
 
 Cortado is a menubar companion that keeps you in the know. Configure **feeds** — GitHub PRs, CI runs, health checks, shell commands — and glance at their status without leaving your flow.
