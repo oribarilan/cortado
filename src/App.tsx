@@ -25,6 +25,8 @@ function App() {
   const [expandedActivityKey, setExpandedActivityKey] = useState<string | null>(null);
   const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
   const [appVersion, setAppVersion] = useState("");
+  const [isDev, setIsDev] = useState(false);
+  const [hideEmptyFeeds, setHideEmptyFeeds] = useState(false);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -43,7 +45,11 @@ function App() {
     };
   }, []);
 
-  const sortedFeeds = feeds;
+  const sortedFeeds = feeds.filter((feed) => {
+    if (feed.activities.length > 0 || feed.error) return true;
+    if (feed.hide_when_empty) return false;
+    return !hideEmptyFeeds;
+  });
 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
@@ -121,6 +127,12 @@ function App() {
       }
 
       getVersion().then(v => { if (isMounted) setAppVersion(v); }).catch(() => {});
+      invoke<boolean>("is_dev_mode").then(v => { if (isMounted) setIsDev(v); }).catch(() => {});
+
+      // Load panel settings for empty feed filtering.
+      invoke<{ panel?: { hide_empty_feeds?: boolean } }>("get_settings")
+        .then((s) => { if (isMounted) setHideEmptyFeeds(s.panel?.hide_empty_feeds ?? false); })
+        .catch(() => {});
 
       try {
         const initialFeeds = await invoke<FeedSnapshot[]>("list_feeds");
@@ -205,6 +217,7 @@ function App() {
       aria-label="Cortado menubar panel"
     >
       <div className="panel-content" ref={panelContentRef}>
+        {isDev ? <div className="dev-bar">DEV</div> : null}
         {loading ? (
           <div className="loading-state" aria-live="polite">
             <div className="skeleton w-55" />
@@ -368,7 +381,7 @@ function App() {
           >
             Quit Cortado
           </button>
-          {appVersion ? <span className="footer-version">v{appVersion}</span> : null}
+          {appVersion ? <span className="footer-version">v{appVersion}{isDev ? "-dev" : ""}</span> : null}
         </footer>
       </div>
     </div>

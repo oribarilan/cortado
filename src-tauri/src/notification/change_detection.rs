@@ -157,6 +157,7 @@ mod tests {
             activities,
             provided_fields: Vec::new(),
             error: None,
+            hide_when_empty: false,
         }
     }
 

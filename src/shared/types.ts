@@ -42,4 +42,5 @@ export type FeedSnapshot = {
   feed_type: string;
   activities: Activity[];
   error: string | null;
+  hide_when_empty: boolean;
 };

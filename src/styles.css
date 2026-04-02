@@ -70,6 +70,18 @@ body {
   padding: var(--space-4) 0;
 }
 
+.dev-bar {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent);
+  padding: 2px 0;
+  margin: 0 var(--space-4) var(--space-4);
+  opacity: 0.8;
+}
+
 .feed-block + .feed-block {
   margin-top: var(--feed-gap);
 }

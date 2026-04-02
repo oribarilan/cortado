@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Increase gear icon size in panel

@@ -210,6 +210,8 @@ pub struct FeedSnapshot {
     pub activities: Vec<Activity>,
     pub provided_fields: Vec<FieldDefinition>,
     pub error: Option<String>,
+    /// When true, the UI should hide this feed if it has no activities.
+    pub hide_when_empty: bool,
 }
 
 /// Feed contract implemented by each feed type.
@@ -220,6 +222,10 @@ pub trait Feed: Send + Sync {
     fn interval(&self) -> Duration;
     fn retain_for(&self) -> Option<Duration>;
     fn provided_fields(&self) -> Vec<FieldDefinition>;
+    /// Whether this feed should be hidden from the UI when it has no activities.
+    fn hide_when_empty(&self) -> bool {
+        false
+    }
     async fn poll(&self) -> Result<Vec<Activity>>;
 }
 
@@ -260,6 +266,7 @@ impl FeedRegistry {
             activities: Vec::new(),
             provided_fields: Vec::new(),
             error: Some(error),
+            hide_when_empty: false,
         });
     }
 
@@ -300,6 +307,7 @@ impl FeedRegistry {
                 activities: Vec::new(),
                 provided_fields: feed.provided_fields(),
                 error: None,
+                hide_when_empty: feed.hide_when_empty(),
             });
         }
 
@@ -771,6 +779,7 @@ mod tests {
             activities,
             provided_fields: Vec::new(),
             error: None,
+            hide_when_empty: false,
         }
     }
 
@@ -787,6 +796,7 @@ mod tests {
             activities: Vec::new(),
             provided_fields: Vec::new(),
             error: Some("oops".to_string()),
+            hide_when_empty: false,
         };
         assert_eq!(StatusKind::rollup_for_feeds(&[snapshot]), StatusKind::Idle);
     }

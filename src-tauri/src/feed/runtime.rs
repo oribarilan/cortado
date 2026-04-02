@@ -252,6 +252,7 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
                 activities,
                 provided_fields: feed.provided_fields(),
                 error: None,
+                hide_when_empty: feed.hide_when_empty(),
             }
         }
         Err(error) => FeedSnapshot {
@@ -260,6 +261,7 @@ async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> 
             activities: baseline.map_or_else(Vec::new, |snapshot| snapshot.activities),
             provided_fields: feed.provided_fields(),
             error: Some(error.to_string()),
+            hide_when_empty: feed.hide_when_empty(),
         },
     }
 }
@@ -403,6 +405,7 @@ mod tests {
                 activities: vec![activity("1", "Old activity")],
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -424,6 +427,7 @@ mod tests {
                 activities: Vec::new(),
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -434,6 +438,7 @@ mod tests {
                 activities: vec![activity("2", "Updated")],
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -535,6 +540,7 @@ mod tests {
                 activities: vec![activity("A", "Still open"), activity("B", "Just merged")],
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -570,6 +576,7 @@ mod tests {
                 activities: vec![activity("A", "Still open"), activity("B", "Closed")],
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -607,6 +614,7 @@ mod tests {
                 }],
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 
@@ -643,6 +651,7 @@ mod tests {
                 activities: baseline,
                 provided_fields: Vec::new(),
                 error: None,
+                hide_when_empty: false,
             })
             .await;
 

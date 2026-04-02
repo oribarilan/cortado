@@ -44,7 +44,7 @@ The app uses two identities to avoid collisions:
 - `just dev` uses the dev identity via `tauri.dev.conf.json` config overlay.
 - `just build` produces a **production** DMG (no overlay).
 - The `tauri-plugin-single-instance` plugin prevents running two instances with the same bundle ID.
-- A red "DEV" badge is shown in the main screen panel for dev builds.
+- Dev builds show a "DEV" bar at the top of the panel and a `-dev` suffix on the version number.
 
 You can run a dev instance and a production install side-by-side. You cannot run two dev instances simultaneously.
 

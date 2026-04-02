@@ -69,6 +69,10 @@ impl Feed for CortadoUpdateFeed {
         None
     }
 
+    fn hide_when_empty(&self) -> bool {
+        true
+    }
+
     fn provided_fields(&self) -> Vec<FieldDefinition> {
         vec![
             FieldDefinition {

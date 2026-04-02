@@ -60,6 +60,7 @@ async fn inject_config_warning_snapshot(
                 activities: Vec::new(),
                 provided_fields: Vec::new(),
                 error: Some(CONFIG_WARNING_MESSAGE.to_string()),
+                hide_when_empty: false,
             },
         );
     }

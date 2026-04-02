@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Loading state for tray and panel on first launch

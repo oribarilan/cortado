@@ -439,7 +439,7 @@ function MainScreenApp() {
           )}
         </span>
         <span className="ms-footer-right">
-          {appVersion ? <span className="ms-footer-version">v{appVersion}</span> : null}
+          {appVersion ? <span className="ms-footer-version">v{appVersion}{isDev ? "-dev" : ""}</span> : null}
           <button
             className="ms-footer-settings"
             onClick={() => invoke("open_settings").catch(console.error)}

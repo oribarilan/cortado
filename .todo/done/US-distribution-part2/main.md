@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # US: App Distribution (Part 2 — Auto-Update)

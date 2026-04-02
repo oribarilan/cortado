@@ -27,6 +27,7 @@ type GeneralSettings = {
 
 type PanelSettings = {
   show_priority_section: boolean;
+  hide_empty_feeds: boolean;
 };
 
 type AppSettings = {
@@ -420,6 +421,7 @@ function SettingsApp() {
   // General settings state
   const [showMenubar, setShowMenubar] = useState(true);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
+  const [hideEmptyFeeds, setHideEmptyFeeds] = useState(false);
   const [theme, setTheme] = useState("system");
   const [textSize, setTextSize] = useState("m");
   const [globalHotkey, setGlobalHotkey] = useState("super+shift+space");
@@ -517,6 +519,7 @@ function SettingsApp() {
         setNotifSettings(s.notifications);
         setShowMenubar(s.general?.show_menubar ?? true);
         setShowPrioritySection(s.panel?.show_priority_section ?? true);
+        setHideEmptyFeeds(s.panel?.hide_empty_feeds ?? false);
         setTheme(s.general?.theme ?? "system");
         setTextSize(s.general?.text_size ?? "m");
         setGlobalHotkey(s.general?.global_hotkey ?? "super+shift+space");
@@ -573,7 +576,7 @@ function SettingsApp() {
       await invoke("save_settings", {
         settings: {
           general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
-          panel: { show_priority_section: showPrioritySection },
+          panel: { show_priority_section: showPrioritySection, hide_empty_feeds: hideEmptyFeeds },
           notifications: updated,
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
@@ -582,16 +585,18 @@ function SettingsApp() {
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [showPrioritySection, showMenubar, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [showPrioritySection, hideEmptyFeeds, showMenubar, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
 
-  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; theme?: string; textSize?: string }) => {
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; hideEmptyFeeds?: boolean; theme?: string; textSize?: string }) => {
     const newMenubar = updates.showMenubar ?? showMenubar;
     const newPriority = updates.showPrioritySection ?? showPrioritySection;
+    const newHideEmpty = updates.hideEmptyFeeds ?? hideEmptyFeeds;
     const newTheme = updates.theme ?? theme;
     const newTextSize = updates.textSize ?? textSize;
 
     if (updates.showMenubar !== undefined) setShowMenubar(newMenubar);
     if (updates.showPrioritySection !== undefined) setShowPrioritySection(newPriority);
+    if (updates.hideEmptyFeeds !== undefined) setHideEmptyFeeds(newHideEmpty);
     if (updates.theme !== undefined) setTheme(newTheme);
     if (updates.textSize !== undefined) setTextSize(newTextSize);
 
@@ -599,7 +604,7 @@ function SettingsApp() {
       await invoke("save_settings", {
         settings: {
           general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize, global_hotkey: globalHotkey },
-          panel: { show_priority_section: newPriority },
+          panel: { show_priority_section: newPriority, hide_empty_feeds: newHideEmpty },
           notifications: notifSettings,
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
@@ -608,7 +613,7 @@ function SettingsApp() {
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [notifSettings, showMenubar, showPrioritySection, hideEmptyFeeds, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
 
   const saveFocusSetting = useCallback(async (updates: { tmuxEnabled?: boolean; accessibilityEnabled?: boolean }) => {
     const newTmux = updates.tmuxEnabled ?? tmuxEnabled;
@@ -621,7 +626,7 @@ function SettingsApp() {
       await invoke("save_settings", {
         settings: {
           general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
-          panel: { show_priority_section: showPrioritySection },
+          panel: { show_priority_section: showPrioritySection, hide_empty_feeds: hideEmptyFeeds },
           notifications: notifSettings,
           focus: { tmux_enabled: newTmux, accessibility_enabled: newAccessibility },
         },
@@ -630,7 +635,7 @@ function SettingsApp() {
     } catch (err) {
       console.error("failed saving focus setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [notifSettings, showMenubar, showPrioritySection, hideEmptyFeeds, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
 
   const saveHotkey = useCallback(async (hotkey: string) => {
     setHotkeyError(null);
@@ -1022,6 +1027,19 @@ function SettingsApp() {
                 onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }); }}
                 aria-pressed={showPrioritySection}
                 aria-label="Show Needs Attention section"
+              />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Hide empty feeds</div>
+                <div className="setting-hint">Hide feeds with no activities from the panel</div>
+              </div>
+              <button
+                className={`toggle ${hideEmptyFeeds ? "on" : ""}`}
+                onClick={() => { void saveGeneralSetting({ hideEmptyFeeds: !hideEmptyFeeds }); }}
+                aria-pressed={hideEmptyFeeds}
+                aria-label="Hide empty feeds"
               />
             </div>
 
@@ -1799,7 +1817,7 @@ function SettingsApp() {
                       notify_removed_activities: true,
                     });
                   } else {
-                    void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, theme: "system", textSize: "m" });
+                    void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, hideEmptyFeeds: false, theme: "system", textSize: "m" });
                     void saveHotkey("super+shift+space");
                     if (autostart) void toggleAutostart();
                   }

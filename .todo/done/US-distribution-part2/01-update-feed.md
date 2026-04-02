@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Update Awareness Feed

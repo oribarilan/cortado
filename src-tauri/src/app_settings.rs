@@ -76,12 +76,16 @@ pub struct PanelSettings {
     /// Show the "Needs Attention" priority section at the top of the activity list.
     #[serde(default = "default_true")]
     pub show_priority_section: bool,
+    /// Hide feeds that have no activities from the panel.
+    #[serde(default)]
+    pub hide_empty_feeds: bool,
 }
 
 impl Default for PanelSettings {
     fn default() -> Self {
         Self {
             show_priority_section: true,
+            hide_empty_feeds: false,
         }
     }
 }
@@ -479,6 +483,7 @@ mod tests {
             },
             panel: PanelSettings {
                 show_priority_section: false,
+                hide_empty_feeds: false,
             },
             ..AppSettings::default()
         };
