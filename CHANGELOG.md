@@ -3,6 +3,11 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.1] - 2026-04-02
+
+### Added
+- Panel height adapts to screen size instead of a fixed 400px
+
 ## [0.5.0] - 2026-04-02
 
 ### Added

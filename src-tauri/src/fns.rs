@@ -223,6 +223,9 @@ pub fn position_panel_at_menubar_icon(
 
     let mut win_frame: NSRect = unsafe { msg_send![handle, frame] };
 
+    // Size panel to 40% of screen height.
+    win_frame.size.height = (monitor_size.height * 0.4).round();
+
     win_frame.origin.y =
         (monitor_pos.y + monitor_size.height) - menubar_height - win_frame.size.height;
 
