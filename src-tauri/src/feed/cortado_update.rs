@@ -93,13 +93,14 @@ impl Feed for CortadoUpdateFeed {
     }
 
     async fn poll(&self) -> Result<Vec<Activity>> {
-        let response = self
-            .client
-            .get(&self.endpoint)
-            .send()
-            .await?
-            .error_for_status()?;
+        let response = self.client.get(&self.endpoint).send().await?;
 
+        // No latest.json yet (first release, or endpoint misconfigured).
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(Vec::new());
+        }
+
+        let response = response.error_for_status()?;
         let latest: LatestJson = response.json().await?;
 
         let remote_version = latest
