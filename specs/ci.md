@@ -15,7 +15,7 @@ Runs on every push to `main` and on every pull request.
 2. **Frontend build** — runs `pnpm build` (Vite bundle):
    - Verifies the frontend compiles and bundles correctly
 
-### CI Build (`ci-build.yml`)
+### CI Packaging (`ci-build.yml`)
 
 Runs only when packaging-related files change (Tauri config, Cargo deps, capabilities, icons, JS deps). Triggered on pushes to `main` and pull requests.
 
