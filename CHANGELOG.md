@@ -3,7 +3,7 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## [0.5.0] - 2026-04-02
 
 ### Added
 - Built-in update awareness feed: Cortado checks for new versions and surfaces "vX.Y.Z available" as an activity with an "Install update" button
