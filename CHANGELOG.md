@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+### Added
+- Tray icon status indicator: a colored dot in the bottom-right corner reflects the global rollup status across all feeds (red for attention, yellow for waiting, blue for running, green for action needed). When idle, the icon reverts to its native monochrome template.
+
 ## [0.4.0] - 2026-03-31
 
 ### Added

@@ -331,6 +331,15 @@ Status mapping:
 
 Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tray icon that opens a menubar-attached panel.
 
+### Tray icon status indicator
+
+The tray icon reflects the global rollup status — the highest-priority `StatusKind` across all activities in all feeds. This makes the menubar icon a passive, glanceable signal of whether anything needs attention.
+
+- When all feeds are **Idle** (or no feeds are configured): the icon uses macOS template mode — a monochrome silhouette that auto-adapts to light/dark menubar. No dot is shown.
+- When any feed has a non-Idle status: template mode is disabled and a **colored dot** is composited in the bottom-right corner of the icon. The dot color matches the global rollup status kind (red, yellow, blue, or green). The base icon is tinted for the current menubar theme (white on dark, black on light).
+- The dot updates on each poll cycle. The icon is only regenerated when the status or theme changes.
+- Theme detection uses the macOS system appearance (`AppleInterfaceStyle`).
+
 ### Menubar UX (panel disclosure, Strict System)
 
 - Top level groups by **Feed**.

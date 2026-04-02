@@ -11,6 +11,7 @@ mod notification;
 mod panel;
 mod settings_config;
 mod terminal_focus;
+mod tray_icon;
 mod ui_snapshot;
 
 use std::sync::Arc;
@@ -23,7 +24,7 @@ use crate::feed::{
     config::{self, ConfigChangeTracker},
     load_feed_registry,
     runtime::NotificationContext,
-    BackgroundPoller, FeedSnapshotCache, RegistryBuildMode,
+    BackgroundPoller, FeedSnapshotCache, RegistryBuildMode, StatusKind,
 };
 
 fn main() {
@@ -209,6 +210,10 @@ fn start_refresh_loop(
                     snapshots_cache.list().await
                 }
             };
+
+            // Update tray icon to reflect global status rollup.
+            let global_status = StatusKind::rollup_for_feeds(&snapshots);
+            tray_icon::update_tray_status(&app_handle, global_status);
 
             if let Err(err) = app_handle.emit("feeds-updated", snapshots) {
                 eprintln!("failed emitting feeds-updated event: {err}");

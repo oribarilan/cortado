@@ -20,13 +20,13 @@ Activity-level dot precedence: `AttentionNegative > Waiting > Running > Attentio
 
 ### Rollup
 
-The same highest-kind-wins algorithm applies at two levels:
+The same highest-kind-wins algorithm applies at three levels:
 
 - **Fields → Activity dot** — highest status kind across an activity's status fields. The status chip text also shows the highest-priority field, not a fixed field order.
+- **Activities → Tray icon** — highest rollup kind across every activity in every feed. This is the global at-a-glance signal.
 
 Retained activities always roll up as Idle — they are no longer actively monitored.
-
-Tray icon global rollup is planned but not yet implemented (see `.todo/backlog/tray-icon-rollup.md`).
+Errored or empty feeds contribute Idle to the global rollup.
 
 ## Status Values
 
@@ -44,7 +44,8 @@ See `.todo/backlog/semantic-status-types.md` for the full design discussion, sce
 
 ## Implementation
 
-- `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`
+- `src-tauri/src/tray_icon.rs` — Tray icon compositing, theme detection, global rollup → dot overlay
+- `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`, `rollup_for_activity`, `rollup_for_feeds`
 - `src-tauri/src/feed/github_pr.rs` — GitHub PR value→kind mappings
 - `src-tauri/src/feed/ado_pr.rs` — ADO PR value→kind mappings
 - `src-tauri/src/feed/shell.rs` — Shell feed keyword inference

@@ -105,6 +105,19 @@ impl StatusKind {
             .unwrap_or(StatusKind::Idle)
     }
 
+    /// Derives the global rollup kind across all feeds.
+    ///
+    /// Returns the highest-priority `StatusKind` across every activity
+    /// in every feed snapshot. Errored or empty feeds contribute `Idle`.
+    pub fn rollup_for_feeds(snapshots: &[FeedSnapshot]) -> StatusKind {
+        snapshots
+            .iter()
+            .flat_map(|snap| &snap.activities)
+            .map(Self::rollup_for_activity)
+            .max_by_key(|kind| kind.priority())
+            .unwrap_or(StatusKind::Idle)
+    }
+
     /// Human-friendly display name for notifications.
     pub fn human_name(self) -> &'static str {
         match self {
@@ -746,5 +759,73 @@ mod tests {
             sort_ts: None,
         };
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
+    }
+
+    // --- rollup_for_feeds tests ---
+
+    fn snapshot_with_activities(name: &str, activities: Vec<Activity>) -> FeedSnapshot {
+        FeedSnapshot {
+            name: name.to_string(),
+            feed_type: "test".to_string(),
+            activities,
+            provided_fields: Vec::new(),
+            error: None,
+        }
+    }
+
+    #[test]
+    fn feeds_rollup_empty_returns_idle() {
+        assert_eq!(StatusKind::rollup_for_feeds(&[]), StatusKind::Idle);
+    }
+
+    #[test]
+    fn feeds_rollup_errored_feed_contributes_idle() {
+        let snapshot = FeedSnapshot {
+            name: "broken".to_string(),
+            feed_type: "shell".to_string(),
+            activities: Vec::new(),
+            provided_fields: Vec::new(),
+            error: Some("oops".to_string()),
+        };
+        assert_eq!(StatusKind::rollup_for_feeds(&[snapshot]), StatusKind::Idle);
+    }
+
+    #[test]
+    fn feeds_rollup_picks_highest_across_feeds() {
+        let feed_a = snapshot_with_activities(
+            "feed-a",
+            vec![activity_with_statuses(&[("s", StatusKind::Waiting)])],
+        );
+        let feed_b = snapshot_with_activities(
+            "feed-b",
+            vec![activity_with_statuses(&[(
+                "s",
+                StatusKind::AttentionNegative,
+            )])],
+        );
+        assert_eq!(
+            StatusKind::rollup_for_feeds(&[feed_a, feed_b]),
+            StatusKind::AttentionNegative
+        );
+    }
+
+    #[test]
+    fn feeds_rollup_ignores_retained_activities() {
+        let mut activity = activity_with_statuses(&[("s", StatusKind::AttentionNegative)]);
+        activity.retained = true;
+        let snapshot = snapshot_with_activities("feed", vec![activity]);
+        assert_eq!(StatusKind::rollup_for_feeds(&[snapshot]), StatusKind::Idle);
+    }
+
+    #[test]
+    fn feeds_rollup_mixed_retained_and_active() {
+        let mut retained = activity_with_statuses(&[("s", StatusKind::AttentionNegative)]);
+        retained.retained = true;
+        let active = activity_with_statuses(&[("s", StatusKind::Running)]);
+        let snapshot = snapshot_with_activities("feed", vec![retained, active]);
+        assert_eq!(
+            StatusKind::rollup_for_feeds(&[snapshot]),
+            StatusKind::Running
+        );
     }
 }

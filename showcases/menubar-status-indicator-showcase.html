@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cortado — Menubar Icon Status Indicator Showcase</title>
+<style>
+  /* ── Reset & Base ──────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --menubar-dark: #2d2d2d;
+    --menubar-light: #f0f0f0;
+    --menubar-light-border: #d4d4d4;
+    --icon-dark: rgba(255,255,255,0.85);
+    --icon-light: rgba(0,0,0,0.78);
+    --status-attention-negative: oklch(70% 0.2 25);
+    --status-waiting: oklch(80% 0.16 78);
+    --status-running: oklch(72% 0.16 259);
+    --status-attention-positive: oklch(80% 0.14 150);
+    --status-idle: oklch(67% 0.01 250);
+    --bg: #1a1a1e;
+    --card-bg: #242428;
+    --card-border: #333338;
+    --text-1: #e8e8ec;
+    --text-2: #9999a3;
+    --text-3: #66666f;
+    --accent: oklch(72% 0.14 178);
+  }
+
+  body {
+    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    padding: 32px 40px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ────────────────────────────────── */
+  .header {
+    max-width: 960px;
+    margin: 0 auto 36px;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.5;
+    max-width: 640px;
+  }
+
+  /* ── Controls ──────────────────────────────── */
+  .controls {
+    max-width: 960px;
+    margin: 0 auto 28px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .control-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .control-group .pills {
+    display: flex;
+    gap: 2px;
+    background: #2a2a2e;
+    border-radius: 7px;
+    padding: 2px;
+  }
+  .pill {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .pill:hover { color: var(--text-1); background: rgba(255,255,255,0.05); }
+  .pill.active { background: #3a3a40; color: var(--text-1); font-weight: 500; }
+  .pill .dot-swatch {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    position: relative;
+    top: -0.5px;
+  }
+
+  /* ── Grid ───────────────────────────────────── */
+  .showcase-grid {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .showcase-grid .card.wide { grid-column: 1 / -1; }
+
+  /* ── Card ───────────────────────────────────── */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+  }
+  .card-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .card-label h2 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .card-label .badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-3);
+  }
+  .badge.recommended {
+    background: oklch(72% 0.14 178 / 0.15);
+    color: var(--accent);
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  /* ── Simulated macOS Menubar ───────────────── */
+  .menubar-sim {
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+    border-radius: 4px;
+    gap: 16px;
+    position: relative;
+    user-select: none;
+  }
+  .menubar-sim.dark {
+    background: var(--menubar-dark);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+  .menubar-sim.light {
+    background: var(--menubar-light);
+    border: 1px solid var(--menubar-light-border);
+  }
+
+  /* Fake menubar items (system icons area) */
+  .menubar-items {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .fake-item {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    opacity: 0.3;
+  }
+  .menubar-sim.dark .fake-item { background: rgba(255,255,255,0.5); }
+  .menubar-sim.light .fake-item { background: rgba(0,0,0,0.3); }
+
+  .clock {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .menubar-sim.dark .clock { color: rgba(255,255,255,0.85); }
+  .menubar-sim.light .clock { color: rgba(0,0,0,0.78); }
+
+  /* ── Cortado icon ──────────────────────────── */
+  .cortado-icon-wrap {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cortado-icon-wrap svg {
+    width: 18px;
+    height: 18px;
+  }
+  .menubar-sim.dark .cortado-icon-wrap svg path { fill: var(--icon-dark); }
+  .menubar-sim.light .cortado-icon-wrap svg path { fill: var(--icon-light); }
+  .menubar-sim.dark .cortado-icon-wrap svg line { stroke: var(--menubar-dark); }
+  .menubar-sim.light .cortado-icon-wrap svg line { stroke: var(--menubar-light); }
+
+  /* ── Status dot (for Alternative A/B) ──────── */
+  .status-dot {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .status-dot.corner-br {
+    width: 7px;
+    height: 7px;
+    bottom: -1px;
+    right: -2px;
+    box-shadow: 0 0 0 1.5px var(--dot-ring);
+  }
+  .status-dot.corner-tr {
+    width: 7px;
+    height: 7px;
+    top: -1px;
+    right: -2px;
+    box-shadow: 0 0 0 1.5px var(--dot-ring);
+  }
+
+  .menubar-sim.dark .status-dot { --dot-ring: var(--menubar-dark); }
+  .menubar-sim.light .status-dot { --dot-ring: var(--menubar-light); }
+
+  /* ── Separate dot (Alternative C) ──────────── */
+  .separate-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-left: -10px;
+  }
+
+  /* ── Icon variants (Alternative D) ─────────── */
+  .icon-variant-filled .cortado-icon-wrap svg path {
+    fill-opacity: 1;
+  }
+  .icon-variant-hollow .cortado-icon-wrap svg path {
+    fill: transparent;
+    stroke-width: 5;
+  }
+  .menubar-sim.dark .icon-variant-hollow .cortado-icon-wrap svg path { stroke: var(--icon-dark); }
+  .menubar-sim.light .icon-variant-hollow .cortado-icon-wrap svg path { stroke: var(--icon-light); }
+
+  /* ── Pulse animation (Alternative E) ───────── */
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+  .status-dot.pulsing {
+    animation: dot-pulse 2s ease-in-out infinite;
+  }
+
+  /* ── Comparison table ──────────────────────── */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .comparison-table th {
+    text-align: left;
+    padding: 7px 10px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--card-border);
+  }
+  .comparison-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text-2);
+    vertical-align: top;
+  }
+  .comparison-table tr:last-child td { border-bottom: none; }
+  .comparison-table td:first-child { color: var(--text-1); font-weight: 500; white-space: nowrap; }
+  .check { color: oklch(80% 0.14 150); }
+  .cross { color: oklch(70% 0.2 25); }
+  .meh { color: oklch(80% 0.16 78); }
+
+  /* ── Notes ─────────────────────────────────── */
+  .notes {
+    max-width: 960px;
+    margin: 28px auto 0;
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.6;
+  }
+  .notes strong { color: var(--text-2); }
+
+  /* ── Menubar pair (dark + light side by side) ── */
+  .menubar-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .menubar-pair .theme-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 500;
+  }
+
+  /* ── Variant detail row ─────────────────────── */
+  .detail-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .detail-col { flex: 1; }
+  .detail-col h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .detail-col ul {
+    list-style: none;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .detail-col ul li::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-3);
+    margin-right: 6px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  /* ── Exclamation mark for variant D ────────── */
+  .exclamation {
+    position: absolute;
+    font-size: 7px;
+    font-weight: 800;
+    top: 1px;
+    right: -1px;
+    line-height: 1;
+  }
+  .menubar-sim.dark .exclamation { color: var(--icon-dark); }
+  .menubar-sim.light .exclamation { color: var(--icon-light); }
+
+  /* ── Zoom window ───────────────────────────── */
+  .zoom-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .zoom-box {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .zoom-box.dark { background: var(--menubar-dark); }
+  .zoom-box.light { background: var(--menubar-light); border: 1px solid var(--menubar-light-border); }
+  .zoom-box .cortado-icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+  .zoom-box .cortado-icon-wrap svg {
+    width: 36px;
+    height: 36px;
+  }
+  .zoom-box .status-dot.corner-br {
+    width: 12px;
+    height: 12px;
+    bottom: -2px;
+    right: -3px;
+    box-shadow: 0 0 0 2.5px var(--dot-ring);
+  }
+  .zoom-box.dark .status-dot { --dot-ring: var(--menubar-dark); }
+  .zoom-box.light .status-dot { --dot-ring: var(--menubar-light); }
+  .zoom-label {
+    font-size: 11px;
+    color: var(--text-3);
+    font-style: italic;
+  }
+
+  /* ── All statuses row ──────────────────────── */
+  .status-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .status-row .status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-row .status-item .s-label {
+    font-size: 10px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 500;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot.pulsing { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Menubar Icon — Status Indicator Alternatives</h1>
+  <p>
+    The tray icon should passively signal the global rollup status (highest severity across all feeds).
+    This showcase compares five approaches to rendering that indicator, in both dark and light menubar themes.
+  </p>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Status</label>
+    <div class="pills" id="status-pills">
+      <button class="pill active" data-status="attention-negative">
+        <span class="dot-swatch" style="background: oklch(70% 0.2 25)"></span>Attention-
+      </button>
+      <button class="pill" data-status="waiting">
+        <span class="dot-swatch" style="background: oklch(80% 0.16 78)"></span>Waiting
+      </button>
+      <button class="pill" data-status="running">
+        <span class="dot-swatch" style="background: oklch(72% 0.16 259)"></span>Running
+      </button>
+      <button class="pill" data-status="attention-positive">
+        <span class="dot-swatch" style="background: oklch(80% 0.14 150)"></span>Attention+
+      </button>
+      <button class="pill" data-status="idle">
+        <span class="dot-swatch" style="background: oklch(67% 0.01 250)"></span>Idle
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="showcase-grid">
+
+  <!-- ═══════ ALTERNATIVE A ═══════ -->
+  <div class="card" id="card-a">
+    <div class="card-label">
+      <h2>A: Colored Dot Overlay</h2>
+      <span class="badge recommended">Recommended</span>
+    </div>
+    <p class="card-desc">
+      A small colored circle composited onto the bottom-right corner of the icon at runtime.
+      Like Teams or Slack status dots. Requires disabling template mode and handling theme manually.
+    </p>
+    <div class="menubar-pair">
+      <span class="theme-label">Dark menubar</span>
+      <div class="menubar-sim dark" id="bar-a-dark">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-a-dark">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-ad"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-ad)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+            <div class="status-dot corner-br" id="dot-a-dark"></div>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+      <span class="theme-label">Light menubar</span>
+      <div class="menubar-sim light" id="bar-a-light">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-a-light">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-al"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-al)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+            <div class="status-dot corner-br" id="dot-a-light"></div>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-area">
+      <div class="zoom-box dark">
+        <div class="cortado-icon-wrap">
+          <svg viewBox="0 0 88 88"><defs><mask id="lc-azd"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-azd)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z" fill="rgba(255,255,255,0.85)"/></svg>
+          <div class="status-dot corner-br" id="dot-a-zoom-dark"></div>
+        </div>
+      </div>
+      <div class="zoom-box light">
+        <div class="cortado-icon-wrap">
+          <svg viewBox="0 0 88 88"><defs><mask id="lc-azl"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-azl)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z" fill="rgba(0,0,0,0.78)"/></svg>
+          <div class="status-dot corner-br" id="dot-a-zoom-light"></div>
+        </div>
+      </div>
+      <span class="zoom-label">3x zoom for detail</span>
+    </div>
+    <div class="detail-row">
+      <div class="detail-col">
+        <h4>Pros</h4>
+        <ul>
+          <li>Dynamic — 1 base asset, computed colors</li>
+          <li>Matches Teams/Slack pattern</li>
+          <li>Compact — no extra menubar space</li>
+        </ul>
+      </div>
+      <div class="detail-col">
+        <h4>Cons</h4>
+        <ul>
+          <li>Must handle light/dark theme manually</li>
+          <li>Animation limited without rapid swaps</li>
+          <li>Dot small at native 22px</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ ALTERNATIVE C ═══════ -->
+  <div class="card" id="card-c">
+    <div class="card-label">
+      <h2>C: Separate Dot Item</h2>
+      <span class="badge">Low effort</span>
+    </div>
+    <p class="card-desc">
+      A second, independent tray item — a tiny colored circle — appears next to the main icon.
+      Base icon stays as template (auto light/dark). Simplest code path.
+    </p>
+    <div class="menubar-pair">
+      <span class="theme-label">Dark menubar</span>
+      <div class="menubar-sim dark" id="bar-c-dark">
+        <div class="menubar-items">
+          <div class="separate-dot" id="sepdot-c-dark"></div>
+          <div class="cortado-icon-wrap">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-cd"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-cd)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+      <span class="theme-label">Light menubar</span>
+      <div class="menubar-sim light" id="bar-c-light">
+        <div class="menubar-items">
+          <div class="separate-dot" id="sepdot-c-light"></div>
+          <div class="cortado-icon-wrap">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-cl"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-cl)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-col">
+        <h4>Pros</h4>
+        <ul>
+          <li>Base icon keeps template mode</li>
+          <li>Simplest implementation</li>
+          <li>Hidden when Idle — no visual noise</li>
+        </ul>
+      </div>
+      <div class="detail-col">
+        <h4>Cons</h4>
+        <ul>
+          <li>Takes extra menubar space (~10px)</li>
+          <li>Looks disconnected from icon</li>
+          <li>Unusual pattern — may confuse users</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ ALTERNATIVE D ═══════ -->
+  <div class="card" id="card-d">
+    <div class="card-label">
+      <h2>D: Icon Shape Swap</h2>
+      <span class="badge">HIG-compliant</span>
+    </div>
+    <p class="card-desc">
+      The entire icon changes to indicate status — e.g., filled glass for attention, half-filled for waiting,
+      hollow outline for idle. Stays monochrome template. Respects macOS HIG strictly.
+    </p>
+    <div class="menubar-pair">
+      <span class="theme-label">Dark menubar</span>
+      <div class="menubar-sim dark" id="bar-d-dark">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-d-dark">
+            <!-- dynamically set -->
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+      <span class="theme-label">Light menubar</span>
+      <div class="menubar-sim light" id="bar-d-light">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-d-light">
+            <!-- dynamically set -->
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+    </div>
+    <div class="status-row" id="icon-d-all">
+      <!-- filled by JS: shows all 5 variants side by side -->
+    </div>
+    <div class="detail-row">
+      <div class="detail-col">
+        <h4>Pros</h4>
+        <ul>
+          <li>Full template mode — auto theme</li>
+          <li>Strictly HIG-compliant</li>
+          <li>No color in menubar</li>
+        </ul>
+      </div>
+      <div class="detail-col">
+        <h4>Cons</h4>
+        <ul>
+          <li>Monochrome — less glanceable</li>
+          <li>Hard to design 5 distinct silhouettes at 22px</li>
+          <li>Users must learn icon vocabulary</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ ALTERNATIVE E ═══════ -->
+  <div class="card" id="card-e">
+    <div class="card-label">
+      <h2>E: Native Subview (NSStatusItem)</h2>
+      <span class="badge">High effort</span>
+    </div>
+    <p class="card-desc">
+      A native macOS NSView added as a subview on the tray button via objc interop. Supports smooth
+      animations (pulse for Running). Best quality but most complex and fragile.
+    </p>
+    <div class="menubar-pair">
+      <span class="theme-label">Dark menubar</span>
+      <div class="menubar-sim dark" id="bar-e-dark">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-e-dark">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-ed"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-ed)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+            <div class="status-dot corner-br" id="dot-e-dark"></div>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+      <span class="theme-label">Light menubar</span>
+      <div class="menubar-sim light" id="bar-e-light">
+        <div class="menubar-items">
+          <div class="cortado-icon-wrap" id="icon-e-light">
+            <svg viewBox="0 0 88 88"><defs><mask id="lc-el"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs><path mask="url(#lc-el)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/></svg>
+            <div class="status-dot corner-br" id="dot-e-light"></div>
+          </div>
+          <div class="fake-item"></div>
+          <div class="fake-item"></div>
+          <span class="clock">Wed 12:34</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-col">
+        <h4>Pros</h4>
+        <ul>
+          <li>Best quality — native rendering</li>
+          <li>Base icon stays template</li>
+          <li>Smooth animations (pulse, fade)</li>
+        </ul>
+      </div>
+      <div class="detail-col">
+        <h4>Cons</h4>
+        <ul>
+          <li>Unsafe objc interop</li>
+          <li>Fragile — may break on macOS updates</li>
+          <li>Conflicts with Tauri's tray management</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ COMPARISON TABLE ═══════ -->
+  <div class="card wide">
+    <div class="card-label">
+      <h2>Comparison</h2>
+    </div>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Criterion</th>
+          <th>A: Dot Overlay</th>
+          <th>C: Separate Item</th>
+          <th>D: Icon Swap</th>
+          <th>E: Native Subview</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Glanceability (color)</td>
+          <td><span class="check">Yes</span></td>
+          <td><span class="check">Yes</span></td>
+          <td><span class="cross">No (mono)</span></td>
+          <td><span class="check">Yes</span></td>
+        </tr>
+        <tr>
+          <td>Auto light/dark</td>
+          <td><span class="cross">Manual</span></td>
+          <td><span class="check">Base: auto</span></td>
+          <td><span class="check">Full auto</span></td>
+          <td><span class="check">Base: auto</span></td>
+        </tr>
+        <tr>
+          <td>Code complexity</td>
+          <td><span class="meh">Medium</span></td>
+          <td><span class="check">Low</span></td>
+          <td><span class="check">Low</span></td>
+          <td><span class="cross">High</span></td>
+        </tr>
+        <tr>
+          <td>Asset maintenance</td>
+          <td><span class="check">Low (1 base)</span></td>
+          <td><span class="check">Low</span></td>
+          <td><span class="meh">Medium (5 icons)</span></td>
+          <td><span class="check">Low</span></td>
+        </tr>
+        <tr>
+          <td>Animation</td>
+          <td><span class="meh">Limited</span></td>
+          <td><span class="cross">No</span></td>
+          <td><span class="cross">No</span></td>
+          <td><span class="check">Native smooth</span></td>
+        </tr>
+        <tr>
+          <td>Extra menubar space</td>
+          <td><span class="check">None</span></td>
+          <td><span class="cross">~10px</span></td>
+          <td><span class="check">None</span></td>
+          <td><span class="check">None</span></td>
+        </tr>
+        <tr>
+          <td>HIG compliance</td>
+          <td><span class="meh">Good</span></td>
+          <td><span class="cross">Poor</span></td>
+          <td><span class="check">Best</span></td>
+          <td><span class="meh">Good</span></td>
+        </tr>
+        <tr>
+          <td>Precedent</td>
+          <td>Teams, Slack, Discord</td>
+          <td>Rare</td>
+          <td>Docker, Xcode</td>
+          <td>Native macOS apps</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="notes">
+  <strong>Note:</strong> Alternative B (Pre-Rendered Icon Set) is visually identical to A — same dot overlay, but using
+  10-20 pre-made PNGs instead of runtime compositing. It trades asset maintenance for simpler code. Not shown separately
+  as the visual output is the same. &nbsp;|&nbsp;
+  <strong>Fidelity gap:</strong> Real macOS menubar is 24px tall with system-level rendering. This simulation approximates
+  proportions and colors but cannot replicate subpixel rendering, vibrancy, or native template image behavior.
+</div>
+
+<script>
+const STATUS_COLORS = {
+  'attention-negative': 'oklch(70% 0.2 25)',
+  'waiting':            'oklch(80% 0.16 78)',
+  'running':            'oklch(72% 0.16 259)',
+  'attention-positive': 'oklch(80% 0.14 150)',
+  'idle':               'oklch(67% 0.01 250)',
+};
+
+const STATUS_LABELS = {
+  'attention-negative': 'Attn-',
+  'waiting':            'Waiting',
+  'running':            'Running',
+  'attention-positive': 'Attn+',
+  'idle':               'Idle',
+};
+
+// SVG templates for Alternative D icon variants
+const GLASS_SVG = {
+  'attention-negative': `<svg viewBox="0 0 88 88">
+    <defs><mask id="m-an"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs>
+    <path mask="url(#m-an)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/>
+    <line x1="44" y1="40" x2="44" y2="56" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="44" cy="64" r="3"/>
+  </svg>`,
+  'waiting': `<svg viewBox="0 0 88 88">
+    <defs><mask id="m-w"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs>
+    <path mask="url(#m-w)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/>
+    <circle cx="34" cy="54" r="3"/>
+    <circle cx="44" cy="54" r="3"/>
+    <circle cx="54" cy="54" r="3"/>
+  </svg>`,
+  'running': `<svg viewBox="0 0 88 88">
+    <defs><mask id="m-r"><rect width="88" height="88" fill="white"/></mask></defs>
+    <path d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/>
+    <rect x="22" y="14" width="44" height="24" rx="2" fill="inherit" class="fill-match"/>
+  </svg>`,
+  'attention-positive': `<svg viewBox="0 0 88 88">
+    <defs><mask id="m-ap"><rect width="88" height="88" fill="white"/><line x1="23" y1="30" x2="65" y2="30" stroke="black" stroke-width="4" stroke-linecap="round"/></mask></defs>
+    <path mask="url(#m-ap)" d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z"/>
+    <polyline points="33,52 41,60 55,44" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  'idle': `<svg viewBox="0 0 88 88">
+    <path d="M18 22 Q18 16,26 16 L62 16 Q70 16,70 22 L64 68 Q62 78,50 78 L38 78 Q26 78,24 68 Z" fill="none" stroke-width="5"/>
+    <line x1="23" y1="30" x2="65" y2="30" stroke-width="4" stroke-linecap="round"/>
+  </svg>`,
+};
+
+let currentStatus = 'attention-negative';
+
+function updateAll(status) {
+  currentStatus = status;
+  const color = STATUS_COLORS[status];
+  const isIdle = status === 'idle';
+  const isRunning = status === 'running';
+
+  // Pill active states
+  document.querySelectorAll('#status-pills .pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.status === status);
+  });
+
+  // ── Alt A: Colored dot overlay ──
+  ['dot-a-dark', 'dot-a-light', 'dot-a-zoom-dark', 'dot-a-zoom-light'].forEach(id => {
+    const el = document.getElementById(id);
+    if (isIdle) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = 'block';
+      el.style.background = color;
+    }
+  });
+
+  // ── Alt C: Separate dot ──
+  ['sepdot-c-dark', 'sepdot-c-light'].forEach(id => {
+    const el = document.getElementById(id);
+    if (isIdle) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = 'block';
+      el.style.background = color;
+    }
+  });
+
+  // ── Alt D: Icon shape swap ──
+  ['icon-d-dark', 'icon-d-light'].forEach(id => {
+    const el = document.getElementById(id);
+    const isDark = id.includes('dark');
+    const fillColor = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.78)';
+    el.innerHTML = GLASS_SVG[status];
+    const svg = el.querySelector('svg');
+    svg.style.width = '18px';
+    svg.style.height = '18px';
+    // Apply fill/stroke to all relevant elements
+    svg.querySelectorAll('path').forEach(p => {
+      if (p.getAttribute('fill') === 'none') {
+        p.style.stroke = fillColor;
+        p.style.fill = 'none';
+      } else {
+        p.style.fill = fillColor;
+      }
+    });
+    svg.querySelectorAll('line').forEach(l => { l.style.stroke = fillColor; });
+    svg.querySelectorAll('circle').forEach(c => { c.style.fill = fillColor; });
+    svg.querySelectorAll('polyline').forEach(pl => { pl.style.stroke = fillColor; });
+    svg.querySelectorAll('rect.fill-match').forEach(r => { r.style.fill = fillColor; });
+  });
+
+  // Alt D: all-status row
+  const allRow = document.getElementById('icon-d-all');
+  allRow.innerHTML = '';
+  Object.keys(GLASS_SVG).forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'status-item';
+
+    const box = document.createElement('div');
+    box.className = 'zoom-box dark';
+    box.style.width = '40px';
+    box.style.height = '40px';
+    box.style.borderRadius = '6px';
+    const wrap = document.createElement('div');
+    wrap.className = 'cortado-icon-wrap';
+    wrap.style.width = '24px';
+    wrap.style.height = '24px';
+    wrap.innerHTML = GLASS_SVG[s];
+    const svg = wrap.querySelector('svg');
+    svg.style.width = '24px';
+    svg.style.height = '24px';
+    const fillColor = 'rgba(255,255,255,0.85)';
+    svg.querySelectorAll('path').forEach(p => {
+      if (p.getAttribute('fill') === 'none') { p.style.stroke = fillColor; p.style.fill = 'none'; }
+      else { p.style.fill = fillColor; }
+    });
+    svg.querySelectorAll('line').forEach(l => { l.style.stroke = fillColor; });
+    svg.querySelectorAll('circle').forEach(c => { c.style.fill = fillColor; });
+    svg.querySelectorAll('polyline').forEach(pl => { pl.style.stroke = fillColor; });
+    svg.querySelectorAll('rect.fill-match').forEach(r => { r.style.fill = fillColor; });
+
+    box.appendChild(wrap);
+    item.appendChild(box);
+
+    const label = document.createElement('span');
+    label.className = 's-label';
+    label.textContent = STATUS_LABELS[s];
+    if (s === currentStatus) { label.style.color = 'var(--text-1)'; label.style.fontWeight = '600'; }
+    item.appendChild(label);
+
+    allRow.appendChild(item);
+  });
+
+  // ── Alt E: Native subview (simulated with dot + animation) ──
+  ['dot-e-dark', 'dot-e-light'].forEach(id => {
+    const el = document.getElementById(id);
+    if (isIdle) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = 'block';
+      el.style.background = color;
+      el.classList.toggle('pulsing', isRunning);
+    }
+  });
+}
+
+// Event listeners
+document.getElementById('status-pills').addEventListener('click', e => {
+  const pill = e.target.closest('.pill');
+  if (pill) updateAll(pill.dataset.status);
+});
+
+// Initial render
+updateAll('attention-negative');
+</script>
+</body>
+</html>
