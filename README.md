@@ -18,11 +18,11 @@
   </a>
 </p>
 
-Cortado is a menubar companion that keeps you in the know. Configure **feeds** — GitHub PRs, CI runs, health checks, shell commands — and glance at their status without leaving your flow.
+Cortado is a lightweight app that keeps you in the know. Configure **feeds**, GitHub PRs, CI runs, health checks, etc, and glance at their status without leaving your flow.
 
 ## Install
 
-Download the latest `.dmg` from [Releases](https://github.com/oribarilan/cortado/releases/latest), open it, and drag Cortado to your Applications folder. The app is signed and notarized — no Gatekeeper warnings.
+Download the latest `.dmg` from [Releases](https://github.com/oribarilan/cortado/releases/latest), open it, and drag Cortado to your Applications folder.
 
 ## Getting started
 
