@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Focus strategy: tmux pane switching

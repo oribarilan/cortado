@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Harness provider trait + Copilot implementation
