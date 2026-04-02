@@ -2,6 +2,59 @@
 
 This document covers feed types beyond the basics in `main.md`. For shared feed concepts (config format, field overrides, retention, intervals), see `specs/main.md`.
 
+## Cortado Update feed
+
+A **built-in** feed that checks for new Cortado versions and surfaces update availability as a standard activity.
+
+### Architecture
+
+Unlike user-configured feeds, the update feed is always registered and not parsed from `feeds.toml`. It is added to the feed registry in `main.rs` after loading user-configured feeds.
+
+```
+CortadoUpdateFeed (implements Feed trait)
+  |
+  |- poll(): fetches latest.json from GitHub Releases via reqwest
+  |- compares remote version with current app version (semver)
+  |- returns Vec<Activity> — one activity if update available, empty if current
+  |- activity has StatusKind::AttentionPositive
+  |- frontend "Install update" button triggers install_update Tauri command
+  |- install_update uses tauri-plugin-updater to download, verify, install, restart
+```
+
+### Feed type: `cortado-update`
+
+**Data source**: `latest.json` from `https://github.com/oribarilan/cortado/releases/latest/download/latest.json`
+
+**Default interval**: `6h` (21600s).
+
+**Provided fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | status | "update available" with `AttentionPositive` kind |
+| `version` | text | Available version (e.g., "v0.5.0") |
+| `notes` | text | Release notes from `latest.json` |
+
+**Activity title**: `Cortado vX.Y.Z available`
+
+**Activity identity**: `cortado-update-vX.Y.Z` — unique per version.
+
+**Behavior**:
+- When app is up to date: feed produces no activities (hidden from view).
+- When update available: one activity with `AttentionPositive` status. No dismiss — stays visible until installed or app restarts at the new version.
+- Expanding the activity shows release notes and an "Install update" action button.
+- Clicking "Install update" triggers the Tauri updater plugin to download, verify signature, install, and restart the app.
+
+### Implementation
+
+```
+src-tauri/src/feed/cortado_update.rs  # Feed implementation
+src-tauri/src/command.rs              # install_update Tauri command
+src-tauri/src/main.rs                 # Built-in feed registration
+src/App.tsx                           # Frontend update button rendering
+src/shared/utils.ts                   # supportsUpdate() helper
+```
+
 ## Harness feeds
 
 A **harness** is a terminal-based AI coding agent — GitHub Copilot CLI, Claude Code, or similar. Harness feeds track active coding sessions as activities, showing their status, context, and providing one-click terminal focus.

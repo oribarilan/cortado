@@ -85,7 +85,10 @@ export function activityKey(feed: FeedSnapshot, activity: Activity): string {
   return `${feed.name}::${feed.feed_type}::${activity.id}`;
 }
 
-/// Returns focus info if this activity supports terminal focus (copilot-session feeds).
+/// Returns true if this activity is an app update (cortado-update feed).
+export function supportsUpdate(feed: FeedSnapshot): boolean {
+  return feed.feed_type === "cortado-update";
+}
 /// Label is built from focus_app and focus_has_tmux fields.
 export function supportsFocus(
   feed: FeedSnapshot,

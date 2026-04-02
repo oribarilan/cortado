@@ -24,6 +24,9 @@ Push a tag matching `v*` (e.g., `v0.3.0`). See `CONTRIBUTING.md` for the full re
 The release includes:
 
 - `Cortado_X.Y.Z_aarch64.dmg` — signed, notarized macOS Apple Silicon disk image
+- `Cortado.app.tar.gz` — compressed app bundle for Tauri updater
+- `Cortado.app.tar.gz.sig` — Ed25519 signature for updater verification
+- `latest.json` — Tauri updater endpoint (version, platform URL, signature, release notes)
 
 ## Required GitHub Actions secrets
 
@@ -36,6 +39,8 @@ The release includes:
 | `APPLE_API_KEY` | App Store Connect API key ID |
 | `APPLE_API_KEY_PATH` | Base64-encoded `.p8` private key file |
 | `KEYCHAIN_PASSWORD` | Any strong password for the CI-only temporary keychain |
+| `TAURI_SIGNING_PRIVATE_KEY` | Ed25519 private key for Tauri updater artifact signing |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password for the Tauri signing key (optional) |
 
 ## Runner
 
@@ -43,4 +48,4 @@ macOS ARM (`macos-latest`) — same as CI.
 
 ## Future additions (US-distribution-part2)
 
-- Tauri updater artifacts (`.app.tar.gz`, `.app.tar.gz.sig`, `latest.json`)
+- ~~Tauri updater artifacts (`.app.tar.gz`, `.app.tar.gz.sig`, `latest.json`)~~ Done — updater artifacts are now produced and uploaded alongside the DMG.

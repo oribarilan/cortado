@@ -6,7 +6,7 @@ status: pending
 
 ## Theme
 
-In-app auto-update pipeline for Cortado: install script for first-time setup, Tauri updater for subsequent updates, and a built-in feed to surface update availability.
+In-app auto-update pipeline for Cortado: Tauri updater for seamless updates, and a built-in feed to surface update availability.
 
 ## Prerequisites
 
@@ -15,25 +15,22 @@ In-app auto-update pipeline for Cortado: install script for first-time setup, Ta
 ## Context
 
 - **Current state (after Part 1):** Users download a signed, notarized DMG from GitHub Releases and install manually. No auto-update mechanism.
-- **Target:** Users can install Cortado via a one-liner (`curl | bash`), the app knows when a new version is available (via a built-in feed), and Tauri's updater plugin handles the actual update.
+- **Target:** The app knows when a new version is available (via a built-in feed), and Tauri's updater plugin handles the actual update download, verification, and installation.
 - **Tauri updater:** Tauri has a built-in `tauri-plugin-updater` that checks a `latest.json` endpoint (e.g., on GitHub Releases), verifies cryptographic signatures, downloads the `.app.tar.gz` bundle, and replaces the running app. It requires a signing keypair generated via `tauri signer generate`.
 
 ## Sequencing
 
 ```
-01-install-script  curl | bash install script
-    |
-02-update-feed     Built-in update awareness feed (Tauri updater + activity feed)
+01-update-feed     Built-in update awareness feed (Tauri updater + activity feed)
 ```
 
-Task 01 can technically be done independently, but 02 depends on updater infrastructure (signing, `latest.json`) which builds on the CD pipeline from Part 1.
+Single task. Depends on updater infrastructure (signing, `latest.json`) which builds on the CD pipeline from Part 1.
 
 ## Tasks
 
 | # | Task | Description |
 |---|------|-------------|
-| 01 | Install script | `curl -fsSL <raw-github-url>/install \| bash` — detect arch, download from GitHub Releases, install to `~/Applications/`. |
-| 02 | Update awareness feed | Built-in Cortado feed using Tauri updater plugin. Checks `latest.json`, surfaces "v0.X.0 available" as an activity. User clicks to install. Always visible in tray and panel. |
+| 01 | Update awareness feed | Built-in Cortado feed using Tauri updater plugin. Checks `latest.json`, surfaces "v0.X.0 available" as an activity. User clicks to install. Always visible in tray and panel. |
 
 ## Cross-cutting notes
 
@@ -61,9 +58,6 @@ Task 01 can technically be done independently, but 02 depends on updater infrast
 - Expanding the activity shows release notes; an action triggers the update.
 
 ### Install script considerations
-- Pattern: `curl -fsSL <url> | bash` (same as opencode.ai).
-- Repo: `oribarilan/cortado` on GitHub.
-- Script detects OS (macOS only for now) and arch (aarch64 only for now, but future-proof for x86_64).
-- Downloads `.app.tar.gz` from GitHub Releases, extracts to `~/Applications/Cortado.app`.
-- First-time install only — subsequent updates handled by the Tauri updater plugin in-app.
-- The updater replaces the `.app` in-place wherever it's running from (user may move it to `/Applications/`).
+- Removed from scope — not implementing `curl | bash` install script.
+- First-time install remains manual (DMG from GitHub Releases).
+- The updater handles all subsequent updates in-app.

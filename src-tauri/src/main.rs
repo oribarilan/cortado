@@ -22,6 +22,7 @@ use tauri::{Emitter, Manager};
 use crate::app_settings::{load_settings, AppSettingsState};
 use crate::feed::{
     config::{self, ConfigChangeTracker},
+    cortado_update::CortadoUpdateFeed,
     load_feed_registry,
     runtime::NotificationContext,
     BackgroundPoller, FeedSnapshotCache, RegistryBuildMode, StatusKind,
@@ -53,10 +54,13 @@ fn main() {
         .map(|c| (c.name.clone(), c.notify.unwrap_or(true)))
         .collect();
 
-    let feed_registry = Arc::new(
-        load_feed_registry(RegistryBuildMode::Tolerant)
-            .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}")),
-    );
+    let mut feed_registry = load_feed_registry(RegistryBuildMode::Tolerant)
+        .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}"));
+
+    // Built-in feeds (always registered, not user-configured).
+    feed_registry.register(Arc::new(CortadoUpdateFeed::new()));
+
+    let feed_registry = Arc::new(feed_registry);
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
     let poller = BackgroundPoller::new(feed_cache.clone());
     let config_tracker = Arc::new(
@@ -82,6 +86,7 @@ fn main() {
             None,
         ))
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
@@ -114,7 +119,8 @@ fn main() {
             command::set_global_hotkey,
             command::focus_session,
             command::get_focus_capabilities,
-            command::is_dev_mode
+            command::is_dev_mode,
+            command::install_update
         ])
         .setup({
             let feed_registry = feed_registry.clone();

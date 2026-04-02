@@ -95,6 +95,7 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | `ado-pr` | `"120s"` |
 | `shell` | `"30s"` |
 | `copilot-session` | `"30s"` |
+| `cortado-update` | `"6h"` (built-in, not user-configured) |
 
 Intervals use duration strings parsed by `jiff` (for example: `"30s"`, `"5m"`, `"1.5m"`, `"2h"`). Integer seconds are not supported.
 

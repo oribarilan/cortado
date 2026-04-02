@@ -18,6 +18,7 @@ use self::{
 pub mod ado_pr;
 pub mod concurrent;
 pub mod config;
+pub mod cortado_update;
 pub mod dependency;
 pub mod field_overrides;
 pub mod github_actions;

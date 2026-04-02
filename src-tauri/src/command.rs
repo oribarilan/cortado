@@ -238,3 +238,28 @@ pub fn get_focus_capabilities() -> terminal_focus::FocusCapabilities {
 pub fn is_dev_mode() -> bool {
     crate::app_env::is_dev()
 }
+
+/// Downloads and installs an available Cortado update, then restarts the app.
+#[tauri::command]
+pub async fn install_update(app_handle: AppHandle) -> Result<(), String> {
+    use tauri_plugin_updater::UpdaterExt;
+
+    let update = app_handle
+        .updater()
+        .map_err(|e| format!("updater not available: {e}"))?
+        .check()
+        .await
+        .map_err(|e| format!("update check failed: {e}"))?;
+
+    let update = match update {
+        Some(u) => u,
+        None => return Err("no update available".to_string()),
+    };
+
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| format!("update install failed: {e}"))?;
+
+    app_handle.restart();
+}

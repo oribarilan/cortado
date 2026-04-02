@@ -11,6 +11,7 @@ import {
   highestStatusField,
   supportsOpen,
   supportsFocus,
+  supportsUpdate,
   formatFieldValue,
   activityKey,
 } from "./shared/utils";
@@ -86,6 +87,19 @@ function App() {
       setLoadError(null);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
+    }
+  }, []);
+
+  const [installing, setInstalling] = useState(false);
+
+  const installUpdate = useCallback(async () => {
+    setInstalling(true);
+    setLoadError(null);
+    try {
+      await invoke("install_update");
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
+      setInstalling(false);
     }
   }, []);
 
@@ -241,6 +255,7 @@ function App() {
                         const firstStatus = highestStatusField(activity);
                         const openUrl = supportsOpen(activity);
                         const focus = supportsFocus(feed, activity);
+                        const isUpdate = supportsUpdate(feed);
                         const canOpen = openUrl || focus;
 
                         return (
@@ -268,7 +283,17 @@ function App() {
                             <div className="detail-region" role="region" aria-label={`${activity.title} details`}>
                               <div className="detail-inner">
                                 <div className="detail-body">
-                                  {canOpen ? (
+                                  {isUpdate ? (
+                                    <button
+                                      className="open-activity update-action"
+                                      onClick={() => {
+                                        void installUpdate();
+                                      }}
+                                      disabled={installing}
+                                    >
+                                      {installing ? "Installing..." : "↗ Install update"}
+                                    </button>
+                                  ) : canOpen ? (
                                     <button
                                       className="open-activity"
                                       onClick={() => {
