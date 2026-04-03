@@ -82,8 +82,9 @@ function EmptyState() {
           <div className="ms-empty-icon">☕</div>
           <div className="ms-empty-heading">Welcome to Cortado</div>
           <div className="ms-empty-body">
-            A feed tracks a data source and surfaces its activities
-            — PRs, CI runs, endpoints — in your menubar.
+            A feed tracks a data source and surfaces its activities,
+            like PRs, CI runs, and endpoints, so you can check their
+            status at a glance.
           </div>
           <button className="ms-empty-cta" onClick={() => openSettings()}>
             + Add your first feed
