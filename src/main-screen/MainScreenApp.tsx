@@ -14,6 +14,17 @@ import {
   activityKey,
 } from "../shared/utils";
 
+type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "shell" | "copilot-session";
+
+const EMPTY_STATE_FEED_TYPES: { feedType: FeedType; name: string; description: string; icon: string }[] = [
+  { feedType: "github-pr", name: "GitHub PR", description: "Review status, checks, mergeability", icon: "\u2299" },
+  { feedType: "github-actions", name: "GitHub Actions", description: "CI/CD workflow runs", icon: "\u27F3" },
+  { feedType: "ado-pr", name: "Azure DevOps PR", description: "ADO pull requests", icon: "\u2B21" },
+  { feedType: "http-health", name: "HTTP Health", description: "Endpoint availability and response time", icon: "\u2B22" },
+  { feedType: "shell", name: "Shell", description: "Any command -- your escape hatch", icon: "\u25B8" },
+  { feedType: "copilot-session", name: "Copilot Session", description: "Active coding agent sessions", icon: "\u25CE" },
+];
+
 type AppSettings = {
   panel: { show_priority_section: boolean };
 };
@@ -64,6 +75,57 @@ function buildFlatList(
   }
 
   return { items: [...priorityItems, ...feedItems], priorityItems, feedItems };
+}
+
+function EmptyState() {
+  const openSettings = (feedType?: FeedType) => {
+    invoke("open_settings", {
+      section: "feeds",
+      feedType: feedType ?? null,
+    }).catch(console.error);
+  };
+
+  return (
+    <div className="ms-split">
+      <div className="ms-list ms-empty-list">
+        <div className="ms-empty-welcome">
+          <div className="ms-empty-icon">☕</div>
+          <div className="ms-empty-heading">Welcome to Cortado</div>
+          <div className="ms-empty-body">
+            A feed tracks a data source and surfaces its activities
+            — PRs, CI runs, endpoints — in your menubar.
+          </div>
+          <button className="ms-empty-cta" onClick={() => openSettings()}>
+            + Add your first feed
+          </button>
+          <div className="ms-empty-secondary">
+            or edit ~/.config/cortado/feeds.toml
+          </div>
+          <div className="ms-empty-hotkey-hint">
+            <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Space</kbd> to toggle this panel
+          </div>
+        </div>
+      </div>
+      <div className="ms-detail ms-empty-detail">
+        <div className="ms-empty-types">
+          <div className="ms-empty-types-header">Feed types</div>
+          {EMPTY_STATE_FEED_TYPES.map((ft) => (
+            <button
+              key={ft.feedType}
+              className="ms-empty-type-card"
+              onClick={() => openSettings(ft.feedType)}
+            >
+              <span className="ms-empty-type-icon">{ft.icon}</span>
+              <div>
+                <div className="ms-empty-type-name">{ft.name}</div>
+                <div className="ms-empty-type-desc">{ft.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function DetailPane({ item }: { item: ListItem | null }) {
@@ -320,6 +382,9 @@ function MainScreenApp() {
   return (
     <div className="main-screen-root" ref={rootRef}>
       {isDev ? <div className="dev-badge">DEV</div> : null}
+      {!loading && feeds.length === 0 ? (
+        <EmptyState />
+      ) : (
       <div className="ms-split">
         {/* List pane */}
         <div className="ms-list" ref={listRef}>
@@ -330,10 +395,6 @@ function MainScreenApp() {
               <div className="ms-skel-row stagger-2"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "50%" }} /></div>
               <div className="ms-skel-row stagger-3"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "72%" }} /></div>
               <div className="ms-skel-row stagger-4"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "58%" }} /></div>
-            </div>
-          ) : feeds.length === 0 ? (
-            <div className="ms-empty-state">
-              No feeds configured. Add feeds in Settings.
             </div>
           ) : !seeded && flatList.length === 0 ? (
             <div className="ms-loading-state">
@@ -428,6 +489,7 @@ function MainScreenApp() {
         {/* Detail pane */}
         <DetailPane item={focusedItem} />
       </div>
+      )}
 
       {/* Footer */}
       <footer className="ms-footer">
