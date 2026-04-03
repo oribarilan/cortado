@@ -536,20 +536,20 @@ mod tests {
         let raw = r#"
 [[feed]]
 name = "Silent feed"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 notify = false
 
 [[feed]]
 name = "Loud feed"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 notify = true
 
 [[feed]]
 name = "Default feed"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 "#;
 
         let configs =

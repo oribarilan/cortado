@@ -453,6 +453,17 @@ body,
   line-height: 1.4;
 }
 
+.ms-empty-type-more .ms-empty-type-icon {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  letter-spacing: 0.1em;
+}
+
+.ms-empty-type-more .ms-empty-type-name {
+  color: var(--text-secondary);
+}
+
 /* ── Footer ────────────────────────────────────── */
 
 .ms-footer {

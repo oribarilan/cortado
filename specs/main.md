@@ -31,7 +31,7 @@ A **Feed** is the core extensibility unit. Each feed type:
 2. Implements a **poll** method that discovers/updates activities.
 3. Is configured via the user's config file.
 
-Feed types ship as curated implementations in Rust. There is no external plugin system — extensibility comes from the `shell` feed type, which lets users run arbitrary commands.
+Feed types ship as curated implementations in Rust. There is no external plugin system.
 
 ### Feed trait contract
 
@@ -93,7 +93,6 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 |-----------|-----------------|
 | `github-pr` | `"120s"` |
 | `ado-pr` | `"120s"` |
-| `shell` | `"30s"` |
 | `copilot-session` | `"30s"` |
 | `cortado-update` | `"6h"` (built-in, not user-configured) |
 
@@ -143,7 +142,6 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | `github-actions` | CI workflow runs per repo | status (status), branch (text), workflow (text), event (text) |
 | `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
 | `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
-| `shell` | Single activity (the command output) | User-defined |
 | `copilot-session` | Active GitHub Copilot CLI sessions | status (status), repo (text), branch (text) |
 
 Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.
@@ -196,18 +194,12 @@ method = "GET"             # Optional: GET (default) or HEAD
 timeout = "10s"            # Optional: per-request timeout (default: 10s)
 expected_status = 200      # Optional: expected HTTP status code (default: 200)
 interval = "60s"
-
-[[feed]]
-name = "Disk usage"
-type = "shell"
-command = "df -h / | tail -1 | awk '{print $5}'"
-interval = "30s"
 ```
 
 ### Config rules
 
 - `name` and `type` are required on every feed.
-- Type-specific fields (e.g., `repo`, `url`, `command`) are flat, not nested.
+- Type-specific fields (e.g., `repo`, `url`) are flat, not nested.
 - PR feed types support optional `user` author filter values:
   - `github-pr`: default `@me` when omitted; accepts GitHub login or `@me`
   - `ado-pr`: default `me` when omitted; accepts creator identity (prefer email/UPN) or `me`

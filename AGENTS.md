@@ -172,7 +172,6 @@ src-tauri/               # Backend (Rust + Tauri)
       mod.rs             # Core types, Feed trait, registry
       config.rs          # TOML config parsing
       github_pr.rs       # GitHub PR feed implementation
-      shell.rs           # Shell feed implementation
 
 specs/                   # App specification
   main.md                # Main spec (terminology, architecture, config format)

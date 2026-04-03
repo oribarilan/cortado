@@ -31,11 +31,6 @@ impl CommandInvocation {
         }
     }
 
-    /// Creates a shell invocation (`sh -c <command>`).
-    pub fn shell(command: impl Into<String>, timeout: Duration) -> Self {
-        Self::new("sh", ["-c".to_string(), command.into()], timeout)
-    }
-
     /// Returns a human-readable representation of the command.
     pub fn display(&self) -> String {
         let mut parts = Vec::with_capacity(self.args.len() + 1);
@@ -176,14 +171,6 @@ mod tests {
         assert_eq!(inv.program, "git");
         assert_eq!(inv.args, vec!["status", "--short"]);
         assert_eq!(inv.timeout, Duration::from_secs(5));
-    }
-
-    #[test]
-    fn command_invocation_shell_wraps_in_sh_c() {
-        let inv = CommandInvocation::shell("echo hello", Duration::from_secs(10));
-        assert_eq!(inv.program, "sh");
-        assert_eq!(inv.args, vec!["-c", "echo hello"]);
-        assert_eq!(inv.timeout, Duration::from_secs(10));
     }
 
     #[test]

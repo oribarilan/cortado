@@ -12,7 +12,6 @@ use self::{
     github_pr::GithubPrFeed,
     harness::{copilot::CopilotProvider, feed::HarnessFeed},
     http_health::HttpHealthFeed,
-    shell::ShellFeed,
 };
 
 pub mod ado_pr;
@@ -28,7 +27,6 @@ pub mod harness;
 pub mod http_health;
 pub mod process;
 pub mod runtime;
-pub mod shell;
 
 pub use runtime::{BackgroundPoller, FeedSnapshotCache};
 
@@ -48,7 +46,6 @@ pub enum FieldType {
     Text,
     Status,
     Number,
-    Url,
 }
 
 /// Semantic status indicating who needs to act next.
@@ -138,7 +135,6 @@ pub enum FieldValue {
     Text { value: String },
     Status { value: String, kind: StatusKind },
     Number { value: f64 },
-    Url { value: String },
 }
 
 impl FieldValue {
@@ -148,16 +144,13 @@ impl FieldValue {
             FieldValue::Text { .. } => "text",
             FieldValue::Status { .. } => "status",
             FieldValue::Number { .. } => "number",
-            FieldValue::Url { .. } => "url",
         }
     }
 
     /// Returns the display-friendly value string.
     pub fn display_value(&self) -> String {
         match self {
-            FieldValue::Text { value }
-            | FieldValue::Status { value, .. }
-            | FieldValue::Url { value } => value.clone(),
+            FieldValue::Text { value } | FieldValue::Status { value, .. } => value.clone(),
             FieldValue::Number { value } => {
                 if value.fract() == 0.0 {
                     format!("{}", *value as i64)
@@ -369,7 +362,6 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
             GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
         "ado-pr" => AdoPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
-        "shell" => ShellFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
         "http-health" => {
             HttpHealthFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
@@ -505,13 +497,6 @@ mod tests {
             "status"
         );
         assert_eq!(FieldValue::Number { value: 1.0 }.field_type(), "number");
-        assert_eq!(
-            FieldValue::Url {
-                value: "https://x.com".to_string()
-            }
-            .field_type(),
-            "url"
-        );
     }
 
     #[test]
@@ -555,14 +540,6 @@ mod tests {
         assert_eq!(fv.display_value(), "-7.50");
     }
 
-    #[test]
-    fn display_value_url_returns_clone() {
-        let fv = FieldValue::Url {
-            value: "https://example.com".to_string(),
-        };
-        assert_eq!(fv.display_value(), "https://example.com");
-    }
-
     // --- FeedRegistry tests ---
 
     #[test]
@@ -583,7 +560,7 @@ mod tests {
         let mut registry = FeedRegistry::new();
         registry.register_error(
             "bad-feed".to_string(),
-            "shell".to_string(),
+            "test".to_string(),
             "missing command".to_string(),
         );
 
@@ -592,7 +569,7 @@ mod tests {
         let snapshots = registry.initial_snapshots();
         assert_eq!(snapshots.len(), 1);
         assert_eq!(snapshots[0].name, "bad-feed");
-        assert_eq!(snapshots[0].feed_type, "shell");
+        assert_eq!(snapshots[0].feed_type, "test");
         assert_eq!(snapshots[0].error.as_deref(), Some("missing command"));
         assert!(snapshots[0].activities.is_empty());
     }
@@ -632,11 +609,7 @@ mod tests {
 
         let mut registry = FeedRegistry::new();
         registry.register(Arc::new(DummyFeed));
-        registry.register_error(
-            "broken".to_string(),
-            "shell".to_string(),
-            "oops".to_string(),
-        );
+        registry.register_error("broken".to_string(), "test".to_string(), "oops".to_string());
 
         let snapshots = registry.initial_snapshots();
         assert_eq!(snapshots.len(), 2);
@@ -657,15 +630,15 @@ mod tests {
         let configs = vec![
             FeedConfig {
                 name: "Good".to_string(),
-                feed_type: "shell".to_string(),
+                feed_type: "http-health".to_string(),
                 interval: None,
                 retain: None,
                 notify: None,
                 type_specific: {
                     let mut t = Table::new();
                     t.insert(
-                        "command".to_string(),
-                        toml::Value::String("echo hi".to_string()),
+                        "url".to_string(),
+                        toml::Value::String("https://example.com/health".to_string()),
                     );
                     t
                 },
@@ -792,7 +765,7 @@ mod tests {
     fn feeds_rollup_errored_feed_contributes_idle() {
         let snapshot = FeedSnapshot {
             name: "broken".to_string(),
-            feed_type: "shell".to_string(),
+            feed_type: "test".to_string(),
             activities: Vec::new(),
             provided_fields: Vec::new(),
             error: Some("oops".to_string()),

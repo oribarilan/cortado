@@ -48,7 +48,6 @@ See `.todo/backlog/semantic-status-types.md` for the full design discussion, sce
 - `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`, `rollup_for_activity`, `rollup_for_feeds`
 - `src-tauri/src/feed/github_pr.rs` — GitHub PR value→kind mappings
 - `src-tauri/src/feed/ado_pr.rs` — ADO PR value→kind mappings
-- `src-tauri/src/feed/shell.rs` — Shell feed keyword inference
 - `src-tauri/src/feed/harness/` — Harness session status inference (working, question, approval, idle)
 - `src/App.tsx` — `kindPriority`, `deriveActivityKind`, rendering
 - `src/styles.css` — Status kind colors, pulse animation, theme variables

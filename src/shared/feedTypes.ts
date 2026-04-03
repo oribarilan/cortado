@@ -4,7 +4,6 @@ export type FeedType =
   | "github-actions"
   | "ado-pr"
   | "http-health"
-  | "shell"
   | "copilot-session";
 
 /// A single feed type within a catalog provider.
@@ -14,6 +13,7 @@ export type CatalogFeedType = {
   description: string;
   icon: string;
   defaultInterval: string;
+  popular?: boolean;
 };
 
 /// A provider that groups one or more feed types (e.g., "GitHub" has PR + Actions).
@@ -37,6 +37,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         description: "Track PRs with review status, checks, and mergeability",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
         defaultInterval: "2m",
+        popular: true,
       },
       {
         feedType: "github-actions",
@@ -44,6 +45,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         description: "Monitor CI/CD workflow run status",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
         defaultInterval: "2m",
+        popular: true,
       },
     ],
   },
@@ -72,20 +74,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         description: "Monitor endpoint availability and response time",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
         defaultInterval: "1m",
-      },
-    ],
-  },
-  {
-    id: "shell",
-    name: "Shell",
-    icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
-    types: [
-      {
-        feedType: "shell",
-        name: "Custom Command",
-        description: "Run any shell command and track its output",
-        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
-        defaultInterval: "30s",
+        popular: true,
       },
     ],
   },
@@ -107,3 +96,6 @@ export const FEED_CATALOG: CatalogProvider[] = [
 
 /// Flat list of all feed types across all providers.
 export const ALL_FEED_TYPES: CatalogFeedType[] = FEED_CATALOG.flatMap((p) => p.types);
+
+/// Feed types marked as popular, for use in the empty state.
+export const POPULAR_FEED_TYPES: CatalogFeedType[] = ALL_FEED_TYPES.filter((t) => t.popular);

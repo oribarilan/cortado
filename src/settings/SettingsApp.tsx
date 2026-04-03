@@ -59,7 +59,6 @@ const FEED_TYPE_LABELS: Record<FeedType, string> = {
   "github-actions": "GitHub Actions",
   "ado-pr": "Azure DevOps PR",
   "http-health": "HTTP Health Check",
-  "shell": "Shell",
   "copilot-session": "Copilot Session",
 };
 
@@ -83,11 +82,6 @@ const FEED_TYPE_FIELDS: Record<FeedType, { key: string; label: string; placehold
     { key: "method", label: "Method", placeholder: "GET", hint: "GET or HEAD (default: GET)", mono: true },
     { key: "expected_status", label: "Expected status", placeholder: "200", hint: "Expected HTTP status code (default: 200)", mono: true },
     { key: "timeout", label: "Timeout", placeholder: "10s", hint: "Request timeout (default: 10s)", mono: true },
-  ],
-  "shell": [
-    { key: "command", label: "Command", placeholder: "df -h /", hint: "Executed via sh -c", mono: true, required: true },
-    { key: "field_name", label: "Field name", placeholder: "output", hint: "Name for the output field (default: output)", mono: true },
-    { key: "field_type", label: "Field type", placeholder: "text", hint: "text, status, number, or url (default: text)", mono: true },
   ],
   "copilot-session": [],
 };
@@ -233,13 +227,6 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
       errors.url = "Must be an https:// URL";
     } else if (url && !url.includes("/_git/")) {
       errors.url = "URL must contain /_git/ (e.g., https://dev.azure.com/org/project/_git/repo)";
-    }
-  }
-
-  if (feed.type === "shell") {
-    const fieldType = String(feed.type_specific.field_type ?? "").trim();
-    if (fieldType && !["text", "status", "number", "url"].includes(fieldType)) {
-      errors.field_type = "Must be text, status, number, or url";
     }
   }
 

@@ -388,7 +388,7 @@ mod tests {
     async fn build_snapshot_for_feed_keeps_stale_activities_on_error() {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
-            feed_type: "shell".to_string(),
+            feed_type: "test".to_string(),
             interval: Duration::from_secs(30),
             retain_for: None,
             outcomes: Mutex::new(vec![Err(anyhow!("poll failed"))]),
@@ -401,7 +401,7 @@ mod tests {
         cache
             .upsert(FeedSnapshot {
                 name: "My feed".to_string(),
-                feed_type: "shell".to_string(),
+                feed_type: "test".to_string(),
                 activities: vec![activity("1", "Old activity")],
                 provided_fields: Vec::new(),
                 error: None,
@@ -423,7 +423,7 @@ mod tests {
         cache
             .upsert(FeedSnapshot {
                 name: "A".to_string(),
-                feed_type: "shell".to_string(),
+                feed_type: "test".to_string(),
                 activities: Vec::new(),
                 provided_fields: Vec::new(),
                 error: None,
@@ -434,7 +434,7 @@ mod tests {
         cache
             .upsert(FeedSnapshot {
                 name: "A".to_string(),
-                feed_type: "shell".to_string(),
+                feed_type: "test".to_string(),
                 activities: vec![activity("2", "Updated")],
                 provided_fields: Vec::new(),
                 error: None,
@@ -453,7 +453,7 @@ mod tests {
         let mut registry = FeedRegistry::new();
         registry.register_error(
             "Broken".to_string(),
-            "shell".to_string(),
+            "test".to_string(),
             "invalid config".to_string(),
         );
 
@@ -469,7 +469,7 @@ mod tests {
     async fn build_snapshot_for_feed_success_replaces_activities_and_clears_error() {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
-            feed_type: "shell".to_string(),
+            feed_type: "test".to_string(),
             interval: Duration::from_secs(30),
             retain_for: None,
             outcomes: Mutex::new(vec![Ok(vec![activity("new", "Fresh")])]),
@@ -490,7 +490,7 @@ mod tests {
     async fn refresh_now_updates_cache_and_notifies() {
         let feed = Arc::new(SequencedFeed {
             name: "My feed".to_string(),
-            feed_type: "shell".to_string(),
+            feed_type: "test".to_string(),
             interval: Duration::from_secs(30),
             retain_for: None,
             outcomes: Mutex::new(vec![Ok(vec![activity("fresh-1", "Fresh activity")])]),
@@ -511,7 +511,7 @@ mod tests {
         let snapshots = cache.list().await;
         let snapshot = snapshots
             .iter()
-            .find(|snapshot| snapshot.name == "My feed" && snapshot.feed_type == "shell")
+            .find(|snapshot| snapshot.name == "My feed" && snapshot.feed_type == "test")
             .expect("snapshot should exist");
 
         assert_eq!(snapshot.activities.len(), 1);

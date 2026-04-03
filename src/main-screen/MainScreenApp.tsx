@@ -5,7 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "../shared/types";
 import { useAppearance } from "../shared/useAppearance";
-import { ALL_FEED_TYPES, type FeedType } from "../shared/feedTypes";
+import { POPULAR_FEED_TYPES, type FeedType } from "../shared/feedTypes";
 import {
   deriveActivityKind,
   highestStatusField,
@@ -100,7 +100,7 @@ function EmptyState() {
       <div className="ms-detail ms-empty-detail">
         <div className="ms-empty-types">
           <div className="ms-empty-types-header">Feed types</div>
-          {ALL_FEED_TYPES.map((ft) => (
+          {POPULAR_FEED_TYPES.map((ft) => (
             <button
               key={ft.feedType}
               className="ms-empty-type-card"
@@ -113,6 +113,15 @@ function EmptyState() {
               </div>
             </button>
           ))}
+          <button
+            className="ms-empty-type-card ms-empty-type-more"
+            onClick={() => openSettings()}
+          >
+            <span className="ms-empty-type-icon">...</span>
+            <div>
+              <div className="ms-empty-type-name">See all feed types</div>
+            </div>
+          </button>
         </div>
       </div>
     </div>

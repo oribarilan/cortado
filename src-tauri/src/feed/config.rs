@@ -306,14 +306,10 @@ retain = "2h"
 visible = false
 label = "Tags"
 
-[[feed]]
-name = "Disk usage"
-type = "shell"
-command = "df -h /"
 "#;
 
         let configs = parse_feeds_config_toml(raw).expect("valid config should parse");
-        assert_eq!(configs.len(), 2);
+        assert_eq!(configs.len(), 1);
 
         let github = &configs[0];
         assert_eq!(github.name, "My PRs");
@@ -334,20 +330,14 @@ command = "df -h /"
             .expect("labels override should exist");
         assert_eq!(labels_override.visible, Some(false));
         assert_eq!(labels_override.label.as_deref(), Some("Tags"));
-
-        let shell = &configs[1];
-        assert_eq!(shell.name, "Disk usage");
-        assert_eq!(shell.feed_type, "shell");
-        assert_eq!(shell.interval, None);
-        assert_eq!(shell.retain, None);
     }
 
     #[test]
     fn parse_errors_on_missing_required_keys() {
         let missing_name = r#"
 [[feed]]
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 "#;
 
         let error = match parse_feeds_config_toml(missing_name) {
@@ -361,7 +351,7 @@ command = "echo hi"
         let missing_type = r#"
 [[feed]]
 name = "No type"
-command = "echo hi"
+url = "https://example.com"
 "#;
 
         let error = match parse_feeds_config_toml(missing_type) {
@@ -378,8 +368,8 @@ command = "echo hi"
         let non_string_interval = r#"
 [[feed]]
 name = "Bad interval"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 interval = 60
 "#;
 
@@ -394,8 +384,8 @@ interval = 60
         let invalid_interval = r#"
 [[feed]]
 name = "Invalid interval"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 interval = "fast"
 "#;
 
@@ -410,8 +400,8 @@ interval = "fast"
         let non_positive_interval = r#"
 [[feed]]
 name = "Zero interval"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 interval = "0s"
 "#;
 
@@ -426,8 +416,8 @@ interval = "0s"
         let invalid_retain = r#"
 [[feed]]
 name = "Bad retain"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 interval = "30s"
 retain = "-1s"
 "#;
@@ -446,8 +436,8 @@ retain = "-1s"
         let raw = r#"
 [[feed]]
 name = "Dup"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 
 [[feed]]
 name = "Dup"
@@ -493,8 +483,8 @@ repo = "personal/cortado"
             &path,
             r#"[[feed]]
 name = "X"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 "#,
         )
         .expect("write baseline config");
@@ -511,8 +501,8 @@ command = "echo hi"
             &path,
             r#"[[feed]]
 name = "X"
-type = "shell"
-command = "echo changed"
+type = "http-health"
+url = "https://changed.example.com"
 "#,
         )
         .expect("write modified config");
@@ -542,8 +532,8 @@ command = "echo changed"
             &path,
             r#"[[feed]]
 name = "Y"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 "#,
         )
         .expect("create config file");
@@ -582,8 +572,8 @@ command = "echo hi"
         let raw = r#"
 [[feed]]
 name = "Bad notify"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 notify = "yes"
 "#;
         let err = parse_feeds_config_toml(raw).expect_err("non-bool notify should fail");
@@ -595,8 +585,8 @@ notify = "yes"
         let raw = r#"
 [[feed]]
 name = "Bad override"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 
 [feed.fields]
 output = "not a table"
@@ -610,8 +600,8 @@ output = "not a table"
         let raw = r#"
 [[feed]]
 name = "Bad visible"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 
 [feed.fields.output]
 visible = "no"
@@ -625,8 +615,8 @@ visible = "no"
         let raw = r#"
 [[feed]]
 name = "Bad label"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 
 [feed.fields.output]
 label = 42
@@ -640,8 +630,8 @@ label = 42
         let raw = r#"
 [[feed]]
 name = "Full"
-type = "shell"
-command = "echo hi"
+type = "http-health"
+url = "https://example.com"
 interval = "5m"
 retain = "1h"
 notify = false

@@ -112,14 +112,7 @@ fn extract_activity_url(activity: &crate::feed::Activity) -> Option<String> {
         return Some(activity.id.clone());
     }
 
-    activity.fields.iter().find_map(|f| match &f.value {
-        crate::feed::FieldValue::Url { value }
-            if value.starts_with("https://") || value.starts_with("http://") =>
-        {
-            Some(value.clone())
-        }
-        _ => None,
-    })
+    None
 }
 
 #[cfg(test)]
@@ -338,40 +331,9 @@ mod tests {
     }
 
     #[test]
-    fn extracts_url_from_url_field_when_id_is_not_url() {
-        let a = Activity {
-            id: "shell:disk-check".to_string(),
-            title: "Disk check".to_string(),
-            fields: vec![
-                Field {
-                    name: "link".to_string(),
-                    label: "Link".to_string(),
-                    value: FieldValue::Url {
-                        value: "https://dashboard.example.com/disk".to_string(),
-                    },
-                },
-                status_field("status", "ok", StatusKind::Idle),
-            ],
-            retained: false,
-            retained_at_unix_ms: None,
-            sort_ts: None,
-        };
-
-        let prev = snapshot("Feed", vec![]);
-        let new = snapshot("Feed", vec![a]);
-
-        let events = detect_changes(&prev, &new);
-        assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0].activity_url.as_deref(),
-            Some("https://dashboard.example.com/disk")
-        );
-    }
-
-    #[test]
     fn no_url_when_id_and_fields_are_not_urls() {
         let a = Activity {
-            id: "shell:test".to_string(),
+            id: "test:check".to_string(),
             title: "Test".to_string(),
             fields: vec![Field {
                 name: "output".to_string(),

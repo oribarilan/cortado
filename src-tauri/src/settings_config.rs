@@ -382,19 +382,22 @@ mod tests {
                 fields: HashMap::new(),
             },
             FeedConfigDto {
-                name: "Deploy".into(),
-                feed_type: "shell".into(),
+                name: "Health".into(),
+                feed_type: "http-health".into(),
                 interval: Some("30s".into()),
                 retain: Some("1h".into()),
                 notify: Some(false),
-                type_specific: [("command".into(), serde_json::json!("./check.sh"))]
-                    .into_iter()
-                    .collect(),
+                type_specific: [(
+                    "url".into(),
+                    serde_json::json!("https://example.com/health"),
+                )]
+                .into_iter()
+                .collect(),
                 fields: [(
                     "status".into(),
                     FieldOverrideDto {
                         visible: Some(true),
-                        label: Some("Deploy Status".into()),
+                        label: Some("Health Status".into()),
                     },
                 )]
                 .into_iter()
@@ -407,7 +410,7 @@ mod tests {
             config::parse_feeds_config_str(&toml_str).expect("generated TOML should parse cleanly");
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0].name, "My PRs");
-        assert_eq!(parsed[1].name, "Deploy");
+        assert_eq!(parsed[1].name, "Health");
         assert_eq!(
             parsed[1]
                 .field_overrides
@@ -415,7 +418,7 @@ mod tests {
                 .unwrap()
                 .label
                 .as_deref(),
-            Some("Deploy Status")
+            Some("Health Status")
         );
     }
 
@@ -500,11 +503,11 @@ mod tests {
     fn dto_to_toml_document_omits_none_fields() {
         let feeds = vec![FeedConfigDto {
             name: "Minimal".into(),
-            feed_type: "shell".into(),
+            feed_type: "http-health".into(),
             interval: None,
             retain: None,
             notify: None,
-            type_specific: [("command".into(), serde_json::json!("echo hi"))]
+            type_specific: [("url".into(), serde_json::json!("https://example.com"))]
                 .into_iter()
                 .collect(),
             fields: HashMap::new(),
@@ -514,7 +517,7 @@ mod tests {
         assert!(!toml_str.contains("interval"));
         assert!(!toml_str.contains("retain"));
         assert!(!toml_str.contains("notify"));
-        assert!(toml_str.contains("echo hi"));
+        assert!(toml_str.contains("https://example.com"));
     }
 
     #[test]

@@ -21,7 +21,7 @@
 Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about — PRs, CI runs, health checks — and glance at their status without leaving your flow.
 
 - **Menubar tray + floating panel** — quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
-- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, shell commands, and Copilot coding sessions
+- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, and Copilot coding sessions
 - **Lightweight** — minimal CPU and memory footprint; stays out of your way
 - **Auto-updates** — checks for new versions and lets you install in one click
 - **Text-based config** — everything is plain TOML under `~/.config/cortado/`, editable through the built-in settings UI or by hand
@@ -46,7 +46,6 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | `github-actions` | CI/CD workflow runs |
 | `ado-pr` | Azure DevOps pull requests |
 | `http-health` | Endpoint availability and response time |
-| `shell` | Any shell command — the escape hatch for custom data sources |
 | `copilot-session` | Active GitHub Copilot coding agent sessions |
 
 <details>
@@ -108,18 +107,6 @@ name = "API"
 type = "http-health"
 url = "https://api.example.com/health"
 interval = "60s"
-```
-
-### `shell`
-
-Run any command. Output maps to a single typed field.
-
-```toml
-[[feed]]
-name = "Disk usage"
-type = "shell"
-command = "df -h / | tail -1"
-interval = "30s"
 ```
 
 ### `copilot-session`
