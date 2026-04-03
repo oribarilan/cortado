@@ -18,7 +18,13 @@
   </a>
 </p>
 
-Cortado is a lightweight app that keeps you in the know. Configure **feeds**, GitHub PRs, CI runs, health checks, etc, and glance at their status without leaving your flow.
+Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about — PRs, CI runs, health checks — and glance at their status without leaving your flow.
+
+- **Menubar tray + floating panel** — quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
+- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, shell commands, and Copilot coding sessions
+- **Lightweight** — minimal CPU and memory footprint; stays out of your way
+- **Auto-updates** — checks for new versions and lets you install in one click
+- **Text-based config** — everything is plain TOML under `~/.config/cortado/`, editable through the built-in settings UI or by hand
 
 ## Install
 
@@ -26,18 +32,13 @@ Download the latest `.dmg` from [Releases](https://github.com/oribarilan/cortado
 
 ## Getting started
 
-Cortado reads feeds from `~/.config/cortado/feeds.toml`. Create the file and add your first feed:
+Launch Cortado and open **Settings** (click the gear icon or press **Cmd+,**). Add your first feed from there — no manual file editing required.
 
-```toml
-[[feed]]
-name = "My PRs"
-type = "github-pr"
-repo = "owner/repo"
-```
+Your feeds appear in the menubar tray and the main panel (toggle with **Cmd+Shift+Space**).
 
-Launch Cortado — your feed appears in the menubar tray and the main panel (toggle with **Cmd+Shift+Space**).
+## Feeds
 
-## Feed types
+A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities** — for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.
 
 | Feed type | What it tracks |
 |-----------|---------------|
@@ -48,16 +49,19 @@ Launch Cortado — your feed appears in the menubar tray and the main panel (tog
 | `shell` | Any shell command — the escape hatch for custom data sources |
 | `copilot-session` | Active GitHub Copilot coding agent sessions |
 
-## Configuration
+<details>
+<summary><strong>Configuration reference</strong></summary>
 
-Each feed is a `[[feed]]` block in `~/.config/cortado/feeds.toml`.
+Feeds are configured through the settings UI, but under the hood everything is stored as TOML in `~/.config/cortado/feeds.toml`. You can edit this file directly if you prefer.
+
+Each feed is a `[[feed]]` block.
 
 ### Shared keys
 
 | Key | Required | Default | Description |
 |-----|----------|---------|-------------|
-| `name` | Yes | — | Display name (must be unique) |
-| `type` | Yes | — | One of the feed types above |
+| `name` | Yes | | Display name (must be unique) |
+| `type` | Yes | | One of the feed types above |
 | `interval` | No | varies | Poll interval (e.g., `"30s"`, `"5m"`) |
 | `retain` | No | off | Keep disappeared activities for this duration |
 
@@ -120,7 +124,7 @@ interval = "30s"
 
 ### `copilot-session`
 
-Discovers active sessions automatically — no config needed beyond the block.
+Discovers active sessions automatically; no config needed beyond the block.
 
 ```toml
 [[feed]]
@@ -142,6 +146,8 @@ repo = "oribarilan/cortado"
 visible = false
 label = "Tags"
 ```
+
+</details>
 
 ## Contributing
 
