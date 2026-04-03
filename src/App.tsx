@@ -228,7 +228,15 @@ function App() {
         ) : null}
 
         {!loading && sortedFeeds.length === 0 ? (
-          <p className="empty-state">No feeds configured. Add a Feed in your <code>feeds.toml</code> config file.</p>
+          <div className="empty-state">
+            <p className="empty-state-text">No feeds configured yet</p>
+            <button
+              className="empty-state-btn"
+              onClick={() => invoke("open_main_screen").catch(console.error)}
+            >
+              Open Cortado to get started
+            </button>
+          </div>
         ) : null}
 
         {!loading && sortedFeeds.length > 0
