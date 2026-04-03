@@ -431,9 +431,10 @@ body,
 }
 
 .ms-empty-type-icon {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
-  text-align: center;
   flex-shrink: 0;
   margin-top: 1px;
   color: var(--text-secondary);
