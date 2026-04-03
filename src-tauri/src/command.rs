@@ -1,7 +1,7 @@
 use std::process::Command;
 use std::sync::Once;
 
-use tauri::{AppHandle, Emitter, Manager, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Listener, Manager, WebviewWindowBuilder};
 use tauri_nspanel::ManagerExt;
 
 use crate::{
@@ -138,12 +138,22 @@ pub fn open_settings(
             section: String,
             feed_type: Option<String>,
         }
-        // Brief delay so the Settings window has time to mount its event listener.
+        let payload = SettingsNavigate { section, feed_type };
+        // Wait for the Settings window to finish loading before emitting.
+        // When freshly created, React needs time to mount and register listeners.
         let handle = app_handle.clone();
-        tauri::async_runtime::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-            let _ = handle.emit("settings-navigate", SettingsNavigate { section, feed_type });
-        });
+        if let Some(window) = handle.get_webview_window("settings") {
+            let payload_clone = payload.clone();
+            let handle_clone = handle.clone();
+            window.once("settings-ready", move |_| {
+                let _ = handle_clone.emit("settings-navigate", payload_clone);
+            });
+            // Also emit after a delay as fallback (window may already be loaded).
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                let _ = handle.emit("settings-navigate", payload);
+            });
+        }
     }
 
     Ok(())

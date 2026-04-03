@@ -306,6 +306,7 @@ body,
 /* ── Empty state ───────────────────────────────── */
 
 .ms-empty-list {
+  display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -389,6 +390,7 @@ body,
 }
 
 .ms-empty-detail {
+  display: flex;
   align-items: flex-start;
   justify-content: flex-start;
 }

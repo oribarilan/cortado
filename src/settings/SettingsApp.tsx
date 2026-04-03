@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
   isPermissionGranted,
@@ -533,6 +533,8 @@ function SettingsApp() {
     isPermissionGranted()
       .then(setNotifPermission)
       .catch(() => setNotifPermission(null));
+
+    emit("settings-ready").catch(() => {});
   }, []);
 
   const loadFeeds = useCallback(async () => {
@@ -916,8 +918,14 @@ function SettingsApp() {
   }, [section, sectionFading, cancelEdit, scheduleAnim]);
 
   // Deep-link: external surfaces can open Settings to a specific section and feed type.
+  const lastNavTimestamp = useRef(0);
   useEffect(() => {
     const unlisten = listen<{ section: string; feed_type?: string }>("settings-navigate", (event) => {
+      // Deduplicate: ignore events within 500ms of each other (ready + fallback timer).
+      const now = Date.now();
+      if (now - lastNavTimestamp.current < 500) return;
+      lastNavTimestamp.current = now;
+
       const { section: target, feed_type } = event.payload;
       const validSections = ["general", "notifications", "feeds", "focus"] as const;
       type Section = typeof validSections[number];
