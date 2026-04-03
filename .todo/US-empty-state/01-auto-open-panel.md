@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Auto-open panel on app launch

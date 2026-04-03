@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Panel empty state UI
