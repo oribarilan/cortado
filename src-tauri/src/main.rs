@@ -182,6 +182,9 @@ fn main() {
                     poller.start(feed_registry);
                 });
 
+                // Auto-open the panel so users see the app immediately on launch.
+                main_screen::show_main_screen_panel(&app_handle);
+
                 Ok(())
             }
         })

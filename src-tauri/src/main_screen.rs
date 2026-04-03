@@ -219,3 +219,23 @@ pub fn toggle_main_screen_panel(app_handle: &tauri::AppHandle) {
     let _ = app_handle.emit("main_screen_panel_will_show", ());
     panel.show();
 }
+
+/// Shows the main screen panel if it is not already visible.
+pub fn show_main_screen_panel(app_handle: &tauri::AppHandle) {
+    let panel = match app_handle.get_webview_panel("main-screen") {
+        Ok(panel) => panel,
+        Err(err) => {
+            eprintln!("cannot show main screen panel: {err:?}");
+            return;
+        }
+    };
+
+    if panel.is_visible() {
+        return;
+    }
+
+    center_on_active_monitor(app_handle);
+
+    let _ = app_handle.emit("main_screen_panel_will_show", ());
+    panel.show();
+}
