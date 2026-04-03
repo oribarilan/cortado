@@ -5,6 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "../shared/types";
 import { useAppearance } from "../shared/useAppearance";
+import { ALL_FEED_TYPES, type FeedType } from "../shared/feedTypes";
 import {
   deriveActivityKind,
   highestStatusField,
@@ -13,23 +14,6 @@ import {
   formatFieldValue,
   activityKey,
 } from "../shared/utils";
-
-type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "shell" | "copilot-session";
-
-const EMPTY_STATE_FEED_TYPES: { feedType: FeedType; name: string; description: string; icon: string }[] = [
-  { feedType: "github-pr", name: "GitHub PR", description: "Review status, checks, mergeability",
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>` },
-  { feedType: "github-actions", name: "GitHub Actions", description: "CI/CD workflow runs",
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>` },
-  { feedType: "ado-pr", name: "Azure DevOps PR", description: "ADO pull requests",
-    icon: `<svg width="16" height="16" viewBox="0 0 18 18" fill="currentColor"><path d="M17 4v10.97l-4 3.03V4.03L7 8.56v8.97L3.63 14.99A1 1 0 0 1 3 14.13V5.73c0-.31.14-.6.38-.79L10 0l7 4z"/></svg>` },
-  { feedType: "http-health", name: "HTTP Health", description: "Endpoint availability and response time",
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>` },
-  { feedType: "shell", name: "Shell", description: "Any command -- your escape hatch",
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>` },
-  { feedType: "copilot-session", name: "Copilot Session", description: "Active coding agent sessions",
-    icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6 2 10.5c0 2.49 1.13 4.71 3 6.24V20l3.5-2C9.62 18.32 10.78 18.5 12 18.5c5.52 0 10-3.98 10-8.5S17.52 2 12 2z"/><circle cx="8.5" cy="10.5" r="1.5"/><circle cx="15.5" cy="10.5" r="1.5"/></svg>` },
-];
 
 type AppSettings = {
   panel: { show_priority_section: boolean };
@@ -115,7 +99,7 @@ function EmptyState() {
       <div className="ms-detail ms-empty-detail">
         <div className="ms-empty-types">
           <div className="ms-empty-types-header">Feed types</div>
-          {EMPTY_STATE_FEED_TYPES.map((ft) => (
+          {ALL_FEED_TYPES.map((ft) => (
             <button
               key={ft.feedType}
               className="ms-empty-type-card"
