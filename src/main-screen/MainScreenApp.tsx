@@ -379,10 +379,14 @@ function MainScreenApp() {
     });
   }, [feeds, feedItems, priorityItems.length]);
 
+  const hasUserFeeds = feeds.some(
+    (f) => !f.hide_when_empty || f.activities.length > 0 || f.error,
+  );
+
   return (
     <div className="main-screen-root" ref={rootRef}>
       {isDev ? <div className="dev-badge">DEV</div> : null}
-      {!loading && feeds.length === 0 ? (
+      {!loading && !hasUserFeeds ? (
         <EmptyState />
       ) : (
       <div className="ms-split">
