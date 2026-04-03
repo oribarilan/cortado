@@ -108,26 +108,43 @@ pub fn quit_app(app_handle: AppHandle) {
 }
 
 #[tauri::command]
-pub fn open_settings(app_handle: AppHandle) -> Result<(), String> {
+pub fn open_settings(
+    app_handle: AppHandle,
+    section: Option<String>,
+    feed_type: Option<String>,
+) -> Result<(), String> {
     hide_all_panels(&app_handle);
     if let Some(window) = app_handle.get_webview_window("settings") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;
-        return Ok(());
+    } else {
+        let config = &app_handle.config().app.windows;
+        let settings_config = config
+            .iter()
+            .find(|w| w.label == "settings")
+            .ok_or_else(|| "settings window config not found".to_string())?;
+
+        let window = WebviewWindowBuilder::from_config(&app_handle, settings_config)
+            .map_err(|e| e.to_string())?
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        let _ = window.center();
     }
 
-    let config = &app_handle.config().app.windows;
-    let settings_config = config
-        .iter()
-        .find(|w| w.label == "settings")
-        .ok_or_else(|| "settings window config not found".to_string())?;
-
-    let window = WebviewWindowBuilder::from_config(&app_handle, settings_config)
-        .map_err(|e| e.to_string())?
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let _ = window.center();
+    if let Some(section) = section {
+        #[derive(Clone, serde::Serialize)]
+        struct SettingsNavigate {
+            section: String,
+            feed_type: Option<String>,
+        }
+        // Brief delay so the Settings window has time to mount its event listener.
+        let handle = app_handle.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            let _ = handle.emit("settings-navigate", SettingsNavigate { section, feed_type });
+        });
+    }
 
     Ok(())
 }

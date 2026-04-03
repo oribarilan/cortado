@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import {
   isPermissionGranted,
@@ -913,6 +914,34 @@ function SettingsApp() {
       setSectionFading(false);
     }, 110); // ~60% of --duration-normal
   }, [section, sectionFading, cancelEdit, scheduleAnim]);
+
+  // Deep-link: external surfaces can open Settings to a specific section and feed type.
+  useEffect(() => {
+    const unlisten = listen<{ section: string; feed_type?: string }>("settings-navigate", (event) => {
+      const { section: target, feed_type } = event.payload;
+      const validSections = ["general", "notifications", "feeds", "focus"] as const;
+      type Section = typeof validSections[number];
+      if (!validSections.includes(target as Section)) return;
+
+      cancelEdit();
+      setSection(target as Section);
+      setSectionFading(false);
+
+      if (target === "feeds" && feed_type) {
+        const catalogType = FEED_CATALOG
+          .flatMap((p) => p.types)
+          .find((t) => t.feedType === feed_type);
+        if (catalogType) {
+          selectFeedType(catalogType);
+        } else {
+          startAdd();
+        }
+      } else if (target === "feeds") {
+        startAdd();
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [cancelEdit, selectFeedType, startAdd]);
 
   const feedTypeFields = editingFeed ? FEED_TYPE_FIELDS[editingFeed.type as FeedType] ?? [] : [];
   const depInfo = editingFeed ? FEED_TYPE_DEPS[editingFeed.type as FeedType] : undefined;

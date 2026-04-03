@@ -63,7 +63,7 @@ fn handle_menu_event(app_handle: &AppHandle, event: MenuEvent) {
             app_handle.exit(0);
         }
         MENU_ID_SETTINGS => {
-            if let Err(err) = command::open_settings(app_handle.clone()) {
+            if let Err(err) = command::open_settings(app_handle.clone(), None, None) {
                 eprintln!("failed opening settings from tray action: {err}");
             }
         }
