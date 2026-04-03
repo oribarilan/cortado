@@ -158,20 +158,31 @@ Any context, decisions, or gotchas.
 
 ```
 src/                     # Frontend (React + TypeScript)
-  App.tsx                # Main UI
+  App.tsx                # Tray panel UI
   main.tsx               # React entry point
-  styles.css             # Panel styles
+  styles.css             # Tray panel styles
+  shared/
+    feedTypes.ts         # Feed type catalog — single source of truth for all feed metadata
+    types.ts             # Shared TypeScript types
+    utils.ts             # Shared utilities
+    tokens.css           # Design tokens
+  main-screen/           # Panel UI (split layout)
+  settings/              # Settings window UI
 
 src-tauri/               # Backend (Rust + Tauri)
   src/
     main.rs              # App entry, Tauri builder
-    command.rs            # Tauri commands (invokable from frontend)
+    command.rs           # Tauri commands (invokable from frontend)
     fns.rs               # Menubar panel logic (NSPanel swizzling)
     tray.rs              # Tray icon setup
-    feed/                # Feed system (being built)
-      mod.rs             # Core types, Feed trait, registry
+    feed/                # Feed system
+      mod.rs             # Core types, Feed trait, registry, feed factories
       config.rs          # TOML config parsing
       github_pr.rs       # GitHub PR feed implementation
+      github_actions.rs  # GitHub Actions feed implementation
+      ado_pr.rs          # Azure DevOps PR feed implementation
+      http_health.rs     # HTTP health check feed implementation
+      harness/           # Harness-based feeds (coding agents)
 
 specs/                   # App specification
   main.md                # Main spec (terminology, architecture, config format)
@@ -185,6 +196,15 @@ specs/                   # App specification
     main.md              # Sprint overview
     NN-task-name.md      # Individual tasks
 ```
+
+### Adding a new feed type
+
+Feed type metadata is centralized. To add a new feed type:
+
+1. **Backend**: Create `src-tauri/src/feed/<type>.rs` implementing the `Feed` trait. Add a match arm in `instantiate_feed()` (or `instantiate_harness_feed()`) in `feed/mod.rs`.
+2. **Frontend**: Add an entry to `FEED_CATALOG` in `src/shared/feedTypes.ts`. This single entry defines the type's name, label, icon, description, default interval, form fields, dependency info, validation rules, and notes. No other frontend files need per-type changes.
+3. **Docs**: Update `README.md` feed types table and config reference. Update `specs/main.md` feed contracts.
+
 
 ## Development
 

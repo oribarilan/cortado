@@ -7,7 +7,7 @@ import {
   requestPermission,
 } from "@tauri-apps/plugin-notification";
 import { useAppearance } from "../shared/useAppearance";
-import { FEED_CATALOG, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
+import { FEED_CATALOG, findFeedType, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
@@ -54,38 +54,6 @@ type FeedConfigDto = {
   fields: Record<string, FieldOverrideDto>;
 };
 
-const FEED_TYPE_LABELS: Record<FeedType, string> = {
-  "github-pr": "GitHub PR",
-  "github-actions": "GitHub Actions",
-  "ado-pr": "Azure DevOps PR",
-  "http-health": "HTTP Health Check",
-  "copilot-session": "Copilot Session",
-};
-
-const FEED_TYPE_FIELDS: Record<FeedType, { key: string; label: string; placeholder: string; hint?: string; mono?: boolean; required?: boolean; sensitive?: boolean }[]> = {
-  "github-pr": [
-    { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
-    { key: "user", label: "Author filter", placeholder: "@me", hint: "GitHub username or @me (default)", mono: true },
-  ],
-  "github-actions": [
-    { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
-    { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch", mono: true },
-    { key: "workflow", label: "Workflow filter", placeholder: "ci.yml", hint: "Only this workflow file", mono: true },
-    { key: "user", label: "Actor filter", placeholder: "@me", hint: "Only runs triggered by this user", mono: true },
-  ],
-  "ado-pr": [
-    { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
-    { key: "user", label: "Creator filter", placeholder: "me", hint: "User identity or 'me' (default)", mono: true },
-  ],
-  "http-health": [
-    { key: "url", label: "URL", placeholder: "https://api.example.com/health", hint: "Endpoint to monitor", mono: true, required: true },
-    { key: "method", label: "Method", placeholder: "GET", hint: "GET or HEAD (default: GET)", mono: true },
-    { key: "expected_status", label: "Expected status", placeholder: "200", hint: "Expected HTTP status code (default: 200)", mono: true },
-    { key: "timeout", label: "Timeout", placeholder: "10s", hint: "Request timeout (default: 10s)", mono: true },
-  ],
-  "copilot-session": [],
-};
-
 function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
   return {
     name: "",
@@ -95,39 +63,6 @@ function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
     fields: {},
   };
 }
-
-type DepInfo = {
-  binary: string;
-  name: string;
-  installUrl: string;
-  authCommand: string;
-  extraSteps?: string[];
-};
-
-const FEED_TYPE_DEPS: Partial<Record<FeedType, DepInfo>> = {
-  "github-pr": {
-    binary: "gh",
-    name: "GitHub CLI",
-    installUrl: "https://cli.github.com",
-    authCommand: "gh auth login",
-  },
-  "github-actions": {
-    binary: "gh",
-    name: "GitHub CLI",
-    installUrl: "https://cli.github.com",
-    authCommand: "gh auth login",
-  },
-  "ado-pr": {
-    binary: "az",
-    name: "Azure CLI",
-    installUrl: "https://learn.microsoft.com/en-us/cli/azure/install-azure-cli",
-    authCommand: "az login",
-    extraSteps: [
-      "Add the extension: az extension add --name azure-devops",
-      "Sign in: az login",
-    ],
-  },
-};
 
 type TestFeedResult = {
   success: boolean;
@@ -211,7 +146,8 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
     errors.interval = "Poll interval is required";
   }
 
-  const typeFields = FEED_TYPE_FIELDS[feed.type as FeedType] ?? [];
+  const catalogType = findFeedType(feed.type);
+  const typeFields = catalogType?.fields ?? [];
   for (const field of typeFields) {
     if (!field.required) continue;
     const val = String(feed.type_specific[field.key] ?? "").trim();
@@ -220,21 +156,11 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
     }
   }
 
-  // Type-specific validations
-  if (feed.type === "ado-pr") {
-    const url = String(feed.type_specific.url ?? "").trim();
-    if (url && !url.startsWith("https://")) {
-      errors.url = "Must be an https:// URL";
-    } else if (url && !url.includes("/_git/")) {
-      errors.url = "URL must contain /_git/ (e.g., https://dev.azure.com/org/project/_git/repo)";
-    }
-  }
-
-  if (feed.type === "http-health") {
-    const url = String(feed.type_specific.url ?? "").trim();
-    if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-      errors.url = "Must be an http:// or https:// URL";
-    }
+  for (const rule of catalogType?.validations ?? []) {
+    if (errors[rule.field]) continue;
+    const val = String(feed.type_specific[rule.field] ?? "").trim();
+    const msg = rule.check(val);
+    if (msg) errors[rule.field] = msg;
   }
 
   return errors;
@@ -610,9 +536,14 @@ function SettingsApp() {
     setTestPreviewOpen(false);
     setFeedNavTransition("drill-in");
     scheduleAnim(() => setFeedNavTransition("idle"), 180);
-    invoke<{ installed: boolean }>("check_feed_dependency", { feedType: feeds[index].type })
-      .then((r) => setDepInstalled(r.installed))
-      .catch(() => setDepInstalled(null));
+    const dep = findFeedType(feeds[index].type)?.dependency;
+    if (dep) {
+      invoke<{ installed: boolean }>("check_feed_dependency", { binary: dep.binary })
+        .then((r) => setDepInstalled(r.installed))
+        .catch(() => setDepInstalled(null));
+    } else {
+      setDepInstalled(null);
+    }
   }, [feeds, scheduleAnim]);
 
   const startAdd = useCallback(() => {
@@ -645,9 +576,9 @@ function SettingsApp() {
     setFeedNavTransition("drill-in");
     scheduleAnim(() => setFeedNavTransition("idle"), 180);
 
-    const depInfoForType = FEED_TYPE_DEPS[feedType];
-    if (depInfoForType) {
-      invoke<{ installed: boolean }>("check_feed_dependency", { feedType })
+    const depForType = findFeedType(feedType)?.dependency;
+    if (depForType) {
+      invoke<{ installed: boolean }>("check_feed_dependency", { binary: depForType.binary })
         .then((r) => setDepInstalled(r.installed))
         .catch(() => setDepInstalled(null));
     } else {
@@ -752,9 +683,14 @@ function SettingsApp() {
     } else if (key === "type") {
       setEditingFeed({ ...editingFeed, type: value, type_specific: {} });
       setTestResult(null);
-      invoke<{ installed: boolean }>("check_feed_dependency", { feedType: value })
-        .then((r) => setDepInstalled(r.installed))
-        .catch(() => setDepInstalled(null));
+      const dep = findFeedType(value)?.dependency;
+      if (dep) {
+        invoke<{ installed: boolean }>("check_feed_dependency", { binary: dep.binary })
+          .then((r) => setDepInstalled(r.installed))
+          .catch(() => setDepInstalled(null));
+      } else {
+        setDepInstalled(null);
+      }
     } else if (key === "interval") {
       setEditingFeed({ ...editingFeed, interval: value || undefined });
     } else if (key === "retain") {
@@ -842,8 +778,9 @@ function SettingsApp() {
     return () => { unlisten.then((fn) => fn()); };
   }, [cancelEdit, selectFeedType, startAdd]);
 
-  const feedTypeFields = editingFeed ? FEED_TYPE_FIELDS[editingFeed.type as FeedType] ?? [] : [];
-  const depInfo = editingFeed ? FEED_TYPE_DEPS[editingFeed.type as FeedType] : undefined;
+  const editingCatalogType = editingFeed ? findFeedType(editingFeed.type) : undefined;
+  const feedTypeFields = editingCatalogType?.fields ?? [];
+  const depInfo = editingCatalogType?.dependency;
 
   return (
     <div className="settings-root">
@@ -1419,7 +1356,7 @@ function SettingsApp() {
             <div className="form-group">
               <label className="form-label">Type</label>
               <div className="form-type-display">
-                {FEED_TYPE_LABELS[editingFeed.type as FeedType] ?? editingFeed.type}
+                {editingCatalogType?.label ?? editingFeed.type}
               </div>
             </div>
 
@@ -1587,14 +1524,17 @@ function SettingsApp() {
               </div>
             )}
 
-            {/* Copilot session feed info */}
-            {editingFeed.type === "copilot-session" && (
+            {/* Feed type notes (generic, driven by catalog) */}
+            {editingCatalogType?.notes && editingCatalogType.notes.length > 0 && !depInfo && (
               <div className="dep-footer">
-                Discovers active sessions automatically from <code>~/.copilot/session-state/</code>. No CLI or authentication required.
-                <ul className="dep-steps">
-                  <li>Shows one activity per working directory (multiple resumed sessions are deduplicated)</li>
-                  <li>Opening an activity focuses the terminal — exact tmux pane when available</li>
-                </ul>
+                {editingCatalogType.notes[0]}
+                {editingCatalogType.notes.length > 1 && (
+                  <ul className="dep-steps">
+                    {editingCatalogType.notes.slice(1).map((note, i) => (
+                      <li key={i}>{note}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
@@ -1684,7 +1624,7 @@ function SettingsApp() {
                     <div className="feed-card-body">
                       <div className="feed-card-top">
                         <span className="feed-card-name">{feed.name}</span>
-                        <span className="feed-card-badge">{feed.type}</span>
+                        <span className="feed-card-badge">{findFeedType(feed.type)?.label ?? feed.type}</span>
                       </div>
                       <div className="feed-card-meta">
                         {feed.interval && (

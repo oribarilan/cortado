@@ -252,15 +252,9 @@ pub struct DepCheckResult {
 }
 
 #[tauri::command]
-pub fn check_feed_dependency(feed_type: String) -> DepCheckResult {
-    let binary = match feed_type.as_str() {
-        "github-pr" => "gh",
-        "ado-pr" => "az",
-        _ => return DepCheckResult { installed: true },
-    };
-
+pub fn check_feed_dependency(binary: String) -> DepCheckResult {
     let installed = Command::new("which")
-        .arg(binary)
+        .arg(&binary)
         .output()
         .is_ok_and(|out| out.status.success());
 
@@ -317,26 +311,13 @@ pub async fn test_feed(feed_dto: FeedConfigDto) -> TestFeedResult {
         }
     };
 
-    let feed: std::sync::Arc<dyn feed::Feed> = if feed_config.feed_type == "copilot-session" {
-        match feed::instantiate_harness_feed(&feed_config) {
-            Ok(f) => f as std::sync::Arc<dyn feed::Feed>,
-            Err(e) => {
-                return TestFeedResult {
-                    success: false,
-                    error: Some(e.to_string()),
-                    activities: Vec::new(),
-                }
-            }
-        }
-    } else {
-        match feed::instantiate_feed(&feed_config) {
-            Ok(f) => f,
-            Err(e) => {
-                return TestFeedResult {
-                    success: false,
-                    error: Some(e.to_string()),
-                    activities: Vec::new(),
-                }
+    let feed = match feed::create_feed(&feed_config) {
+        Ok(f) => f,
+        Err(e) => {
+            return TestFeedResult {
+                success: false,
+                error: Some(e.to_string()),
+                activities: Vec::new(),
             }
         }
     };

@@ -6,14 +6,51 @@ export type FeedType =
   | "http-health"
   | "copilot-session";
 
+/// A form field for the Settings feed edit form.
+export type FeedTypeField = {
+  key: string;
+  label: string;
+  placeholder: string;
+  hint?: string;
+  mono?: boolean;
+  required?: boolean;
+  sensitive?: boolean;
+};
+
+/// External CLI dependency required by a feed type.
+export type FeedTypeDep = {
+  binary: string;
+  name: string;
+  installUrl: string;
+  authCommand: string;
+  extraSteps?: string[];
+};
+
+/// A custom validation rule for a type-specific field.
+export type FeedTypeValidation = {
+  field: string;
+  check: (value: string) => string | null;
+};
+
 /// A single feed type within a catalog provider.
 export type CatalogFeedType = {
   feedType: FeedType;
+  /// Short name shown in catalog cards (e.g., "Pull Requests").
   name: string;
+  /// Full display label for badges and headers (e.g., "GitHub PR").
+  label: string;
   description: string;
   icon: string;
   defaultInterval: string;
   popular?: boolean;
+  /// Form fields for the Settings edit form.
+  fields: FeedTypeField[];
+  /// External CLI dependency, if any.
+  dependency?: FeedTypeDep;
+  /// Type-specific validation rules beyond the generic required-field check.
+  validations?: FeedTypeValidation[];
+  /// Informational notes shown in the edit form footer.
+  notes?: string[];
 };
 
 /// A provider that groups one or more feed types (e.g., "GitHub" has PR + Actions).
@@ -22,6 +59,13 @@ export type CatalogProvider = {
   name: string;
   icon: string;
   types: CatalogFeedType[];
+};
+
+const GH_DEP: FeedTypeDep = {
+  binary: "gh",
+  name: "GitHub CLI",
+  installUrl: "https://cli.github.com",
+  authCommand: "gh auth login",
 };
 
 /// All available feed types, grouped by provider.
@@ -34,18 +78,32 @@ export const FEED_CATALOG: CatalogProvider[] = [
       {
         feedType: "github-pr",
         name: "Pull Requests",
+        label: "GitHub PR",
         description: "Track PRs with review status, checks, and mergeability",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
         defaultInterval: "2m",
         popular: true,
+        fields: [
+          { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
+          { key: "user", label: "Author filter", placeholder: "@me", hint: "GitHub username or @me (default)", mono: true },
+        ],
+        dependency: GH_DEP,
       },
       {
         feedType: "github-actions",
         name: "Actions",
+        label: "GitHub Actions",
         description: "Monitor CI/CD workflow run status",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
         defaultInterval: "2m",
         popular: true,
+        fields: [
+          { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
+          { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch", mono: true },
+          { key: "workflow", label: "Workflow filter", placeholder: "ci.yml", hint: "Only this workflow file", mono: true },
+          { key: "user", label: "Actor filter", placeholder: "@me", hint: "Only runs triggered by this user", mono: true },
+        ],
+        dependency: GH_DEP,
       },
     ],
   },
@@ -57,9 +115,31 @@ export const FEED_CATALOG: CatalogProvider[] = [
       {
         feedType: "ado-pr",
         name: "Pull Requests",
+        label: "Azure DevOps PR",
         description: "Track PRs with review status and merge conflicts",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
         defaultInterval: "2m",
+        fields: [
+          { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
+          { key: "user", label: "Creator filter", placeholder: "me", hint: "User identity or 'me' (default)", mono: true },
+        ],
+        dependency: {
+          binary: "az",
+          name: "Azure CLI",
+          installUrl: "https://learn.microsoft.com/en-us/cli/azure/install-azure-cli",
+          authCommand: "az login",
+          extraSteps: [
+            "Add the extension: az extension add --name azure-devops",
+            "Sign in: az login",
+          ],
+        },
+        validations: [
+          { field: "url", check: (v) => {
+            if (v && !v.startsWith("https://")) return "Must be an https:// URL";
+            if (v && !v.includes("/_git/")) return "URL must contain /_git/ (e.g., https://dev.azure.com/org/project/_git/repo)";
+            return null;
+          }},
+        ],
       },
     ],
   },
@@ -71,10 +151,23 @@ export const FEED_CATALOG: CatalogProvider[] = [
       {
         feedType: "http-health",
         name: "Health Check",
+        label: "HTTP Health Check",
         description: "Monitor endpoint availability and response time",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
         defaultInterval: "1m",
         popular: true,
+        fields: [
+          { key: "url", label: "URL", placeholder: "https://api.example.com/health", hint: "Endpoint to monitor", mono: true, required: true },
+          { key: "method", label: "Method", placeholder: "GET", hint: "GET or HEAD (default: GET)", mono: true },
+          { key: "expected_status", label: "Expected status", placeholder: "200", hint: "Expected HTTP status code (default: 200)", mono: true },
+          { key: "timeout", label: "Timeout", placeholder: "10s", hint: "Request timeout (default: 10s)", mono: true },
+        ],
+        validations: [
+          { field: "url", check: (v) => {
+            if (v && !v.startsWith("http://") && !v.startsWith("https://")) return "Must be an http:// or https:// URL";
+            return null;
+          }},
+        ],
       },
     ],
   },
@@ -86,9 +179,16 @@ export const FEED_CATALOG: CatalogProvider[] = [
       {
         feedType: "copilot-session" as FeedType,
         name: "Copilot Sessions",
+        label: "Copilot Session",
         description: "Track active GitHub Copilot CLI sessions",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6 2 10.5c0 2.49 1.13 4.71 3 6.24V20l3.5-2C9.62 18.32 10.78 18.5 12 18.5c5.52 0 10-3.98 10-8.5S17.52 2 12 2z"/><circle cx="8.5" cy="10.5" r="1.5"/><circle cx="15.5" cy="10.5" r="1.5"/></svg>`,
         defaultInterval: "30s",
+        fields: [],
+        notes: [
+          "Discovers active sessions automatically from ~/.copilot/session-state/. No CLI or authentication required.",
+          "Shows one activity per working directory (multiple resumed sessions are deduplicated)",
+          "Opening an activity focuses the terminal — exact tmux pane when available",
+        ],
       },
     ],
   },
@@ -99,3 +199,8 @@ export const ALL_FEED_TYPES: CatalogFeedType[] = FEED_CATALOG.flatMap((p) => p.t
 
 /// Feed types marked as popular, for use in the empty state.
 export const POPULAR_FEED_TYPES: CatalogFeedType[] = ALL_FEED_TYPES.filter((t) => t.popular);
+
+/// Look up a feed type's catalog entry by its feedType string.
+export function findFeedType(feedType: string): CatalogFeedType | undefined {
+  return ALL_FEED_TYPES.find((t) => t.feedType === feedType);
+}

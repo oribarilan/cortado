@@ -382,6 +382,16 @@ pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>>
     }
 }
 
+/// Creates a feed from config, dispatching to the correct factory.
+/// This is the single entry point — callers don't need to know whether
+/// a feed type is a harness feed or a standard feed.
+pub fn create_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
+    if let Ok(harness) = instantiate_harness_feed(config) {
+        return Ok(harness as Arc<dyn Feed>);
+    }
+    instantiate_feed(config)
+}
+
 impl Default for FeedRegistry {
     fn default() -> Self {
         Self::new()
