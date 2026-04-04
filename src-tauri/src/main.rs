@@ -108,6 +108,8 @@ fn main() {
             settings_config::open_config_file,
             settings_config::reveal_config_file,
             settings_config::check_feed_dependency,
+            settings_config::check_opencode_plugin,
+            settings_config::install_opencode_plugin,
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,

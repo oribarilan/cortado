@@ -142,7 +142,7 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
     errors.name = "Feed name is required";
   }
 
-  if (!feed.interval) {
+  if (!feed.interval && !findFeedType(feed.type)?.hideInterval) {
     errors.interval = "Poll interval is required";
   }
 
@@ -325,6 +325,10 @@ function SettingsApp() {
   const [testResult, setTestResult] = useState<TestFeedResult | null>(null);
   const [testLoading, setTestLoading] = useState(false);
   const [testPreviewOpen, setTestPreviewOpen] = useState(false);
+  const [setupReady, setSetupReady] = useState<boolean | null>(null);
+  const [setupOutdated, setSetupOutdated] = useState(false);
+  const [setupInstalling, setSetupInstalling] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
 
   useEffect(() => {
     isEnabled()
@@ -522,6 +526,26 @@ function SettingsApp() {
     }
   }, []);
 
+  const checkSetup = useCallback((feedType: string) => {
+    const setup = findFeedType(feedType)?.setup;
+    if (setup) {
+      invoke<{ ready: boolean; outdated: boolean }>(setup.checkCommand)
+        .then((r) => {
+          setSetupReady(r.ready);
+          setSetupOutdated(r.outdated);
+        })
+        .catch(() => {
+          setSetupReady(null);
+          setSetupOutdated(false);
+        });
+    } else {
+      setSetupReady(null);
+      setSetupOutdated(false);
+    }
+    setSetupError(null);
+    setSetupInstalling(false);
+  }, []);
+
   const startEdit = useCallback((index: number) => {
     setEditingIndex(index);
     setEditingFeed(structuredClone(feeds[index]));
@@ -544,6 +568,7 @@ function SettingsApp() {
     } else {
       setDepInstalled(null);
     }
+    checkSetup(feeds[index].type);
   }, [feeds, scheduleAnim]);
 
   const startAdd = useCallback(() => {
@@ -584,6 +609,7 @@ function SettingsApp() {
     } else {
       setDepInstalled(null);
     }
+    checkSetup(feedType);
   }, [feeds.length, scheduleAnim]);
 
   const selectProvider = useCallback((provider: CatalogProvider) => {
@@ -734,6 +760,30 @@ function SettingsApp() {
     }
   }, [editingFeed]);
 
+  const editingCatalogType = editingFeed ? findFeedType(editingFeed.type) : undefined;
+  const feedTypeFields = editingCatalogType?.fields ?? [];
+  const depInfo = editingCatalogType?.dependency;
+  const setupInfo = editingCatalogType?.setup;
+
+  const runSetupInstall = useCallback(async () => {
+    if (!setupInfo) return;
+    setSetupInstalling(true);
+    setSetupError(null);
+    try {
+      const result = await invoke<{ success: boolean; error?: string }>(setupInfo.installCommand);
+      if (result.success) {
+        setSetupReady(true);
+        setSetupOutdated(false);
+      } else {
+        setSetupError(result.error ?? "Installation failed");
+      }
+    } catch (e) {
+      setSetupError(String(e));
+    } finally {
+      setSetupInstalling(false);
+    }
+  }, [setupInfo]);
+
   const switchSection = useCallback((next: "general" | "notifications" | "feeds" | "focus") => {
     if (next === section || sectionFading) return;
     cancelEdit();
@@ -777,10 +827,6 @@ function SettingsApp() {
     });
     return () => { unlisten.then((fn) => fn()); };
   }, [cancelEdit, selectFeedType, startAdd]);
-
-  const editingCatalogType = editingFeed ? findFeedType(editingFeed.type) : undefined;
-  const feedTypeFields = editingCatalogType?.fields ?? [];
-  const depInfo = editingCatalogType?.dependency;
 
   return (
     <div className="settings-root">
@@ -1309,6 +1355,8 @@ function SettingsApp() {
               <span className="breadcrumb-current">
                 {isNewFeed ? "New Feed" : editingFeed.name || "Untitled"}
               </span>
+              <span className="breadcrumb-sep">›</span>
+              <span className="breadcrumb-type">{editingCatalogType?.label ?? editingFeed.type}</span>
               {!isNewFeed && (
                 <div className="breadcrumb-actions">
                   {deleteConfirm ? (
@@ -1341,6 +1389,69 @@ function SettingsApp() {
               </div>
             )}
 
+            {setupInfo && setupReady === false && (
+              <div className="setup-banner">
+                <span className="setup-banner-icon">⚙</span>
+                <div className="setup-banner-content">
+                  <strong>{setupInfo.label} required.</strong> {setupInfo.description}
+                  <div className="setup-banner-action">
+                    <button
+                      className="btn-primary-sm"
+                      onClick={() => { void runSetupInstall(); }}
+                      disabled={setupInstalling}
+                    >
+                      {setupInstalling ? (
+                        <><span className="spinner-sm" /> Installing...</>
+                      ) : (
+                        setupInfo.installLabel
+                      )}
+                    </button>
+                  </div>
+                  {setupError && (
+                    <details className="setup-error-details">
+                      <summary className="setup-error-summary">✕ Installation failed</summary>
+                      <pre className="setup-error-pre">{setupError}</pre>
+                    </details>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {setupInfo && setupReady === true && setupOutdated && (
+              <div className="setup-banner">
+                <span className="setup-banner-icon">↑</span>
+                <div className="setup-banner-content">
+                  <strong>Plugin update available.</strong> Update for question and approval detection.
+                  <div className="setup-banner-action">
+                    <button
+                      className="btn-primary-sm"
+                      onClick={() => { void runSetupInstall(); }}
+                      disabled={setupInstalling}
+                    >
+                      {setupInstalling ? (
+                        <><span className="spinner-sm" /> Updating...</>
+                      ) : (
+                        "Update Plugin"
+                      )}
+                    </button>
+                  </div>
+                  {setupError && (
+                    <details className="setup-error-details">
+                      <summary className="setup-error-summary">✕ Update failed</summary>
+                      <pre className="setup-error-pre">{setupError}</pre>
+                    </details>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {setupInfo && setupReady === true && !setupOutdated && (
+              <div className="setup-banner-ok">
+                <span className="setup-banner-icon">✓</span>
+                <span>{setupInfo.label} installed</span>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Feed name</label>
               <input
@@ -1351,13 +1462,6 @@ function SettingsApp() {
                 placeholder="e.g. My PRs"
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Type</label>
-              <div className="form-type-display">
-                {editingCatalogType?.label ?? editingFeed.type}
-              </div>
             </div>
 
             {feedTypeFields.map((field) => (
@@ -1390,6 +1494,7 @@ function SettingsApp() {
             ))}
 
             <div className="form-row">
+              {!editingCatalogType?.hideInterval && (
               <div className="form-group">
                 <label className="form-label">Interval<span className="required-mark">*</span></label>
                 <div className="form-hint">How often to poll</div>
@@ -1409,6 +1514,7 @@ function SettingsApp() {
                 />
                 {fieldErrors.interval && <div className="field-error">{fieldErrors.interval}</div>}
               </div>
+              )}
               <div className="form-group">
                 <label className="form-label">Retain</label>
                 <div className="form-hint">Keep completed items for</div>
@@ -1448,13 +1554,13 @@ function SettingsApp() {
             )}
 
             <div className="btn-row">
-              <button className="btn-primary" onClick={() => { void saveFeed(); }}>Save</button>
+              <button className="btn-primary" onClick={() => { void saveFeed(); }} disabled={setupInfo !== undefined && setupReady !== true}>Save</button>
               <button className="btn-secondary" onClick={cancelEdit}>Discard</button>
               <div style={{ flex: 1 }} />
               <button
                 className="btn-test"
                 onClick={() => { void runTest(); }}
-                disabled={testLoading}
+                disabled={testLoading || (setupInfo !== undefined && setupReady !== true)}
               >
                 {testLoading ? (
                   <><span className="spinner-sm" /> Testing...</>

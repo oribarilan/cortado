@@ -21,7 +21,7 @@
 Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about — PRs, CI runs, health checks — and glance at their status without leaving your flow.
 
 - **Menubar tray + floating panel** — quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
-- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, and Copilot coding sessions
+- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
 - **Lightweight** — minimal CPU and memory footprint; stays out of your way
 - **Auto-updates** — checks for new versions and lets you install in one click
 - **Text-based config** — everything is plain TOML under `~/.config/cortado/`, editable through the built-in settings UI or by hand
@@ -47,6 +47,7 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | `ado-pr` | Azure DevOps pull requests |
 | `http-health` | Endpoint availability and response time |
 | `copilot-session` | Active GitHub Copilot coding agent sessions |
+| `opencode-session` | Active OpenCode coding sessions |
 
 <details>
 <summary><strong>Configuration reference</strong></summary>
@@ -117,6 +118,16 @@ Discovers active sessions automatically; no config needed beyond the block.
 [[feed]]
 name = "Copilot"
 type = "copilot-session"
+```
+
+### `opencode-session`
+
+Tracks active OpenCode sessions. The `cortado-opencode` plugin must be installed in OpenCode -- Cortado offers a one-click install button when you add this feed type.
+
+```toml
+[[feed]]
+name = "OpenCode"
+type = "opencode-session"
 ```
 
 ### Field overrides

@@ -73,6 +73,11 @@ impl HarnessFeed {
         self.cached_sessions.lock().ok()?.first().cloned()
     }
 
+    /// Returns directories to watch for file changes, if the provider supports it.
+    pub fn watch_paths(&self) -> Option<Vec<std::path::PathBuf>> {
+        self.provider.watch_paths()
+    }
+
     /// Resolves focus info for a session, caching the result.
     /// The PID ancestry walk only runs once per session — the terminal app
     /// doesn't change for a given process tree.

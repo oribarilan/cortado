@@ -41,6 +41,7 @@ tauri-plugin-updater = "2"
 semver = "1"
 serde-saphyr = "0.0"
 libc = "0.2"
+notify = "7"
 
 [features]
 # Used for production builds and when `devPath` points to the filesystem.

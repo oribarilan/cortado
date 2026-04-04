@@ -128,6 +128,16 @@ impl BackgroundPoller {
                 poll_feed_loop(cache, update_tx, feed, notify_ctx).await;
             });
         }
+
+        // Spawn file watchers for harness feeds (additive to the poll loop).
+        for (feed, paths) in registry.harness_watch_info() {
+            super::harness_watcher::spawn_harness_watcher(
+                feed,
+                paths,
+                self.cache.clone(),
+                self.update_tx.clone(),
+            );
+        }
     }
 }
 
@@ -208,12 +218,15 @@ async fn poll_feed_loop(
     }
 }
 
-fn bump_update_counter(update_tx: &watch::Sender<u64>) {
+pub(crate) fn bump_update_counter(update_tx: &watch::Sender<u64>) {
     let next = (*update_tx.borrow()).wrapping_add(1);
     let _ = update_tx.send(next);
 }
 
-async fn build_snapshot_for_feed(cache: &FeedSnapshotCache, feed: &dyn Feed) -> FeedSnapshot {
+pub(crate) async fn build_snapshot_for_feed(
+    cache: &FeedSnapshotCache,
+    feed: &dyn Feed,
+) -> FeedSnapshot {
     let baseline =
         cache.list().await.into_iter().find(|snapshot| {
             snapshot.name == feed.name() && snapshot.feed_type == feed.feed_type()

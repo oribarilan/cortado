@@ -4,7 +4,8 @@ export type FeedType =
   | "github-actions"
   | "ado-pr"
   | "http-health"
-  | "copilot-session";
+  | "copilot-session"
+  | "opencode-session";
 
 /// A form field for the Settings feed edit form.
 export type FeedTypeField = {
@@ -32,6 +33,20 @@ export type FeedTypeValidation = {
   check: (value: string) => string | null;
 };
 
+/// A setup prerequisite that must be satisfied before a feed can be saved.
+export type FeedTypeSetup = {
+  /** Human-readable label (e.g., "OpenCode plugin") */
+  label: string;
+  /** Description shown in the setup banner */
+  description: string;
+  /** Tauri command to check if setup is done. Returns { ready: boolean } */
+  checkCommand: string;
+  /** Tauri command to perform setup. Returns { success: boolean, error?: string } */
+  installCommand: string;
+  /** Button text (e.g., "Install Plugin") */
+  installLabel: string;
+};
+
 /// A single feed type within a catalog provider.
 export type CatalogFeedType = {
   feedType: FeedType;
@@ -51,6 +66,10 @@ export type CatalogFeedType = {
   validations?: FeedTypeValidation[];
   /// Informational notes shown in the edit form footer.
   notes?: string[];
+  /// A setup prerequisite (e.g., plugin installation) required before this feed can be used.
+  setup?: FeedTypeSetup;
+  /// If true, the interval field is hidden in the edit form (e.g., file-watching feeds).
+  hideInterval?: boolean;
 };
 
 /// A provider that groups one or more feed types (e.g., "GitHub" has PR + Actions).
@@ -183,11 +202,40 @@ export const FEED_CATALOG: CatalogProvider[] = [
         description: "Track active GitHub Copilot CLI sessions",
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6 2 10.5c0 2.49 1.13 4.71 3 6.24V20l3.5-2C9.62 18.32 10.78 18.5 12 18.5c5.52 0 10-3.98 10-8.5S17.52 2 12 2z"/><circle cx="8.5" cy="10.5" r="1.5"/><circle cx="15.5" cy="10.5" r="1.5"/></svg>`,
         defaultInterval: "30s",
+        hideInterval: true,
         fields: [],
         notes: [
           "Discovers active sessions automatically from ~/.copilot/session-state/. No CLI or authentication required.",
           "Shows one activity per working directory (multiple resumed sessions are deduplicated)",
           "Opening an activity focuses the terminal — exact tmux pane when available",
+        ],
+      },
+      {
+        feedType: "opencode-session",
+        name: "OpenCode Sessions",
+        label: "OpenCode Session",
+        description: "Track active OpenCode coding sessions",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+        defaultInterval: "30s",
+        hideInterval: true,
+        fields: [],
+        dependency: {
+          binary: "opencode",
+          name: "OpenCode",
+          installUrl: "https://opencode.ai",
+          authCommand: "opencode auth",
+        },
+        setup: {
+          label: "OpenCode plugin",
+          description: "The cortado-opencode plugin must be installed in OpenCode to publish session state to Cortado.",
+          checkCommand: "check_opencode_plugin",
+          installCommand: "install_opencode_plugin",
+          installLabel: "Install Plugin",
+        },
+        notes: [
+          "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
+          "Shows one activity per working directory with repo, branch, and status.",
+          "Opening an activity focuses the terminal -- exact tmux pane when available",
         ],
       },
     ],

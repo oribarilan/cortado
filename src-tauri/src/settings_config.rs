@@ -261,6 +261,173 @@ pub fn check_feed_dependency(binary: String) -> DepCheckResult {
     DepCheckResult { installed }
 }
 
+#[derive(Debug, Serialize)]
+pub struct SetupCheckResult {
+    pub ready: bool,
+    pub outdated: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SetupInstallResult {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+/// The plugin source, embedded at compile time from the single-file bundle.
+const OPENCODE_PLUGIN_SOURCE: &str = include_str!("../../plugins/opencode/src/plugin-bundle.ts");
+
+/// The filename written to OpenCode's global plugins directory.
+const OPENCODE_PLUGIN_FILENAME: &str = "cortado-opencode.ts";
+
+/// Returns the path to the OpenCode global plugins directory.
+///
+/// `~/.config/opencode/plugins/` (follows XDG conventions, same as OpenCode).
+fn opencode_plugins_dir() -> Option<std::path::PathBuf> {
+    dirs::home_dir().map(|h| h.join(".config/opencode/plugins"))
+}
+
+/// Parses a plugin version from a source string.
+///
+/// Looks for `// cortado-plugin-version: N` in the first 5 lines.
+fn parse_plugin_version(source: &str) -> Option<u32> {
+    for line in source.lines().take(5) {
+        if let Some(rest) = line.trim().strip_prefix("// cortado-plugin-version:") {
+            return rest.trim().parse().ok();
+        }
+    }
+    None
+}
+
+/// Checks whether the cortado-opencode plugin is installed.
+///
+/// Checks two locations (in order):
+/// 1. File exists at `~/.config/opencode/plugins/cortado-opencode.ts`
+/// 2. OpenCode's resolved config contains a "cortado" plugin entry
+///
+/// The first check is fast (filesystem only). The second handles users who
+/// installed via npm or the config file directly.
+///
+/// When installed via the file path, also checks if the on-disk plugin is
+/// outdated compared to the version embedded in this binary.
+#[tauri::command]
+pub fn check_opencode_plugin() -> SetupCheckResult {
+    // Fast path: check if the plugin file exists in the global plugins dir.
+    if let Some(dir) = opencode_plugins_dir() {
+        let plugin_path = dir.join(OPENCODE_PLUGIN_FILENAME);
+        if plugin_path.exists() {
+            let outdated = std::fs::read_to_string(&plugin_path)
+                .map(|content| is_plugin_outdated(&content, OPENCODE_PLUGIN_SOURCE))
+                .unwrap_or(false);
+            return SetupCheckResult {
+                ready: true,
+                outdated,
+            };
+        }
+    }
+
+    // Slow path: check OpenCode's resolved config for any cortado plugin entry.
+    let output = match Command::new("opencode")
+        .args(["debug", "config"])
+        .env("NO_COLOR", "1")
+        .output()
+    {
+        Ok(out) if out.status.success() => out,
+        _ => {
+            return SetupCheckResult {
+                ready: false,
+                outdated: false,
+            }
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    SetupCheckResult {
+        ready: config_has_cortado_plugin(&stdout),
+        // Can't determine version when installed via config (not our file).
+        outdated: false,
+    }
+}
+
+/// Returns true if the on-disk plugin is older than the embedded source.
+fn is_plugin_outdated(on_disk: &str, embedded: &str) -> bool {
+    let disk_version = parse_plugin_version(on_disk);
+    let embedded_version = parse_plugin_version(embedded);
+    match (disk_version, embedded_version) {
+        (Some(d), Some(e)) => d < e,
+        // No version header on disk means an old pre-versioned plugin.
+        (None, Some(_)) => true,
+        _ => false,
+    }
+}
+
+/// Checks whether an OpenCode config JSON string contains a cortado plugin entry.
+///
+/// Plugin entries can be plain strings (`"cortado-opencode"`) or tuples
+/// (`["cortado-opencode", { ... }]`). Any entry whose name contains "cortado"
+/// is considered a match.
+fn config_has_cortado_plugin(config_json: &str) -> bool {
+    let config: serde_json::Value = match serde_json::from_str(config_json) {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+
+    config
+        .get("plugin")
+        .and_then(|p| p.as_array())
+        .map(|plugins| {
+            plugins.iter().any(|entry| {
+                let name = entry
+                    .as_str()
+                    .or_else(|| entry.as_array().and_then(|a| a.first()?.as_str()));
+                name.map(|n| n.contains("cortado")).unwrap_or(false)
+            })
+        })
+        .unwrap_or(false)
+}
+
+/// Installs the cortado-opencode plugin into OpenCode's global plugins directory.
+///
+/// Writes the embedded plugin source to `~/.config/opencode/plugins/cortado-opencode.ts`.
+/// Creates the directory if it doesn't exist. Overwrites any existing file (idempotent).
+#[tauri::command]
+pub fn install_opencode_plugin() -> SetupInstallResult {
+    let plugins_dir = match opencode_plugins_dir() {
+        Some(dir) => dir,
+        None => {
+            return SetupInstallResult {
+                success: false,
+                error: Some("Could not determine home directory".to_string()),
+            }
+        }
+    };
+
+    if let Err(e) = std::fs::create_dir_all(&plugins_dir) {
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!(
+                "Failed to create plugins directory {}: {e}",
+                plugins_dir.display()
+            )),
+        };
+    }
+
+    let plugin_path = plugins_dir.join(OPENCODE_PLUGIN_FILENAME);
+    if let Err(e) = std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE) {
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!(
+                "Failed to write plugin to {}: {e}",
+                plugin_path.display()
+            )),
+        };
+    }
+
+    SetupInstallResult {
+        success: true,
+        error: None,
+    }
+}
+
 /// Ad-hoc poll result for the "Test" button in settings.
 #[derive(Debug, Serialize)]
 pub struct TestFeedResult {
@@ -556,5 +723,225 @@ mod tests {
 
         let ta = activity_to_test_activity(&a);
         assert!(ta.status.is_none());
+    }
+
+    // ── config_has_cortado_plugin ────────────────────────────────────
+
+    #[test]
+    fn plugin_check_string_entry_with_cortado() {
+        let json = r#"{ "plugin": ["github:oribarilan/cortado/plugins/opencode"] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_npm_package_name() {
+        let json = r#"{ "plugin": ["cortado-opencode"] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_tuple_entry() {
+        let json = r#"{ "plugin": [["cortado-opencode", { "some": "option" }]] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_mixed_plugins_finds_cortado() {
+        let json = r#"{ "plugin": ["opencode-helicone", "cortado-opencode", "other-plugin"] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_no_cortado_entry() {
+        let json = r#"{ "plugin": ["opencode-helicone", "other-plugin"] }"#;
+        assert!(!config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_empty_plugin_array() {
+        let json = r#"{ "plugin": [] }"#;
+        assert!(!config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_no_plugin_key() {
+        let json = r#"{ "provider": {} }"#;
+        assert!(!config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_malformed_json() {
+        assert!(!config_has_cortado_plugin("not valid json"));
+    }
+
+    #[test]
+    fn plugin_check_empty_string() {
+        assert!(!config_has_cortado_plugin(""));
+    }
+
+    #[test]
+    fn plugin_check_plugin_is_not_array() {
+        let json = r#"{ "plugin": "cortado-opencode" }"#;
+        assert!(!config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_tuple_without_cortado() {
+        let json = r#"{ "plugin": [["other-plugin", {}]] }"#;
+        assert!(!config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_numeric_entry_skipped() {
+        let json = r#"{ "plugin": [42, "cortado-opencode"] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    #[test]
+    fn plugin_check_empty_tuple_skipped() {
+        let json = r#"{ "plugin": [[], "cortado-opencode"] }"#;
+        assert!(config_has_cortado_plugin(json));
+    }
+
+    // ── install / check opencode plugin ─────────────────────────────
+
+    #[test]
+    fn install_writes_plugin_file_to_temp_dir() {
+        let dir = tempfile::tempdir().unwrap();
+        let plugins_dir = dir.path().join("plugins");
+
+        // Simulate what install_opencode_plugin does.
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        let plugin_path = plugins_dir.join(OPENCODE_PLUGIN_FILENAME);
+        std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE).unwrap();
+
+        assert!(plugin_path.exists());
+        let content = std::fs::read_to_string(&plugin_path).unwrap();
+        assert!(content.contains("cortado-opencode"));
+        assert!(content.contains("export default CortadoPlugin"));
+    }
+
+    #[test]
+    fn install_is_idempotent() {
+        let dir = tempfile::tempdir().unwrap();
+        let plugins_dir = dir.path().join("plugins");
+        std::fs::create_dir_all(&plugins_dir).unwrap();
+        let plugin_path = plugins_dir.join(OPENCODE_PLUGIN_FILENAME);
+
+        // Write twice — should succeed both times with same content.
+        std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE).unwrap();
+        std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE).unwrap();
+
+        let content = std::fs::read_to_string(&plugin_path).unwrap();
+        assert_eq!(content, OPENCODE_PLUGIN_SOURCE);
+    }
+
+    #[test]
+    fn embedded_plugin_source_is_valid() {
+        // Verify the embedded source is non-empty and contains expected markers.
+        assert!(!OPENCODE_PLUGIN_SOURCE.is_empty());
+        assert!(OPENCODE_PLUGIN_SOURCE.contains("export default CortadoPlugin"));
+        assert!(OPENCODE_PLUGIN_SOURCE.contains("harness"));
+        assert!(OPENCODE_PLUGIN_SOURCE.contains("session.status"));
+    }
+
+    #[test]
+    fn opencode_plugins_dir_returns_path() {
+        let dir = opencode_plugins_dir();
+        assert!(dir.is_some());
+        let path = dir.unwrap();
+        assert!(path.ends_with(".config/opencode/plugins"));
+    }
+
+    // ── parse_plugin_version ────────────────────────────────────────
+
+    #[test]
+    fn parse_version_from_first_line() {
+        let source = "// cortado-plugin-version: 2\n// rest of file";
+        assert_eq!(parse_plugin_version(source), Some(2));
+    }
+
+    #[test]
+    fn parse_version_from_later_line() {
+        let source = "// comment\n// cortado-plugin-version: 5\ncode";
+        assert_eq!(parse_plugin_version(source), Some(5));
+    }
+
+    #[test]
+    fn parse_version_none_when_missing() {
+        let source = "// no version here\nexport default Foo;";
+        assert_eq!(parse_plugin_version(source), None);
+    }
+
+    #[test]
+    fn parse_version_none_for_empty_string() {
+        assert_eq!(parse_plugin_version(""), None);
+    }
+
+    #[test]
+    fn parse_version_ignores_after_line_5() {
+        let source = "a\nb\nc\nd\ne\n// cortado-plugin-version: 3";
+        assert_eq!(parse_plugin_version(source), None);
+    }
+
+    #[test]
+    fn parse_version_handles_extra_whitespace() {
+        let source = "  // cortado-plugin-version:   7  \n";
+        assert_eq!(parse_plugin_version(source), Some(7));
+    }
+
+    // ── is_plugin_outdated ──────────────────────────────────────────
+
+    #[test]
+    fn outdated_when_disk_older() {
+        assert!(is_plugin_outdated(
+            "// cortado-plugin-version: 1\n",
+            "// cortado-plugin-version: 2\n"
+        ));
+    }
+
+    #[test]
+    fn not_outdated_when_same_version() {
+        assert!(!is_plugin_outdated(
+            "// cortado-plugin-version: 2\n",
+            "// cortado-plugin-version: 2\n"
+        ));
+    }
+
+    #[test]
+    fn not_outdated_when_disk_newer() {
+        assert!(!is_plugin_outdated(
+            "// cortado-plugin-version: 3\n",
+            "// cortado-plugin-version: 2\n"
+        ));
+    }
+
+    #[test]
+    fn outdated_when_no_version_on_disk() {
+        assert!(is_plugin_outdated(
+            "// no version\nexport default Foo;\n",
+            "// cortado-plugin-version: 2\n"
+        ));
+    }
+
+    #[test]
+    fn not_outdated_when_no_version_in_embedded() {
+        assert!(!is_plugin_outdated(
+            "// cortado-plugin-version: 1\n",
+            "// no version\n"
+        ));
+    }
+
+    #[test]
+    fn not_outdated_when_neither_has_version() {
+        assert!(!is_plugin_outdated("// old\n", "// new\n"));
+    }
+
+    #[test]
+    fn embedded_plugin_has_version_header() {
+        assert!(
+            parse_plugin_version(OPENCODE_PLUGIN_SOURCE).is_some(),
+            "Embedded plugin source must have a cortado-plugin-version header"
+        );
     }
 }

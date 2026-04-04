@@ -78,6 +78,10 @@ impl HarnessProvider for CopilotProvider {
 
         Ok(sessions)
     }
+
+    fn watch_paths(&self) -> Option<Vec<std::path::PathBuf>> {
+        Some(vec![self.state_dir.clone()])
+    }
 }
 
 /// Attempts to discover a single session from a session directory.

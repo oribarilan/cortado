@@ -51,7 +51,16 @@ pub trait HarnessProvider: Send + Sync {
 
     /// Discover all active sessions.
     fn discover_sessions(&self) -> Result<Vec<SessionInfo>>;
+
+    /// Returns directories that should be watched for file changes.
+    /// When files change in these directories, the feed re-polls immediately.
+    /// Returns `None` if file watching is not supported (uses timer-only polling).
+    #[allow(dead_code)] // Will be used when file-watch polling is wired up.
+    fn watch_paths(&self) -> Option<Vec<std::path::PathBuf>> {
+        None
+    }
 }
 
 pub mod copilot;
 pub mod feed;
+pub mod generic;

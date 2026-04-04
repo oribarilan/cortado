@@ -67,8 +67,8 @@ The harness system separates generic feed behavior from agent-specific session d
 HarnessProvider (trait)          HarnessFeed (generic Feed impl)
   |                                 |
   |-- CopilotProvider               |-- maps SessionInfo -> Activity
-  |-- (future: ClaudeCodeProvider)  |-- caches focus context per session
-  '-- ...                           '-- registered in instantiate_feed()
+  |-- GenericProvider("opencode")   |-- caches focus context per session
+  '-- GenericProvider("...")        '-- registered in instantiate_harness_feed()
 ```
 
 **Adding a new harness** requires only a new `HarnessProvider` implementation — zero changes to `HarnessFeed`, the UI, or the config format. The provider discovers sessions and returns `Vec<SessionInfo>`; the feed handles everything else.
@@ -185,10 +185,38 @@ Activates the terminal app via `System Events` AppleScript. Brings the app to fr
 src-tauri/src/feed/harness/
   mod.rs          # SessionStatus, SessionInfo, HarnessProvider trait
   copilot.rs      # CopilotProvider: lock files, YAML, events.jsonl
+  generic.rs      # GenericProvider: reads interchange format JSON files
   feed.rs         # HarnessFeed: Feed impl, focus context caching
+
+src-tauri/src/feed/
+  harness_watcher.rs  # FSEvents-based file watching for harness feeds
 
 src-tauri/src/terminal_focus/
   mod.rs          # FocusContext, FocusResult, strategy waterfall, capabilities
   pid_ancestry.rs # PID walk, tmux detection, GUI app lookup
   tmux.rs         # tmux pane switching strategy
 ```
+
+### `opencode-session` feed type
+
+Tracks active OpenCode coding sessions via the generic harness interchange format.
+
+**Data source**: `~/.config/cortado/harness/<pid>.json` (files written by the `cortado-opencode` plugin)
+
+**Config**:
+
+```toml
+[[feed]]
+name = "OpenCode"
+type = "opencode-session"
+```
+
+No type-specific config fields. Default interval: 30s, with near-instant FSEvents-based detection.
+
+**Provided fields**: same as `copilot-session` (status, summary, last_active, repo, branch, focus_app, focus_has_tmux).
+
+**Activity title**: `{short_repo} @ {branch}` (same format as other harness feeds).
+
+**How it works**: The `cortado-opencode` OpenCode plugin listens to `session.status` events and writes session state to the interchange directory. The `GenericProvider("opencode")` reads these files, checks PID liveness, and returns active sessions. FSEvents watching triggers near-instant re-polls when files change.
+
+See `specs/harness-interchange.md` for the full interchange format specification.

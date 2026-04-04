@@ -1,0 +1,15 @@
+default:
+	@just --list
+
+check:
+	pnpm exec tsc --noEmit
+	bun test
+
+test:
+	bun test
+
+format:
+	@echo "no formatter configured"
+
+build:
+	pnpm exec tsc

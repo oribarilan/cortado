@@ -10,7 +10,7 @@ use self::{
     config::FeedConfig,
     github_actions::GithubActionsFeed,
     github_pr::GithubPrFeed,
-    harness::{copilot::CopilotProvider, feed::HarnessFeed},
+    harness::{copilot::CopilotProvider, feed::HarnessFeed, generic::GenericProvider},
     http_health::HttpHealthFeed,
 };
 
@@ -24,6 +24,7 @@ pub mod github_actions;
 pub mod github_common;
 pub mod github_pr;
 pub mod harness;
+pub mod harness_watcher;
 pub mod http_health;
 pub mod process;
 pub mod runtime;
@@ -289,6 +290,16 @@ impl FeedRegistry {
         None
     }
 
+    /// Returns (feed, watch_paths) pairs for harness feeds that support file watching.
+    pub fn harness_watch_info(
+        &self,
+    ) -> Vec<(Arc<harness::feed::HarnessFeed>, Vec<std::path::PathBuf>)> {
+        self.harness_feeds
+            .iter()
+            .filter_map(|feed| feed.watch_paths().map(|paths| (feed.clone(), paths)))
+            .collect()
+    }
+
     /// Returns cache seed snapshots in registration order.
     pub fn initial_snapshots(&self) -> Vec<FeedSnapshot> {
         let mut snapshots = Vec::with_capacity(self.feeds.len() + self.errored.len());
@@ -326,29 +337,37 @@ pub fn build_feed_registry_from_configs(
         let feed_name = config.name.clone();
         let feed_type = config.feed_type.clone();
 
-        if feed_type == "copilot-session" {
-            match instantiate_harness_feed(&config) {
-                Ok(feed) => registry.register_harness(feed),
-                Err(error) => {
+        // Try harness feed first; fall through to standard feed if not a harness type.
+        match instantiate_harness_feed(&config) {
+            Ok(feed) => {
+                registry.register_harness(feed);
+                continue;
+            }
+            Err(e) => {
+                // "unknown harness feed type" means it's not a harness feed — try standard.
+                // Any other error is a real config error for a known harness type.
+                let msg = e.to_string();
+                if !msg.contains("unknown harness feed type") {
                     if mode == RegistryBuildMode::Strict {
                         return Err(anyhow::anyhow!(
-                            "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                            "feed `{feed_name}` (`{feed_type}`) failed validation: {e}"
                         ));
                     }
-                    registry.register_error(feed_name, feed_type, error.to_string());
+                    registry.register_error(feed_name, feed_type, msg);
+                    continue;
                 }
             }
-        } else {
-            match instantiate_feed(&config) {
-                Ok(feed) => registry.register(feed),
-                Err(error) => {
-                    if mode == RegistryBuildMode::Strict {
-                        return Err(anyhow::anyhow!(
-                            "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
-                        ));
-                    }
-                    registry.register_error(feed_name, feed_type, error.to_string());
+        }
+
+        match instantiate_feed(&config) {
+            Ok(feed) => registry.register(feed),
+            Err(error) => {
+                if mode == RegistryBuildMode::Strict {
+                    return Err(anyhow::anyhow!(
+                        "feed `{feed_name}` (`{feed_type}`) failed validation: {error}"
+                    ));
                 }
+                registry.register_error(feed_name, feed_type, error.to_string());
             }
         }
     }
@@ -376,6 +395,10 @@ pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>>
     match config.feed_type.as_str() {
         "copilot-session" => {
             let provider = Box::new(CopilotProvider::new()?);
+            HarnessFeed::from_config(config, provider).map(Arc::new)
+        }
+        "opencode-session" => {
+            let provider = Box::new(GenericProvider::new("opencode")?);
             HarnessFeed::from_config(config, provider).map(Arc::new)
         }
         other => Err(anyhow::anyhow!("unknown harness feed type `{other}`")),

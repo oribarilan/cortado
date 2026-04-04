@@ -12,12 +12,14 @@ lint:
 	@if [ ! -d node_modules ]; then just install; fi
 	pnpm exec tsc --noEmit
 	cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --no-default-features -- -D warnings
+	just -f plugins/opencode/justfile check
 
 format:
 	cargo fmt --manifest-path src-tauri/Cargo.toml --all
 
 test:
 	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features
+	just -f plugins/opencode/justfile test
 
 check:
 	just format

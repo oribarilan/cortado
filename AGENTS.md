@@ -183,6 +183,10 @@ src-tauri/               # Backend (Rust + Tauri)
       ado_pr.rs          # Azure DevOps PR feed implementation
       http_health.rs     # HTTP health check feed implementation
       harness/           # Harness-based feeds (coding agents)
+      harness_watcher.rs # FSEvents-based file watching for harness feeds
+
+plugins/                 # Agent plugins (separate npm packages)
+  opencode/              # OpenCode plugin (cortado-opencode)
 
 specs/                   # App specification
   main.md                # Main spec (terminology, architecture, config format)

@@ -3,6 +3,12 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- OpenCode session tracking: see your OpenCode coding sessions with status, repo, and branch at a glance
+- Near-instant session detection for coding agent feeds via filesystem event watching
+
 ## [0.5.1] - 2026-04-02
 
 ### Added

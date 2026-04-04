@@ -1,0 +1,26 @@
+{
+  "name": "cortado-opencode",
+  "version": "0.1.0",
+  "description": "OpenCode plugin that publishes session state for Cortado",
+  "type": "module",
+  "main": "dist/plugin-bundle.js",
+  "types": "dist/plugin-bundle.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit && bun test",
+    "test": "bun test",
+    "format": "echo 'no formatter configured'"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.3.3",
+    "@opencode-ai/sdk": "^1.3.3",
+    "@types/bun": "latest",
+    "typescript": "^5.8.0"
+  },
+  "keywords": ["opencode", "cortado", "plugin"],
+  "license": "MIT"
+}
