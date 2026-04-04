@@ -49,6 +49,10 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | `copilot-session` | Active GitHub Copilot coding agent sessions |
 | `opencode-session` | Active OpenCode coding sessions |
 
+### Terminal focus
+
+Coding agent feeds support **one-click terminal focus**: click a session activity to jump to the exact terminal tab and pane running that agent. Works with Ghostty, iTerm2, Terminal.app, WezTerm, and kitty. tmux is supported and gives pane-level precision with any terminal.
+
 <details>
 <summary><strong>Configuration reference</strong></summary>
 

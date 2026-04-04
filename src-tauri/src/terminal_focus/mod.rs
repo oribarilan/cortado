@@ -42,8 +42,13 @@ pub enum FocusResult {
 
 /// Attempts to focus the terminal containing the given session.
 ///
-/// Runs strategies in priority order: tmux > terminal_script > accessibility > app_activation.
-/// Stops at the first successful strategy. Strategies can be disabled via settings.
+/// Two-phase approach:
+/// 1. **tmux pre-step**: navigates to the correct tmux pane (if tmux is detected and enabled).
+/// 2. **Terminal waterfall**: tries terminal-specific strategies to switch to the right
+///    tab/window and activate the app. Falls back to generic app activation.
+///
+/// This separation lets tmux pane navigation compose with terminal tab focus
+/// (e.g., Ghostty tab switching) instead of competing with it.
 pub fn focus_terminal(
     session: &SessionInfo,
     tmux_enabled: bool,
@@ -57,10 +62,21 @@ pub fn focus_terminal(
         session.id, ctx.terminal_app_name, ctx.terminal_app_bundle, ctx.tmux_server_pid
     );
 
+    // Phase 1: tmux pane navigation (pre-step, not part of the waterfall).
+    if tmux_enabled {
+        match tmux::try_navigate(&ctx) {
+            Ok(true) => eprintln!("focus: tmux pane navigation succeeded"),
+            Ok(false) => eprintln!("focus: tmux not applicable"),
+            Err(e) => eprintln!("focus: tmux pane navigation failed: {e}"),
+        }
+    } else {
+        eprintln!("focus: tmux skipped (disabled)");
+    }
+
+    // Phase 2: terminal focus waterfall.
     type Strategy = fn(&FocusContext) -> FocusResult;
 
     let strategies: &[(&str, Strategy, bool)] = &[
-        ("tmux", tmux::try_focus, tmux_enabled),
         ("terminals", terminals::try_focus, true),
         ("accessibility", stub_not_applicable, accessibility_enabled),
         ("app_activation", try_app_activation, true),

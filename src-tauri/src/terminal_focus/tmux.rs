@@ -1,34 +1,31 @@
 use std::process::Command;
 
-use super::{FocusContext, FocusResult};
+use super::FocusContext;
 
-/// tmux focus strategy: navigates to the exact pane containing the copilot session.
+/// tmux pane navigation: navigates to the exact pane containing the copilot session.
+///
+/// This is a pre-step, not a competing strategy — it handles tmux-level navigation
+/// while terminal strategies handle app-level focus (tab switching, activation).
 ///
 /// When the target session already has a client attached, uses select-window + select-pane
 /// to navigate within it (non-destructive). Only uses switch-client when the target session
 /// has no attached client.
-pub fn try_focus(ctx: &FocusContext) -> FocusResult {
+///
+/// Returns `Ok(true)` if navigation succeeded, `Ok(false)` if tmux is not applicable.
+pub fn try_navigate(ctx: &FocusContext) -> Result<bool, String> {
     if ctx.tmux_server_pid.is_none() {
-        return FocusResult::NotApplicable;
+        return Ok(false);
     }
 
-    let panes = match list_panes() {
-        Ok(panes) => panes,
-        Err(e) => return FocusResult::Failed(e),
-    };
+    let panes = list_panes()?;
 
-    let target_pane = match find_target_pane(&panes, &ctx.ancestors, ctx.copilot_pid) {
-        Some(pane) => pane,
-        None => return FocusResult::Failed("no tmux pane matches copilot process ancestry".into()),
-    };
+    let target_pane = find_target_pane(&panes, &ctx.ancestors, ctx.copilot_pid)
+        .ok_or_else(|| "no tmux pane matches copilot process ancestry".to_string())?;
 
-    let clients = match list_clients() {
-        Ok(clients) => clients,
-        Err(e) => return FocusResult::Failed(e),
-    };
+    let clients = list_clients()?;
 
     if clients.is_empty() {
-        return FocusResult::Failed("no tmux clients attached".into());
+        return Err("no tmux clients attached".into());
     }
 
     let target_session = target_pane.pane_id.split(':').next().unwrap_or("");
@@ -36,23 +33,14 @@ pub fn try_focus(ctx: &FocusContext) -> FocusResult {
 
     if has_own_client {
         // Target session already has a client viewing it — just navigate within it.
-        if let Err(e) = select_within_session(&target_pane.pane_id) {
-            return FocusResult::Failed(e);
-        }
+        select_within_session(&target_pane.pane_id)?;
     } else {
         // No client on this session — switch an existing client to it.
         let client = &clients[0];
-        if let Err(e) = switch_client_to_pane(&client.client_tty, &target_pane.pane_id) {
-            return FocusResult::Failed(e);
-        }
+        switch_client_to_pane(&client.client_tty, &target_pane.pane_id)?;
     }
 
-    // Activate the terminal app.
-    if let Some(terminal_pid) = ctx.terminal_app_pid {
-        let _ = super::activate_app_by_pid(terminal_pid);
-    }
-
-    FocusResult::Focused
+    Ok(true)
 }
 
 /// A parsed tmux pane entry.
@@ -323,7 +311,7 @@ mod tests {
     }
 
     #[test]
-    fn try_focus_not_applicable_without_tmux() {
+    fn try_navigate_not_applicable_without_tmux() {
         let ctx = FocusContext {
             copilot_pid: 1,
             cwd: "/tmp".to_string(),
@@ -333,7 +321,7 @@ mod tests {
             terminal_app_name: None,
             terminal_app_bundle: None,
         };
-        assert_eq!(try_focus(&ctx), FocusResult::NotApplicable);
+        assert_eq!(try_navigate(&ctx).unwrap(), false);
     }
 
     #[test]

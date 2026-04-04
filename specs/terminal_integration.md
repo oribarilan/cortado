@@ -16,33 +16,44 @@ The design addresses this with a **strategy waterfall** — each layer tries a m
 
 ## Architecture
 
-Terminal focus is a layered system. Each layer is tried in order; the first success wins.
+Terminal focus uses a **two-phase** approach: an optional tmux pre-step followed by a terminal strategy waterfall. The phases are composable — tmux handles pane-level navigation, then the terminal strategy handles app/tab-level activation.
 
 ```
-Layer 1: tmux (terminal-agnostic)
-  |  Switches to the exact pane. Works with any terminal.
+Phase 1: tmux pre-step (optional, terminal-agnostic)
+  |  Navigates to the exact pane within tmux.
   |  Uses: tmux list-panes, select-window, select-pane.
-  |  Non-destructive: navigates within existing tabs, doesn't steal tabs.
-  |  Disabled: falls through to Layer 2.
+  |  Does NOT activate the terminal app — that's Phase 2's job.
+  |  Skipped if: tmux not detected, or tmux disabled in settings.
   |
-Layer 2: Terminal-specific
+Phase 2: Terminal strategy waterfall
   |  Each terminal has its own strategy, selected by bundle ID.
-  |  Focuses the correct tab/window using the terminal's native API.
+  |  Focuses the correct tab/window using the terminal's native API,
+  |  then activates the app.
   |  Only one strategy runs (first bundle ID match).
-  |
-Layer 3: App activation (fallback)
-     Brings the terminal app to front. No tab/window targeting.
-     Always available. Works with any terminal.
+  |  Fallback: app activation (brings terminal to front, no tab targeting).
 ```
 
-### tmux behavior (Layer 1)
+### Why two phases?
+
+tmux was originally a competing strategy in the waterfall (position 0). It navigated the pane, activated the app by PID, and returned `Focused` — preventing terminal-specific strategies from ever running. This broke Ghostty+tmux: tmux would bring Ghostty to the foreground, but since the Ghostty strategy never ran, the wrong tab could remain visible.
+
+The fix: tmux is a **composable pre-step** that only navigates within tmux, then *always* falls through to the terminal waterfall. This lets the Ghostty strategy switch to the correct tab (matching by tmux session name) after tmux has already navigated to the correct pane.
+
+### tmux behavior (Phase 1)
+
+tmux navigation is implemented as `tmux::try_navigate()`, which returns `Result<bool, String>`:
+- `Ok(true)` — tmux pane navigation succeeded
+- `Ok(false)` — tmux not applicable (not detected, or disabled in settings)
+- `Err(msg)` — tmux command failed (logged, falls through to Phase 2)
 
 When tmux is detected in the process ancestry:
 
 - **Session has an attached client (common case)**: uses `select-window` + `select-pane` to navigate within the existing tab. Does *not* steal the tab or switch what it displays.
 - **Session is detached (no terminal tab viewing it)**: uses `switch-client` to attach the session to an available terminal tab. This is common in tmux workflows where sessions are detached and reattached later — cortado handles it seamlessly.
 
-tmux can be toggled off in Settings > Agents. When disabled, Layer 2 strategies still use tmux *data* (to map PIDs to sessions) but don't use tmux *commands* to switch panes.
+After tmux navigation, Phase 2 (terminal waterfall) always runs to activate the app and switch to the correct tab.
+
+tmux can be toggled off in Settings > Agents. When disabled, Phase 1 is skipped entirely, but terminal strategies in Phase 2 still use tmux *data* (to map PIDs to sessions) for tab matching (e.g., Ghostty maps tmux session name to tab name).
 
 ## tmux integration
 
@@ -52,10 +63,11 @@ tmux is the highest-precision, most universal focus strategy. It works with any 
 
 1. **Pane discovery**: `tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_pid}'` — finds which pane contains the copilot process (by PID or ancestor PID match).
 2. **Client discovery**: `tmux list-clients -F '#{client_pid} #{client_session}'` — finds which terminal tab is viewing the target session.
-3. **Focus**:
+3. **Navigate** (pane-level only, no app activation):
    - If the session has a client: `tmux select-window` + `tmux select-pane` — navigates within the existing tab (non-destructive).
    - If the session is detached (no terminal tab viewing it): `tmux switch-client` — attaches the session to an available terminal tab. Detached sessions are common in tmux workflows; cortado brings them back without manual reattachment.
-4. **App activation**: activates the correct terminal app (resolved per-session, not globally).
+
+App activation is left to Phase 2 (terminal strategy waterfall), which handles both bringing the terminal to the foreground and switching to the correct tab.
 
 ### Terminal resolution with tmux
 
@@ -73,7 +85,12 @@ This per-session client resolution is critical when multiple terminals run tmux 
 
 ### Ghostty + tmux interaction
 
-Ghostty tabs map 1:1 to tmux sessions (each tab runs a separate tmux session, and the tab name = tmux session name). The Ghostty strategy leverages this: when tmux is detected, it maps the copilot PID to a tmux session name, then finds the Ghostty tab with that name. This gives tab-level focus via Ghostty's AppleScript API, complementing (or replacing) the pane-level tmux strategy.
+Ghostty tabs map 1:1 to tmux sessions (each tab runs a separate tmux session, and the tab name = tmux session name). With the two-phase architecture, both phases contribute:
+
+1. **Phase 1 (tmux pre-step)**: navigates to the correct pane within the tmux session.
+2. **Phase 2 (Ghostty strategy)**: maps the copilot PID to a tmux session name, finds the Ghostty tab with that name via AppleScript, switches to it, and activates the app.
+
+This gives both pane-level precision (tmux) and tab-level precision (Ghostty) in a single focus action.
 
 ### Settings
 
@@ -126,8 +143,8 @@ Focus info (terminal name, tmux detection) is cached per session ID. The PID anc
 
 | Terminal | Strategy | Matching | Precision | Notes |
 |----------|----------|----------|-----------|-------|
-| **Any (via tmux)** | `tmux select-window/select-pane` | PID ancestry → tmux pane | Exact pane | Terminal-agnostic. Best experience. |
-| **Ghostty** | AppleScript `focus` | tmux session name (exact) or CWD substring | Tab-level | Requires 1.3+. No PID/TTY exposed yet. |
+| **Any (via tmux)** | `tmux select-window/select-pane` | PID ancestry → tmux pane | Exact pane | Pre-step, not a waterfall entry. Runs before terminal strategies. |
+| **Ghostty** | AppleScript `focus` | tmux session name (exact) or CWD substring | Tab-level | Requires 1.3+. Best with tmux (exact session name match). |
 | **Terminal.app** | AppleScript `tty of tab` | TTY | Exact tab | Most mature AppleScript API. No config needed. |
 | **iTerm2** | AppleScript `tty of session` | TTY | Exact pane | Handles split panes. `select` on window/tab/session. |
 | **WezTerm** | `wezterm cli list --format json` | CWD/TTY | Pane-level | No PID in list output. CWD matching with URL parsing. |
@@ -218,12 +235,12 @@ When tmux is in use, the copilot's TTY is a tmux PTY, not the terminal's PTY. TT
 
 ```
 src-tauri/src/terminal_focus/
-  mod.rs              # FocusContext, FocusResult, waterfall, app_activation, escape_applescript
+  mod.rs              # FocusContext, FocusResult, two-phase focus_terminal(), app_activation, escape_applescript
   pid_ancestry.rs     # PID walk, tmux client resolution, terminal detection
-  tmux.rs             # Layer 1: tmux pane switching (terminal-agnostic)
+  tmux.rs             # Phase 1: tmux pane navigation pre-step (try_navigate)
   e2e.rs              # E2E tests (ignored, run via `just local-e2e`)
   terminals/
-    mod.rs            # Strategy registry, shared TTY resolution helper
+    mod.rs            # Phase 2: terminal strategy registry, shared TTY resolution helper
     ghostty.rs        # Ghostty 1.3+ AppleScript tab switching
     terminal_app.rs   # macOS Terminal.app AppleScript TTY matching
     iterm2.rs         # iTerm2 AppleScript TTY matching (split pane support)

@@ -133,7 +133,9 @@ Status is inferred from the last event in `events.jsonl`:
 
 ### Terminal focus
 
-When a user opens a copilot-session activity, Cortado focuses the terminal containing that session rather than opening a URL. The focus system resolves which terminal and strategy to use via a PID ancestry walk.
+When a user opens a harness feed activity (any coding agent session), Cortado focuses the terminal containing that session rather than opening a URL. The focus system resolves which terminal and strategy to use via a PID ancestry walk.
+
+Focus eligibility is detected by the presence of a `focus_app` field on the activity — any harness feed that provides a PID gets focus support automatically.
 
 #### Focus context
 
@@ -146,18 +148,23 @@ This context is cached per session ID for the session's lifetime (the terminal a
 
 The context is surfaced as the `focus_label` field — e.g., "Open in Ghostty (via tmux)" — and used as the action button label in the UI.
 
-#### Strategy waterfall
+#### Two-phase focus
 
-When the user triggers focus, strategies are tried in priority order:
+When the user triggers focus, the system runs two phases:
+
+**Phase 1 — tmux pre-step** (if tmux detected and enabled): navigates to the exact pane within tmux. Does not activate the terminal app.
+
+**Phase 2 — terminal strategy waterfall**: tries terminal-specific strategies by bundle ID, then falls back to app activation.
 
 | # | Strategy | Precision | Condition |
 |---|----------|-----------|-----------|
-| 1 | **tmux pane switching** | Exact pane | tmux detected in ancestry |
-| 2 | Terminal-specific scripting | Tab/window | Scriptable terminal (stretch — stubbed) |
-| 3 | Accessibility window focus | Window by title | AX permission granted (stretch — stubbed) |
-| 4 | **App activation** (fallback) | App-level | Always available |
+| 1 | Terminal-specific scripting | Tab/window | Scriptable terminal (Ghostty, iTerm2, etc.) |
+| 2 | Accessibility window focus | Window by title | AX permission granted (stretch — stubbed) |
+| 3 | **App activation** (fallback) | App-level | Always available |
 
 The first strategy that returns `Focused` wins. Strategies return `NotApplicable` (skip) or `Failed` (try next).
+
+See `specs/terminal_integration.md` for the full architecture, supported terminals, and integration details.
 
 #### tmux strategy
 
@@ -192,9 +199,9 @@ src-tauri/src/feed/
   harness_watcher.rs  # FSEvents-based file watching for harness feeds
 
 src-tauri/src/terminal_focus/
-  mod.rs          # FocusContext, FocusResult, strategy waterfall, capabilities
+  mod.rs          # FocusContext, FocusResult, two-phase focus_terminal(), capabilities
   pid_ancestry.rs # PID walk, tmux detection, GUI app lookup
-  tmux.rs         # tmux pane switching strategy
+  tmux.rs         # Phase 1: tmux pane navigation pre-step
 ```
 
 ### `opencode-session` feed type

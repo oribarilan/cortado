@@ -94,17 +94,15 @@ export function supportsUpdate(feed: FeedSnapshot): boolean {
 export function isPluginUpdate(activity: Activity): boolean {
   return activity.id.startsWith("plugin-update-");
 }
-/// Label is built from focus_app and focus_has_tmux fields.
+/// Returns focus info if the activity has a `focus_app` field (any harness-based feed).
 export function supportsFocus(
-  feed: FeedSnapshot,
   activity: Activity
 ): { sessionId: string; label: string } | null {
-  if (feed.feed_type === "copilot-session") {
-    const appField = activity.fields.find((f) => f.name === "focus_app");
-    const appName =
-      appField && appField.value.type === "text" ? appField.value.value : "terminal";
-
-    return { sessionId: activity.id, label: `Open in ${appName}` };
+  const appField = activity.fields.find((f) => f.name === "focus_app");
+  if (!appField) {
+    return null;
   }
-  return null;
+
+  const appName = appField.value.type === "text" ? appField.value.value : "terminal";
+  return { sessionId: activity.id, label: `Open in ${appName}` };
 }

@@ -1,5 +1,6 @@
 ---
 status: pending
+priority: high
 ---
 
 # Feed Sort Order

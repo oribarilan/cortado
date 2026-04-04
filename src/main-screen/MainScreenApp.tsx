@@ -137,8 +137,8 @@ function DetailPane({ item }: { item: ListItem | null }) {
     );
   }
 
-  const { activity, feed } = item;
-  const focus = supportsFocus(feed, activity);
+  const { activity } = item;
+  const focus = supportsFocus(activity);
   const openUrl = supportsOpen(activity);
   const canOpen = focus || openUrl;
 
@@ -281,7 +281,7 @@ function MainScreenApp() {
   // Keyboard navigation
   const openFocusedActivity = useCallback(() => {
     if (!focusedItem) return;
-    const focus = supportsFocus(focusedItem.feed, focusedItem.activity);
+    const focus = supportsFocus(focusedItem.activity);
     if (focus) {
       invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error);
       return;
@@ -426,7 +426,7 @@ function MainScreenApp() {
                         className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                         onClick={() => setFocusIndex(index)}
                         onDoubleClick={() => {
-                          const focus = supportsFocus(item.feed, item.activity);
+                          const focus = supportsFocus(item.activity);
                           if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
                           const url = supportsOpen(item.activity);
                           if (url) invoke("open_activity", { url }).catch(console.error);
@@ -466,7 +466,7 @@ function MainScreenApp() {
                           className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
                           onClick={() => setFocusIndex(index)}
                           onDoubleClick={() => {
-                            const focus = supportsFocus(feed, activity);
+                            const focus = supportsFocus(activity);
                             if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
                             const url = supportsOpen(activity);
                             if (url) invoke("open_activity", { url }).catch(console.error);

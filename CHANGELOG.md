@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- "Focus session" works for all coding agent feeds, not just Copilot
+
+### Fixed
+- "Focus session" now correctly switches to the right terminal tab when using tmux inside Ghostty
+
 ## [0.6.0] - 2026-04-04
 
 ### Added

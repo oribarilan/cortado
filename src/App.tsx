@@ -70,9 +70,9 @@ function App() {
   }, []);
 
   const openActivity = useCallback(async (activity: Activity, feed?: FeedSnapshot) => {
-    // Try focus action first (copilot-session feeds).
+    // Try focus action first (harness-based agent feeds).
     if (feed) {
-      const focus = supportsFocus(feed, activity);
+      const focus = supportsFocus(activity);
       if (focus) {
         try {
           await invoke("focus_session", { sessionId: focus.sessionId });
@@ -301,7 +301,7 @@ function App() {
                         const expanded = expandedActivityKey === key;
                         const firstStatus = highestStatusField(activity);
                         const openUrl = supportsOpen(activity);
-                        const focus = supportsFocus(feed, activity);
+                        const focus = supportsFocus(activity);
                         const isUpdate = supportsUpdate(feed);
                         const canOpen = openUrl || focus;
 
