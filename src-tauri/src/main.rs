@@ -58,7 +58,10 @@ fn main() {
         .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}"));
 
     // Built-in feeds (always registered, not user-configured).
-    feed_registry.register(Arc::new(CortadoUpdateFeed::new()));
+    let has_opencode_feed = feed_configs
+        .iter()
+        .any(|c| c.feed_type == "opencode-session");
+    feed_registry.register(Arc::new(CortadoUpdateFeed::new(has_opencode_feed)));
 
     let feed_registry = Arc::new(feed_registry);
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());

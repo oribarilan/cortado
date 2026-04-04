@@ -12,6 +12,7 @@ import {
   supportsOpen,
   supportsFocus,
   supportsUpdate,
+  isPluginUpdate,
   formatFieldValue,
   activityKey,
 } from "./shared/utils";
@@ -106,6 +107,31 @@ function App() {
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
       setInstalling(false);
+    }
+  }, []);
+
+  const [pluginInstalling, setPluginInstalling] = useState(false);
+
+  const installPluginUpdate = useCallback(async () => {
+    setPluginInstalling(true);
+    try {
+      const result = await invoke<{ success: boolean; error?: string }>("install_opencode_plugin");
+      if (result.success) {
+        // Optimistically remove plugin-update activities from the feed.
+        setFeeds((prev) =>
+          prev.map((f) =>
+            f.feed_type === "cortado-update"
+              ? { ...f, activities: f.activities.filter((a) => !isPluginUpdate(a)) }
+              : f
+          )
+        );
+      } else {
+        setLoadError(result.error ?? "Plugin update failed");
+      }
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setPluginInstalling(false);
     }
   }, []);
 
@@ -304,7 +330,7 @@ function App() {
                             <div className="detail-region" role="region" aria-label={`${activity.title} details`}>
                               <div className="detail-inner">
                                 <div className="detail-body">
-                                  {isUpdate ? (
+                                  {isUpdate && !isPluginUpdate(activity) ? (
                                     <button
                                       className="open-activity update-action"
                                       onClick={() => {
@@ -313,6 +339,16 @@ function App() {
                                       disabled={installing}
                                     >
                                       {installing ? "Installing..." : "↗ Install update"}
+                                    </button>
+                                  ) : isUpdate && isPluginUpdate(activity) ? (
+                                    <button
+                                      className="open-activity update-action"
+                                      onClick={() => {
+                                        void installPluginUpdate();
+                                      }}
+                                      disabled={pluginInstalling}
+                                    >
+                                      {pluginInstalling ? "Updating..." : "↗ Update plugin"}
                                     </button>
                                   ) : canOpen ? (
                                     <button

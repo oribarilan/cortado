@@ -89,6 +89,11 @@ export function activityKey(feed: FeedSnapshot, activity: Activity): string {
 export function supportsUpdate(feed: FeedSnapshot): boolean {
   return feed.feed_type === "cortado-update";
 }
+
+/// Returns true if this activity is a plugin update (not an app update).
+export function isPluginUpdate(activity: Activity): boolean {
+  return activity.id.startsWith("plugin-update-");
+}
 /// Label is built from focus_app and focus_has_tmux fields.
 export function supportsFocus(
   feed: FeedSnapshot,

@@ -274,22 +274,23 @@ pub struct SetupInstallResult {
 }
 
 /// The plugin source, embedded at compile time from the single-file bundle.
-const OPENCODE_PLUGIN_SOURCE: &str = include_str!("../../plugins/opencode/src/plugin-bundle.ts");
+pub(crate) const OPENCODE_PLUGIN_SOURCE: &str =
+    include_str!("../../plugins/opencode/src/plugin-bundle.ts");
 
 /// The filename written to OpenCode's global plugins directory.
-const OPENCODE_PLUGIN_FILENAME: &str = "cortado-opencode.ts";
+pub(crate) const OPENCODE_PLUGIN_FILENAME: &str = "cortado-opencode.ts";
 
 /// Returns the path to the OpenCode global plugins directory.
 ///
 /// `~/.config/opencode/plugins/` (follows XDG conventions, same as OpenCode).
-fn opencode_plugins_dir() -> Option<std::path::PathBuf> {
+pub(crate) fn opencode_plugins_dir() -> Option<std::path::PathBuf> {
     dirs::home_dir().map(|h| h.join(".config/opencode/plugins"))
 }
 
 /// Parses a plugin version from a source string.
 ///
 /// Looks for `// cortado-plugin-version: N` in the first 5 lines.
-fn parse_plugin_version(source: &str) -> Option<u32> {
+pub(crate) fn parse_plugin_version(source: &str) -> Option<u32> {
     for line in source.lines().take(5) {
         if let Some(rest) = line.trim().strip_prefix("// cortado-plugin-version:") {
             return rest.trim().parse().ok();
@@ -349,7 +350,7 @@ pub fn check_opencode_plugin() -> SetupCheckResult {
 }
 
 /// Returns true if the on-disk plugin is older than the embedded source.
-fn is_plugin_outdated(on_disk: &str, embedded: &str) -> bool {
+pub(crate) fn is_plugin_outdated(on_disk: &str, embedded: &str) -> bool {
     let disk_version = parse_plugin_version(on_disk);
     let embedded_version = parse_plugin_version(embedded);
     match (disk_version, embedded_version) {
