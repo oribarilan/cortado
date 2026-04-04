@@ -5,9 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-04
+
 ### Added
 - OpenCode session tracking: see your OpenCode coding sessions with status, repo, and branch at a glance
+- One-click plugin install and update from Settings
+- Plugin update notifications in the Cortado Updates feed
 - Near-instant session detection for coding agent feeds via filesystem event watching
+
+### Fixed
+- When multiple coding sessions share the same repo, the most actionable status now surfaces (e.g., "question" beats "working")
 
 ## [0.5.1] - 2026-04-02
 

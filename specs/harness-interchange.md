@@ -101,6 +101,26 @@ rename(~/.config/cortado/harness/.42567.json.tmp, ~/.config/cortado/harness/4256
 5. **Skip unknown versions:** If a file has a `version` value that the provider doesn't recognize, log a warning and skip it. Do not error.
 6. **Handle gracefully:** Missing directory (return empty), malformed JSON (log warning, skip), I/O errors on individual files (log warning, skip).
 
+## Deduplication and status priority
+
+When multiple sessions share the same `cwd` (e.g., two OpenCode instances in the same repo), Cortado consolidates them into a single activity. The winner is selected by **status urgency**, not recency:
+
+| Priority | Statuses              | Rationale |
+|----------|-----------------------|-----------|
+| Highest  | `question`, `approval`| User action required — must surface |
+| Medium   | `working`             | Agent is active — informational |
+| Lowest   | `idle`, unknown       | Nothing happening — least urgent |
+
+Within the same priority tier, the session with the most recent `last_active_at` wins.
+
+When dedup collapses multiple sessions, the surviving activity gets a **stable CWD-derived ID** (not the original session ID). This prevents the UI row from jumping when the winning session changes between polls. Single-session CWDs keep their original session ID.
+
+### Implications for plugin authors
+
+- **Set status accurately.** Status drives which session surfaces in the UI when multiple exist. A session stuck on `working` when it's actually waiting for a question will hide a sibling's `question` status.
+- **Always update `last_active_at`.** It's the tiebreaker within the same priority tier.
+- **`idle` is the "I'm done" signal.** Transition to `idle` promptly when the agent finishes — don't leave stale `working` statuses that could mask a sibling's attention-needed state.
+
 ## Versioning
 
 The `version` field is required. The current version is `1`.

@@ -204,31 +204,75 @@ impl Feed for HarnessFeed {
     }
 }
 
-/// Deduplicates sessions by working directory.
+/// Returns a numeric urgency priority for a session status.
 ///
-/// Multiple sessions can exist for the same cwd (e.g., from Copilot CLI's `/resume`).
-/// We keep only the most recently active session per cwd — determined by `last_active_at`
-/// timestamp, falling back to session ID for deterministic ordering.
+/// Higher values = more urgent. Used to surface the most actionable session
+/// when multiple sessions share the same working directory (e.g., two coding
+/// agent instances in the same repo). Attention-needed statuses (question,
+/// approval) take precedence over active work, which takes precedence over idle.
+fn status_priority(status: SessionStatus) -> u8 {
+    match status {
+        SessionStatus::Question | SessionStatus::Approval => 2,
+        SessionStatus::Working => 1,
+        SessionStatus::Idle | SessionStatus::Unknown => 0,
+    }
+}
+
+/// Deduplicates sessions by working directory with status-priority selection.
+///
+/// Multiple sessions can exist for the same cwd (e.g., two OpenCode instances
+/// in the same repo). We keep the session with the most urgent status — so
+/// "question" or "approval" (attention needed) beats "working", which beats
+/// "idle". Ties in status priority are broken by `last_active_at` (most recent
+/// wins).
+///
+/// When dedup collapses multiple sessions into one, the surviving activity
+/// gets a stable CWD-derived ID so the UI row doesn't jump when the winner
+/// changes between polls.
 fn deduplicate_sessions(sessions: Vec<SessionInfo>) -> Vec<SessionInfo> {
     let mut best_by_cwd: HashMap<String, SessionInfo> = HashMap::new();
+    let mut had_duplicate: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for session in sessions {
         let key = session.cwd.clone();
 
-        let dominated = match best_by_cwd.get(&key) {
-            None => false,
-            Some(existing) => {
-                // Keep the one with the more recent last_active_at.
-                existing.last_active_at >= session.last_active_at
+        match best_by_cwd.get(&key) {
+            None => {
+                best_by_cwd.insert(key, session);
             }
-        };
+            Some(existing) => {
+                had_duplicate.insert(key.clone());
+                let existing_prio = status_priority(existing.status);
+                let session_prio = status_priority(session.status);
 
-        if !dominated {
-            best_by_cwd.insert(key, session);
+                let replace = if existing_prio != session_prio {
+                    session_prio > existing_prio
+                } else {
+                    // Same priority — keep the more recently active one.
+                    session.last_active_at > existing.last_active_at
+                };
+
+                if replace {
+                    best_by_cwd.insert(key, session);
+                }
+            }
         }
     }
 
-    best_by_cwd.into_values().collect()
+    // For CWDs that had duplicates, use a stable CWD-derived ID
+    // so the activity row doesn't jump when the winner changes.
+    best_by_cwd
+        .into_iter()
+        .map(|(cwd, mut session)| {
+            if had_duplicate.contains(&cwd) {
+                use std::hash::{Hash, Hasher};
+                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                cwd.hash(&mut hasher);
+                session.id = format!("harness-{:x}", hasher.finish());
+            }
+            session
+        })
+        .collect()
 }
 
 /// Converts a `SessionInfo` into an `Activity`.
@@ -592,14 +636,106 @@ mod tests {
     }
 
     #[test]
-    fn deduplicate_keeps_most_recent_per_cwd() {
+    fn deduplicate_attention_beats_working() {
+        let sessions = vec![
+            SessionInfo {
+                id: "working-session".to_string(),
+                cwd: "/home/user/project".to_string(),
+                repository: Some("user/project".to_string()),
+                branch: Some("main".to_string()),
+                status: SessionStatus::Working,
+                pid: 1,
+                summary: None,
+                // More recent — but lower priority status.
+                last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
+            },
+            SessionInfo {
+                id: "question-session".to_string(),
+                cwd: "/home/user/project".to_string(),
+                repository: Some("user/project".to_string()),
+                branch: Some("main".to_string()),
+                status: SessionStatus::Question,
+                pid: 2,
+                summary: None,
+                last_active_at: Some("2026-01-01T00:00:00Z".to_string()),
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].status, SessionStatus::Question);
+    }
+
+    #[test]
+    fn deduplicate_approval_beats_working() {
+        let sessions = vec![
+            SessionInfo {
+                id: "working".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Working,
+                pid: 1,
+                summary: None,
+                last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
+            },
+            SessionInfo {
+                id: "approval".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Approval,
+                pid: 2,
+                summary: None,
+                last_active_at: Some("2026-01-01T00:00:00Z".to_string()),
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].status, SessionStatus::Approval);
+    }
+
+    #[test]
+    fn deduplicate_working_beats_idle() {
+        let sessions = vec![
+            SessionInfo {
+                id: "idle".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Idle,
+                pid: 1,
+                summary: None,
+                last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
+            },
+            SessionInfo {
+                id: "working".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Working,
+                pid: 2,
+                summary: None,
+                last_active_at: Some("2026-01-01T00:00:00Z".to_string()),
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].status, SessionStatus::Working);
+    }
+
+    #[test]
+    fn deduplicate_same_priority_uses_recency() {
+        // Both Working — tiebreak by last_active_at.
         let sessions = vec![
             SessionInfo {
                 id: "old".to_string(),
                 cwd: "/home/user/project".to_string(),
                 repository: Some("user/project".to_string()),
                 branch: Some("main".to_string()),
-                status: SessionStatus::Idle,
+                status: SessionStatus::Working,
                 pid: 1,
                 summary: Some("old session".to_string()),
                 last_active_at: Some("2026-01-01T00:00:00Z".to_string()),
@@ -610,7 +746,7 @@ mod tests {
                 repository: Some("user/project".to_string()),
                 branch: Some("main".to_string()),
                 status: SessionStatus::Working,
-                pid: 1,
+                pid: 2,
                 summary: Some("new session".to_string()),
                 last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
             },
@@ -618,7 +754,61 @@ mod tests {
 
         let deduped = deduplicate_sessions(sessions);
         assert_eq!(deduped.len(), 1);
-        assert_eq!(deduped[0].id, "new");
+        assert_eq!(deduped[0].summary, Some("new session".to_string()));
+    }
+
+    #[test]
+    fn deduplicate_stable_id_for_duplicates() {
+        // When dedup collapses sessions, the surviving activity gets a
+        // CWD-derived stable ID (not the original session ID).
+        let sessions = vec![
+            SessionInfo {
+                id: "session-a".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Working,
+                pid: 1,
+                summary: None,
+                last_active_at: None,
+            },
+            SessionInfo {
+                id: "session-b".to_string(),
+                cwd: "/tmp/repo".to_string(),
+                repository: None,
+                branch: None,
+                status: SessionStatus::Question,
+                pid: 2,
+                summary: None,
+                last_active_at: None,
+            },
+        ];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert!(
+            deduped[0].id.starts_with("harness-"),
+            "expected stable CWD-derived ID, got: {}",
+            deduped[0].id
+        );
+    }
+
+    #[test]
+    fn deduplicate_single_session_keeps_original_id() {
+        let sessions = vec![SessionInfo {
+            id: "my-session-id".to_string(),
+            cwd: "/tmp/repo".to_string(),
+            repository: None,
+            branch: None,
+            status: SessionStatus::Idle,
+            pid: 1,
+            summary: None,
+            last_active_at: None,
+        }];
+
+        let deduped = deduplicate_sessions(sessions);
+        assert_eq!(deduped.len(), 1);
+        assert_eq!(deduped[0].id, "my-session-id");
     }
 
     #[test]
