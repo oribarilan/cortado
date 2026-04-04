@@ -315,6 +315,7 @@ function SettingsApp() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [feedNavTransition, setFeedNavTransition] = useState<"idle" | "drill-in" | "drill-out">("idle");
+  const [swapAnim, setSwapAnim] = useState<{ up: number; down: number } | null>(null);
 
   // Catalog state (for the new feed flow)
   const [catalogStep, setCatalogStep] = useState<"hidden" | "providers" | "types">("hidden");
@@ -693,6 +694,22 @@ function SettingsApp() {
       setSaveError(err instanceof Error ? err.message : String(err));
     }
   }, [editingIndex, feeds, isNewFeed]);
+
+  const moveFeed = useCallback(async (index: number, direction: -1 | 1) => {
+    const swapIndex = index + direction;
+    if (swapIndex < 0 || swapIndex >= feeds.length) return;
+    const updatedFeeds = [...feeds];
+    [updatedFeeds[index], updatedFeeds[swapIndex]] = [updatedFeeds[swapIndex], updatedFeeds[index]];
+    try {
+      await invoke("save_feeds_config", { feeds: updatedFeeds });
+      setFeeds(updatedFeeds);
+      setSwapAnim({ up: Math.min(index, swapIndex), down: Math.max(index, swapIndex) });
+      scheduleAnim(() => setSwapAnim(null), 180);
+      showToast();
+    } catch (err) {
+      console.error("failed to reorder feeds:", err);
+    }
+  }, [feeds, showToast, scheduleAnim]);
 
   const updateField = useCallback((key: string, value: string) => {
     if (!editingFeed) return;
@@ -1725,7 +1742,7 @@ function SettingsApp() {
             ) : (
               <div className="feed-card-list">
                 {feeds.map((feed, index) => (
-                  <div className="feed-card" key={`${feed.name}-${index}`} onClick={() => startEdit(index)}>
+                  <div className={`feed-card${swapAnim?.up === index ? " swap-up" : ""}${swapAnim?.down === index ? " swap-down" : ""}`} key={`${feed.name}-${index}`} onClick={() => startEdit(index)}>
                     <div className="feed-indicator" />
                     <div className="feed-card-body">
                       <div className="feed-card-top">
@@ -1745,6 +1762,22 @@ function SettingsApp() {
                         ))}
                       </div>
                     </div>
+                    {feeds.length > 1 && (
+                      <div className="move-buttons">
+                        <button
+                          className="move-btn"
+                          disabled={index === 0}
+                          title="Move up"
+                          onClick={(e) => { e.stopPropagation(); void moveFeed(index, -1); }}
+                        >&#x25B2;</button>
+                        <button
+                          className="move-btn"
+                          disabled={index === feeds.length - 1}
+                          title="Move down"
+                          onClick={(e) => { e.stopPropagation(); void moveFeed(index, 1); }}
+                        >&#x25BC;</button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -7,6 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 - "Focus session" works for all coding agent feeds, not just Copilot
+- Reorder feeds in Settings: hover over a feed card to reveal up/down arrows that rearrange the list and persist the new order
 
 ### Fixed
 - "Focus session" now correctly switches to the right terminal tab when using tmux inside Ghostty
