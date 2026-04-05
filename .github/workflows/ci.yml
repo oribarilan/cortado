@@ -32,10 +32,15 @@ jobs:
       - uses: pnpm/action-setup@v4
 
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          cd plugins/opencode && pnpm install --frozen-lockfile
 
       - name: Install just
         run: brew install just
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Check (format + lint + test)
         run: just check

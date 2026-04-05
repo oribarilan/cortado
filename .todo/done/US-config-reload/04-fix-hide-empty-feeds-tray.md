@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Fix hide_empty_feeds not updating in tray

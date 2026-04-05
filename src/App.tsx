@@ -210,6 +210,11 @@ function App() {
         setSuppressCollapseAnimation(true);
         setExpandedActivityKey(null);
 
+        // Pull-on-show: re-fetch show_empty_feeds so Settings changes apply without restart.
+        invoke<{ panel?: { show_empty_feeds?: boolean } }>("get_settings")
+          .then((s) => { setShowEmptyFeeds(s.panel?.show_empty_feeds ?? false); })
+          .catch(() => {});
+
         requestAnimationFrame(() => {
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
