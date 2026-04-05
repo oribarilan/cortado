@@ -1667,6 +1667,18 @@ body {
   flex: 1;
 }
 
+.terminal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.terminal-icon svg {
+  display: block;
+}
+
 .terminal-version {
   font-size: 11px;
   font-weight: var(--font-medium);
