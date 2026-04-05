@@ -3,7 +3,7 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.7.0] - 2026-04-05
 
 ### Added
 - Config change detection: edits to feeds.toml or settings.toml are detected automatically and a one-click restart prompt appears in the tray, panel, and Settings sidebar
