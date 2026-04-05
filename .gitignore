@@ -28,3 +28,4 @@ dist-ssr
 .certs/
 .env
 skills-lock.json
+showcases/

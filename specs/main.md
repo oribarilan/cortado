@@ -118,11 +118,22 @@ Retention is a runtime lifecycle primitive:
 Config is loaded once at app launch. Changes to `feeds.toml` or `settings.toml` are detected automatically via filesystem watching (using the `notify` crate with 500ms debounce). When a change is detected:
 
 - The on-disk config is parsed and compared to the running config (content comparison, not just mtime).
-- If valid and different: a "Cortado Configuration" synthetic feed appears with a clickable "Restart to apply" action.
-- If invalid TOML: a config error warning is shown (no restart option).
+- If valid and different: a "Cortado Config" feed appears with a restart activity (standard activity with `FeedAction::RestartApp`).
+- If invalid TOML: a config error activity is shown (`AttentionNegative` status, no restart action).
 - If identical to running config: no prompt (handles no-op saves and GUI saves that already updated in-memory state).
 
-Clicking the restart action (tray or panel) calls `app_handle.restart()`, which relaunches the app with the new config.
+Clicking the restart action (tray, panel, or Settings sidebar) calls `app_handle.restart()`, which relaunches the app with the new config.
+
+#### Which settings need restart
+
+Most settings take effect immediately via the in-memory `AppSettingsState` RwLock and the `appearance-changed` event. The exceptions:
+
+| Setting | Why restart is needed |
+|---------|----------------------|
+| Feed config (`feeds.toml`) | Feeds are built from the registry at startup and not hot-reloaded. |
+| `show_menubar` | The tray icon is created once at startup; there is no dynamic show/hide API. |
+
+All other settings (theme, text size, hotkey, panel options, notifications, focus/agents) apply immediately without restart.
 
 ### Error handling
 

@@ -69,6 +69,40 @@ body {
   opacity: 1;
 }
 
+.sidebar-spacer {
+  flex: 1;
+  min-height: var(--space-5);
+  border-bottom: 1px solid var(--separator);
+  margin-bottom: var(--space-3);
+}
+
+.settings-nav.restart-action {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid var(--accent-dim);
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 450;
+  background: var(--accent-soft);
+  animation: restart-nudge 3s var(--ease-in-out) infinite;
+}
+
+.settings-nav.restart-action .settings-nav-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.settings-nav.restart-action:hover {
+  background: color-mix(in oklch, var(--accent-soft), var(--accent-dim) 40%);
+  border-color: var(--accent);
+}
+
+@keyframes restart-nudge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .settings-main {
   padding: 22px var(--space-9);
   overflow-y: auto;

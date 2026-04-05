@@ -7,6 +7,7 @@ import {
   requestPermission,
 } from "@tauri-apps/plugin-notification";
 import { useAppearance } from "../shared/useAppearance";
+import type { FeedSnapshot } from "../shared/types";
 import { FEED_CATALOG, findFeedType, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
@@ -283,6 +284,10 @@ function SettingsApp() {
 
   const [toastMessage, setToastMessage] = useState("✓ Saved");
 
+  // Restart-required tracking: config watcher (feeds) + local (show_menubar).
+  const [restartNeeded, setRestartNeeded] = useState(false);
+  const initialMenubar = useRef<boolean | null>(null);
+
   const showToast = useCallback((message?: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToastMessage(message ?? "✓ Saved");
@@ -344,6 +349,7 @@ function SettingsApp() {
       .then((s) => {
         setNotifSettings(s.notifications);
         setShowMenubar(s.general?.show_menubar ?? true);
+        initialMenubar.current = s.general?.show_menubar ?? true;
         setShowPrioritySection(s.panel?.show_priority_section ?? true);
         setHideEmptyFeeds(s.panel?.hide_empty_feeds ?? false);
         setTheme(s.general?.theme ?? "system");
@@ -360,6 +366,26 @@ function SettingsApp() {
       .catch(() => setNotifPermission(null));
 
     emit("settings-ready").catch(() => {});
+  }, []);
+
+  // Listen for config change detection from the backend watcher.
+  useEffect(() => {
+    const unlisten = listen<FeedSnapshot[]>("feeds-updated", (event) => {
+      const configFeed = event.payload.find(
+        (f) => f.feed_type === "app" && f.activities.some((a) => a.action === "restart_app")
+      );
+      if (configFeed) setRestartNeeded(true);
+    });
+    // Also check on mount.
+    invoke<FeedSnapshot[]>("list_feeds")
+      .then((snapshots) => {
+        const configFeed = snapshots.find(
+          (f) => f.feed_type === "app" && f.activities.some((a) => a.action === "restart_app")
+        );
+        if (configFeed) setRestartNeeded(true);
+      })
+      .catch(() => {});
+    return () => { unlisten.then((fn) => fn()); };
   }, []);
 
   const loadFeeds = useCallback(async () => {
@@ -437,7 +463,13 @@ function SettingsApp() {
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
-      showToast("✓ Saved (Changes Applied)");
+      const menubarChanged = updates.showMenubar !== undefined && initialMenubar.current !== null && updates.showMenubar !== initialMenubar.current;
+      if (menubarChanged) {
+        setRestartNeeded(true);
+        showToast("✓ Saved (Restart Required)");
+      } else {
+        showToast("✓ Saved (Changes Applied)");
+      }
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
@@ -693,10 +725,11 @@ function SettingsApp() {
       setEditingIndex(null);
       setEditingFeed(null);
       setSaveSuccess(false);
+      showToast("✓ Saved (Restart Required)");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [editingIndex, feeds, isNewFeed]);
+  }, [editingIndex, feeds, isNewFeed, showToast]);
 
   const moveFeed = useCallback(async (index: number, direction: -1 | 1) => {
     const swapIndex = index + direction;
@@ -875,6 +908,17 @@ function SettingsApp() {
         >
           <span className="settings-nav-icon">▸</span> Agents
         </div>
+        {restartNeeded && (
+          <>
+            <div className="sidebar-spacer" />
+            <button
+              className="settings-nav restart-action"
+              onClick={() => { invoke("restart_app").catch(console.error); }}
+            >
+              <span className="settings-nav-icon">↻</span> Restart
+            </button>
+          </>
+        )}
       </nav>
       <main className={`settings-main ${sectionFading ? "fading" : ""}`}>
         {section === "general" ? (
