@@ -186,18 +186,20 @@ pub fn build_context_for_label(session: &SessionInfo) -> Option<FocusContext> {
 
 /// Queries current focus capabilities for the settings UI.
 ///
-/// Only performs cheap checks (tmux binary, AX permission).
+/// Only performs cheap checks (tmux binary, AX permission, app detection).
 /// Does NOT do PID ancestry walks — those happen during poll/focus.
 pub fn get_capabilities() -> FocusCapabilities {
     FocusCapabilities {
         has_active_session: false,
         tmux_installed: is_tmux_installed(),
         tmux_detected: false,
+        tmux_version: tmux_version_string(),
         terminal_app: None,
         terminal_scriptable: false,
         ghostty_scriptable: terminals::ghostty::is_available(),
         ghostty_version: terminals::ghostty::ghostty_version_string(),
         accessibility_permitted: check_accessibility_permission(),
+        terminals: detect_terminals(),
     }
 }
 
@@ -207,11 +209,61 @@ pub struct FocusCapabilities {
     pub has_active_session: bool,
     pub tmux_installed: bool,
     pub tmux_detected: bool,
+    pub tmux_version: Option<String>,
     pub terminal_app: Option<String>,
     pub terminal_scriptable: bool,
     pub ghostty_scriptable: bool,
     pub ghostty_version: Option<String>,
     pub accessibility_permitted: bool,
+    pub terminals: Vec<TerminalDetection>,
+}
+
+/// Per-terminal detection result for the settings UI.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TerminalDetection {
+    pub id: String,
+    pub name: String,
+    pub installed: bool,
+}
+
+/// Known macOS terminal emulators with their bundle identifiers.
+const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
+    ("ghostty", "Ghostty", "com.mitchellh.ghostty"),
+    ("iterm2", "iTerm2", "com.googlecode.iterm2"),
+    ("terminal_app", "Terminal.app", "com.apple.Terminal"),
+    ("wezterm", "WezTerm", "com.github.wez.wezterm"),
+    ("kitty", "Kitty", "net.kovidgoyal.kitty"),
+];
+
+/// Detects which known terminals are installed on this system.
+///
+/// Uses `NSWorkspace::URLForApplicationWithBundleIdentifier` — an instant
+/// lookup against the Launch Services database. No subprocess spawning,
+/// no Spotlight queries, no Accessibility permission required.
+fn detect_terminals() -> Vec<TerminalDetection> {
+    KNOWN_TERMINALS
+        .iter()
+        .map(|(id, name, bundle)| TerminalDetection {
+            id: (*id).to_string(),
+            name: (*name).to_string(),
+            installed: is_app_installed(bundle),
+        })
+        .collect()
+}
+
+/// Returns `true` if a macOS app with the given bundle identifier is installed.
+fn is_app_installed(bundle_id: &str) -> bool {
+    use objc2_app_kit::NSWorkspace;
+    use objc2_foundation::NSString;
+
+    let ns_id = NSString::from_str(bundle_id);
+    // SAFETY: sharedWorkspace returns the process-wide singleton (thread-safe).
+    // URLForApplicationWithBundleIdentifier is a read-only Launch Services query.
+    unsafe {
+        NSWorkspace::sharedWorkspace()
+            .URLForApplicationWithBundleIdentifier(&ns_id)
+            .is_some()
+    }
 }
 
 /// Checks whether the terminal app supports AppleScript-based focus.
@@ -229,6 +281,17 @@ fn is_tmux_installed() -> bool {
         .arg("-V")
         .output()
         .is_ok_and(|o| o.status.success())
+}
+
+/// Returns the tmux version string (e.g., "3.5"), or `None` if tmux is not installed.
+fn tmux_version_string() -> Option<String> {
+    let output = std::process::Command::new("tmux").arg("-V").output().ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    // "tmux 3.5" -> "3.5"
+    raw.strip_prefix("tmux ").map(|v| v.to_string())
 }
 
 /// Checks if Accessibility permission is granted via AXIsProcessTrusted().
@@ -527,6 +590,56 @@ mod tests {
             FocusResult::Failed("a".into()),
             FocusResult::Failed("b".into())
         );
+    }
+
+    // --- Terminal detection ---
+
+    #[test]
+    fn is_app_installed_nonexistent_bundle() {
+        assert!(!is_app_installed("com.nonexistent.fake.app.12345"));
+    }
+
+    #[test]
+    fn is_app_installed_terminal_app_always_present() {
+        // Terminal.app is always installed on macOS.
+        assert!(is_app_installed("com.apple.Terminal"));
+    }
+
+    #[test]
+    fn detect_terminals_returns_all_known() {
+        let detected = detect_terminals();
+        assert_eq!(
+            detected.len(),
+            KNOWN_TERMINALS.len(),
+            "should return one entry per known terminal"
+        );
+        for (i, (id, name, _)) in KNOWN_TERMINALS.iter().enumerate() {
+            assert_eq!(detected[i].id, *id);
+            assert_eq!(detected[i].name, *name);
+        }
+    }
+
+    #[test]
+    fn detect_terminals_terminal_app_is_installed() {
+        let detected = detect_terminals();
+        let terminal_app = detected.iter().find(|t| t.id == "terminal_app").unwrap();
+        assert!(
+            terminal_app.installed,
+            "Terminal.app should always be installed on macOS"
+        );
+    }
+
+    // --- tmux version ---
+
+    #[test]
+    fn tmux_version_string_format() {
+        if let Some(version) = tmux_version_string() {
+            // Should be a bare version like "3.5" or "3.4a", not "tmux 3.5".
+            assert!(
+                !version.starts_with("tmux"),
+                "version string should not include 'tmux' prefix, got: {version}"
+            );
+        }
     }
 
     // --- AppleScript escaping edge cases ---

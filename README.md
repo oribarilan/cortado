@@ -24,7 +24,7 @@ Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** 
 - **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
 - **Lightweight** — minimal CPU and memory footprint; stays out of your way
 - **Auto-updates** — checks for new versions and lets you install in one click
-- **Text-based config** — everything is plain TOML under `~/.config/cortado/`, editable through the built-in settings UI or by hand
+- **Text-based config** — everything is plain TOML under `~/.config/cortado/` (or `$XDG_CONFIG_HOME/cortado/`), editable through the built-in settings UI or by hand
 
 ## Install
 
@@ -56,7 +56,7 @@ Coding agent feeds support **one-click terminal focus**: click a session activit
 <details>
 <summary><strong>Configuration reference</strong></summary>
 
-Feeds are configured through the settings UI, but under the hood everything is stored as TOML in `~/.config/cortado/feeds.toml`. You can edit this file directly if you prefer.
+Feeds are configured through the settings UI, but under the hood everything is stored as TOML in `~/.config/cortado/feeds.toml`. You can edit this file directly if you prefer. If `$XDG_CONFIG_HOME` is set, cortado uses `$XDG_CONFIG_HOME/cortado/` instead.
 
 Each feed is a `[[feed]]` block.
 

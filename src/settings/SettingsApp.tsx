@@ -268,19 +268,21 @@ function SettingsApp() {
     has_active_session: boolean;
     tmux_installed: boolean;
     tmux_detected: boolean;
+    tmux_version: string | null;
     terminal_app: string | null;
     terminal_scriptable: boolean;
     ghostty_scriptable: boolean;
     ghostty_version: string | null;
     accessibility_permitted: boolean;
+    terminals: { id: string; name: string; installed: boolean }[];
   };
   const [focusCaps, setFocusCaps] = useState<FocusCaps | null>(null);
   const [focusLoading, setFocusLoading] = useState(false);
   const [tmuxEnabled, setTmuxEnabled] = useState(true);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
   const [showTmuxHelp, setShowTmuxHelp] = useState(false);
-  const [showGhosttyHelp, setShowGhosttyHelp] = useState(false);
   const [showAccessibilityHelp, setShowAccessibilityHelp] = useState(false);
+  const [expandedTerminal, setExpandedTerminal] = useState<string | null>(null);
 
   const [toastMessage, setToastMessage] = useState("✓ Saved");
 
@@ -926,7 +928,7 @@ function SettingsApp() {
           className={`settings-nav ${section === "focus" ? "active" : ""}`}
           onClick={() => switchSection("focus")}
         >
-          <span className="settings-nav-icon">▸</span> Agents
+          <span className="settings-nav-icon">▸</span> Terminals
         </div>
         {restartNeeded && (
           <>
@@ -1098,6 +1100,9 @@ function SettingsApp() {
                 </div>
               </div>
             )}
+            <p className="settings-hint" style={{ marginTop: 8 }}>
+              Set <code style={{ fontSize: "inherit" }}>$XDG_CONFIG_HOME</code> to override the config directory (default: <code style={{ fontSize: "inherit" }}>~/.config</code>).
+            </p>
           </>
         ) : section === "notifications" ? (
           <>
@@ -1287,147 +1292,207 @@ function SettingsApp() {
           </>
         ) : section === "focus" ? (
           <>
-            <h2 className="settings-title">Coding Agents</h2>
+            <h2 className="settings-title">Terminals</h2>
             <p className="settings-hint" style={{ marginBottom: 16 }}>
-              How cortado tracks and navigates to your coding agent sessions.
+              Terminal emulators and their integration capabilities with cortado.
             </p>
 
             {focusLoading ? (
               <p className="settings-placeholder">Loading...</p>
             ) : (
-              <>
-                <div className="section-header">tmux integration</div>
+              <div className="terminal-list">
+                {/* Terminal rows from backend */}
+                {(focusCaps?.terminals ?? []).map((term) => {
+                  const isExpanded = expandedTerminal === term.id;
+                  const toggleExpand = () => setExpandedTerminal(isExpanded ? null : term.id);
+                  const handleKeyDown = (e: React.KeyboardEvent) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleExpand();
+                    }
+                  };
 
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">
-                      Enable tmux pane switching
-                      <button
-                        className="help-toggle"
-                        onClick={() => setShowTmuxHelp((v) => !v)}
-                      >
-                        ?
-                      </button>
-                    </div>
-                    <div className="setting-hint">Navigate to the exact tmux pane running an agent session.</div>
-                  </div>
-                  <button
-                    className={`toggle ${tmuxEnabled ? "on" : ""}`}
-                    onClick={() => { void saveFocusSetting({ tmuxEnabled: !tmuxEnabled }); }}
-                  />
-                </div>
+                  // Version badge for ghostty
+                  const version = term.id === "ghostty" ? focusCaps?.ghostty_version ?? null : null;
 
-                {showTmuxHelp ? (
-                  <div className="help-detail">
-                    When you open an agent activity, cortado navigates to the exact pane
-                    running that session. If the session already has a terminal tab,
-                    cortado selects the right window and pane without disrupting your other tabs.
-                    If the session is detached, cortado switches an existing client to show it.
-                  </div>
-                ) : null}
-
-                {focusCaps ? (
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <div className="setting-hint">
-                        {focusCaps.tmux_installed ? "tmux detected" : "tmux is not available"}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="section-header">Ghostty tab switching</div>
-
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">
-                      Tab-level focus
-                      <button
-                        className="help-toggle"
-                        onClick={() => setShowGhosttyHelp((v) => !v)}
-                      >
-                        ?
-                      </button>
-                    </div>
-                    <div className="setting-hint">
-                      Switch to the Ghostty tab running the agent session. Requires Ghostty 1.3+.
-                    </div>
-                  </div>
-                  <span className={`status-badge ${focusCaps?.ghostty_scriptable ? "active" : "unavailable"}`}>
-                    {focusCaps?.ghostty_scriptable ? "Available" : "Not available"}
-                  </span>
-                </div>
-
-                {showGhosttyHelp ? (
-                  <div className="help-detail">
-                    Uses Ghostty's AppleScript API to switch to the correct tab. With tmux, matches
-                    precisely by tmux session name. Without tmux, matches by working directory in the tab title
-                    (best-effort, depends on shell config). Ghostty does not yet expose PID or TTY on terminal
-                    objects, so precise matching without tmux is not possible.
-                  </div>
-                ) : null}
-
-                {focusCaps ? (
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <div className="setting-hint">
-                        {focusCaps.ghostty_scriptable
-                          ? `Ghostty ${focusCaps.ghostty_version ?? ""} -- scripting supported`
-                          : focusCaps.ghostty_version
-                            ? `Ghostty ${focusCaps.ghostty_version} -- requires 1.3+`
-                            : "Ghostty not detected"}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="section-header">Accessibility</div>
-
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">
-                      Enable window focus
-                      <button
-                        className="help-toggle"
-                        onClick={() => setShowAccessibilityHelp((v) => !v)}
-                      >
-                        ?
-                      </button>
-                    </div>
-                    <div className="setting-hint">Raise the specific terminal window by matching its title.</div>
-                  </div>
-                  <button
-                    className={`toggle ${accessibilityEnabled ? "on" : ""}`}
-                    onClick={() => { void saveFocusSetting({ accessibilityEnabled: !accessibilityEnabled }); }}
-                  />
-                </div>
-
-                {showAccessibilityHelp ? (
-                  <div className="help-detail">
-                    With Accessibility permission, cortado can find and raise the specific terminal
-                    window containing your agent session. Works with any terminal but less precise
-                    than tmux — matches by window title, which depends on your shell and terminal config.
-                  </div>
-                ) : null}
-
-                {accessibilityEnabled && !focusCaps?.accessibility_permitted ? (
-                  <div className="setting-row">
-                    <div className="setting-info">
-                      <div className="setting-hint">
-                        Accessibility permission not granted.
-                      </div>
-                    </div>
-                    <button
-                      className="config-path-btn"
-                      onClick={() => {
-                        void invoke("open_activity", { url: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" });
-                      }}
+                  return (
+                    <div
+                      className={`terminal-row ${isExpanded ? "expanded" : ""}`}
+                      key={term.id}
+                      data-terminal-id={term.id}
                     >
-                      Open System Settings...
-                    </button>
-                  </div>
-                ) : null}
-              </>
+                      <div
+                        className="terminal-header"
+                        onClick={toggleExpand}
+                        onKeyDown={handleKeyDown}
+                        tabIndex={0}
+                        role="button"
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="terminal-disclosure">{"\u25B8"}</span>
+                        <span className="terminal-name">{term.name}</span>
+                        {version && <span className="terminal-version">{version}</span>}
+                      </div>
+                      <div className="terminal-detail-wrap">
+                        <div className="terminal-detail-inner">
+                          <div className="terminal-detail">
+                            {term.id === "ghostty" ? (
+                              <>
+                                <div className="terminal-detail-line">
+                                  <span className="terminal-detail-label">AppleScript</span>
+                                  <span className={`status-badge ${focusCaps?.ghostty_scriptable ? "active" : "unavailable"}`}>
+                                    {focusCaps?.ghostty_scriptable ? "Available" : "Not available"}
+                                  </span>
+                                </div>
+                                <div className="terminal-detail-line">
+                                  <span className="terminal-detail-label">Version</span>
+                                  <span className="terminal-detail-value">
+                                    {focusCaps?.ghostty_version ?? "Not detected"}
+                                  </span>
+                                </div>
+                                <div className="terminal-detail-desc">
+                                  Ghostty exposes an AppleScript API for tab-level focus. Cortado can switch to the exact tab running an agent session, matched by tmux session name or working directory.
+                                </div>
+                                <div className="terminal-detail-line">
+                                  <div className="setting-info">
+                                    <div className="setting-label">
+                                      Accessibility permission
+                                      <button
+                                        className="help-toggle"
+                                        onClick={() => setShowAccessibilityHelp((v) => !v)}
+                                      >
+                                        ?
+                                      </button>
+                                    </div>
+                                    <div className="setting-hint">Required for window-level focus (raise the terminal window)</div>
+                                  </div>
+                                  <button
+                                    className={`toggle ${accessibilityEnabled ? "on" : ""}`}
+                                    onClick={() => { void saveFocusSetting({ accessibilityEnabled: !accessibilityEnabled }); }}
+                                    aria-pressed={accessibilityEnabled}
+                                    aria-label="Enable accessibility permission"
+                                  />
+                                </div>
+                                {accessibilityEnabled && !focusCaps?.accessibility_permitted ? (
+                                  <div className="terminal-detail-line">
+                                    <span className="status-badge unavailable">Not granted</span>
+                                    <button
+                                      className="config-path-btn"
+                                      onClick={() => {
+                                        void invoke("open_activity", { url: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility" });
+                                      }}
+                                    >
+                                      Open System Settings...
+                                    </button>
+                                  </div>
+                                ) : null}
+                                {showAccessibilityHelp ? (
+                                  <div className="help-detail">
+                                    With Accessibility permission, cortado can find and raise the specific Ghostty window containing your agent session. This works by matching the window title, which depends on your shell and terminal config.
+                                  </div>
+                                ) : null}
+                              </>
+                            ) : term.id === "iterm2" ? (
+                              <div className="terminal-detail-desc">
+                                Standard activation to bring iTerm2 to the foreground.
+                              </div>
+                            ) : term.id === "terminal_app" ? (
+                              <div className="terminal-detail-desc">
+                                The built-in macOS terminal. Always available.
+                              </div>
+                            ) : term.id === "wezterm" ? (
+                              <div className="terminal-detail-desc">
+                                WezTerm integration using its CLI for pane-level focus.
+                              </div>
+                            ) : term.id === "kitty" ? (
+                              <div className="terminal-detail-desc">
+                                Kitty integration using its remote control protocol.
+                              </div>
+                            ) : (
+                              <div className="terminal-detail-desc">
+                                {term.name} terminal emulator.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* tmux row (manually added, always last) */}
+                {(() => {
+                  const isExpanded = expandedTerminal === "tmux";
+                  const toggleExpand = () => setExpandedTerminal(isExpanded ? null : "tmux");
+                  const handleKeyDown = (e: React.KeyboardEvent) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleExpand();
+                    }
+                  };
+                  return (
+                    <div
+                      className={`terminal-row ${isExpanded ? "expanded" : ""}`}
+                      data-terminal-id="tmux"
+                    >
+                      <div
+                        className="terminal-header"
+                        onClick={toggleExpand}
+                        onKeyDown={handleKeyDown}
+                        tabIndex={0}
+                        role="button"
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="terminal-disclosure">{"\u25B8"}</span>
+                        <span className="terminal-name">tmux</span>
+                        {focusCaps?.tmux_version && (
+                          <span className="terminal-version">{focusCaps.tmux_version}</span>
+                        )}
+                      </div>
+                      <div className="terminal-detail-wrap">
+                        <div className="terminal-detail-inner">
+                          <div className="terminal-detail">
+                            <div className="terminal-detail-line">
+                              <span className="terminal-detail-label">Version</span>
+                              <span className="terminal-detail-value">
+                                {focusCaps?.tmux_version ?? "Not detected"}
+                              </span>
+                            </div>
+                            <div className="setting-row">
+                              <div className="setting-info">
+                                <div className="setting-label">
+                                  Enable pane switching
+                                  <button
+                                    className="help-toggle"
+                                    onClick={() => setShowTmuxHelp((v) => !v)}
+                                  >
+                                    ?
+                                  </button>
+                                </div>
+                                <div className="setting-hint">Navigate to the exact tmux pane running an agent session</div>
+                              </div>
+                              <button
+                                className={`toggle ${tmuxEnabled ? "on" : ""}`}
+                                onClick={() => { void saveFocusSetting({ tmuxEnabled: !tmuxEnabled }); }}
+                                aria-pressed={tmuxEnabled}
+                                aria-label="Enable tmux pane switching"
+                              />
+                            </div>
+                            {showTmuxHelp ? (
+                              <div className="help-detail">
+                                When you open an agent activity, cortado navigates to the exact pane
+                                running that session. If the session already has a terminal tab,
+                                cortado selects the right window and pane without disrupting your other tabs.
+                                If the session is detached, cortado switches an existing client to show it.
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             )}
           </>
         ) : editingFeed !== null ? (

@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Settings: "Terminals" tab replaces "Agents" -- each terminal emulator gets its own expandable section showing capabilities, version, and settings
+- Terminal detection: the app now detects which terminal emulators are installed on your system
+- Config directory respects `$XDG_CONFIG_HOME` when set (default remains `~/.config/cortado/`)
+
 ### Changed
 - Copilot and OpenCode feed icons now use the official brand logos
 

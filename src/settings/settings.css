@@ -1611,6 +1611,118 @@ body {
   color: var(--text-secondary);
 }
 
+/* ── Terminal disclosure rows ──────────────── */
+
+.terminal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.terminal-row {
+  border-bottom: 1px solid color-mix(in oklch, var(--border), transparent 40%);
+}
+
+.terminal-row:last-child {
+  border-bottom: none;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.terminal-header:hover {
+  background: var(--hover);
+}
+
+.terminal-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+.terminal-disclosure {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--duration-normal) var(--ease-out);
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+}
+
+.terminal-row.expanded .terminal-disclosure {
+  transform: rotate(90deg);
+}
+
+.terminal-name {
+  font-size: var(--text-sm);
+  font-weight: 450;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.terminal-version {
+  font-size: 11px;
+  font-weight: var(--font-medium);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-detail-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-normal) var(--ease-out);
+}
+
+.terminal-row.expanded .terminal-detail-wrap {
+  grid-template-rows: 1fr;
+}
+
+.terminal-detail-inner {
+  overflow: hidden;
+}
+
+.terminal-detail {
+  padding: 0 0 var(--space-7) calc(12px + var(--space-4));
+}
+
+.terminal-detail-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+}
+
+.terminal-detail-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
+}
+
+.terminal-detail-value {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.terminal-detail-desc {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.terminal-detail .setting-row {
+  padding: var(--space-4) 0;
+  border-bottom: none;
+}
+
 /* ── Reduced motion ── */
 
 @media (prefers-reduced-motion: reduce) {

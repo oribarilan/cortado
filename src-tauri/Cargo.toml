@@ -42,6 +42,10 @@ semver = "1"
 libc = "0.2"
 notify = "7"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-app-kit = { version = "0.3", features = ["NSWorkspace"] }
+objc2-foundation = { version = "0.3", features = ["NSString", "NSURL"] }
+
 [features]
 # Used for production builds and when `devPath` points to the filesystem.
 custom-protocol = ["tauri/custom-protocol"]
