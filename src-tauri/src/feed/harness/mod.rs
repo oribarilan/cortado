@@ -61,6 +61,5 @@ pub trait HarnessProvider: Send + Sync {
     }
 }
 
-pub mod copilot;
 pub mod feed;
 pub mod generic;

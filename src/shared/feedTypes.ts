@@ -23,7 +23,7 @@ export type FeedTypeDep = {
   binary: string;
   name: string;
   installUrl: string;
-  authCommand: string;
+  authCommand?: string;
   extraSteps?: string[];
 };
 
@@ -204,10 +204,22 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultInterval: "30s",
         hideInterval: true,
         fields: [],
+        dependency: {
+          binary: "copilot",
+          name: "GitHub Copilot CLI",
+          installUrl: "https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line",
+        },
+        setup: {
+          label: "Copilot CLI plugin",
+          description: "The Cortado plugin must be installed in Copilot CLI to publish session state to Cortado.",
+          checkCommand: "check_copilot_extension",
+          installCommand: "install_copilot_extension",
+          installLabel: "Install Plugin",
+        },
         notes: [
-          "Discovers active sessions automatically from ~/.copilot/session-state/. No CLI or authentication required.",
-          "Shows one activity per working directory (multiple resumed sessions are deduplicated)",
-          "Opening an activity focuses the terminal — exact tmux pane when available",
+          "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
+          "Shows one activity per working directory with repo, branch, and status.",
+          "Opening an activity focuses the terminal -- exact tmux pane when available",
         ],
       },
       {

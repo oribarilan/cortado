@@ -46,7 +46,7 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | `github-actions` | CI/CD workflow runs |
 | `ado-pr` | Azure DevOps pull requests |
 | `http-health` | Endpoint availability and response time |
-| `copilot-session` | Active GitHub Copilot coding agent sessions |
+| `copilot-session` | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
 | `opencode-session` | Active OpenCode coding sessions |
 
 ### Terminal focus
@@ -116,7 +116,7 @@ interval = "60s"
 
 ### `copilot-session`
 
-Discovers active sessions automatically; no config needed beyond the block.
+Tracks active Copilot CLI sessions. The Cortado plugin for Copilot CLI must be installed -- Cortado offers a one-click install button when you add this feed type.
 
 ```toml
 [[feed]]

@@ -280,6 +280,15 @@ pub(crate) const OPENCODE_PLUGIN_SOURCE: &str =
 /// The filename written to OpenCode's global plugins directory.
 pub(crate) const OPENCODE_PLUGIN_FILENAME: &str = "cortado-opencode.ts";
 
+/// The Copilot CLI plugin hook script, embedded at compile time.
+pub(crate) const COPILOT_HOOK_SCRIPT: &str = include_str!("../../plugins/copilot/cortado-hook.sh");
+
+/// The Copilot CLI plugin manifest, embedded at compile time.
+pub(crate) const COPILOT_PLUGIN_JSON: &str = include_str!("../../plugins/copilot/plugin.json");
+
+/// The Copilot CLI plugin hooks configuration, embedded at compile time.
+pub(crate) const COPILOT_HOOKS_JSON: &str = include_str!("../../plugins/copilot/hooks.json");
+
 /// Returns the path to the OpenCode global plugins directory.
 ///
 /// `~/.config/opencode/plugins/` (follows XDG conventions, same as OpenCode).
@@ -287,12 +296,25 @@ pub(crate) fn opencode_plugins_dir() -> Option<std::path::PathBuf> {
     dirs::home_dir().map(|h| h.join(".config/opencode/plugins"))
 }
 
+/// Returns the path to the Copilot CLI installed-plugins directory for the
+/// Cortado plugin.
+///
+/// `~/.copilot/installed-plugins/_direct/copilot/` — where `copilot plugin install`
+/// places plugins installed from a local directory named `copilot`.
+pub(crate) fn copilot_plugin_dir() -> Option<std::path::PathBuf> {
+    dirs::home_dir().map(|h| h.join(".copilot/installed-plugins/_direct/copilot"))
+}
+
 /// Parses a plugin version from a source string.
 ///
 /// Looks for `// cortado-plugin-version: N` in the first 5 lines.
 pub(crate) fn parse_plugin_version(source: &str) -> Option<u32> {
     for line in source.lines().take(5) {
-        if let Some(rest) = line.trim().strip_prefix("// cortado-plugin-version:") {
+        if let Some(rest) = line
+            .trim()
+            .strip_prefix("// cortado-plugin-version:")
+            .or_else(|| line.trim().strip_prefix("# cortado-plugin-version:"))
+        {
             return rest.trim().parse().ok();
         }
     }
@@ -422,6 +444,145 @@ pub fn install_opencode_plugin() -> SetupInstallResult {
             )),
         };
     }
+
+    SetupInstallResult {
+        success: true,
+        error: None,
+    }
+}
+
+/// Checks whether the Cortado plugin is installed in Copilot CLI.
+///
+/// Runs `copilot plugin list` and checks if "cortado" appears in the output.
+/// When installed, also checks the on-disk hook script for version staleness.
+#[tauri::command]
+pub fn check_copilot_extension() -> SetupCheckResult {
+    // Run `copilot plugin list` to check if our plugin is registered.
+    let output = match Command::new("copilot")
+        .args(["plugin", "list"])
+        .env("NO_COLOR", "1")
+        .output()
+    {
+        Ok(out) => out,
+        Err(_) => {
+            return SetupCheckResult {
+                ready: false,
+                outdated: false,
+            }
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if !stdout.to_lowercase().contains("cortado") {
+        return SetupCheckResult {
+            ready: false,
+            outdated: false,
+        };
+    }
+
+    // Plugin is installed — check if the hook script is outdated.
+    let outdated = copilot_plugin_dir()
+        .map(|dir| dir.join("cortado-hook.sh"))
+        .and_then(|path| std::fs::read_to_string(path).ok())
+        .map(|content| is_plugin_outdated(&content, COPILOT_HOOK_SCRIPT))
+        .unwrap_or(false);
+
+    SetupCheckResult {
+        ready: true,
+        outdated,
+    }
+}
+
+/// Installs the Cortado plugin into Copilot CLI.
+///
+/// Writes the embedded plugin files to a temporary directory, then runs
+/// `copilot plugin install <path>`. Uninstalls any existing version first
+/// to ensure a clean install.
+#[tauri::command]
+pub fn install_copilot_extension() -> SetupInstallResult {
+    let tmp_base =
+        std::env::temp_dir().join(format!("cortado-copilot-install-{}", std::process::id()));
+    let plugin_dir = tmp_base.join("cortado");
+
+    // Clean up any leftover temp dir from a previous attempt.
+    let _ = std::fs::remove_dir_all(&tmp_base);
+
+    if let Err(e) = std::fs::create_dir_all(&plugin_dir) {
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!("Failed to create plugin directory: {e}")),
+        };
+    }
+
+    // Write all plugin files.
+    let files = [
+        ("plugin.json", COPILOT_PLUGIN_JSON),
+        ("hooks.json", COPILOT_HOOKS_JSON),
+        ("cortado-hook.sh", COPILOT_HOOK_SCRIPT),
+    ];
+    for (name, content) in &files {
+        let path = plugin_dir.join(name);
+        if let Err(e) = std::fs::write(&path, content) {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to write {name}: {e}")),
+            };
+        }
+    }
+
+    // Make the hook script executable.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let hook_path = plugin_dir.join("cortado-hook.sh");
+        if let Err(e) = std::fs::set_permissions(&hook_path, std::fs::Permissions::from_mode(0o755))
+        {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to set hook permissions: {e}")),
+            };
+        }
+    }
+
+    // Uninstall any existing version first (ignore errors — may not be installed).
+    let _ = Command::new("copilot")
+        .args(["plugin", "uninstall", "cortado"])
+        .output();
+
+    // Install via `copilot plugin install <path>`.
+    let output = match Command::new("copilot")
+        .args(["plugin", "install"])
+        .arg(&plugin_dir)
+        .output()
+    {
+        Ok(out) => out,
+        Err(e) => {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to run `copilot plugin install`: {e}")),
+            }
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!(
+                "`copilot plugin install` failed: {}{}",
+                stderr.trim(),
+                if stdout.trim().is_empty() {
+                    String::new()
+                } else {
+                    format!("\n{}", stdout.trim())
+                }
+            )),
+        };
+    }
+
+    // Clean up temp directory.
+    let _ = std::fs::remove_dir_all(&tmp_base);
 
     SetupInstallResult {
         success: true,
@@ -946,5 +1107,46 @@ mod tests {
             parse_plugin_version(OPENCODE_PLUGIN_SOURCE).is_some(),
             "Embedded plugin source must have a cortado-plugin-version header"
         );
+    }
+
+    // ── copilot plugin ────────────────────────────────────────────
+
+    #[test]
+    fn copilot_plugin_dir_returns_path() {
+        let dir = copilot_plugin_dir();
+        assert!(dir.is_some());
+        let path = dir.unwrap();
+        assert!(path.ends_with(".copilot/installed-plugins/_direct/copilot"));
+    }
+
+    #[test]
+    fn embedded_copilot_hook_script_is_valid() {
+        assert!(!COPILOT_HOOK_SCRIPT.is_empty());
+        assert!(COPILOT_HOOK_SCRIPT.contains("harness"));
+        assert!(COPILOT_HOOK_SCRIPT.contains("copilot"));
+    }
+
+    #[test]
+    fn embedded_copilot_hook_has_version_header() {
+        assert!(
+            parse_plugin_version(COPILOT_HOOK_SCRIPT).is_some(),
+            "Embedded Copilot hook script must have a cortado-plugin-version header"
+        );
+    }
+
+    #[test]
+    fn embedded_copilot_plugin_json_is_valid() {
+        let v: serde_json::Value =
+            serde_json::from_str(COPILOT_PLUGIN_JSON).expect("plugin.json must be valid JSON");
+        assert_eq!(v["name"], "cortado");
+    }
+
+    #[test]
+    fn embedded_copilot_hooks_json_is_valid() {
+        let v: serde_json::Value =
+            serde_json::from_str(COPILOT_HOOKS_JSON).expect("hooks.json must be valid JSON");
+        assert_eq!(v["version"], 1);
+        assert!(v["hooks"]["sessionStart"].is_array());
+        assert!(v["hooks"]["sessionEnd"].is_array());
     }
 }

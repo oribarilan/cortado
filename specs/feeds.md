@@ -66,70 +66,51 @@ The harness system separates generic feed behavior from agent-specific session d
 ```
 HarnessProvider (trait)          HarnessFeed (generic Feed impl)
   |                                 |
-  |-- CopilotProvider               |-- maps SessionInfo -> Activity
+  |-- GenericProvider("copilot")    |-- maps SessionInfo -> Activity
   |-- GenericProvider("opencode")   |-- caches focus context per session
   '-- GenericProvider("...")        '-- registered in instantiate_harness_feed()
 ```
 
-**Adding a new harness** requires only a new `HarnessProvider` implementation — zero changes to `HarnessFeed`, the UI, or the config format. The provider discovers sessions and returns `Vec<SessionInfo>`; the feed handles everything else.
+**Adding a new harness** requires only a new `HarnessProvider` implementation — zero changes to `HarnessFeed`, the UI, or the config format. The provider discovers sessions and returns `Vec<SessionInfo>`; the feed handles everything else. All current harness feeds use `GenericProvider` backed by the interchange format; agent-specific logic lives in plugins that write the interchange files.
 
 ### `copilot-session` feed type
 
-Tracks active GitHub Copilot CLI sessions by reading local session state files.
+Tracks active GitHub Copilot CLI sessions via the generic harness interchange format. Session state is written by the **Cortado plugin** for Copilot CLI, which uses the Copilot CLI plugin system (hooks-based) to write interchange files consumed by `GenericProvider("copilot")`.
 
-**Data source**: `~/.copilot/session-state/<session-id>/`
+**Data source**: `~/.config/cortado/harness/<pid>.json` (files written by the Cortado Copilot CLI plugin)
 
-| File | Contents |
-|------|----------|
-| `workspace.yaml` | Session metadata: id, cwd, repo, branch, summary |
-| `events.jsonl` | Chronological event stream (we read only the last line) |
-| `inuse.<PID>.lock` | Lock file — present while the owning process is alive |
-
-**Active session detection**: Glob `inuse.*.lock` files, extract PID from filename, check liveness via `kill(pid, 0)`. Dead PID = stale lock, skip. No heuristics.
+**Plugin**: Installed via `copilot plugin install` into `~/.copilot/installed-plugins/`. The plugin uses shell-based hooks (`hooks.json`) to write interchange files. Cortado offers a one-click install button when you add this feed type.
 
 **Config**:
 
 ```toml
 [[feed]]
-name = "copilot sessions"
+name = "Copilot"
 type = "copilot-session"
 ```
 
-No type-specific config keys. No external CLI dependency — reads local files only.
+No type-specific config keys. Default interval: 30s, with near-instant FSEvents-based detection.
 
-**Default interval**: `30s`.
+**Provided fields**: same as `opencode-session` (status, summary, last_active, repo, branch, focus_app, focus_has_tmux).
 
-**Provided fields**:
+**Activity title**: `{short_repo} @ {branch}` (same format as other harness feeds).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `status` | status | Session status: working, question, approval, idle, unknown |
-| `summary` | text | Agent-generated session description |
-| `last_active` | text | Relative time since last event (e.g., "2m ago") |
-| `repo` | text | Repository name (e.g., `oribarilan/cortado`) |
-| `branch` | text | Git branch name |
-| `focus_label` | text | Terminal focus action label (e.g., "Open in Ghostty (via tmux)") |
+**How it works**: The Cortado plugin registers with Copilot CLI via `copilot plugin install` and defines shell-based hooks in `hooks.json`. Each hook invocation writes session state to the harness directory as an interchange file. The `GenericProvider("copilot")` reads these files, checks PID liveness, and returns active sessions. FSEvents watching triggers near-instant re-polls when files change.
 
-**Activity title**: `{short_repo} @ {branch}` — e.g., `cortado @ main`. Falls back to last directory component of `cwd` if repo is unknown.
+See `specs/harness-interchange.md` for the full interchange format specification.
 
-**Activity identity**: Session UUID from `workspace.yaml`. Globally unique and stable.
+#### Plugin hook-to-status mapping
 
-**Deduplication**: Multiple sessions can exist for the same working directory (e.g., from Copilot CLI's `/resume`). The feed deduplicates by cwd, keeping only the most recently active session per directory.
+The Cortado plugin maps Copilot CLI hooks to interchange statuses:
 
-### Status inference
-
-Status is inferred from the last event in `events.jsonl`:
-
-| Last event | Status value | StatusKind |
-|------------|-------------|------------|
-| `assistant.turn_start` / `user.message` | working | Running |
-| `tool.execution_start` (non-`ask_user`) | working | Running |
-| `tool.execution_start` with `toolName: "ask_user"` | question | AttentionPositive |
-| `assistant.message` with `ask_user` tool request | question | AttentionPositive |
-| `assistant.message` with other tool requests | approval | AttentionPositive |
-| `assistant.message` with no tool requests | idle | Idle |
-| `assistant.turn_end` / `tool.execution_complete` | idle | Idle |
-| No events / unparseable | unknown | Idle |
+| Hook | Condition | Interchange status |
+|------|-----------|-------------------|
+| `sessionStart` | file doesn't exist yet | working |
+| `userPromptSubmitted` | | working |
+| `preToolUse` | `toolName` is `ask_user` | question |
+| `preToolUse` | other tools | working |
+| `postToolUse` | | working |
+| `sessionEnd` | | (deletes the interchange file) |
 
 ### Terminal focus
 
@@ -139,7 +120,7 @@ Focus eligibility is detected by the presence of a `focus_app` field on the acti
 
 #### Focus context
 
-On first poll for each session, Cortado walks the process tree from the copilot PID upward to discover:
+On first poll for each session, Cortado walks the process tree from the session PID upward to discover:
 
 - **Terminal app** — the GUI application (e.g., Ghostty, iTerm2, Terminal.app) identified via `NSRunningApplication`
 - **tmux** — detected by process name in the ancestry chain
@@ -170,7 +151,7 @@ See `specs/terminal_integration.md` for the full architecture, supported termina
 
 When tmux is detected:
 
-1. `tmux list-panes -a` — find the pane whose PID matches the copilot process (or its ancestor)
+1. `tmux list-panes -a` — find the pane whose PID matches the session process (or its ancestor)
 2. `tmux list-clients` — find a client, preferring one already attached to the target session
 3. `tmux switch-client` + `tmux select-pane` — switch to the exact pane
 4. Activate the terminal app
@@ -179,24 +160,18 @@ When tmux is detected:
 
 Activates the terminal app via `System Events` AppleScript. Brings the app to front but can't target a specific window — may focus the wrong one if multiple are open.
 
-### Performance
-
-- Session discovery completes in <50ms for ~12 active sessions
-- `events.jsonl` is read via reverse-seek (last 64KB) — never reads the full file
-- Focus context resolved once per session, cached thereafter
-- `~/.copilot/session-state/` can contain 2500+ directories but the lock file glob is fast
-
 ### Implementation
 
 ```
 src-tauri/src/feed/harness/
   mod.rs          # SessionStatus, SessionInfo, HarnessProvider trait
-  copilot.rs      # CopilotProvider: lock files, YAML, events.jsonl
   generic.rs      # GenericProvider: reads interchange format JSON files
   feed.rs         # HarnessFeed: Feed impl, focus context caching
 
 src-tauri/src/feed/
   harness_watcher.rs  # FSEvents-based file watching for harness feeds
+
+plugins/copilot/      # Cortado plugin for Copilot CLI (hooks-based)
 
 src-tauri/src/terminal_focus/
   mod.rs          # FocusContext, FocusResult, two-phase focus_terminal(), capabilities

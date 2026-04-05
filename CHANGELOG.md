@@ -6,6 +6,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [0.7.0] - 2026-04-05
 
 ### Added
+- Copilot: streamlined session tracking with an installable plugin -- more accurate status, including notifications when Copilot asks a question
 - Config change detection: edits to feeds.toml or settings.toml are detected automatically and a one-click restart prompt appears in the tray, panel, and Settings sidebar
 - Settings save feedback now tells you whether changes applied immediately or require a restart
 - "Focus session" works for all coding agent feeds, not just Copilot

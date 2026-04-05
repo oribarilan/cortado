@@ -36,10 +36,13 @@ pub struct CortadoUpdateFeed {
     /// Whether to check for OpenCode plugin updates (true when the user has
     /// an `opencode-session` feed configured).
     check_opencode_plugin: bool,
+    /// Whether to check for Copilot extension updates (true when the user has
+    /// a `copilot-session` feed configured).
+    check_copilot_extension: bool,
 }
 
 impl CortadoUpdateFeed {
-    pub fn new(check_opencode_plugin: bool) -> Self {
+    pub fn new(check_opencode_plugin: bool, check_copilot_extension: bool) -> Self {
         let current_version = env!("CARGO_PKG_VERSION")
             .parse::<semver::Version>()
             .expect("CARGO_PKG_VERSION must be valid semver");
@@ -52,6 +55,7 @@ impl CortadoUpdateFeed {
                 .build()
                 .expect("failed to build HTTP client"),
             check_opencode_plugin,
+            check_copilot_extension,
         }
     }
 
@@ -77,6 +81,52 @@ impl CortadoUpdateFeed {
         Some(Activity {
             id: "plugin-update-opencode".to_string(),
             title: "OpenCode plugin update available".to_string(),
+            fields: vec![
+                Field {
+                    name: "status".to_string(),
+                    label: "Status".to_string(),
+                    value: FieldValue::Status {
+                        value: "update available".to_string(),
+                        kind: StatusKind::AttentionPositive,
+                    },
+                },
+                Field {
+                    name: "version".to_string(),
+                    label: "Version".to_string(),
+                    value: FieldValue::Text {
+                        value: format!("v{new_version}"),
+                    },
+                },
+            ],
+            retained: false,
+            retained_at_unix_ms: None,
+            sort_ts: None,
+            action: None,
+        })
+    }
+
+    /// Checks whether the on-disk Copilot CLI plugin is outdated compared
+    /// to the version embedded in this binary. Returns an activity if so.
+    fn check_copilot_extension_update(&self) -> Option<Activity> {
+        if !self.check_copilot_extension {
+            return None;
+        }
+
+        let dir = settings_config::copilot_plugin_dir()?;
+        let path = dir.join("cortado-hook.sh");
+        let content = std::fs::read_to_string(path).ok()?;
+
+        if !settings_config::is_plugin_outdated(&content, settings_config::COPILOT_HOOK_SCRIPT) {
+            return None;
+        }
+
+        let new_version =
+            settings_config::parse_plugin_version(settings_config::COPILOT_HOOK_SCRIPT)
+                .unwrap_or(0);
+
+        Some(Activity {
+            id: "plugin-update-copilot".to_string(),
+            title: "Copilot CLI extension update available".to_string(),
             fields: vec![
                 Field {
                     name: "status".to_string(),
@@ -166,6 +216,11 @@ impl Feed for CortadoUpdateFeed {
             activities.push(activity);
         }
 
+        // Copilot extension update check (local filesystem, fast).
+        if let Some(activity) = self.check_copilot_extension_update() {
+            activities.push(activity);
+        }
+
         Ok(activities)
     }
 }
@@ -241,14 +296,14 @@ mod tests {
 
     #[test]
     fn new_feed_parses_current_version() {
-        let feed = CortadoUpdateFeed::new(false);
+        let feed = CortadoUpdateFeed::new(false, false);
         // Should parse without panic.
         assert!(!feed.current_version.to_string().is_empty());
     }
 
     #[test]
     fn feed_metadata() {
-        let feed = CortadoUpdateFeed::new(false);
+        let feed = CortadoUpdateFeed::new(false, false);
         assert_eq!(feed.name(), "Cortado Updates");
         assert_eq!(feed.feed_type(), "cortado-update");
         assert_eq!(feed.interval(), Duration::from_secs(6 * 60 * 60));
@@ -258,19 +313,25 @@ mod tests {
 
     #[test]
     fn plugin_check_skipped_when_disabled() {
-        let feed = CortadoUpdateFeed::new(false);
+        let feed = CortadoUpdateFeed::new(false, false);
         assert!(feed.check_plugin_update().is_none());
     }
 
     #[test]
     fn plugin_check_returns_none_when_file_missing() {
         // With check enabled but no plugin file on disk, should return None.
-        let feed = CortadoUpdateFeed::new(true);
+        let feed = CortadoUpdateFeed::new(true, false);
         // This test assumes ~/.config/opencode/plugins/cortado-opencode.ts
         // either doesn't exist or is up to date. Both result in no activity.
         let result = feed.check_plugin_update();
         // Can't assert None definitively (file might exist and be outdated in
         // dev), so just verify the method doesn't panic.
         let _ = result;
+    }
+
+    #[test]
+    fn copilot_check_skipped_when_disabled() {
+        let feed = CortadoUpdateFeed::new(false, false);
+        assert!(feed.check_copilot_extension_update().is_none());
     }
 }

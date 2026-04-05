@@ -63,7 +63,13 @@ fn main() {
     let has_opencode_feed = feed_configs
         .iter()
         .any(|c| c.feed_type == "opencode-session");
-    feed_registry.register(Arc::new(CortadoUpdateFeed::new(has_opencode_feed)));
+    let has_copilot_feed = feed_configs
+        .iter()
+        .any(|c| c.feed_type == "copilot-session");
+    feed_registry.register(Arc::new(CortadoUpdateFeed::new(
+        has_opencode_feed,
+        has_copilot_feed,
+    )));
 
     let feed_registry = Arc::new(feed_registry);
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
@@ -112,6 +118,8 @@ fn main() {
             settings_config::check_feed_dependency,
             settings_config::check_opencode_plugin,
             settings_config::install_opencode_plugin,
+            settings_config::check_copilot_extension,
+            settings_config::install_copilot_extension,
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,

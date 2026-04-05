@@ -1,0 +1,6 @@
+{
+  "name": "cortado",
+  "description": "Cortado session tracking for GitHub Copilot CLI",
+  "version": "1.0.0",
+  "hooks": "hooks.json"
+}

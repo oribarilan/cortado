@@ -186,6 +186,7 @@ src-tauri/               # Backend (Rust + Tauri)
       harness_watcher.rs # FSEvents-based file watching for harness feeds
 
 plugins/                 # Agent plugins (separate npm packages)
+  copilot/               # Copilot CLI plugin (writes interchange files)
   opencode/              # OpenCode plugin (cortado-opencode)
 
 specs/                   # App specification

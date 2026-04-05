@@ -10,7 +10,7 @@ Canonical definitions for project terminology. When introducing a new term, defi
 | **Activity** | An individual tracked item within a feed, discovered and managed by the feed's lifecycle. Example: PR #42 "Add feed scaffold". |
 | **Field** | A typed, structured piece of data on an activity. Fields have a name, label, value, and field type. Example: `review: awaiting` (a status field). |
 | **Retained Activity** | An activity no longer returned by a feed's latest poll, kept visible for a configured retention duration. |
-| **Harness** | A terminal-based AI coding agent (e.g., GitHub Copilot CLI, OpenCode). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. Agent-specific providers (CopilotProvider) read native formats; the `GenericProvider` reads the interchange format (`~/.config/cortado/harness/`, see `specs/harness-interchange.md`). Adding a new agent using the interchange format = one line of Rust (`GenericProvider::new("name")`) + a plugin that writes state files. |
+| **Harness** | A terminal-based AI coding agent (e.g., GitHub Copilot CLI, OpenCode). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. All harness feeds use `GenericProvider` backed by the interchange format (`~/.config/cortado/harness/`, see `specs/harness-interchange.md`). Agent-specific logic lives in plugins that write interchange files (OpenCode plugin, Copilot CLI plugin). Adding a new agent = one line of Rust (`GenericProvider::new("name")`) + a plugin that writes state files. |
 
 ## Status Model
 

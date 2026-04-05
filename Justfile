@@ -6,6 +6,7 @@ install:
 
 dev:
 	@if [ ! -d node_modules ]; then just install; fi
+	@-pkill -x cortado 2>/dev/null
 	pnpm exec tauri dev --config src-tauri/tauri.dev.conf.json
 
 lint:
@@ -13,6 +14,7 @@ lint:
 	pnpm exec tsc --noEmit
 	cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --no-default-features -- -D warnings
 	just -f plugins/opencode/justfile check
+	bash -n plugins/copilot/cortado-hook.sh
 
 format:
 	cargo fmt --manifest-path src-tauri/Cargo.toml --all

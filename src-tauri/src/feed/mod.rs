@@ -10,7 +10,7 @@ use self::{
     config::FeedConfig,
     github_actions::GithubActionsFeed,
     github_pr::GithubPrFeed,
-    harness::{copilot::CopilotProvider, feed::HarnessFeed, generic::GenericProvider},
+    harness::{feed::HarnessFeed, generic::GenericProvider},
     http_health::HttpHealthFeed,
 };
 
@@ -405,7 +405,7 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
 pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>> {
     match config.feed_type.as_str() {
         "copilot-session" => {
-            let provider = Box::new(CopilotProvider::new()?);
+            let provider = Box::new(GenericProvider::new("copilot")?);
             HarnessFeed::from_config(config, provider).map(Arc::new)
         }
         "opencode-session" => {

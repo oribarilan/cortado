@@ -26,6 +26,11 @@ Each active session is represented by a single JSON file named by the **process 
 
 PID-based filenames are always immediately available, unique per running process, and avoid rename dances when the agent's internal session ID isn't known at startup. The agent's session ID is stored inside the JSON as a metadata field (`id`).
 
+**PID strategy varies by integration type:**
+
+- **In-process plugins** (e.g., OpenCode): use `process.pid` — the plugin runs inside the agent process, so the agent's PID is directly available.
+- **Plugin hooks (child process)** (e.g., Copilot CLI): use `process.ppid` — the hook runs as a child process spawned by the agent, so the parent PID is the agent's PID. This ensures the interchange file is named after the agent process (for PID liveness checks and terminal focus), not the short-lived hook process.
+
 ## Schema
 
 Each file is a flat JSON object:
@@ -43,7 +48,9 @@ Each file is a flat JSON object:
 | `branch`         | `string` | no       | Git branch name. |
 | `summary`        | `string` | no       | Agent-generated session summary or current task description. |
 
-### Example
+### Examples
+
+**OpenCode** (in-process plugin — `pid` is the agent's own PID):
 
 ```json
 {
@@ -60,6 +67,23 @@ Each file is a flat JSON object:
 }
 ```
 
+**Copilot CLI** (plugin hook (child process) — `pid` is the parent Copilot process via `process.ppid`):
+
+```json
+{
+  "version": 1,
+  "harness": "copilot",
+  "id": "copilot-98765",
+  "pid": 98765,
+  "cwd": "/Users/dev/repos/another-project",
+  "status": "question",
+  "last_active_at": "2026-03-15T14:35:00Z",
+  "repository": "dev/another-project",
+  "branch": "main",
+  "summary": "Refactoring database layer"
+}
+```
+
 ## Status values
 
 | Value      | Meaning | Maps to `SessionStatus` |
@@ -69,7 +93,7 @@ Each file is a flat JSON object:
 | `question` | Agent asked the user a question | `Question` |
 | `approval` | Agent is waiting for tool/action approval | `Approval` |
 
-Not all agents support all statuses. OpenCode uses only `working` and `idle`. The `question` and `approval` values exist for agents that distinguish those states (e.g., Copilot CLI).
+Not all agents support all statuses. OpenCode uses only `working` and `idle`. Copilot CLI (via the Cortado plugin) uses `working` and `question`.
 
 Any unrecognized status value is treated as `Unknown` (mapped to `Idle` in the UI).
 
@@ -142,7 +166,7 @@ PID liveness is checked via `kill(pid, 0)` (Unix) which returns success if the p
 
 To track a new agent type in Cortado:
 
-1. Write a plugin for the agent that publishes session state in this format with a unique `harness` name.
+1. Write a plugin or hook integration for the agent that publishes session state in this format with a unique `harness` name. For in-process plugins (like OpenCode), use `process.pid`; for plugin hooks (child processes, like Copilot CLI), use `process.ppid`.
 2. Register the provider in Cortado: `GenericProvider::new("agent-name")` -- one line of Rust.
 3. Add a feed type entry (e.g., `"agent-session"`) in the feed catalog.
 

@@ -1682,7 +1682,7 @@ function SettingsApp() {
             {/* D4 — Footer dep note (when CLI is installed) */}
             {depInfo && depInstalled !== false && (
               <div className="dep-footer">
-                Requires <code>{depInfo.binary}</code> CLI, authenticated via <code>{depInfo.authCommand}</code>.
+                Requires <code>{depInfo.binary}</code> CLI{depInfo.authCommand ? <>, authenticated via <code>{depInfo.authCommand}</code></> : ""}.
                 {depInfo.extraSteps && (
                   <ul className="dep-steps">
                     {depInfo.extraSteps.map((step, i) => (

@@ -39,7 +39,6 @@ tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 semver = "1"
-serde-saphyr = "0.0"
 libc = "0.2"
 notify = "7"
 
