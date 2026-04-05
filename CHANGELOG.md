@@ -3,6 +3,11 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Changed
+- Copilot and OpenCode feed icons now use the official brand logos
+
 ## [0.8.0] - 2026-04-05
 
 ### Added
