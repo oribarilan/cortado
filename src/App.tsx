@@ -28,7 +28,7 @@ function App() {
   const [suppressCollapseAnimation, setSuppressCollapseAnimation] = useState(false);
   const [appVersion, setAppVersion] = useState("");
   const [isDev, setIsDev] = useState(false);
-  const [hideEmptyFeeds, setHideEmptyFeeds] = useState(false);
+  const [showEmptyFeeds, setShowEmptyFeeds] = useState(false);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,7 +50,8 @@ function App() {
   const sortedFeeds = feeds.filter((feed) => {
     if (feed.activities.length > 0 || feed.error) return true;
     if (feed.hide_when_empty) return false;
-    return !hideEmptyFeeds;
+    if (!seeded) return true;
+    return showEmptyFeeds;
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -165,8 +166,8 @@ function App() {
       invoke<boolean>("is_dev_mode").then(v => { if (isMounted) setIsDev(v); }).catch(() => {});
 
       // Load panel settings for empty feed filtering.
-      invoke<{ panel?: { hide_empty_feeds?: boolean } }>("get_settings")
-        .then((s) => { if (isMounted) setHideEmptyFeeds(s.panel?.hide_empty_feeds ?? false); })
+      invoke<{ panel?: { show_empty_feeds?: boolean } }>("get_settings")
+        .then((s) => { if (isMounted) setShowEmptyFeeds(s.panel?.show_empty_feeds ?? false); })
         .catch(() => {});
 
       try {

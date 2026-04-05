@@ -17,7 +17,7 @@ import {
 } from "../shared/utils";
 
 type AppSettings = {
-  panel: { show_priority_section: boolean };
+  panel: { show_priority_section: boolean; show_empty_feeds: boolean };
 };
 
 /** A flat list item for keyboard navigation. */
@@ -197,6 +197,7 @@ function MainScreenApp() {
   const [seeded, setSeeded] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
+  const [showEmptyFeeds, setShowEmptyFeeds] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
   const [isDev, setIsDev] = useState(false);
@@ -204,9 +205,19 @@ function MainScreenApp() {
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
+  // Filter out empty feeds when the setting is off
+  const visibleFeeds = useMemo(() => {
+    return feeds.filter((feed) => {
+      if (feed.activities.length > 0 || feed.error) return true;
+      if (feed.hide_when_empty) return false;
+      if (!seeded) return true;
+      return showEmptyFeeds;
+    });
+  }, [feeds, showEmptyFeeds, seeded]);
+
   const { items: flatList, priorityItems, feedItems } = useMemo(
-    () => buildFlatList(feeds, showPrioritySection),
-    [feeds, showPrioritySection],
+    () => buildFlatList(visibleFeeds, showPrioritySection),
+    [visibleFeeds, showPrioritySection],
   );
 
   const focusedItem = flatList[focusIndex] ?? null;
@@ -250,6 +261,7 @@ function MainScreenApp() {
         if (isMounted) {
           setFeeds(initialFeeds);
           setShowPrioritySection(settings.panel?.show_priority_section ?? true);
+          setShowEmptyFeeds(settings.panel?.show_empty_feeds ?? false);
         }
       } catch (err) {
         console.error("failed to load feeds:", err);
@@ -268,7 +280,10 @@ function MainScreenApp() {
         if (listRef.current) listRef.current.scrollTop = 0;
         invoke<AppSettings>("get_settings")
           .then((s) => {
-            if (isMounted) setShowPrioritySection(s.panel?.show_priority_section ?? true);
+            if (isMounted) {
+              setShowPrioritySection(s.panel?.show_priority_section ?? true);
+              setShowEmptyFeeds(s.panel?.show_empty_feeds ?? false);
+            }
           })
           .catch(() => {});
       });
@@ -380,7 +395,7 @@ function MainScreenApp() {
     const feedKeySet = new Set(feedItems.map((i) => i.key));
     let globalIndex = priorityCount;
 
-    return feeds.map((feed) => {
+    return visibleFeeds.map((feed) => {
       const items = feed.activities
         .filter((activity) => feedKeySet.has(activityKey(feed, activity)))
         .map((activity) => ({
@@ -391,7 +406,7 @@ function MainScreenApp() {
         }));
       return { feed, items };
     });
-  }, [feeds, feedItems, priorityItems.length]);
+  }, [visibleFeeds, feedItems, priorityItems.length]);
 
   const hasUserFeeds = feeds.some(
     (f) => !f.hide_when_empty || f.activities.length > 0 || f.error,

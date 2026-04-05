@@ -10,6 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Settings save feedback now tells you whether changes applied immediately or require a restart
 - "Focus session" works for all coding agent feeds, not just Copilot
 - Reorder feeds in Settings: hover over a feed card to reveal up/down arrows that rearrange the list and persist the new order
+- Empty feeds are now hidden by default in both the tray and panel; toggle "Show empty feeds" in Settings to reveal them
 
 ### Fixed
 - "Focus session" now correctly switches to the right terminal tab when using tmux inside Ghostty
