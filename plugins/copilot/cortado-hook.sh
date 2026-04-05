@@ -93,6 +93,12 @@ delete_session() {
   rm -f "$SESSION_FILE"
 }
 
+current_status() {
+  # Read the current status from the session file, if it exists.
+  [ -f "$SESSION_FILE" ] || return
+  grep -o '"status":"[^"]*"' "$SESSION_FILE" | head -1 | sed 's/"status":"//;s/"$//'
+}
+
 # -- Dispatch -----------------------------------------------------------------
 
 case "$HOOK_TYPE" in
@@ -115,10 +121,10 @@ case "$HOOK_TYPE" in
     fi
     ;;
   postToolUse)
-    # Don't overwrite "question" -- ask_user waits for user input, so
-    # postToolUse fires only after the user has answered.
+    # Don't overwrite "question" status -- postToolUse for other tools
+    # (e.g. report_intent) can fire while ask_user is still waiting.
     tool_name="$(json_field toolName)"
-    if [ "$tool_name" != "ask_user" ]; then
+    if [ "$tool_name" != "ask_user" ] && [ "$(current_status)" != "question" ]; then
       write_session "working"
     fi
     ;;
