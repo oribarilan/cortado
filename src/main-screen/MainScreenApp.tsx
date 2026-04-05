@@ -11,6 +11,7 @@ import {
   highestStatusField,
   supportsOpen,
   supportsFocus,
+  supportsRestart,
   formatFieldValue,
   activityKey,
 } from "../shared/utils";
@@ -141,6 +142,7 @@ function DetailPane({ item }: { item: ListItem | null }) {
   const focus = supportsFocus(activity);
   const openUrl = supportsOpen(activity);
   const canOpen = focus || openUrl;
+  const restart = supportsRestart(activity);
 
   const handleOpen = () => {
     if (focus) {
@@ -150,11 +152,19 @@ function DetailPane({ item }: { item: ListItem | null }) {
     }
   };
 
+  const handleRestart = () => {
+    invoke("restart_app").catch(console.error);
+  };
+
   return (
     <div className="ms-detail">
       <div className="ms-detail-content" key={item.key}>
         <div className="ms-detail-title">{activity.title}</div>
-        {canOpen ? (
+        {restart ? (
+          <button className="ms-detail-open" onClick={handleRestart}>
+            ↗ Restart Cortado
+          </button>
+        ) : canOpen ? (
           <button className="ms-detail-open" onClick={handleOpen}>
             ↗ {focus ? focus.label : "Open Activity"}
           </button>
@@ -281,6 +291,10 @@ function MainScreenApp() {
   // Keyboard navigation
   const openFocusedActivity = useCallback(() => {
     if (!focusedItem) return;
+    if (supportsRestart(focusedItem.activity)) {
+      invoke("restart_app").catch(console.error);
+      return;
+    }
     const focus = supportsFocus(focusedItem.activity);
     if (focus) {
       invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error);

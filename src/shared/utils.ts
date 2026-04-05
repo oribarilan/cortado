@@ -94,6 +94,11 @@ export function supportsUpdate(feed: FeedSnapshot): boolean {
 export function isPluginUpdate(activity: Activity): boolean {
   return activity.id.startsWith("plugin-update-");
 }
+/// Returns true if this activity has a restart action (config change).
+export function supportsRestart(activity: Activity): boolean {
+  return activity.action === "restart_app";
+}
+
 /// Returns focus info if the activity has a `focus_app` field (any harness-based feed).
 export function supportsFocus(
   activity: Activity

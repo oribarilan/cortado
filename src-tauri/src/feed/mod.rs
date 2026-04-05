@@ -17,6 +17,7 @@ use self::{
 pub mod ado_pr;
 pub mod concurrent;
 pub mod config;
+pub mod config_watcher;
 pub mod cortado_update;
 pub mod dependency;
 pub mod field_overrides;
@@ -194,6 +195,16 @@ pub struct Activity {
     /// Used as tiebreaker within the same status kind. Not serialized to frontend.
     #[serde(skip)]
     pub sort_ts: Option<u64>,
+    /// Optional action the frontend can invoke (e.g., restart).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub action: Option<FeedAction>,
+}
+
+/// Action that the frontend can invoke on a synthetic feed.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FeedAction {
+    RestartApp,
 }
 
 /// Poll result for one feed, including optional feed-level error.
@@ -445,6 +456,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            action: None,
         }
     }
 
@@ -485,6 +497,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            action: None,
         };
 
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
@@ -772,6 +785,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            action: None,
         };
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
     }

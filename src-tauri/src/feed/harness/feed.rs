@@ -363,6 +363,7 @@ fn session_to_activity(
         retained: false,
         retained_at_unix_ms: None,
         sort_ts: parse_iso_to_unix_ms(session.last_active_at.as_deref()),
+        action: None,
     }
 }
 

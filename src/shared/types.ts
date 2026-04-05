@@ -30,11 +30,14 @@ export type Field = {
   value: FieldValue;
 };
 
+export type FeedAction = "restart_app";
+
 export type Activity = {
   id: string;
   title: string;
   fields: Field[];
   retained: boolean;
+  action?: FeedAction | null;
 };
 
 export type FeedSnapshot = {

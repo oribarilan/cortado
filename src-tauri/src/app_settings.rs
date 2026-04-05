@@ -31,7 +31,7 @@ fn default_global_hotkey() -> String {
 }
 
 /// Global app settings persisted in `~/.config/cortado/settings.toml`.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct AppSettings {
     pub general: GeneralSettings,
@@ -41,7 +41,7 @@ pub struct AppSettings {
 }
 
 /// General preferences under `[general]` in settings.toml.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct GeneralSettings {
     /// Theme preference: `"system"`, `"light"`, or `"dark"`.
@@ -70,7 +70,7 @@ impl Default for GeneralSettings {
 }
 
 /// Main screen (panel) display preferences under `[panel]` in settings.toml.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct PanelSettings {
     /// Show the "Needs Attention" priority section at the top of the activity list.
@@ -118,7 +118,7 @@ pub enum DeliveryPreset {
 }
 
 /// Notification preferences within global settings.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct NotificationSettings {
     pub enabled: bool,
@@ -142,7 +142,7 @@ impl Default for NotificationSettings {
 }
 
 /// Focus settings under `[focus]` in settings.toml.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct FocusSettings {
     /// Whether to use tmux pane switching when tmux is detected.

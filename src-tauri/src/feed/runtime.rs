@@ -86,6 +86,13 @@ impl BackgroundPoller {
         self.update_tx.subscribe()
     }
 
+    /// Returns a clone of the internal update sender.
+    ///
+    /// Used by the config watcher to signal UI refreshes when config files change.
+    pub fn update_sender(&self) -> watch::Sender<u64> {
+        self.update_tx.clone()
+    }
+
     /// Performs a best-effort startup seed poll within a bounded time budget.
     pub async fn seed_startup_best_effort(&self, registry: Arc<FeedRegistry>, budget: Duration) {
         let feeds: Vec<Arc<dyn Feed>> = registry.active_feeds().to_vec();
@@ -218,7 +225,7 @@ async fn poll_feed_loop(
     }
 }
 
-pub(crate) fn bump_update_counter(update_tx: &watch::Sender<u64>) {
+pub fn bump_update_counter(update_tx: &watch::Sender<u64>) {
     let next = (*update_tx.borrow()).wrapping_add(1);
     let _ = update_tx.send(next);
 }
@@ -356,6 +363,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            action: None,
         }
     }
 

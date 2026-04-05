@@ -21,7 +21,8 @@ use tauri::{Emitter, Manager};
 
 use crate::app_settings::{load_settings, AppSettingsState};
 use crate::feed::{
-    config::{self, ConfigChangeTracker},
+    config,
+    config_watcher::{self, ConfigChangeState},
     cortado_update::CortadoUpdateFeed,
     load_feed_registry,
     runtime::NotificationContext,
@@ -49,6 +50,7 @@ fn main() {
     app_env::init(&context.config().identifier);
 
     let feed_configs = config::load_feeds_config().unwrap_or_default();
+    let startup_feed_configs = Arc::new(feed_configs.clone());
     let feed_notify_map: std::collections::HashMap<String, bool> = feed_configs
         .iter()
         .map(|c| (c.name.clone(), c.notify.unwrap_or(true)))
@@ -66,10 +68,7 @@ fn main() {
     let feed_registry = Arc::new(feed_registry);
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
     let poller = BackgroundPoller::new(feed_cache.clone());
-    let config_tracker = Arc::new(
-        ConfigChangeTracker::initialize()
-            .unwrap_or_else(|err| panic!("failed to initialize config change tracker: {err}")),
-    );
+    let config_change_state = ConfigChangeState::new();
     let initial_settings = load_settings().unwrap_or_else(|err| {
         eprintln!("failed to load settings, using defaults: {err}");
         app_settings::AppSettings::default()
@@ -93,7 +92,7 @@ fn main() {
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
-        .manage(config_tracker)
+        .manage(config_change_state.clone())
         .manage(app_settings_state.clone())
         .invoke_handler(tauri::generate_handler![
             command::init_panel,
@@ -125,6 +124,7 @@ fn main() {
             command::focus_session,
             command::get_focus_capabilities,
             command::is_dev_mode,
+            command::restart_app,
             command::install_update
         ])
         .setup({
@@ -168,6 +168,14 @@ fn main() {
 
                 let updates = poller.subscribe();
 
+                // Spawn config file watcher for feeds.toml and settings.toml.
+                config_watcher::spawn_config_watcher(
+                    config_change_state,
+                    startup_feed_configs,
+                    app_settings_state.clone(),
+                    poller.update_sender(),
+                );
+
                 start_refresh_loop(app_handle.clone(), feed_cache.clone(), updates);
 
                 let notify_ctx = NotificationContext {
@@ -186,9 +194,6 @@ fn main() {
                         .await;
                     poller.start(feed_registry);
                 });
-
-                // Auto-open the panel so users see the app immediately on launch.
-                main_screen::show_main_screen_panel(&app_handle);
 
                 Ok(())
             }
@@ -211,10 +216,6 @@ fn start_refresh_loop(
         loop {
             if updates.changed().await.is_err() {
                 break;
-            }
-
-            if let Err(err) = ui_snapshot::refresh_config_change_state(&app_handle).await {
-                eprintln!("failed checking config change state: {err}");
             }
 
             let snapshots = match ui_snapshot::list_for_ui(&app_handle).await {

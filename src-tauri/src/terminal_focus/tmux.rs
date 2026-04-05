@@ -321,7 +321,7 @@ mod tests {
             terminal_app_name: None,
             terminal_app_bundle: None,
         };
-        assert_eq!(try_navigate(&ctx).unwrap(), false);
+        assert!(!try_navigate(&ctx).unwrap());
     }
 
     #[test]

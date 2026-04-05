@@ -33,6 +33,11 @@ pub fn init_main_screen_panel(app_handle: AppHandle) {
         main_screen::swizzle_to_main_screen_panel(&app_handle);
         main_screen::update_main_screen_appearance(&app_handle);
         main_screen::setup_main_screen_panel_listeners(&app_handle);
+
+        // Auto-open the panel on first launch so users see the app immediately.
+        // This must happen here (not in setup()) because the NSPanel doesn't
+        // exist until swizzle completes.
+        main_screen::show_main_screen_panel(&app_handle);
     });
 }
 
@@ -264,6 +269,12 @@ pub fn get_focus_capabilities() -> terminal_focus::FocusCapabilities {
 #[tauri::command]
 pub fn is_dev_mode() -> bool {
     crate::app_env::is_dev()
+}
+
+/// Restarts the app to apply config changes.
+#[tauri::command]
+pub fn restart_app(app_handle: AppHandle) {
+    app_handle.restart();
 }
 
 /// Downloads and installs an available Cortado update, then restarts the app.

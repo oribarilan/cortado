@@ -281,8 +281,11 @@ function SettingsApp() {
   const [showGhosttyHelp, setShowGhosttyHelp] = useState(false);
   const [showAccessibilityHelp, setShowAccessibilityHelp] = useState(false);
 
-  const showToast = useCallback(() => {
+  const [toastMessage, setToastMessage] = useState("✓ Saved");
+
+  const showToast = useCallback((message?: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMessage(message ?? "✓ Saved");
     setToastVisible(true);
     toastTimer.current = setTimeout(() => setToastVisible(false), 1500);
   }, []);
@@ -406,7 +409,7 @@ function SettingsApp() {
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
-      showToast();
+      showToast("✓ Saved (Changes Applied)");
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
@@ -434,7 +437,7 @@ function SettingsApp() {
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
-      showToast();
+      showToast("✓ Saved (Changes Applied)");
     } catch (err) {
       console.error("failed saving general setting:", err);
     }
@@ -456,7 +459,7 @@ function SettingsApp() {
           focus: { tmux_enabled: newTmux, accessibility_enabled: newAccessibility },
         },
       });
-      showToast();
+      showToast("✓ Saved (Changes Applied)");
     } catch (err) {
       console.error("failed saving focus setting:", err);
     }
@@ -467,7 +470,7 @@ function SettingsApp() {
     try {
       await invoke("set_global_hotkey", { hotkey });
       setGlobalHotkey(hotkey);
-      showToast();
+      showToast("✓ Saved (Changes Applied)");
     } catch (err) {
       setHotkeyError(err instanceof Error ? err.message : String(err));
     }
@@ -705,7 +708,7 @@ function SettingsApp() {
       setFeeds(updatedFeeds);
       setSwapAnim({ up: Math.min(index, swapIndex), down: Math.max(index, swapIndex) });
       scheduleAnim(() => setSwapAnim(null), 180);
-      showToast();
+      showToast("✓ Saved (Restart Required)");
     } catch (err) {
       console.error("failed to reorder feeds:", err);
     }
@@ -1566,7 +1569,7 @@ function SettingsApp() {
             {saveError && <div className="save-error">{saveError}</div>}
             {saveSuccess && (
               <div className="save-success">
-                Saved. Restart Cortado for changes to take effect.
+                Saved (Restart Required)
               </div>
             )}
 
@@ -1836,7 +1839,7 @@ function SettingsApp() {
           </div>
         </div>
       )}
-      <div className={`save-toast ${toastVisible ? "visible" : ""}`}>✓ Saved</div>
+      <div className={`save-toast ${toastVisible ? "visible" : ""}`}>{toastMessage}</div>
     </div>
   );
 }

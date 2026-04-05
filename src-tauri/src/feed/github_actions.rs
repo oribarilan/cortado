@@ -281,6 +281,7 @@ fn map_run_to_activity(
         retained: false,
         retained_at_unix_ms: None,
         sort_ts: None,
+        action: None,
     }
 }
 

@@ -115,9 +115,14 @@ Retention is a runtime lifecycle primitive:
 
 ### Config loading
 
-Config is loaded once at app launch. Changes to `feeds.toml` require restarting the app to take effect. (Hot-reload may be added later.)
+Config is loaded once at app launch. Changes to `feeds.toml` or `settings.toml` are detected automatically via filesystem watching (using the `notify` crate with 500ms debounce). When a change is detected:
 
-If Cortado detects that `feeds.toml` changed while the app is running, it should surface a persistent menubar-level warning instructing the user to restart the app to apply updates.
+- The on-disk config is parsed and compared to the running config (content comparison, not just mtime).
+- If valid and different: a "Cortado Configuration" synthetic feed appears with a clickable "Restart to apply" action.
+- If invalid TOML: a config error warning is shown (no restart option).
+- If identical to running config: no prompt (handles no-op saves and GUI saves that already updated in-memory state).
+
+Clicking the restart action (tray or panel) calls `app_handle.restart()`, which relaunches the app with the new config.
 
 ### Error handling
 

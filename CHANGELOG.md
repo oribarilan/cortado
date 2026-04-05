@@ -6,6 +6,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- Config change detection: edits to feeds.toml or settings.toml are detected automatically and a one-click restart prompt appears
 - "Focus session" works for all coding agent feeds, not just Copilot
 - Reorder feeds in Settings: hover over a feed card to reveal up/down arrows that rearrange the list and persist the new order
 

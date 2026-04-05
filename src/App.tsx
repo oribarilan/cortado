@@ -12,6 +12,7 @@ import {
   supportsOpen,
   supportsFocus,
   supportsUpdate,
+  supportsRestart,
   isPluginUpdate,
   formatFieldValue,
   activityKey,
@@ -132,6 +133,14 @@ function App() {
       setLoadError(error instanceof Error ? error.message : String(error));
     } finally {
       setPluginInstalling(false);
+    }
+  }, []);
+
+  const restartApp = useCallback(async () => {
+    try {
+      await invoke("restart_app");
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
     }
   }, []);
 
@@ -349,6 +358,13 @@ function App() {
                                       disabled={pluginInstalling}
                                     >
                                       {pluginInstalling ? "Updating..." : "↗ Update plugin"}
+                                    </button>
+                                  ) : supportsRestart(activity) ? (
+                                    <button
+                                      className="open-activity update-action"
+                                      onClick={() => { void restartApp(); }}
+                                    >
+                                      ↗ Restart Cortado
                                     </button>
                                   ) : canOpen ? (
                                     <button

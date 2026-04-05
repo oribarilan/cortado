@@ -286,6 +286,14 @@ Then verify with `git status --short --branch`.
 
 ## Gotchas
 
+### No `tokio::spawn` inside Tauri `setup()`
+
+Use `tauri::async_runtime::spawn()`, not `tokio::spawn()`, for any async work initiated from the `setup()` closure. The setup closure runs on the main thread via the Cocoa `didFinishLaunching` callback, which has **no tokio runtime context**. Calling `tokio::spawn` will panic at runtime with "there is no reactor running." The app compiles fine — the error only surfaces at launch.
+
+This also applies to any function called from setup that internally spawns (e.g., `spawn_config_watcher`). The spawn call must use `tauri::async_runtime::spawn` all the way down.
+
+Code spawned via `tauri::async_runtime::spawn` runs inside the Tauri-managed tokio runtime and can freely use `tokio::spawn` for child tasks.
+
 ### No `block_on` inside Tauri `setup()`
 
 Never use `tauri::async_runtime::block_on()` inside the `setup()` closure. Tauri's setup runs on the main thread within an active tokio runtime. Calling `block_on` from inside a tokio context will deadlock or panic — especially when the awaited future spawns its own tokio tasks (process I/O, timers, etc.). The app will compile fine but silently hang at launch with no tray icon and no visible error.
