@@ -115,10 +115,17 @@ case "$HOOK_TYPE" in
     fi
     ;;
   postToolUse)
-    write_session "working"
+    # Don't overwrite "question" -- ask_user waits for user input, so
+    # postToolUse fires only after the user has answered.
+    tool_name="$(json_field toolName)"
+    if [ "$tool_name" != "ask_user" ]; then
+      write_session "working"
+    fi
     ;;
   sessionEnd)
-    delete_session
+    # Write "idle" instead of deleting -- matches OpenCode behavior.
+    # GenericProvider cleans up the file when the copilot PID dies.
+    write_session "idle"
     ;;
   *)
     # Unknown hook type -- ignore silently.
