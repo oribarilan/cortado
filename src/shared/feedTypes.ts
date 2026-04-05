@@ -45,6 +45,10 @@ export type FeedTypeSetup = {
   installCommand: string;
   /** Button text (e.g., "Install Plugin") */
   installLabel: string;
+  /** Tauri command to uninstall. Returns { success: boolean, error?: string } */
+  uninstallCommand: string;
+  /** Brief explanation shown in a help tooltip */
+  helpText: string;
 };
 
 /// A single feed type within a catalog provider.
@@ -215,6 +219,8 @@ export const FEED_CATALOG: CatalogProvider[] = [
           checkCommand: "check_copilot_extension",
           installCommand: "install_copilot_extension",
           installLabel: "Install Plugin",
+          uninstallCommand: "uninstall_copilot_extension",
+          helpText: "Installs a small hook-based plugin into Copilot CLI that reports session status to Cortado. Safe to uninstall at any time -- Copilot CLI continues to work normally without it.",
         },
         notes: [
           "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
@@ -243,6 +249,8 @@ export const FEED_CATALOG: CatalogProvider[] = [
           checkCommand: "check_opencode_plugin",
           installCommand: "install_opencode_plugin",
           installLabel: "Install Plugin",
+          uninstallCommand: "uninstall_opencode_plugin",
+          helpText: "Installs a small plugin into OpenCode that reports session status to Cortado. Safe to uninstall at any time -- OpenCode continues to work normally without it.",
         },
         notes: [
           "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",

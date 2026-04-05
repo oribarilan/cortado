@@ -63,3 +63,6 @@ pub trait HarnessProvider: Send + Sync {
 
 pub mod feed;
 pub mod generic;
+
+#[cfg(test)]
+mod e2e;

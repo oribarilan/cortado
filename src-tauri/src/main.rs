@@ -120,6 +120,8 @@ fn main() {
             settings_config::install_opencode_plugin,
             settings_config::check_copilot_extension,
             settings_config::install_copilot_extension,
+            settings_config::uninstall_opencode_plugin,
+            settings_config::uninstall_copilot_extension,
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,

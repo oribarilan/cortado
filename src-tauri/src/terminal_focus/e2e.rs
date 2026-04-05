@@ -1,7 +1,7 @@
 //! E2E tests for terminal focus strategies.
 //!
 //! All tests are `#[ignore]` — they open real terminal windows and require
-//! macOS with the target terminal installed. Run with `just local-e2e`.
+//! macOS with the target terminal installed. Run with `just test-focus`.
 
 use std::process::Command;
 

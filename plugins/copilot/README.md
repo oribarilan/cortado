@@ -24,14 +24,23 @@ copilot plugin install ./plugins/copilot
 
 ## Status tracking
 
-| Hook | Status |
-|------|--------|
-| `sessionStart` | working (creates file if not exists) |
-| `userPromptSubmitted` | working |
-| `preToolUse` (ask_user) | question |
-| `preToolUse` (other) | working |
-| `postToolUse` | working |
-| `sessionEnd` | cleanup (deletes file) |
+| Hook | Condition | Status |
+|------|-----------|--------|
+| `sessionStart` | file doesn't exist yet | working |
+| `userPromptSubmitted` | | working |
+| `preToolUse` | `toolName` is `ask_user` | question |
+| `preToolUse` | other tools | working |
+| `postToolUse` | current status is not `question` | working |
+| `postToolUse` | current status is `question` | (no write -- preserves question) |
+| `sessionEnd` | | idle |
+
+### Hook ordering
+
+Copilot CLI fires hooks with some non-obvious ordering:
+
+- **Prompt mode** (`-p`): `userPromptSubmitted` fires before `sessionStart`. The script handles this by skipping `sessionStart` when a file already exists.
+- **Concurrent tools**: When copilot calls `ask_user` alongside `report_intent`, `postToolUse(report_intent)` fires while `ask_user` is still waiting for input. Without protection, this would overwrite the `question` status. The script reads the current file status and refuses to overwrite `question`.
+- **Session end**: Writes `idle` instead of deleting the file. This matches the OpenCode plugin behavior -- the session appears as idle until GenericProvider's PID liveness check cleans it up.
 
 ## Files
 

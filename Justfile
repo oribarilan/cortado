@@ -36,5 +36,8 @@ build-signed:
 	@if [ ! -d node_modules ]; then just install; fi
 	set -a && . ./.env && set +a && pnpm exec tauri build
 
-local-e2e:
+e2e:
+	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features -- --ignored feed::harness::e2e 2>&1
+
+test-focus:
 	cargo test --manifest-path src-tauri/Cargo.toml --no-default-features -- --ignored terminal_focus::e2e 2>&1

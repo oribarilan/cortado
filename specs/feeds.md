@@ -109,8 +109,15 @@ The Cortado plugin maps Copilot CLI hooks to interchange statuses:
 | `userPromptSubmitted` | | working |
 | `preToolUse` | `toolName` is `ask_user` | question |
 | `preToolUse` | other tools | working |
-| `postToolUse` | | working |
-| `sessionEnd` | | (deletes the interchange file) |
+| `postToolUse` | current status is not `question` | working |
+| `postToolUse` | current status is `question` | (no write -- preserves question) |
+| `sessionEnd` | | idle |
+
+**Hook ordering quirks**: Copilot CLI batches tool requests. When `ask_user` is called alongside `report_intent`, the hooks fire as: `preToolUse(report_intent)` -> `preToolUse(ask_user)` -> `postToolUse(report_intent)` -> (user answers) -> `postToolUse(ask_user)`. Without protection, `postToolUse(report_intent)` would overwrite the `question` status set by `preToolUse(ask_user)`. The plugin reads the current file status and refuses to overwrite `question` in `postToolUse`.
+
+In prompt mode (`-p`), `userPromptSubmitted` fires before `sessionStart`. The plugin skips `sessionStart` when a file already exists.
+
+`sessionEnd` writes `idle` instead of deleting the file, matching OpenCode behavior. GenericProvider's PID liveness check cleans up the file once the copilot process exits.
 
 ### Terminal focus
 

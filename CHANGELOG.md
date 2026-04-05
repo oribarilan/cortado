@@ -3,15 +3,21 @@
 All notable changes to Cortado are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.0] - 2026-04-05
+
+### Added
+- Copilot CLI session tracking: see your Copilot CLI sessions with live status, repo, and branch -- install the Cortado plugin with one click in Settings
+- Question detection for Copilot: when Copilot asks you a question, the session shows an attention indicator (same as OpenCode)
+- Plugin uninstall: safely remove the Cortado plugin from Copilot CLI or OpenCode via Settings
+- Empty feeds are now hidden by default in both the tray and panel; toggle "Show empty feeds" in Settings to reveal them
+
 ## [0.7.0] - 2026-04-05
 
 ### Added
-- Copilot: streamlined session tracking with an installable plugin -- more accurate status, including notifications when Copilot asks a question
 - Config change detection: edits to feeds.toml or settings.toml are detected automatically and a one-click restart prompt appears in the tray, panel, and Settings sidebar
 - Settings save feedback now tells you whether changes applied immediately or require a restart
 - "Focus session" works for all coding agent feeds, not just Copilot
 - Reorder feeds in Settings: hover over a feed card to reveal up/down arrows that rearrange the list and persist the new order
-- Empty feeds are now hidden by default in both the tray and panel; toggle "Show empty feeds" in Settings to reveal them
 
 ### Fixed
 - "Focus session" now correctly switches to the right terminal tab when using tmux inside Ghostty

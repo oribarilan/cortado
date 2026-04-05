@@ -7,6 +7,26 @@
 # Hooks fire as shell commands on session events. Each hook receives
 # a JSON payload on stdin with sessionId, cwd, timestamp, and
 # hook-specific fields (toolName, reason, etc.).
+#
+# Hook ordering quirks:
+#
+#   1. Prompt mode (-p): userPromptSubmitted fires BEFORE sessionStart
+#      because copilot delivers the prompt before initializing the session.
+#      sessionStart skips writing if a file already exists to avoid
+#      overwriting the "working" status set by userPromptSubmitted.
+#
+#   2. Concurrent tool calls: copilot batches tool requests. When ask_user
+#      is requested alongside report_intent, the hook system fires
+#      preToolUse for each tool sequentially, then postToolUse for each.
+#      Without protection, postToolUse(report_intent) would overwrite the
+#      "question" status set by preToolUse(ask_user). To prevent this,
+#      postToolUse checks the current file status and refuses to overwrite
+#      "question" — the status clears naturally when the user responds and
+#      the next userPromptSubmitted fires.
+#
+#   3. Session end: writes "idle" instead of deleting the file, matching
+#      OpenCode behavior. GenericProvider's PID liveness check cleans up
+#      the file once the copilot process exits.
 
 set -euo pipefail
 

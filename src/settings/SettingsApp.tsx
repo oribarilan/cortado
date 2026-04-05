@@ -337,6 +337,7 @@ function SettingsApp() {
   const [setupReady, setSetupReady] = useState<boolean | null>(null);
   const [setupOutdated, setSetupOutdated] = useState(false);
   const [setupInstalling, setSetupInstalling] = useState(false);
+  const [setupUninstalling, setSetupUninstalling] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -834,6 +835,25 @@ function SettingsApp() {
       setSetupError(String(e));
     } finally {
       setSetupInstalling(false);
+    }
+  }, [setupInfo]);
+
+  const runSetupUninstall = useCallback(async () => {
+    if (!setupInfo) return;
+    setSetupUninstalling(true);
+    setSetupError(null);
+    try {
+      const result = await invoke<{ success: boolean; error?: string }>(setupInfo.uninstallCommand);
+      if (result.success) {
+        setSetupReady(false);
+        setSetupOutdated(false);
+      } else {
+        setSetupError(result.error ?? "Uninstall failed");
+      }
+    } catch (e) {
+      setSetupError(String(e));
+    } finally {
+      setSetupUninstalling(false);
     }
   }, [setupInfo]);
 
@@ -1457,7 +1477,7 @@ function SettingsApp() {
               <div className="setup-banner">
                 <span className="setup-banner-icon">⚙</span>
                 <div className="setup-banner-content">
-                  <strong>{setupInfo.label} required.</strong> {setupInfo.description}
+                  <strong>{setupInfo.label} required.</strong> {setupInfo.description} <span className="setup-help-tip" title={setupInfo.helpText}>(?)</span>
                   <div className="setup-banner-action">
                     <button
                       className="btn-primary-sm"
@@ -1513,6 +1533,22 @@ function SettingsApp() {
               <div className="setup-banner-ok">
                 <span className="setup-banner-icon">✓</span>
                 <span>{setupInfo.label} installed</span>
+                <span className="setup-help-group">
+                  <span className="setup-help-tip" title={setupInfo.helpText}>(?)</span>
+                  <button
+                    className="btn-link-subtle"
+                    onClick={() => { void runSetupUninstall(); }}
+                    disabled={setupUninstalling}
+                  >
+                    {setupUninstalling ? "Removing..." : "Uninstall"}
+                  </button>
+                </span>
+                {setupError && (
+                  <details className="setup-error-details">
+                    <summary className="setup-error-summary">✕ Uninstall failed</summary>
+                    <pre className="setup-error-pre">{setupError}</pre>
+                  </details>
+                )}
               </div>
             )}
 

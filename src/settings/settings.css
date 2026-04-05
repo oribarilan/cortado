@@ -1676,3 +1676,36 @@ body {
   margin: -4px 0 8px;
   border-left: 2px solid var(--border);
 }
+
+.setup-help-group {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setup-help-tip {
+  color: var(--text-tertiary);
+  cursor: help;
+  font-size: 11px;
+}
+
+.btn-link-subtle {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.btn-link-subtle:hover {
+  color: var(--text-secondary);
+}
+
+.btn-link-subtle:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
