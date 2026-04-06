@@ -389,7 +389,7 @@ function MainScreenApp() {
     if (row) row.scrollIntoView({ block: "nearest" });
   }, [focusIndex]);
 
-  // Group feed activities for rendering (deduped — priority items excluded)
+  // Group feed activities for rendering (deduped, priority items excluded)
   const feedSections = useMemo(() => {
     const priorityCount = priorityItems.length;
     const feedKeySet = new Set(feedItems.map((i) => i.key));

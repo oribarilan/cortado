@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   Design Tokens — Cortado
+   Design Tokens - Cortado
    Single source of truth for colors, typography,
    spacing, radii, and theme switching.
    ═══════════════════════════════════════════════════ */
@@ -36,7 +36,7 @@
   --accent-soft: oklch(22% 0.03 178);
   --danger: oklch(70% 0.18 25);
 
-  /* ── Type scale (px — explicit per size preset for crisp rendering) */
+  /* ── Type scale (px, explicit per size preset for crisp rendering) */
   --text-2xs: 12px;
   --text-xs: 13px;
   --text-sm: 13px;
@@ -48,7 +48,7 @@
   --font-medium: 500;
   --font-semibold: 600;
 
-  /* ── Spacing (px — fixed, not scaled) */
+  /* ── Spacing (px, fixed, not scaled) */
   --space-1: 2px;
   --space-2: 4px;
   --space-3: 6px;
@@ -176,4 +176,31 @@
   --text-sm: 15px;
   --text-base: 20px;
   --text-lg: 21px;
+}
+
+/* ── Disclosure chevron (reusable) ─────────────── */
+
+.disclosure-chevron {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--duration-normal) var(--ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.disclosure-chevron svg {
+  display: block;
+}
+
+.expanded .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-chevron {
+    transition-duration: 0ms;
+  }
 }

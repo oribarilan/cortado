@@ -1623,8 +1623,42 @@ body {
   border-bottom: 1px solid color-mix(in oklch, var(--border), transparent 40%);
 }
 
+.terminal-row.not-detected {
+  opacity: 0.4;
+}
+
+.terminal-row.not-detected:hover,
+.terminal-row.not-detected:focus-within {
+  opacity: 0.7;
+}
+
 .terminal-row:last-child {
   border-bottom: none;
+}
+
+.terminal-separator {
+  margin-top: var(--space-5);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid color-mix(in oklch, var(--border), transparent 40%);
+}
+
+.terminal-separator-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.terminal-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.terminal-link:hover {
+  text-decoration: underline;
 }
 
 .terminal-header {
@@ -1644,20 +1678,6 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: var(--radius-sm);
-}
-
-.terminal-disclosure {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-  transition: transform var(--duration-normal) var(--ease-out);
-  display: inline-block;
-  width: 12px;
-  text-align: center;
-}
-
-.terminal-row.expanded .terminal-disclosure {
-  transform: rotate(90deg);
 }
 
 .terminal-name {
@@ -1701,7 +1721,7 @@ body {
 }
 
 .terminal-detail {
-  padding: 0 0 var(--space-7) calc(12px + var(--space-4));
+  padding: 0 0 var(--space-7) calc(16px + var(--space-4));
 }
 
 .terminal-detail-line {
@@ -1746,7 +1766,7 @@ body {
   }
 }
 
-/* Focus settings — strategy status badges */
+/* Focus settings: strategy status badges */
 .status-badge {
   font-size: 11px;
   font-weight: 500;

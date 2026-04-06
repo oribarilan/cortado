@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { DisclosureChevron } from "../shared/DisclosureChevron";
 import {
   isPermissionGranted,
   requestPermission,
@@ -90,6 +91,15 @@ const TERMINAL_ICONS: Record<string, string> = {
 /** Generic terminal icon for emulators without a brand SVG. */
 const TERMINAL_ICON_GENERIC = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="7 8 10 11 7 14"/><line x1="12" y1="14" x2="17" y2="14"/></svg>`;
 
+/** Download/homepage URLs for terminal apps. */
+const TERMINAL_URLS: Record<string, string> = {
+  ghostty: "https://ghostty.org/",
+  iterm2: "https://iterm2.com/",
+  wezterm: "https://wezterm.org/index.html",
+  kitty: "https://github.com/kovidgoyal/kitty",
+  tmux: "https://github.com/tmux/tmux",
+};
+
 function parseDurationString(raw: string | undefined): { value: number; unit: DurationUnit } {
   if (!raw) return { value: 5, unit: "m" };
   const match = raw.match(/^(\d+)\s*(s|m|h)$/);
@@ -127,7 +137,7 @@ function DurationInput({
             onChange(toDurationString(num, parsed.unit));
           }
         }}
-        placeholder={placeholder ?? "—"}
+        placeholder={placeholder ?? "-"}
       />
       <select
         className="duration-unit"
@@ -1312,8 +1322,8 @@ function SettingsApp() {
               <p className="settings-placeholder">Loading...</p>
             ) : (
               <div className="terminal-list">
-                {/* Terminal rows from backend */}
-                {(focusCaps?.terminals ?? []).map((term) => {
+                {/* Terminal rows from backend, sorted: detected first */}
+                {[...(focusCaps?.terminals ?? [])].sort((a, b) => Number(b.installed) - Number(a.installed)).map((term) => {
                   const isExpanded = expandedTerminal === term.id;
                   const toggleExpand = () => setExpandedTerminal(isExpanded ? null : term.id);
                   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1329,7 +1339,7 @@ function SettingsApp() {
 
                   return (
                     <div
-                      className={`terminal-row ${isExpanded ? "expanded" : ""}`}
+                      className={`terminal-row ${isExpanded ? "expanded" : ""} ${!term.installed ? "not-detected" : ""}`}
                       key={term.id}
                       data-terminal-id={term.id}
                     >
@@ -1341,16 +1351,35 @@ function SettingsApp() {
                         role="button"
                         aria-expanded={isExpanded}
                       >
-                        <span className="terminal-disclosure">{"\u25B8"}</span>
+                        <DisclosureChevron />
                         <span className="terminal-icon" dangerouslySetInnerHTML={{ __html: icon }} />
                         <span className="terminal-name">{term.name}</span>
                         {version && <span className="terminal-version">{version}</span>}
                       </div>
                       <div className="terminal-detail-wrap">
                         <div className="terminal-detail-inner">
-                          <div className="terminal-detail">
-                            {term.id === "ghostty" ? (
+                           <div className="terminal-detail">
+                            {!term.installed ? (
+                              <div className="terminal-detail-desc">
+                                Not detected on this system.
+                                {TERMINAL_URLS[term.id] && (
+                                  <>
+                                    {" "}
+                                    <a
+                                      href="#"
+                                      className="terminal-link"
+                                      onClick={(e) => { e.preventDefault(); void invoke("open_activity", { url: TERMINAL_URLS[term.id] }); }}
+                                    >
+                                      Get {term.name}
+                                    </a>
+                                  </>
+                                )}
+                              </div>
+                            ) : term.id === "ghostty" ? (
                               <>
+                                <div className="terminal-detail-desc">
+                                  Click "Focus session" and cortado switches to the exact Ghostty tab running your agent. With tmux, matching is precise (by session name). Without tmux, it matches by working directory in the tab title. Requires Ghostty 1.3+.
+                                </div>
                                 <div className="terminal-detail-line">
                                   <span className="terminal-detail-label">AppleScript</span>
                                   <span className={`status-badge ${focusCaps?.ghostty_scriptable ? "active" : "unavailable"}`}>
@@ -1363,9 +1392,6 @@ function SettingsApp() {
                                     {focusCaps?.ghostty_version ?? "Not detected"}
                                   </span>
                                 </div>
-                                <div className="terminal-detail-desc">
-                                  Ghostty exposes an AppleScript API for tab-level focus. Cortado can switch to the exact tab running an agent session, matched by tmux session name or working directory.
-                                </div>
                                 <div className="terminal-detail-line">
                                   <div className="setting-info">
                                     <div className="setting-label">
@@ -1377,7 +1403,7 @@ function SettingsApp() {
                                         ?
                                       </button>
                                     </div>
-                                    <div className="setting-hint">Required for window-level focus (raise the terminal window)</div>
+                                    <div className="setting-hint">Also raises the Ghostty window to the front, not just the tab</div>
                                   </div>
                                   <button
                                     className={`toggle ${accessibilityEnabled ? "on" : ""}`}
@@ -1401,25 +1427,25 @@ function SettingsApp() {
                                 ) : null}
                                 {showAccessibilityHelp ? (
                                   <div className="help-detail">
-                                    With Accessibility permission, cortado can find and raise the specific Ghostty window containing your agent session. This works by matching the window title, which depends on your shell and terminal config.
+                                    Without this permission, cortado can switch to the right tab but cannot bring a background Ghostty window to the front. Grant Accessibility access in System Settings to enable full window-level focus.
                                   </div>
                                 ) : null}
                               </>
                             ) : term.id === "iterm2" ? (
                               <div className="terminal-detail-desc">
-                                Standard activation to bring iTerm2 to the foreground.
+                                Click "Focus session" and cortado jumps to the exact iTerm2 split pane running your agent. The right window, tab, and pane are all selected automatically. Without tmux, matching is precise via TTY. With tmux, cortado brings iTerm2 to the front while tmux handles internal pane navigation.
                               </div>
                             ) : term.id === "terminal_app" ? (
                               <div className="terminal-detail-desc">
-                                The built-in macOS terminal. Always available.
+                                Click "Focus session" and cortado switches to the exact Terminal.app tab running your agent. Without tmux, matching is precise via TTY. With tmux, cortado brings Terminal to the front while tmux handles internal pane navigation. No setup needed. Always available on macOS.
                               </div>
                             ) : term.id === "wezterm" ? (
                               <div className="terminal-detail-desc">
-                                WezTerm integration using its CLI for pane-level focus.
+                                Click "Focus session" and cortado navigates to the exact WezTerm pane running your agent, matched by working directory. Works with or without tmux. Requires the <code style={{ fontSize: "inherit" }}>wezterm</code> CLI on your PATH.
                               </div>
                             ) : term.id === "kitty" ? (
                               <div className="terminal-detail-desc">
-                                Kitty integration using its remote control protocol.
+                                Click "Focus session" and cortado focuses the exact Kitty window (pane) running your agent, matched by process ID. Requires <code style={{ fontSize: "inherit" }}>allow_remote_control</code> enabled in your kitty.conf.
                               </div>
                             ) : (
                               <div className="terminal-detail-desc">
@@ -1433,10 +1459,14 @@ function SettingsApp() {
                   );
                 })}
 
-                {/* tmux row (manually added, always last) */}
+                {/* tmux separator + row */}
+                <div className="terminal-separator">
+                  <span className="terminal-separator-label">Multiplexer</span>
+                </div>
                 {(() => {
                   const isExpanded = expandedTerminal === "tmux";
                   const toggleExpand = () => setExpandedTerminal(isExpanded ? null : "tmux");
+                  const tmuxDetected = focusCaps?.tmux_installed ?? false;
                   const handleKeyDown = (e: React.KeyboardEvent) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -1445,7 +1475,7 @@ function SettingsApp() {
                   };
                   return (
                     <div
-                      className={`terminal-row ${isExpanded ? "expanded" : ""}`}
+                      className={`terminal-row ${isExpanded ? "expanded" : ""} ${!tmuxDetected ? "not-detected" : ""}`}
                       data-terminal-id="tmux"
                     >
                       <div
@@ -1456,7 +1486,7 @@ function SettingsApp() {
                         role="button"
                         aria-expanded={isExpanded}
                       >
-                        <span className="terminal-disclosure">{"\u25B8"}</span>
+                        <DisclosureChevron />
                         <span className="terminal-icon" dangerouslySetInnerHTML={{ __html: TERMINAL_ICONS.tmux }} />
                         <span className="terminal-name">tmux</span>
                         {focusCaps?.tmux_version && (
@@ -1466,6 +1496,23 @@ function SettingsApp() {
                       <div className="terminal-detail-wrap">
                         <div className="terminal-detail-inner">
                           <div className="terminal-detail">
+                            {!tmuxDetected ? (
+                              <div className="terminal-detail-desc">
+                                Not detected on this system.
+                                {" "}
+                                <a
+                                  href="#"
+                                  className="terminal-link"
+                                  onClick={(e) => { e.preventDefault(); void invoke("open_activity", { url: TERMINAL_URLS.tmux }); }}
+                                >
+                                  Get tmux
+                                </a>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="terminal-detail-desc">
+                                  If your agent sessions run inside tmux, cortado navigates to the exact pane (right session, window, and pane) before switching to the terminal tab. This adds pane-level precision on top of any terminal integration above.
+                                </div>
                             <div className="terminal-detail-line">
                               <span className="terminal-detail-label">Version</span>
                               <span className="terminal-detail-value">
@@ -1500,6 +1547,8 @@ function SettingsApp() {
                                 If the session is detached, cortado switches an existing client to show it.
                               </div>
                             ) : null}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1703,7 +1752,7 @@ function SettingsApp() {
                     setSaveSuccess(false);
                     setEditingFeed({ ...editingFeed, retain: val });
                   }}
-                  placeholder="—"
+                  placeholder="-"
                 />
               </div>
             </div>
@@ -1763,7 +1812,7 @@ function SettingsApp() {
                     <div className="test-header">
                       <span className="test-status">
                         {testResult.success
-                          ? `✓ Connected — ${testResult.activities.length} ${testResult.activities.length === 1 ? "activity" : "activities"}`
+                          ? `✓ Connected: ${testResult.activities.length} ${testResult.activities.length === 1 ? "activity" : "activities"}`
                           : "✕ Poll failed"}
                       </span>
                       <span className="test-toggle" onClick={() => setTestPreviewOpen(!testPreviewOpen)}>

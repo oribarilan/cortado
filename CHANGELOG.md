@@ -9,9 +9,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Settings: "Terminals" tab replaces "Agents" -- each terminal emulator gets its own expandable section showing capabilities, version, and settings
 - Terminal detection: the app now detects which terminal emulators are installed on your system
 - Config directory respects `$XDG_CONFIG_HOME` when set (default remains `~/.config/cortado/`)
+- Terminal icons: each terminal in Settings shows its brand icon (Ghostty, iTerm2, WezTerm, tmux)
+- Each terminal's expanded section explains what the integration does for you, not just technical details
+- Non-detected terminals link to the official download page ("Get WezTerm", etc.)
 
 ### Changed
 - Copilot and OpenCode feed icons now use the official brand logos
+- Terminals sorted by availability: detected first, non-detected dimmed at the bottom
+- tmux visually separated under its own "Multiplexer" section header
 
 ## [0.8.0] - 2026-04-05
 
@@ -66,7 +71,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [0.3.0] - 2026-03-31
 
 ### Added
-- Signed and notarized DMG — no more Gatekeeper warnings
+- Signed and notarized DMG, no more Gatekeeper warnings
 - CD pipeline: push a version tag to auto-publish a GitHub Release
 - Version shown in tray menu
 - Panels close when opening Settings (Cmd+,)

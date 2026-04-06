@@ -34,7 +34,7 @@ describe("supportsFocus", () => {
     });
   });
 
-  it("works regardless of feed type — any activity with focus_app gets focus", () => {
+  it("works regardless of feed type, any activity with focus_app gets focus", () => {
     const activity = makeActivity([
       { name: "focus_app", label: "App", value: { type: "text", value: "iTerm2" } },
     ]);

@@ -18,13 +18,13 @@
   </a>
 </p>
 
-Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about — PRs, CI runs, health checks — and glance at their status without leaving your flow.
+Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about (PRs, CI runs, health checks) and glance at their status without leaving your flow.
 
-- **Menubar tray + floating panel** — quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
-- **Multiple feed types** — GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
-- **Lightweight** — minimal CPU and memory footprint; stays out of your way
-- **Auto-updates** — checks for new versions and lets you install in one click
-- **Text-based config** — everything is plain TOML under `~/.config/cortado/` (or `$XDG_CONFIG_HOME/cortado/`), editable through the built-in settings UI or by hand
+- **Menubar tray + floating panel**: quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
+- **Multiple feed types**: GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
+- **Lightweight**: minimal CPU and memory footprint; stays out of your way
+- **Auto-updates**: checks for new versions and lets you install in one click
+- **Text-based config**: everything is plain TOML under `~/.config/cortado/` (or `$XDG_CONFIG_HOME/cortado/`), editable through the built-in settings UI or by hand
 
 ## Install
 
@@ -32,13 +32,13 @@ Download the latest `.dmg` from [Releases](https://github.com/oribarilan/cortado
 
 ## Getting started
 
-Launch Cortado and open **Settings** (click the gear icon or press **Cmd+,**). Add your first feed from there — no manual file editing required.
+Launch Cortado and open **Settings** (click the gear icon or press **Cmd+,**). Add your first feed from there, no manual file editing required.
 
 Your feeds appear in the menubar tray and the main panel (toggle with **Cmd+Shift+Space**).
 
 ## Feeds
 
-A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities** — for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.
+A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities**: for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.
 
 | Feed type | What it tracks |
 |-----------|---------------|
