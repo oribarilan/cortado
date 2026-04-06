@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-06
+
 ### Added
 - Settings: "Terminals" tab replaces "Agents" -- each terminal emulator gets its own expandable section showing capabilities, version, and settings
 - Terminal detection: the app now detects which terminal emulators are installed on your system
