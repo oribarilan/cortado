@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Wrap-around keyboard navigation in panel activity list
@@ -39,8 +39,8 @@ setFocusIndex((i) => (i - 1 + flatList.length) % flatList.length);
 
 ## Acceptance criteria
 
-- [ ] Pressing Down (or j) on the last activity wraps focus to the first activity
-- [ ] Pressing Up (or k) on the first activity wraps focus to the last activity
-- [ ] Scroll-into-view still works correctly after wrapping (the list scrolls to the newly focused row)
-- [ ] Navigation still works normally for all other positions in the list
-- [ ] `just check` passes
+- [x] Pressing Down (or j) on the last activity wraps focus to the first activity
+- [x] Pressing Up (or k) on the first activity wraps focus to the last activity
+- [x] Scroll-into-view still works correctly after wrapping (the list scrolls to the newly focused row)
+- [x] Navigation still works normally for all other positions in the list
+- [x] `just check` passes

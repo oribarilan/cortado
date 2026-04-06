@@ -318,7 +318,7 @@ body,
 /* ── Priority section ───────────────────────────── */
 
 .ms-priority-header {
-  color: var(--status-attention-negative) !important;
+  border-left: 2px solid var(--status-attention-negative);
 }
 
 .ms-feed-hint {

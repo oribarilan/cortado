@@ -367,14 +367,14 @@ function MainScreenApp() {
       if (e.key === "ArrowDown" || (e.key === "j" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
-        setFocusIndex((i) => Math.min(i + 1, flatList.length - 1));
+        setFocusIndex((i) => (i + 1) % flatList.length);
         return;
       }
 
       if (e.key === "ArrowUp" || (e.key === "k" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
-        setFocusIndex((i) => Math.max(i - 1, 0));
+        setFocusIndex((i) => (i - 1 + flatList.length) % flatList.length);
         return;
       }
 
@@ -455,7 +455,7 @@ function MainScreenApp() {
               {/* Priority section */}
               <section className={`ms-feed-section ms-priority-section ${priorityItems.length === 0 ? "collapsing" : ""}`}>
                 <div className="ms-priority-inner">
-                  <header className="ms-feed-header ms-priority-header">⚑ Needs Attention</header>
+                  <header className="ms-feed-header ms-priority-header">Attention</header>
                   {priorityItems.map((item, index) => {
                     const kind = deriveActivityKind(item.activity);
                     const topStatus = highestStatusField(item.activity);

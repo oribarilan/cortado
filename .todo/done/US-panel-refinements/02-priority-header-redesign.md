@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Restyle the priority section header
@@ -8,13 +8,11 @@ status: pending
 
 The "Needs Attention" header in the panel's priority section feels out-of-place compared to the regular feed section headers. Redesign it to feel more cohesive while still signaling urgency.
 
-## Showcase
+## Chosen direction
 
-A showcase with 5 alternatives (dark + light themes) is at:
+**B -- Subtle Left Border**: 2px left border in `var(--status-attention-negative)`; header text stays `var(--text-tertiary)` like regular feed headers. Remove the ⚑ icon. Change text to "ATTENTION".
 
-`showcase-priority-header.html`
-
-Open in a browser, pick a direction, then implement.
+Showcase with all alternatives: `showcase-priority-header.html`
 
 ## Related files
 
@@ -25,11 +23,11 @@ Open in a browser, pick a direction, then implement.
 
 ## Acceptance criteria
 
-- [ ] User picks a direction from the showcase
-- [ ] Priority header is restyled to match the chosen direction
-- [ ] Header still feels distinct enough to convey urgency, but consistent with overall list pane style
-- [ ] Both dark and light themes look correct
-- [ ] `just check` passes
+- [x] User picks a direction from the showcase -- **B (Subtle Left Border)**
+- [x] Priority header is restyled to match the chosen direction
+- [x] Header still feels distinct enough to convey urgency, but consistent with overall list pane style
+- [x] Both dark and light themes look correct
+- [x] `just check` passes
 
 ## Notes
 

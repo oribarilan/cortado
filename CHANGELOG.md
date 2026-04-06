@@ -18,6 +18,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Retry connection: a single button in the footer lets you trigger an immediate connectivity check
 
 ### Changed
+- Panel: arrow keys wrap around when navigating past the first or last activity
+- Panel: "Needs Attention" section header restyled to match feed headers, with a subtle accent border
 - Copilot and OpenCode feed icons now use the official brand logos
 - Terminals sorted by availability: detected first, non-detected dimmed at the bottom
 - tmux visually separated under its own "Multiplexer" section header
