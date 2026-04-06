@@ -10,7 +10,7 @@ Refactor bloated files that have grown beyond a single responsibility or are har
 
 ## Flagged files
 
-### 1. `src/settings/SettingsApp.tsx` — 1930 lines (HIGH)
+### 1. `src/settings/SettingsApp.tsx` — 2009 lines (HIGH)
 
 **Problem**: The entire Settings window lives in a single component — 30+ state variables, 4 distinct sections (General, Notifications, Feeds, Focus), feed CRUD logic, inline form validation, hotkey recording, autostart management, notification permission handling, plugin setup UI, and utility functions.
 

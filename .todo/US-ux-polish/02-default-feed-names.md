@@ -4,10 +4,6 @@ status: pending
 
 # Better default names for new feeds
 
-## Problem
-
-When adding a new feed in settings, the name field starts empty. Users must manually type a name before saving. A sensible default based on the feed type and config would reduce friction and produce more consistent naming.
-
 ## Goal
 
 Auto-populate the feed name with a descriptive default derived from the feed type and its primary config field. The user can always override it.
@@ -29,11 +25,15 @@ Auto-populate the feed name with a descriptive default derived from the feed typ
 - If the user has manually edited the name, don't overwrite it.
 - If the user clears the name, regenerate the default.
 
+## Acceptance criteria
+
+- [ ] Selecting a feed type auto-populates the name field with a sensible default
+- [ ] For repo/url-based feeds, the default updates when the primary field changes
+- [ ] Manual edits are preserved — auto-population stops once the user types
+- [ ] Clearing the name field regenerates the default
+- [ ] `just check` passes
+
 ## Relevant files
 
 - `src/settings/SettingsApp.tsx` — feed form, `name: ""` initial state
 - `src/shared/feedTypes.ts` — `FEED_CATALOG` with per-type metadata
-
-## Scope Estimate
-
-Small
