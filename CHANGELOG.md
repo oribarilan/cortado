@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-04-06
+
 ### Added
 - Feed filters: author/creator/actor filters now use a 3-option control (All / Me / User) instead of a plain text input
 - Feed filters: "All" option shows activities from every author, not just yours

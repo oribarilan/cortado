@@ -1,6 +1,6 @@
 [package]
 name = "cortado"
-version = "0.9.0"
+version = "0.10.0"
 description = "Cortado cross-platform extensible watcher"
 authors = ["Cortado contributors"]
 edition = "2021"
