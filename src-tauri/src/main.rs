@@ -126,6 +126,7 @@ fn main() {
             settings_config::open_config_file,
             settings_config::reveal_config_file,
             settings_config::check_feed_dependency,
+            settings_config::resolve_github_username,
             settings_config::check_opencode_plugin,
             settings_config::install_opencode_plugin,
             settings_config::check_copilot_extension,

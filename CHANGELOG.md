@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Feed filters: author/creator/actor filters now use a 3-option control (All / Me / User) instead of a plain text input
+- Feed filters: "All" option shows activities from every author, not just yours
+- Feed filters: workflow and branch filters for GitHub Actions now explain that empty means "all"
+
+### Changed
+- Feed filters: empty author/creator config now means "no filter" (previously defaulted to current user)
+
 ## [0.9.0] - 2026-04-06
 
 ### Added

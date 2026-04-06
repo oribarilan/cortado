@@ -261,6 +261,36 @@ pub fn check_feed_dependency(binary: String) -> DepCheckResult {
     DepCheckResult { installed }
 }
 
+/// Resolves the authenticated GitHub user's login via `gh api user`.
+/// Used by the settings UI when the user selects "Me" for GitHub Actions feeds
+/// (where `@me` isn't supported by `gh run list`).
+#[tauri::command]
+pub async fn resolve_github_username() -> Result<String, String> {
+    const TIMEOUT: Duration = Duration::from_secs(10);
+
+    let output = tokio::time::timeout(
+        TIMEOUT,
+        tokio::process::Command::new("gh")
+            .args(["api", "user", "--jq", ".login"])
+            .output(),
+    )
+    .await
+    .map_err(|_| "Timed out resolving GitHub username".to_string())?
+    .map_err(|e| format!("Failed to run `gh api user`: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Failed to resolve GitHub username: {stderr}"));
+    }
+
+    let username = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if username.is_empty() {
+        return Err("GitHub username resolved to an empty string".to_string());
+    }
+
+    Ok(username)
+}
+
 #[derive(Debug, Serialize)]
 pub struct SetupCheckResult {
     pub ready: bool,

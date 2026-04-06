@@ -16,6 +16,16 @@ export type FeedTypeField = {
   mono?: boolean;
   required?: boolean;
   sensitive?: boolean;
+  /// When set to "user-filter", renders a segmented control with "All" / "Me" / "User"
+  /// options instead of a plain text input. The "Me" option stores `meValue` in config;
+  /// "All" stores an empty string; "User" shows a text input for a specific identity.
+  kind?: "user-filter";
+  /// The config value stored when the user selects "Me" (e.g., "@me" for GitHub, "me" for ADO).
+  /// Ignored when `resolveMeCommand` is set.
+  meValue?: string;
+  /// Tauri command to resolve "Me" to a specific value (e.g., GitHub username).
+  /// When set, clicking "Me" invokes this command and stores the resolved value.
+  resolveMeCommand?: string;
 };
 
 /// External CLI dependency required by a feed type.
@@ -112,7 +122,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultNamePattern: "{repo} PRs",
         fields: [
           { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
-          { key: "user", label: "Author filter", placeholder: "@me", hint: "GitHub username or @me (default)", mono: true },
+          { key: "user", label: "Author filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", meValue: "@me" },
         ],
         dependency: GH_DEP,
       },
@@ -127,9 +137,9 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultNamePattern: "{repo} Actions",
         fields: [
           { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
-          { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch", mono: true },
-          { key: "workflow", label: "Workflow filter", placeholder: "ci.yml", hint: "Only this workflow file", mono: true },
-          { key: "user", label: "Actor filter", placeholder: "@me", hint: "Only runs triggered by this user", mono: true },
+          { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch (empty = all branches)", mono: true },
+          { key: "workflow", label: "Workflow filter", placeholder: "ci.yml", hint: "Workflow filename (empty = all workflows)", mono: true },
+          { key: "user", label: "Actor filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", resolveMeCommand: "resolve_github_username" },
         ],
         dependency: GH_DEP,
       },
@@ -150,7 +160,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultNamePattern: "{url} PRs",
         fields: [
           { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
-          { key: "user", label: "Creator filter", placeholder: "me", hint: "User identity or 'me' (default)", mono: true },
+          { key: "user", label: "Creator filter", placeholder: "user@org.com", hint: "Email address (display names may be ambiguous)", mono: true, kind: "user-filter", meValue: "me" },
         ],
         dependency: {
           binary: "az",

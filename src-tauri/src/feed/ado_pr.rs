@@ -34,7 +34,7 @@ pub struct AdoPrFeed {
     org_url: String,
     project: String,
     repo: String,
-    user: String,
+    user: Option<String>,
     interval: Duration,
     retain_for: Option<Duration>,
     config_overrides: HashMap<String, FieldOverride>,
@@ -61,8 +61,7 @@ impl AdoPrFeed {
             .and_then(Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(str::to_string)
-            .unwrap_or_else(|| "me".to_string());
+            .map(str::to_string);
 
         Ok(Self {
             name: config.name.clone(),
@@ -202,31 +201,36 @@ impl Feed for AdoPrFeed {
     async fn poll(&self) -> Result<Vec<Activity>> {
         self.ensure_az_ready().await?;
 
-        let invocation = CommandInvocation::new(
-            "az",
-            [
-                "repos",
-                "pr",
-                "list",
-                "--organization",
-                &self.org_url,
-                "--project",
-                &self.project,
-                "--repository",
-                &self.repo,
-                "--creator",
-                &self.user,
-                "--status",
-                "active",
-                "--top",
-                "20",
-                "--output",
-                "json",
-                "--detect",
-                "false",
-            ],
-            AZ_POLL_TIMEOUT,
-        );
+        let mut args = vec![
+            "repos".to_string(),
+            "pr".to_string(),
+            "list".to_string(),
+            "--organization".to_string(),
+            self.org_url.clone(),
+            "--project".to_string(),
+            self.project.clone(),
+            "--repository".to_string(),
+            self.repo.clone(),
+        ];
+
+        if let Some(ref user) = self.user {
+            args.push("--creator".to_string());
+            args.push(user.clone());
+        }
+
+        args.extend([
+            "--status".to_string(),
+            "active".to_string(),
+            "--top".to_string(),
+            "20".to_string(),
+            "--output".to_string(),
+            "json".to_string(),
+            "--detect".to_string(),
+            "false".to_string(),
+        ]);
+
+        let invocation =
+            CommandInvocation::new("az", args.iter().map(String::as_str), AZ_POLL_TIMEOUT);
 
         let command_display = invocation.display();
         let output = self
@@ -909,6 +913,45 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn poll_without_user_omits_creator_flag() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "azure-cli 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: String::new(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let mut config = base_config();
+        config.type_specific.remove("user");
+        let feed =
+            AdoPrFeed::from_config_with_runner(&config, runner.clone()).expect("feed should build");
+
+        feed.poll().await.expect("poll should succeed");
+
+        let invocations = runner.invocations().await;
+        assert!(
+            !invocations[3].args.contains(&"--creator".to_string()),
+            "should omit --creator when user is None"
+        );
+    }
+
+    #[tokio::test]
     async fn poll_creator_identity_error_returns_exact_message() {
         let runner = Arc::new(StubRunner::new(vec![
             Ok(CommandOutput {
@@ -970,8 +1013,8 @@ mod tests {
         config.type_specific.remove("user");
         let feed =
             AdoPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
-                .expect("missing user should default to me");
-        assert_eq!(feed.user, "me");
+                .expect("missing user should mean no filter");
+        assert_eq!(feed.user, None);
 
         let mut config = base_config();
         config
@@ -979,8 +1022,8 @@ mod tests {
             .insert("user".to_string(), Value::String("  ".to_string()));
         let feed =
             AdoPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
-                .expect("blank user should default to me");
-        assert_eq!(feed.user, "me");
+                .expect("blank user should mean no filter");
+        assert_eq!(feed.user, None);
     }
 
     #[test]

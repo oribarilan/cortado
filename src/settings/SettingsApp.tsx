@@ -9,7 +9,7 @@ import {
 } from "@tauri-apps/plugin-notification";
 import { useAppearance } from "../shared/useAppearance";
 import type { FeedSnapshot } from "../shared/types";
-import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
+import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type CatalogFeedType, type CatalogProvider, type FeedTypeField } from "../shared/feedTypes";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
@@ -57,11 +57,20 @@ type FeedConfigDto = {
 };
 
 function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
+  const typeSpecific: Record<string, unknown> = {};
+  const catalog = findFeedType(feedType);
+  if (catalog) {
+    for (const f of catalog.fields) {
+      if (f.kind === "user-filter" && f.meValue) {
+        typeSpecific[f.key] = f.meValue;
+      }
+    }
+  }
   return {
     name: "",
     type: feedType,
     interval: interval ?? "5m",
-    type_specific: {},
+    type_specific: typeSpecific,
     fields: {},
   };
 }
@@ -153,6 +162,138 @@ function DurationInput({
           <option key={u} value={u}>{label}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+/// Segmented control for user/author filter fields with three modes:
+/// "All" (no filter), "Me" (authenticated user), "User" (specific identity).
+///
+/// Two resolution strategies for "Me":
+/// - `meValue`: stores a literal string (e.g., "@me" for GitHub PRs, "me" for ADO).
+/// - `resolveMeCommand`: invokes a Tauri command to resolve the username (e.g., for GitHub Actions
+///   where `@me` isn't supported). The resolved username is stored as a regular value;
+///   a `resolvedMe` flag tracks that this value came from "Me" selection.
+///
+/// Note: `resolvedMe` is component-local state. If the component remounts (e.g., navigating away
+/// and back), a previously resolved username will appear as "User" mode since we can't distinguish
+/// it from a manually typed value. This is acceptable -- the user can click "Me" again to re-resolve.
+///
+/// Note: feeds with `resolveMeCommand` (but no `meValue`) default to "All" for new feeds since
+/// resolving "Me" requires an async API call that can't run synchronously during feed creation.
+function UserFilterField({
+  field,
+  value,
+  onChange,
+  error,
+}: {
+  field: FeedTypeField;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  const meVal = field.meValue ?? "";
+  const hasResolveCommand = !!field.resolveMeCommand;
+
+  // For resolveMeCommand fields, track whether current value came from "Me" resolution.
+  const [resolvedMe, setResolvedMe] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  // Guard against stale resolve responses when the user switches modes before resolution completes.
+  const resolveGeneration = useRef(0);
+
+  const derivedMode =
+    value === ""
+      ? "all"
+      : hasResolveCommand
+        ? resolvedMe
+          ? "me"
+          : "user"
+        : value === meVal
+          ? "me"
+          : "user";
+
+  // Explicit override for when user clicks "User" but hasn't typed yet (value is still "").
+  const [explicitUser, setExplicitUser] = useState(false);
+  const mode = explicitUser ? "user" : derivedMode;
+
+  // Clear override once the value naturally indicates user mode.
+  useEffect(() => {
+    if (explicitUser && value !== "" && !(hasResolveCommand ? resolvedMe : value === meVal)) {
+      setExplicitUser(false);
+    }
+  }, [value, meVal, explicitUser, hasResolveCommand, resolvedMe]);
+
+  const handleMeClick = useCallback(() => {
+    setExplicitUser(false);
+    setResolveError(null);
+
+    if (hasResolveCommand) {
+      const gen = ++resolveGeneration.current;
+      setResolving(true);
+      invoke<string>(field.resolveMeCommand!)
+        .then((username) => {
+          if (resolveGeneration.current !== gen) return; // stale
+          setResolvedMe(true);
+          onChange(username);
+        })
+        .catch((err) => {
+          if (resolveGeneration.current !== gen) return; // stale
+          setResolveError(err instanceof Error ? err.message : String(err));
+        })
+        .finally(() => {
+          if (resolveGeneration.current === gen) setResolving(false);
+        });
+    } else {
+      setResolvedMe(false);
+      onChange(meVal);
+    }
+  }, [field.resolveMeCommand, hasResolveCommand, meVal, onChange]);
+
+  return (
+    <div className="user-filter-control">
+      <div className="segmented-control">
+        {(["all", "me", "user"] as const).map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            className={`segmented-option ${mode === opt ? "active" : ""}`}
+            disabled={opt === "me" && resolving}
+            onClick={() => {
+              if (opt === "all") {
+                setExplicitUser(false);
+                setResolvedMe(false);
+                setResolveError(null);
+                onChange("");
+              } else if (opt === "me") {
+                handleMeClick();
+              } else {
+                setExplicitUser(true);
+                setResolvedMe(false);
+                setResolveError(null);
+                const isCurrentlyMe = hasResolveCommand ? resolvedMe : value === meVal;
+                if (isCurrentlyMe || value === "") onChange("");
+              }
+            }}
+          >
+            {opt === "all" ? "All" : opt === "me" ? (resolving ? "..." : "Me") : "User"}
+          </button>
+        ))}
+      </div>
+      {resolveError && <div className="field-error">{resolveError}</div>}
+      {mode === "me" && hasResolveCommand && value && (
+        <div className="form-hint mono">{value}</div>
+      )}
+      {mode === "user" && (
+        <input
+          className={`form-input ${field.mono ? "mono" : ""} ${error ? "error" : ""}`}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          autoFocus
+        />
+      )}
     </div>
   );
 }
@@ -800,7 +941,16 @@ function SettingsApp() {
         setEditingFeed({ ...editingFeed, name: value });
       }
     } else if (key === "type") {
-      setEditingFeed({ ...editingFeed, type: value, type_specific: {} });
+      const newTypeSpecific: Record<string, unknown> = {};
+      const newCatalog = findFeedType(value);
+      if (newCatalog) {
+        for (const f of newCatalog.fields) {
+          if (f.kind === "user-filter" && f.meValue) {
+            newTypeSpecific[f.key] = f.meValue;
+          }
+        }
+      }
+      setEditingFeed({ ...editingFeed, type: value, type_specific: newTypeSpecific });
       setTestResult(null);
       const dep = findFeedType(value)?.dependency;
       if (dep) {
@@ -1721,6 +1871,14 @@ function SettingsApp() {
                   {field.required && <span className="required-mark">*</span>}
                 </label>
                 {field.hint && <div className="form-hint">{field.hint}</div>}
+                {field.kind === "user-filter" ? (
+                  <UserFilterField
+                    field={field}
+                    value={String(editingFeed.type_specific[field.key] ?? "")}
+                    onChange={(v) => updateField(field.key, v)}
+                    error={fieldErrors[field.key]}
+                  />
+                ) : (
                 <div className={field.sensitive ? "input-with-toggle" : ""}>
                   <input
                     className={`form-input ${field.mono ? "mono" : ""} ${fieldErrors[field.key] ? "error" : ""}`}
@@ -1739,6 +1897,7 @@ function SettingsApp() {
                     </button>
                   )}
                 </div>
+                )}
                 {fieldErrors[field.key] && <div className="field-error">{fieldErrors[field.key]}</div>}
               </div>
             ))}

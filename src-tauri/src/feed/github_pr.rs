@@ -22,7 +22,7 @@ const MAX_ACTIVITIES_PER_FEED: usize = 20;
 pub struct GithubPrFeed {
     name: String,
     repo: String,
-    user: String,
+    user: Option<String>,
     interval: Duration,
     retain_for: Option<Duration>,
     config_overrides: HashMap<String, FieldOverride>,
@@ -66,15 +66,7 @@ impl GithubPrFeed {
             .and_then(Value::as_str)
             .map(str::trim)
             .filter(|value| !value.is_empty())
-            .map(str::to_string)
-            .unwrap_or_else(|| "@me".to_string());
-
-        if user.trim().is_empty() {
-            bail!(
-                "feed `{}` (type github-pr) requires non-empty `user`",
-                config.name
-            );
-        }
+            .map(str::to_string);
 
         Ok(Self {
             name: config.name.clone(),
@@ -119,24 +111,30 @@ impl Feed for GithubPrFeed {
     async fn poll(&self) -> Result<Vec<Activity>> {
         ensure_gh_available(self.process_runner.as_ref()).await?;
 
-        let invocation = CommandInvocation::new(
-            "gh",
-            [
-                "pr",
-                "list",
-                "--repo",
-                &self.repo,
-                "--author",
-                &self.user,
-                "--state",
-                "open",
-                "--limit",
-                "20",
-                "--json",
-                "number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup",
-            ],
-            GH_COMMAND_TIMEOUT,
-        );
+        let mut args = vec![
+            "pr".to_string(),
+            "list".to_string(),
+            "--repo".to_string(),
+            self.repo.clone(),
+        ];
+
+        if let Some(ref user) = self.user {
+            args.push("--author".to_string());
+            args.push(user.clone());
+        }
+
+        args.extend([
+            "--state".to_string(),
+            "open".to_string(),
+            "--limit".to_string(),
+            "20".to_string(),
+            "--json".to_string(),
+            "number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup"
+                .to_string(),
+        ]);
+
+        let invocation =
+            CommandInvocation::new("gh", args.iter().map(String::as_str), GH_COMMAND_TIMEOUT);
 
         let command_display = invocation.display();
         let output = self
@@ -551,6 +549,75 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn poll_without_user_omits_author_flag() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let feed = GithubPrFeed::from_config_with_runner(&base_config_no_user(), runner.clone())
+            .expect("feed should build");
+
+        feed.poll().await.expect("poll should succeed");
+
+        let commands = runner.commands().await;
+        assert_eq!(
+            commands[2],
+            "gh pr list --repo personal/cortado --state open --limit 20 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
+        );
+    }
+
+    #[tokio::test]
+    async fn poll_with_specific_user_passes_author_flag() {
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  ✓ Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "[]".to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let mut config = base_config();
+        config
+            .type_specific
+            .insert("user".to_string(), Value::String("octocat".to_string()));
+
+        let feed = GithubPrFeed::from_config_with_runner(&config, runner.clone())
+            .expect("feed should build");
+
+        feed.poll().await.expect("poll should succeed");
+
+        let commands = runner.commands().await;
+        assert_eq!(
+            commands[2],
+            "gh pr list --repo personal/cortado --author octocat --state open --limit 20 --json \"number,title,url,isDraft,labels,mergeable,reviewDecision,statusCheckRollup\""
+        );
+    }
+
+    #[tokio::test]
     async fn poll_missing_gh_binary_returns_exact_error() {
         let runner = Arc::new(StubRunner::new(vec![Err(CommandError::NotFound {
             program: "gh".to_string(),
@@ -800,8 +867,8 @@ mod tests {
         config.type_specific.remove("user");
         let feed =
             GithubPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
-                .expect("user should default to @me");
-        assert_eq!(feed.user, "@me");
+                .expect("missing user should mean no filter");
+        assert_eq!(feed.user, None);
 
         let mut config = base_config();
         config
@@ -809,8 +876,8 @@ mod tests {
             .insert("user".to_string(), Value::String("   ".to_string()));
         let feed =
             GithubPrFeed::from_config_with_runner(&config, Arc::new(StubRunner::new(Vec::new())))
-                .expect("blank user should default to @me");
-        assert_eq!(feed.user, "@me");
+                .expect("blank user should mean no filter");
+        assert_eq!(feed.user, None);
     }
 
     fn assert_status(value: FieldValue, expected_value: &str, expected_kind: StatusKind) {
@@ -839,6 +906,13 @@ mod tests {
             type_specific,
             field_overrides: HashMap::new(),
         }
+    }
+
+    /// Config with no user filter (show all authors).
+    fn base_config_no_user() -> FeedConfig {
+        let mut config = base_config();
+        config.type_specific.remove("user");
+        config
     }
 
     fn gh_list_json_fixture() -> String {
