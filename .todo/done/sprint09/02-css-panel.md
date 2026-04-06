@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 02 — CSS Normalization: Menubar Panel
+# 02 -- CSS Normalization: Menubar Panel
 
 ## Goal
 
@@ -46,6 +46,6 @@ Refactor `src/styles.css` to use shared design tokens from `tokens.css`, removin
 ## Notes
 
 - Keep `--dur-expand`, `--dur-hover`, `--dur-chevron`, `--ease-expand`, `--ease-default` as local vars (animation tokens are out of scope).
-- Keep `--pad-x`, `--feed-gap`, `--activity-row-h`, `--dot-size`, `--field-indent`, `--field-row-gap` as local vars if they don't map cleanly to the spacing scale — or replace where they do.
+- Keep `--pad-x`, `--feed-gap`, `--activity-row-h`, `--dot-size`, `--field-indent`, `--field-row-gap` as local vars if they don't map cleanly to the spacing scale -- or replace where they do.
 - Keep `@keyframes shimmer`, `@keyframes pulse`, and `@media (prefers-reduced-motion)` blocks.
-- `color-mix()` expressions that reference tokens should continue working — just update the token name inside them.
+- `color-mix()` expressions that reference tokens should continue working -- just update the token name inside them.

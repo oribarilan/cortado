@@ -10,7 +10,7 @@ See `specs/glossary.md` for canonical definitions of all terms (Feed, Activity, 
 ### Hierarchy
 
 ```
-Feed: "GitHub PRs — personal/cortado"
+Feed: "GitHub PRs -- personal/cortado"
   |-- Activity: PR #42 "Add feed scaffold"
   |     |-- Field: review    = awaiting   (status)
   |     |-- Field: checks    = passing    (status)
@@ -44,7 +44,7 @@ Every feed implementation must:
 
 ### Feed identity
 
-Feed names must be unique within the config file. The name is the feed's identity — duplicate names are a config error.
+Feed names must be unique within the config file. The name is the feed's identity -- duplicate names are a config error.
 
 ### GitHub authentication
 
@@ -166,13 +166,13 @@ Feed snapshots are capped to at most **20 activities** per feed after retention 
 
 ### Future feed types
 
-- `docker` — running containers. Fields: state (status), health (status), uptime (text), image (text).
+- `docker` -- running containers. Fields: state (status), health (status), uptime (text), image (text).
 
 ## Configuration
 
 ### Location
 
-`~/.config/cortado/feeds.toml` — single file, source of truth.
+`~/.config/cortado/feeds.toml` -- single file, source of truth.
 
 The GUI can also create/edit this file. If the file doesn't exist, Cortado starts with no feeds and can guide the user to create one.
 
@@ -257,7 +257,7 @@ Mergeable mapping from `mergeStatus`:
 
 `ado-pr` polling scope for initial implementation is active PRs only (`--status active`).
 
-Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only — Build and Status types; reviewer/approval policies are excluded since the `review` field covers that):
+Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only -- Build and Status types; reviewer/approval policies are excluded since the `review` field covers that):
 
 - any `rejected` or `broken` → `failed` (attention-negative)
 - any `queued` or `running` with expired build context (`isExpired: true`) → `failed` (attention-negative); ADO auto-requeues builds that may never run (e.g., file-pattern scoped), leaving them as `queued` indefinitely
@@ -275,11 +275,11 @@ Uses the `gh` CLI (`gh run list`). Auth and preflight checks are shared with `gi
 
 Config fields:
 
-- `repo` (required) — `owner/repo`
-- `branch` (optional) — filter to runs on this branch
-- `workflow` (optional) — filter to this workflow file
-- `event` (optional) — filter by trigger event (push, pull_request, etc.)
-- `user` (optional) — filter by triggering user (`@me` or a login)
+- `repo` (required) -- `owner/repo`
+- `branch` (optional) -- filter to runs on this branch
+- `workflow` (optional) -- filter to this workflow file
+- `event` (optional) -- filter by trigger event (push, pull_request, etc.)
+- `user` (optional) -- filter by triggering user (`@me` or a login)
 
 Default interval: `120s`.
 
@@ -310,10 +310,10 @@ Pure Rust HTTP monitoring using `reqwest` (with `rustls-tls`). No external CLI d
 
 Config fields:
 
-- `url` (required) — HTTP or HTTPS endpoint URL
-- `method` (optional) — `GET` (default) or `HEAD`
-- `timeout` (optional) — per-request timeout, default `10s`
-- `expected_status` (optional) — expected HTTP status code (100-599), default `200`
+- `url` (required) -- HTTP or HTTPS endpoint URL
+- `method` (optional) -- `GET` (default) or `HEAD`
+- `timeout` (optional) -- per-request timeout, default `10s`
+- `expected_status` (optional) -- expected HTTP status code (100-599), default `200`
 
 Default interval: `60s`.
 
@@ -352,9 +352,9 @@ Phase 1 is macOS only. The app runs as an `Accessory` (no dock icon), with a tra
 
 ### Tray icon status indicator
 
-The tray icon reflects the global rollup status — the highest-priority `StatusKind` across all activities in all feeds. This makes the menubar icon a passive, glanceable signal of whether anything needs attention.
+The tray icon reflects the global rollup status -- the highest-priority `StatusKind` across all activities in all feeds. This makes the menubar icon a passive, glanceable signal of whether anything needs attention.
 
-- When all feeds are **Idle** (or no feeds are configured): the icon uses macOS template mode — a monochrome silhouette that auto-adapts to light/dark menubar. No dot is shown.
+- When all feeds are **Idle** (or no feeds are configured): the icon uses macOS template mode -- a monochrome silhouette that auto-adapts to light/dark menubar. No dot is shown.
 - When any feed has a non-Idle status: template mode is disabled and a **colored dot** is composited in the bottom-right corner of the icon. The dot color matches the global rollup status kind (red, yellow, blue, or green). The base icon is tinted for the current menubar theme (white on dark, black on light).
 - The dot updates on each poll cycle. The icon is only regenerated when the status or theme changes.
 - Theme detection uses the macOS system appearance (`AppleInterfaceStyle`).
@@ -377,12 +377,12 @@ Cortado sends macOS Notification Center alerts when activity statuses change. No
 
 ### Trigger model
 
-Notifications fire when an activity's **rollup kind** changes — the highest-priority `StatusKind` across all its status fields shifts (e.g., Waiting → AttentionNegative). New and removed activities are also optionally notifiable.
+Notifications fire when an activity's **rollup kind** changes -- the highest-priority `StatusKind` across all its status fields shifts (e.g., Waiting → AttentionNegative). New and removed activities are also optionally notifiable.
 
 ### Configuration layers
 
-1. **Global settings** (`~/.config/cortado/settings.toml`) — master toggle, notification mode, delivery preset, new/removed activity toggles.
-2. **Per-feed toggle** (`feeds.toml`) — `notify = false` disables notifications for a specific feed. Default is `true` (opt-out model).
+1. **Global settings** (`~/.config/cortado/settings.toml`) -- master toggle, notification mode, delivery preset, new/removed activity toggles.
+2. **Per-feed toggle** (`feeds.toml`) -- `notify = false` disables notifications for a specific feed. Default is `true` (opt-out model).
 
 ### Notification modes
 
@@ -401,7 +401,7 @@ Notifications fire when an activity's **rollup kind** changes — the highest-pr
 
 ### Startup suppression
 
-Notifications are suppressed during the initial startup seed poll. The first poll establishes the baseline — it is not a "change."
+Notifications are suppressed during the initial startup seed poll. The first poll establishes the baseline -- it is not a "change."
 
 ### Settings reload behavior
 
@@ -446,14 +446,14 @@ notify = false  # Suppress notifications for this feed
 
 - External plugin system (WASM, JS, or otherwise).
 - Windows/Linux support.
-- Notification digest mode (time-window summary batching — deferred to backlog).
+- Notification digest mode (time-window summary batching -- deferred to backlog).
 - Notification scheduling / DND / quiet hours.
 - Notification history / log.
 - Persistent storage beyond config files.
 
 ## Panel
 
-The panel is a floating, keyboard-centric window opened via a global hotkey. It coexists with the menubar panel — both remain accessible.
+The panel is a floating, keyboard-centric window opened via a global hotkey. It coexists with the menubar panel -- both remain accessible.
 
 ### Activation
 
@@ -465,14 +465,14 @@ The panel is a floating, keyboard-centric window opened via a global hotkey. It 
 - Floating NSPanel, non-activating, centered on the monitor with the cursor.
 - Hides on: Esc, clicking outside (resign key), desktop/space change, pressing the hotkey again.
 - State resets on each show: scroll to top, focus first activity.
-- No Dock icon — the app remains an Accessory (`ActivationPolicy::Accessory`).
+- No Dock icon -- the app remains an Accessory (`ActivationPolicy::Accessory`).
 
 ### Layout
 
 Split panel (~700×480), 60/40 flex ratio:
 
 - **List pane (flex 3)**: Full-width rows grouped by feed. Each row shows a status dot, title, and inline status chip. Full keyboard navigation with ↑↓. Accent-soft highlight on focused row.
-- **Detail pane (flex 2)**: Inset background, shows the focused activity's full un-truncated title, all field rows, and an "Open" link. No feed label or status chip — the inline chip on the list row already shows status. Updates instantly as focus moves.
+- **Detail pane (flex 2)**: Inset background, shows the focused activity's full un-truncated title, all field rows, and an "Open" link. No feed label or status chip -- the inline chip on the list row already shows status. Updates instantly as focus moves.
 - Enter opens the activity URL.
 
 ### Priority section (Needs Attention)

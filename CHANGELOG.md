@@ -12,11 +12,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Terminal icons: each terminal in Settings shows its brand icon (Ghostty, iTerm2, WezTerm, tmux)
 - Each terminal's expanded section explains what the integration does for you, not just technical details
 - Non-detected terminals link to the official download page ("Get WezTerm", etc.)
+- Default feed names: new feeds auto-populate a descriptive name from their type and config (e.g., "owner/repo PRs")
+- Last refreshed: each feed shows when it was last polled (e.g., "Updated 3m ago"), ticking live
+- Offline detection: when the network is down, affected feeds show "disconnected" and polling pauses until connectivity is restored -- local feeds are unaffected
+- Retry connection: a single button in the footer lets you trigger an immediate connectivity check
 
 ### Changed
 - Copilot and OpenCode feed icons now use the official brand logos
 - Terminals sorted by availability: detected first, non-detected dimmed at the bottom
 - tmux visually separated under its own "Multiplexer" section header
+- "Removed activities" notifications now default to off -- most removals (e.g., merged PRs) are expected
+- File-watching feeds no longer show an interval badge in Settings since they update via filesystem events
+- Replaced all em dashes with double dashes for consistent rendering across terminals and editors
 
 ## [0.8.0] - 2026-04-05
 

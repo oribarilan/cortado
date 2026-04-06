@@ -2,11 +2,11 @@
 status: done
 ---
 
-# 00 — UX Design Spec
+# 00 -- UX Design Spec
 
 ## Goal
 
-Create `specs/ux_design.md` documenting the app's style system design decisions, motivation, and reasoning. This serves as the living reference for all UX/design choices — why Space Grotesk, why these token names, why this theme mechanism, etc.
+Create `specs/ux_design.md` documenting the app's style system design decisions, motivation, and reasoning. This serves as the living reference for all UX/design choices -- why Space Grotesk, why these token names, why this theme mechanism, etc.
 
 ## Acceptance Criteria
 
@@ -22,7 +22,7 @@ Create `specs/ux_design.md` documenting the app's style system design decisions,
 - **Text size scaling**: rationale for root font-size approach, the 4 levels (S/M/L/XL), why `rem` for type and `px` for spacing
 - **Spacing scale**: the scale steps, rationale
 - **Border radius scale**: the scale steps, standardization decisions (e.g., panel root 10px)
-- **Surface hierarchy**: `--surface`, `--surface-raised`, `--surface-inset` — what each is for
+- **Surface hierarchy**: `--surface`, `--surface-raised`, `--surface-inset` -- what each is for
 - **Accent and status colors**: semantics and usage
 - **Cross-window consistency**: how appearance settings propagate via events
 

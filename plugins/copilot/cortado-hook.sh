@@ -21,7 +21,7 @@
 #      Without protection, postToolUse(report_intent) would overwrite the
 #      "question" status set by preToolUse(ask_user). To prevent this,
 #      postToolUse checks the current file status and refuses to overwrite
-#      "question" — the status clears naturally when the user responds and
+#      "question" -- the status clears naturally when the user responds and
 #      the next userPromptSubmitted fires.
 #
 #   3. Session end: writes "idle" instead of deleting the file, matching

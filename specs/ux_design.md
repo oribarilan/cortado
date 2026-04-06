@@ -1,4 +1,4 @@
-# UX Design — Style System
+# UX Design -- Style System
 
 This document captures the design decisions, motivation, and reasoning behind Cortado's style system.
 
@@ -6,7 +6,7 @@ This document captures the design decisions, motivation, and reasoning behind Co
 
 ### Why semantic tokens
 
-Token names describe their *purpose*, not their visual value. `--text-primary` says "this is the main readable text color" — it doesn't say "this is 92% lightness oklch." This lets us:
+Token names describe their *purpose*, not their visual value. `--text-primary` says "this is the main readable text color" -- it doesn't say "this is 92% lightness oklch." This lets us:
 
 - Swap palettes (themes) without touching component CSS.
 - Reason about intent: "should this label be `--text-secondary` or `--text-tertiary`?" is a UX question, not a color question.
@@ -48,9 +48,9 @@ The scale uses `rem` units so all text sizes scale proportionally when the user 
 
 ### Surface hierarchy
 
-- `--surface` — the main background of any screen or panel.
-- `--surface-raised` — elements sitting above the surface (sidebar, cards). Slightly lighter in dark mode, slightly darker in light mode.
-- `--surface-inset` — elements recessed into raised surfaces (inner card areas, input backgrounds).
+- `--surface` -- the main background of any screen or panel.
+- `--surface-raised` -- elements sitting above the surface (sidebar, cards). Slightly lighter in dark mode, slightly darker in light mode.
+- `--surface-inset` -- elements recessed into raised surfaces (inner card areas, input backgrounds).
 
 ### Status colors
 
@@ -60,9 +60,9 @@ Status colors map directly to the `StatusKind` enum defined in `specs/status.md`
 
 The accent hue (oklch hue ~178, teal) is used for interactive elements: links, active states, toggles, and focus rings. Three levels of intensity:
 
-- `--accent` — full strength, for text and active indicators.
-- `--accent-dim` — medium, for button backgrounds and borders.
-- `--accent-soft` — subtle, for selected-state backgrounds.
+- `--accent` -- full strength, for text and active indicators.
+- `--accent-dim` -- medium, for button backgrounds and borders.
+- `--accent-soft` -- subtle, for selected-state backgrounds.
 
 ## Theme System
 
@@ -70,15 +70,15 @@ The accent hue (oklch hue ~178, teal) is used for interactive elements: links, a
 
 A `data-theme` attribute on `<html>` controls the active theme:
 
-- `data-theme="system"` (or absent) — CSS media queries control light/dark based on OS preference.
-- `data-theme="dark"` — always dark, overrides OS setting.
-- `data-theme="light"` — always light, overrides OS setting.
+- `data-theme="system"` (or absent) -- CSS media queries control light/dark based on OS preference.
+- `data-theme="dark"` -- always dark, overrides OS setting.
+- `data-theme="light"` -- always light, overrides OS setting.
 
 The CSS uses `:root` for dark tokens, `@media (prefers-color-scheme: light)` on `:root:not([data-theme="dark"])` for system-responsive light, and `[data-theme="light"]` for forced light.
 
 ### Cross-window propagation
 
-When the user changes theme or text size in Settings, the backend emits an `appearance-changed` event. All windows listen for this event via the `useAppearance` hook and update their `data-theme` and `data-text-size` attributes immediately — no restart required.
+When the user changes theme or text size in Settings, the backend emits an `appearance-changed` event. All windows listen for this event via the `useAppearance` hook and update their `data-theme` and `data-text-size` attributes immediately -- no restart required.
 
 ## Text Size Scaling
 
@@ -101,16 +101,16 @@ Considered per-token multipliers but rejected them: they require touching every 
 
 ## Spacing Scale
 
-A numeric scale (`--space-1` through `--space-9`) covering 2px to 24px. The steps were derived from an audit of all padding, margin, and gap values in the codebase, covering the most common values with clean multiples. Values that don't map to a scale step (3px, 5px, 7px, etc.) remain as hardcoded `px` — forcing everything onto the scale would distort layout.
+A numeric scale (`--space-1` through `--space-9`) covering 2px to 24px. The steps were derived from an audit of all padding, margin, and gap values in the codebase, covering the most common values with clean multiples. Values that don't map to a scale step (3px, 5px, 7px, etc.) remain as hardcoded `px` -- forcing everything onto the scale would distort layout.
 
 ## Border Radius Scale
 
 Four levels covering the range of roundness in the app:
 
-- `--radius-sm` (3px) — buttons, input fields, inline elements.
-- `--radius-md` (5px) — cards, panels, form controls.
-- `--radius-lg` (10px) — root panel containers (standardized from 10px/12px to 10px).
-- `--radius-full` (999px) — pills, dots, fully rounded elements.
+- `--radius-sm` (3px) -- buttons, input fields, inline elements.
+- `--radius-md` (5px) -- cards, panels, form controls.
+- `--radius-lg` (10px) -- root panel containers (standardized from 10px/12px to 10px).
+- `--radius-full` (999px) -- pills, dots, fully rounded elements.
 
 The panel root radius was standardized to 10px (previously 10px for menubar, 12px for panel) for visual consistency.
 
@@ -123,12 +123,12 @@ All animation durations and easings are defined as CSS custom properties in `tok
 | Token | Value | Use |
 |-------|-------|-----|
 | `--duration-fast` | 100ms | Hover states, micro-interactions |
-| `--duration-normal` | 180ms | Most transitions — expand, crossfade, section switch |
+| `--duration-normal` | 180ms | Most transitions -- expand, crossfade, section switch |
 | `--duration-slow` | 280ms | Larger reveals, modals |
 | `--duration-none` | 0ms | Explicitly non-animated states |
-| `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | Entrances — element arriving |
-| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | State toggles — there and back |
-| `--ease-in` | `cubic-bezier(0.7, 0, 0.84, 0)` | Exits — element leaving |
+| `--ease-out` | `cubic-bezier(0.22, 1, 0.36, 1)` | Entrances -- element arriving |
+| `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | State toggles -- there and back |
+| `--ease-in` | `cubic-bezier(0.7, 0, 0.84, 0)` | Exits -- element leaving |
 
 **No hardcoded durations or easings.** Every `transition` and `animation` property must reference these tokens. This ensures consistent motion language and makes the reduced-motion reset work automatically.
 
@@ -137,7 +137,7 @@ All animation durations and easings are defined as CSS custom properties in `tok
 `prefers-reduced-motion: reduce` must disable all animations and transitions. The mechanism:
 
 - Each CSS file has a `@media (prefers-reduced-motion: reduce)` block that sets `transition-duration` and `animation-duration` to `0ms` (via `--duration-none`).
-- **Every new animated element must be added to the reduced-motion block.** This is easy to forget — treat it as a mandatory checklist item when adding animations.
+- **Every new animated element must be added to the reduced-motion block.** This is easy to forget -- treat it as a mandatory checklist item when adding animations.
 - Functional indicators (spinners for in-progress operations) may keep a slowed-down animation, but spatial movement (slides, scales) must be removed.
 
 ### What to animate
@@ -167,7 +167,7 @@ Every user-facing save action that persists a setting must show transient feedba
 
 ### Error banners
 
-Save errors use `.save-error` — a red banner that appears below the form/control area. Error banners should animate in with `feedback-fade-in` (opacity + translateY).
+Save errors use `.save-error` -- a red banner that appears below the form/control area. Error banners should animate in with `feedback-fade-in` (opacity + translateY).
 
 ### Consistency rule
 
@@ -180,7 +180,7 @@ Save errors use `.save-error` — a red banner that appears below the form/contr
 Every settings section with configurable options must have a "Reset to defaults" action. Implementation:
 
 - Place a `btn-danger-sm` button at the bottom-right of the section, inside a `.btn-row`.
-- Trigger a confirmation modal before resetting. The modal is shared — use a discriminated state (`"general" | "notifications" | null`) rather than separate booleans.
+- Trigger a confirmation modal before resetting. The modal is shared -- use a discriminated state (`"general" | "notifications" | null`) rather than separate booleans.
 - The modal text must specify which section is being reset.
 - After confirming, apply all default values and persist them.
 

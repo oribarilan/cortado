@@ -17,8 +17,8 @@ Create a full-color app icon with the cortado coffee theme.
 
 ## Notes
 
-- The app icon can be much richer than the tray icon — gradients, shadows, depth.
+- The app icon can be much richer than the tray icon -- gradients, shadows, depth.
 - Design centered in the square canvas. macOS applies its own squircle mask.
 - Consider the cortado's distinctive look: a short glass with a visible layer of dark espresso sitting on top of lighter steamed milk.
 - Warm palette: espresso browns, cream/milk whites, maybe a subtle glass highlight.
-- Test readability at small sizes — the 32x32 version must still be identifiable.
+- Test readability at small sizes -- the 32x32 version must still be identifiable.

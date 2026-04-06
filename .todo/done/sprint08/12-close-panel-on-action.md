@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 12 — Close Panel on Footer Action
+# 12 -- Close Panel on Footer Action
 
 ## Goal
 

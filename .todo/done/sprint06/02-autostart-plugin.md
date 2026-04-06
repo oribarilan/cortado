@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 02 — Autostart plugin
+# 02 -- Autostart plugin
 
 ## Goal
 

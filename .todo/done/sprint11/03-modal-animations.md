@@ -21,4 +21,4 @@ Animate the entrance and exit of modal overlays in Settings (reset-defaults conf
 
 - Currently modals appear/disappear instantly via conditional rendering.
 - The exit animation requires either a brief delay before unmounting (e.g., `onAnimationEnd` callback) or keeping the element mounted with a hidden state. Choose whichever is simpler.
-- Keep the scale subtle — `0.97` to `1.0` is enough. Big zooms feel dated.
+- Keep the scale subtle -- `0.97` to `1.0` is enough. Big zooms feel dated.

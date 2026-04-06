@@ -19,8 +19,8 @@ WezTerm ships a powerful CLI that communicates with the running GUI instance:
 | `wezterm cli list` | List all panes with metadata | 20220624 |
 | `wezterm cli list --format json` | JSON output | 20220624 |
 | `wezterm cli activate-pane --pane-id <id>` | Focus a specific pane | 20230326 |
-| `wezterm cli activate-tab --tab-id <id>` | Focus a specific tab | — |
-| `wezterm cli list-clients --format json` | List connected clients | — |
+| `wezterm cli activate-tab --tab-id <id>` | Focus a specific tab | -- |
+| `wezterm cli list-clients --format json` | List connected clients | -- |
 
 ### `wezterm cli list --format json` fields
 
@@ -51,15 +51,15 @@ Each pane object contains:
 
 ### Limitations
 
-- **No PID** in `list` output — must match by CWD or TTY.
-- **No `activate-window` command** — `activate-pane` focuses within WezTerm's mux but doesn't raise the OS window. Need app activation separately.
+- **No PID** in `list` output -- must match by CWD or TTY.
+- **No `activate-window` command** -- `activate-pane` focuses within WezTerm's mux but doesn't raise the OS window. Need app activation separately.
 - CWD is a URL format (`file://hostname/path`), needs parsing.
 
 ### Compatibility
 
 - `list`: since build 20220624
 - `activate-pane`: since build 20230326
-- No special config required — CLI connects to running GUI instance automatically.
+- No special config required -- CLI connects to running GUI instance automatically.
 - Bundle ID: `com.github.wez.wezterm`
 
 ## How it works
@@ -83,5 +83,5 @@ Each pane object contains:
 
 - WezTerm's CLI is the most powerful among non-AppleScript terminals.
 - CWD matching is reliable since `workspace.yaml` has the exact CWD.
-- The CWD in list output is a URL (`file://host/path`) — extract the path component.
+- The CWD in list output is a URL (`file://host/path`) -- extract the path component.
 - `tty_name` is optional and may not always be present.

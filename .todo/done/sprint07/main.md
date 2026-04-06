@@ -2,7 +2,7 @@
 status: done
 ---
 
-# Sprint 07 — Notifications
+# Sprint 07 -- Notifications
 
 ## Theme
 
@@ -22,18 +22,18 @@ Add OS-level notifications to Cortado so users are alerted when activity statuse
 
 ## Task sequencing
 
-Tasks are mostly sequential — each builds on prior work:
+Tasks are mostly sequential -- each builds on prior work:
 
-1. **settings.toml infrastructure** — foundation for global preferences (no deps)
-2. **tauri-plugin-notification setup** — install plugin, verify permissions (no deps)
-3. **notification config types** — Rust types for notification settings (depends on 1)
-4. **per-feed notify toggle** — `notify` on FeedConfig (depends on 3 for full integration, but structurally independent)
-5. **status change detection** — diff engine comparing snapshots (depends on 3 for config, but core logic is independent)
-6. **notification dispatch** — wire detection → OS notifications (depends on 2, 3, 4, 5)
-7. **notification content formatting** — title/body templates (depends on 6)
-8. **settings UI — notifications tab** — full UI for notification preferences (depends on 3; can parallel with 5-7)
-9. **spec update** — update specs/main.md to document notifications (depends on design being finalized)
-10. **integration testing & edge cases** — comprehensive testing (depends on all above)
+1. **settings.toml infrastructure** -- foundation for global preferences (no deps)
+2. **tauri-plugin-notification setup** -- install plugin, verify permissions (no deps)
+3. **notification config types** -- Rust types for notification settings (depends on 1)
+4. **per-feed notify toggle** -- `notify` on FeedConfig (depends on 3 for full integration, but structurally independent)
+5. **status change detection** -- diff engine comparing snapshots (depends on 3 for config, but core logic is independent)
+6. **notification dispatch** -- wire detection → OS notifications (depends on 2, 3, 4, 5)
+7. **notification content formatting** -- title/body templates (depends on 6)
+8. **settings UI -- notifications tab** -- full UI for notification preferences (depends on 3; can parallel with 5-7)
+9. **spec update** -- update specs/main.md to document notifications (depends on design being finalized)
+10. **integration testing & edge cases** -- comprehensive testing (depends on all above)
 
 Tasks 1 and 2 can run in parallel. Task 4 is structurally independent from 3 but benefits from having types defined. Task 8 (UI) can be developed in parallel with 5-7 once types exist.
 
@@ -41,10 +41,10 @@ Tasks 1 and 2 can run in parallel. Task 4 is structurally independent from 3 but
 
 All independent of each other. Can be done in any order.
 
-11. **no-emoji symbol system** — ban emoji from codebase, establish Unicode text symbol convention
-12. **test notification button** — "Send test notification" in settings UI
-13. **open system notification settings** — deep-link to macOS System Settings for Cortado
-14. **reset to defaults** — restore notification preferences to defaults
+11. **no-emoji symbol system** -- ban emoji from codebase, establish Unicode text symbol convention
+12. **test notification button** -- "Send test notification" in settings UI
+13. **open system notification settings** -- deep-link to macOS System Settings for Cortado
+14. **reset to defaults** -- restore notification preferences to defaults
 
 ## Scope boundaries
 

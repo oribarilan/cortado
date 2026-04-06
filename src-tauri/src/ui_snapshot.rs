@@ -1,6 +1,7 @@
 use tauri::{AppHandle, Manager};
 
 use crate::feed::config_watcher::ConfigChangeState;
+use crate::feed::connectivity::ConnectivityManager;
 use crate::feed::{Activity, FeedAction, FeedSnapshot, Field, FieldValue, StatusKind};
 
 const CONFIG_FEED_NAME: &str = "Cortado Config";
@@ -16,7 +17,25 @@ pub async fn list_for_ui(app_handle: &AppHandle) -> Result<Vec<FeedSnapshot>, St
     let mut snapshots = cache.list().await;
     inject_config_snapshot(app_handle, &mut snapshots).await?;
 
+    // Mark network feeds as disconnected when offline.
+    if let Some(cm) = app_handle.try_state::<std::sync::Arc<ConnectivityManager>>() {
+        if cm.is_offline() {
+            mark_disconnected_feeds(&mut snapshots);
+        }
+    }
+
     Ok(snapshots)
+}
+
+/// Marks all network-type feed snapshots as disconnected.
+///
+/// Separated from `list_for_ui` so the logic is testable without an `AppHandle`.
+fn mark_disconnected_feeds(snapshots: &mut [FeedSnapshot]) {
+    for snapshot in snapshots {
+        if crate::feed::is_network_feed_type(&snapshot.feed_type) {
+            snapshot.is_disconnected = true;
+        }
+    }
 }
 
 async fn inject_config_snapshot(
@@ -37,7 +56,7 @@ async fn inject_config_snapshot(
     let status = state.status().await;
 
     if let Some(ref parse_error) = status.parse_error {
-        // Invalid config — show as an activity with error details, no restart action.
+        // Invalid config -- show as an activity with error details, no restart action.
         let activity = Activity {
             id: "config-error".to_string(),
             title: "Config error".to_string(),
@@ -73,10 +92,12 @@ async fn inject_config_snapshot(
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             },
         );
     } else if status.feeds_changed || status.settings_changed {
-        // Valid config that differs from running — prompt restart.
+        // Valid config that differs from running -- prompt restart.
         let description = status.change_description();
         let activity = Activity {
             id: "config-change".to_string(),
@@ -104,9 +125,68 @@ async fn inject_config_snapshot(
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             },
         );
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::feed::FeedSnapshot;
+
+    use super::mark_disconnected_feeds;
+
+    fn snapshot(name: &str, feed_type: &str) -> FeedSnapshot {
+        FeedSnapshot {
+            name: name.to_string(),
+            feed_type: feed_type.to_string(),
+            activities: Vec::new(),
+            provided_fields: Vec::new(),
+            error: None,
+            hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
+        }
+    }
+
+    #[test]
+    fn marks_network_feeds_as_disconnected() {
+        let mut snapshots = vec![
+            snapshot("My PRs", "github-pr"),
+            snapshot("CI", "github-actions"),
+            snapshot("Copilot", "copilot-session"),
+            snapshot("Health", "http-health"),
+        ];
+
+        mark_disconnected_feeds(&mut snapshots);
+
+        assert!(snapshots[0].is_disconnected); // github-pr
+        assert!(snapshots[1].is_disconnected); // github-actions
+        assert!(!snapshots[2].is_disconnected); // copilot-session (local)
+        assert!(snapshots[3].is_disconnected); // http-health
+    }
+
+    #[test]
+    fn empty_snapshots_is_no_op() {
+        let mut snapshots: Vec<FeedSnapshot> = Vec::new();
+        mark_disconnected_feeds(&mut snapshots);
+        assert!(snapshots.is_empty());
+    }
+
+    #[test]
+    fn only_local_feeds_remain_connected() {
+        let mut snapshots = vec![
+            snapshot("Copilot", "copilot-session"),
+            snapshot("OpenCode", "opencode-session"),
+        ];
+
+        mark_disconnected_feeds(&mut snapshots);
+
+        assert!(!snapshots[0].is_disconnected);
+        assert!(!snapshots[1].is_disconnected);
+    }
 }

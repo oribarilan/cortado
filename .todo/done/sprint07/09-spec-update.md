@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 09 — Spec update
+# 09 -- Spec update
 
 ## Goal
 

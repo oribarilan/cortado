@@ -31,7 +31,7 @@ pub struct StatusChangeEvent {
 /// - `RemovedActivity`: activity present in `prev` but absent in `new`
 ///   (and not retained in `new`).
 ///
-/// Retained activities are excluded from change detection — their status
+/// Retained activities are excluded from change detection -- their status
 /// is frozen at Idle and should not produce notifications.
 pub fn detect_changes(prev: &FeedSnapshot, new: &FeedSnapshot) -> Vec<StatusChangeEvent> {
     let mut events = Vec::new();
@@ -152,6 +152,8 @@ mod tests {
             provided_fields: Vec::new(),
             error: None,
             hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
         }
     }
 
@@ -373,7 +375,7 @@ mod tests {
         // When a poll errors, the runtime preserves previous activities,
         // but if it didn't, we should still not crash.
         let events = detect_changes(&prev, &new);
-        // pr-1 would be detected as removed — but the dispatch layer
+        // pr-1 would be detected as removed -- but the dispatch layer
         // should skip errored feeds. Detection itself is honest.
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].change_type, ChangeType::RemovedActivity);

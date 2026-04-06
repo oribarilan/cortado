@@ -22,11 +22,11 @@ Define the foundational Rust types for the feed system and add the new crate dep
 
 - The `Feed` trait uses `async_trait` for async poll support with dyn dispatch.
 - `StatusKind` enum: `success`, `warning`, `error`, `pending`, `neutral`.
-- Keep types minimal — don't add registry, config, or implementations here.
+- Keep types minimal -- don't add registry, config, or implementations here.
 - All types that cross the Tauri boundary need `Serialize`. Types only used in Rust need `Deserialize` too if they come from config.
 
 ## Relevant files
 
-- `src-tauri/Cargo.toml` — add deps
-- `src-tauri/src/feed/mod.rs` — new file
-- `src-tauri/src/main.rs` — add `mod feed`
+- `src-tauri/Cargo.toml` -- add deps
+- `src-tauri/src/feed/mod.rs` -- new file
+- `src-tauri/src/main.rs` -- add `mod feed`

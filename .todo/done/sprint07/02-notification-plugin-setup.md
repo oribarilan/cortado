@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 02 — tauri-plugin-notification setup
+# 02 -- tauri-plugin-notification setup
 
 ## Goal
 
@@ -20,7 +20,7 @@ Plugin source: https://github.com/tauri-apps/plugins-workspace/tree/v2/plugins/n
 - [ ] Unused `system-notification` crate removed from `Cargo.toml`
 - [ ] Plugin initialized in `main.rs` builder (`.plugin(tauri_plugin_notification::init())`)
 - [ ] Capability permissions added (`notification:default` or specific allows)
-- [ ] Permission request flow works — app requests notification permission on first use
+- [ ] Permission request flow works -- app requests notification permission on first use
 - [ ] Smoke test: can send a basic notification from Rust side
 - [ ] `just check` passes
 
@@ -33,7 +33,7 @@ Plugin source: https://github.com/tauri-apps/plugins-workspace/tree/v2/plugins/n
 
 ## Relevant files
 
-- `src-tauri/Cargo.toml` — add Rust dependency
-- `package.json` — add JS dependency
-- `src-tauri/src/main.rs` — plugin init
-- `src-tauri/capabilities/core.json` or `settings.json` — permissions
+- `src-tauri/Cargo.toml` -- add Rust dependency
+- `package.json` -- add JS dependency
+- `src-tauri/src/main.rs` -- plugin init
+- `src-tauri/capabilities/core.json` or `settings.json` -- permissions

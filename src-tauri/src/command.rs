@@ -301,3 +301,13 @@ pub async fn install_update(app_handle: AppHandle) -> Result<(), String> {
 
     app_handle.restart();
 }
+
+/// Triggers an immediate connectivity retry check.
+#[tauri::command]
+pub async fn retry_connection(app_handle: AppHandle) -> Result<(), String> {
+    let cm = app_handle
+        .try_state::<std::sync::Arc<crate::feed::connectivity::ConnectivityManager>>()
+        .ok_or_else(|| "connectivity manager not available".to_string())?;
+    cm.trigger_retry();
+    Ok(())
+}

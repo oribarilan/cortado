@@ -87,7 +87,7 @@ Parse `owner/repo` from SSH (`git@...`) or HTTPS URLs, same logic as the OpenCod
 
 ### Hot-reload (`/clear`) behavior
 
-When a user runs `/clear` in Copilot CLI, the extension process is terminated (SIGTERM) and a new one is forked. Since `process.ppid` (the CLI's PID) stays the same, the new instance writes to the same `<ppid>.json` file. The exit handler on the old instance deletes the file; the new instance recreates it. This is a brief gap (~1-2s) where the session file doesn't exist — acceptable.
+When a user runs `/clear` in Copilot CLI, the extension process is terminated (SIGTERM) and a new one is forked. Since `process.ppid` (the CLI's PID) stays the same, the new instance writes to the same `<ppid>.json` file. The exit handler on the old instance deletes the file; the new instance recreates it. This is a brief gap (~1-2s) where the session file doesn't exist -- acceptable.
 
 ### Testing considerations
 

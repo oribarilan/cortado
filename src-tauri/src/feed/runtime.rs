@@ -7,6 +7,7 @@ use std::{
 use tokio::sync::{watch, RwLock};
 
 use crate::app_settings::AppSettingsState;
+use crate::feed::connectivity::ConnectivityManager;
 use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot, StatusKind};
 use crate::notification;
 
@@ -61,6 +62,7 @@ pub struct BackgroundPoller {
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
     notify_ctx: Option<NotificationContext>,
+    connectivity: Option<Arc<ConnectivityManager>>,
 }
 
 impl BackgroundPoller {
@@ -72,12 +74,19 @@ impl BackgroundPoller {
             cache,
             update_tx,
             notify_ctx: None,
+            connectivity: None,
         }
     }
 
     /// Attaches notification dispatch context to this poller.
     pub fn with_notifications(mut self, ctx: NotificationContext) -> Self {
         self.notify_ctx = Some(ctx);
+        self
+    }
+
+    /// Attaches connectivity tracking to this poller.
+    pub fn with_connectivity(mut self, mgr: Arc<ConnectivityManager>) -> Self {
+        self.connectivity = Some(mgr);
         self
     }
 
@@ -130,9 +139,10 @@ impl BackgroundPoller {
             let cache = self.cache.clone();
             let update_tx = self.update_tx.clone();
             let notify_ctx = self.notify_ctx.clone();
+            let connectivity = self.connectivity.clone();
 
             tokio::spawn(async move {
-                poll_feed_loop(cache, update_tx, feed, notify_ctx).await;
+                poll_feed_loop(cache, update_tx, feed, notify_ctx, connectivity).await;
             });
         }
 
@@ -186,12 +196,36 @@ async fn poll_feed_loop(
     update_tx: watch::Sender<u64>,
     feed: Arc<dyn Feed>,
     notify_ctx: Option<NotificationContext>,
+    connectivity: Option<Arc<ConnectivityManager>>,
 ) {
     loop {
         let interval = feed.interval().max(Duration::from_secs(1));
         tokio::time::sleep(interval).await;
 
+        // Skip polling for network feeds while offline.
+        let is_network = super::is_network_feed_type(feed.feed_type());
+        if let Some(ref cm) = connectivity {
+            if is_network && cm.is_offline() {
+                continue;
+            }
+        }
+
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+
+        // Track network feed poll outcomes for connectivity detection.
+        // Any error type (network, auth, parsing) increments the failure counter.
+        // This is intentionally coarse -- the connectivity manager's ping check
+        // is the actual arbiter of online/offline state, so false triggers from
+        // non-network errors are harmless (the ping succeeds and resets counters).
+        if let Some(ref cm) = connectivity {
+            if is_network {
+                if snapshot.error.is_some() {
+                    cm.record_failure(feed.name()).await;
+                } else {
+                    cm.record_success(feed.name()).await;
+                }
+            }
+        }
 
         // Dispatch notifications before upserting (prev snapshot is still in cache).
         if let Some(ref ctx) = notify_ctx {
@@ -239,6 +273,9 @@ pub(crate) async fn build_snapshot_for_feed(
             snapshot.name == feed.name() && snapshot.feed_type == feed.feed_type()
         });
 
+    // Preserve the previous last_refreshed for error paths (poll failed, data is stale).
+    let baseline_last_refreshed = baseline.as_ref().and_then(|s| s.last_refreshed);
+
     match feed.poll().await {
         Ok(mut activities) => {
             for activity in &mut activities {
@@ -273,6 +310,8 @@ pub(crate) async fn build_snapshot_for_feed(
                 provided_fields: feed.provided_fields(),
                 error: None,
                 hide_when_empty: feed.hide_when_empty(),
+                last_refreshed: Some(unix_epoch_millis_now()),
+                is_disconnected: false,
             }
         }
         Err(error) => FeedSnapshot {
@@ -282,6 +321,8 @@ pub(crate) async fn build_snapshot_for_feed(
             provided_fields: feed.provided_fields(),
             error: Some(error.to_string()),
             hide_when_empty: feed.hide_when_empty(),
+            last_refreshed: baseline_last_refreshed,
+            is_disconnected: false,
         },
     }
 }
@@ -427,6 +468,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -449,6 +492,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -460,6 +505,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -562,6 +609,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -598,6 +647,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -636,6 +687,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 
@@ -673,6 +726,8 @@ mod tests {
                 provided_fields: Vec::new(),
                 error: None,
                 hide_when_empty: false,
+                last_refreshed: None,
+                is_disconnected: false,
             })
             .await;
 

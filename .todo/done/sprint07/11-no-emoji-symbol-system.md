@@ -33,7 +33,7 @@ The codebase currently uses a mix of emoji (🔔) and Unicode symbols (⚙, ◉,
 | Success | ✓ | ✓ (keep) |
 | Failure | ✕ | ✕ (keep) |
 
-Best replacement for 🔔: Use `⏣` (benzene ring — geometric, neutral) or simply the text "Notifications" with no icon prefix. Alternatively `▣` (square with fill) to match the geometric style of ⚙ and ◉.
+Best replacement for 🔔: Use `⏣` (benzene ring -- geometric, neutral) or simply the text "Notifications" with no icon prefix. Alternatively `▣` (square with fill) to match the geometric style of ⚙ and ◉.
 
 ## Acceptance criteria
 

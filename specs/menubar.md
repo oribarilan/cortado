@@ -110,7 +110,7 @@ Returning to native NSMenu is explicitly considered a future development effort,
 
 ---
 
-## 5) Current Contract — Panel Disclosure (Variant 3, Strict System)
+## 5) Current Contract -- Panel Disclosure (Variant 3, Strict System)
 
 Current menubar direction: **inline expandable disclosure panel** (Control Center / Wi-Fi style), using the **Strict System** sub-variant.
 

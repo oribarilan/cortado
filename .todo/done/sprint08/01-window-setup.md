@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 01 — Window Setup & Global Hotkey
+# 01 -- Window Setup & Global Hotkey
 
 ## Goal
 
@@ -18,12 +18,12 @@ Create the floating panel infrastructure: a new Tauri window with its own HTML e
 - [ ] Shortcut toggles: if hidden → center on active monitor + show; if visible → hide
 - [ ] Panel hides when it resigns key (loses focus)
 - [ ] Panel hides on Esc (frontend keydown handler)
-- [ ] Coexists with existing menubar panel — both can be used independently
-- [ ] Two-NSPanel coexistence verified: resign-key delegates are scoped to their own window label — showing/hiding the panel does not interfere with the menubar panel's visibility, and vice versa
+- [ ] Coexists with existing menubar panel -- both can be used independently
+- [ ] Two-NSPanel coexistence verified: resign-key delegates are scoped to their own window label -- showing/hiding the panel does not interfere with the menubar panel's visibility, and vice versa
 
 ## Notes
 
 - Reference implementation: `ahkohd/tauri-macos-spotlight-example` (already explored)
-- The existing NSPanel conversion logic lives in `fns.rs` (NOT `panel.rs` — that file handles tray icon/menu wiring). The `fns.rs` functions are hardcoded to the `"main"` window label. Create a parallel `main_screen.rs` module with its own NSPanel setup, centered positioning (no popover arrow), and lifecycle.
+- The existing NSPanel conversion logic lives in `fns.rs` (NOT `panel.rs` -- that file handles tray icon/menu wiring). The `fns.rs` functions are hardcoded to the `"main"` window label. Create a parallel `main_screen.rs` module with its own NSPanel setup, centered positioning (no popover arrow), and lifecycle.
 - Use `monitor::get_monitor_with_cursor()` for centering (the spotlight example does this)
-- `tauri-plugin-global-shortcut` is NOT currently a dependency — must be added to `Cargo.toml` and registered in the plugin builder chain in `main.rs`
+- `tauri-plugin-global-shortcut` is NOT currently a dependency -- must be added to `Cargo.toml` and registered in the plugin builder chain in `main.rs`

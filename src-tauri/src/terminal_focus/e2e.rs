@@ -1,6 +1,6 @@
 //! E2E tests for terminal focus strategies.
 //!
-//! All tests are `#[ignore]` — they open real terminal windows and require
+//! All tests are `#[ignore]` -- they open real terminal windows and require
 //! macOS with the target terminal installed. Run with `just test-focus`.
 
 use std::process::Command;
@@ -12,7 +12,7 @@ fn is_app_installed(app_name: &str) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// E2E tests — all #[ignore], run via `just local-e2e`
+// E2E tests -- all #[ignore], run via `just local-e2e`
 // ---------------------------------------------------------------------------
 
 /// Verifies Terminal.app AppleScript API: can query TTY and switch tabs.

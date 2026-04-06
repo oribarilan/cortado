@@ -2,17 +2,17 @@
 status: done
 ---
 
-# 05 — Status change detection
+# 05 -- Status change detection
 
 ## Goal
 
-Implement a diff engine that compares previous and new feed snapshots to detect notifiable status changes. This is the core detection logic — no notification dispatch yet.
+Implement a diff engine that compares previous and new feed snapshots to detect notifiable status changes. This is the core detection logic -- no notification dispatch yet.
 
 ## Change types to detect
 
-1. **Rollup kind change** — an existing activity's derived rollup status kind changed (e.g., Waiting → AttentionNegative)
-2. **New activity** — an activity appears that wasn't in the previous snapshot
-3. **Removed activity** — an activity disappears from the snapshot (and isn't retained)
+1. **Rollup kind change** -- an existing activity's derived rollup status kind changed (e.g., Waiting → AttentionNegative)
+2. **New activity** -- an activity appears that wasn't in the previous snapshot
+3. **Removed activity** -- an activity disappears from the snapshot (and isn't retained)
 
 ## Design
 
@@ -54,10 +54,10 @@ enum ChangeType {
 
 - The rollup kind computation already exists in the frontend (`deriveActivityKind` in `App.tsx`). This needs a Rust equivalent for the backend. Consider extracting the priority logic into `feed/mod.rs` as a shared function.
 - Hook point in `runtime.rs`: after building a new snapshot but before `cache.upsert()`, compare with the cached (previous) snapshot.
-- Suppress detection during `seed_startup_best_effort()` — the first poll establishes the baseline, not a change.
+- Suppress detection during `seed_startup_best_effort()` -- the first poll establishes the baseline, not a change.
 
 ## Relevant files
 
-- `src-tauri/src/feed/mod.rs` — `StatusKind`, `Activity`, `FeedSnapshot`, `FieldValue`
-- `src-tauri/src/feed/runtime.rs` — poll loop, snapshot cache
-- `src/App.tsx` — `deriveActivityKind` (frontend rollup, reference implementation)
+- `src-tauri/src/feed/mod.rs` -- `StatusKind`, `Activity`, `FeedSnapshot`, `FieldValue`
+- `src-tauri/src/feed/runtime.rs` -- poll loop, snapshot cache
+- `src/App.tsx` -- `deriveActivityKind` (frontend rollup, reference implementation)

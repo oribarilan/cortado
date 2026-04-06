@@ -7,7 +7,7 @@ const BUNDLE_ID: &str = "com.apple.Terminal";
 /// macOS Terminal.app focus strategy: uses AppleScript to enumerate tabs
 /// and match by TTY device path.
 ///
-/// Only works without tmux — when tmux is in the process ancestry the
+/// Only works without tmux -- when tmux is in the process ancestry the
 /// copilot TTY is a tmux PTY, not the terminal's.
 pub fn try_focus(ctx: &FocusContext) -> FocusResult {
     if ctx.terminal_app_bundle.as_deref() != Some(BUNDLE_ID) {

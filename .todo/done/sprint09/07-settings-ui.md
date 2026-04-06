@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 07 — Settings UI: Theme + Text Size Controls
+# 07 -- Settings UI: Theme + Text Size Controls
 
 ## Goal
 
@@ -11,8 +11,8 @@ Add appearance controls to the Settings > General section so users can switch th
 ## Acceptance Criteria
 
 - [ ] "Appearance" subsection visible in Settings > General
-- [ ] Theme: segmented control with labels "Light", "Dark", "System" — default "System"
-- [ ] Text size: segmented control with labels "S", "M", "L", "XL" — default "M"
+- [ ] Theme: segmented control with labels "Light", "Dark", "System" -- default "System"
+- [ ] Text size: segmented control with labels "S", "M", "L", "XL" -- default "M"
 - [ ] Changes save immediately on selection (no save button)
 - [ ] Changes emit `appearance-changed` event (via `save_settings`) so all windows update live
 - [ ] Selections persist across app restarts

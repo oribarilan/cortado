@@ -88,7 +88,7 @@ All Copilot-specific parsing logic lives in `copilot.rs`. The shared types in `m
 - All fields except `id` are optional.
 - If missing or malformed, skip the session.
 
-### `events.jsonl` — last event
+### `events.jsonl` -- last event
 
 - Read last non-empty line via reverse-seek (never read full file).
 - Parse JSON, extract `type` field.
@@ -110,7 +110,7 @@ All Copilot-specific parsing logic lives in `copilot.rs`. The shared types in `m
 
 - Complete discovery <50ms for ~12 active sessions.
 - Never read full `events.jsonl`.
-- Use `std::fs` (sync I/O — fast local files).
+- Use `std::fs` (sync I/O -- fast local files).
 
 ## Acceptance criteria
 
@@ -119,19 +119,19 @@ All Copilot-specific parsing logic lives in `copilot.rs`. The shared types in `m
 - [ ] `CopilotProvider::discover_sessions()` handles: lock file discovery, PID liveness, YAML parsing, last-event reading
 - [ ] All parsing is resilient: unknown events -> `Unknown`, missing fields -> skip, malformed files -> skip
 - [ ] Unit tests: YAML parsing (valid, missing fields, malformed), event type mapping (all types), last-line reading, PID extraction
-- [ ] Add `serde-saphyr` to `Cargo.toml` — approved for `workspace.yaml` parsing (pure Rust, panic-free, no C deps)
-- [ ] Add `libc` to `Cargo.toml` — needed for `kill(pid, 0)` PID liveness check
+- [ ] Add `serde-saphyr` to `Cargo.toml` -- approved for `workspace.yaml` parsing (pure Rust, panic-free, no C deps)
+- [ ] Add `libc` to `Cargo.toml` -- needed for `kill(pid, 0)` PID liveness check
 - [ ] `just check` passes
 
 ## Notes
 
-- The provider trait is intentionally minimal. Future providers (Claude Code) will have completely different file formats, directory structures, and lock mechanisms — that's fine, they just return `Vec<SessionInfo>`.
+- The provider trait is intentionally minimal. Future providers (Claude Code) will have completely different file formats, directory structures, and lock mechanisms -- that's fine, they just return `Vec<SessionInfo>`.
 - `SessionInfo` is the contract between providers and the generic feed. Keep it lean.
 - The `~/.copilot/session-state/` path should be configurable in `CopilotProvider` (for testing).
 
 ## Relevant files
 
-- `src-tauri/src/feed/harness/mod.rs` — new (trait + shared types)
-- `src-tauri/src/feed/harness/copilot.rs` — new (Copilot provider)
-- `src-tauri/Cargo.toml` — add `serde-saphyr`, `libc`
+- `src-tauri/src/feed/harness/mod.rs` -- new (trait + shared types)
+- `src-tauri/src/feed/harness/copilot.rs` -- new (Copilot provider)
+- `src-tauri/Cargo.toml` -- add `serde-saphyr`, `libc`
 

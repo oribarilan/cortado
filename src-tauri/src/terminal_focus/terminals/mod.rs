@@ -55,7 +55,7 @@ pub fn try_focus(ctx: &FocusContext) -> FocusResult {
 ///
 /// Returns the full device path (e.g. `/dev/ttys003`).
 ///
-/// When tmux is in use, the returned TTY is a tmux PTY — not the terminal
+/// When tmux is in use, the returned TTY is a tmux PTY -- not the terminal
 /// tab's TTY. Callers should skip TTY matching when tmux is detected.
 pub fn resolve_tty(pid: u32) -> Option<String> {
     use std::process::Command;

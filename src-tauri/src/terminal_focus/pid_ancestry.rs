@@ -38,7 +38,7 @@ pub fn build_focus_context(session: &SessionInfo) -> Result<FocusContext, String
                 }
             }
         } else if terminal_app_pid.is_none() {
-            // Already past tmux — still look for terminal.
+            // Already past tmux -- still look for terminal.
             if let Some(name) = get_process_name(parent) {
                 if let Some((display, bundle)) = is_terminal_app(&name) {
                     terminal_app_pid = Some(parent);

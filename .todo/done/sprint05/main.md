@@ -2,7 +2,7 @@
 status: done
 ---
 
-# Sprint 05 — Azure DevOps PR feed (`ado-pr`) + custom-feed primitive docs
+# Sprint 05 -- Azure DevOps PR feed (`ado-pr`) + custom-feed primitive docs
 
 ## Theme
 

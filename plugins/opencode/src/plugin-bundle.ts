@@ -1,5 +1,5 @@
 // cortado-plugin-version: 2
-// cortado-opencode — single-file plugin for ~/.config/opencode/plugins/
+// cortado-opencode -- single-file plugin for ~/.config/opencode/plugins/
 // This file is auto-embedded in the Cortado binary and written to disk
 // when the user clicks "Install Plugin" in Settings.
 

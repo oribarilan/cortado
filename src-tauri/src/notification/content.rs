@@ -21,7 +21,7 @@ pub fn format_single(event: &StatusChangeEvent) -> FormattedNotification {
                 .new_kind
                 .map(StatusKind::human_name)
                 .unwrap_or("unknown");
-            format!("{} — {}", truncate(&event.activity_title, 60), kind_name)
+            format!("{} -- {}", truncate(&event.activity_title, 60), kind_name)
         }
     };
 

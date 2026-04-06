@@ -66,11 +66,11 @@ kitty exposes a JSON-based remote control protocol:
 ### Match selectors
 
 The `--match` parameter supports:
-- `pid:<pid>` — exact PID match
-- `cwd:<regex>` — regex match on CWD
-- `cmdline:<regex>` — regex match on command line
-- `title:<regex>` — regex match on title
-- `id:<id>` — window ID
+- `pid:<pid>` -- exact PID match
+- `cwd:<regex>` -- regex match on CWD
+- `cmdline:<regex>` -- regex match on command line
+- `title:<regex>` -- regex match on title
+- `id:<id>` -- window ID
 
 ### Focus behavior
 
@@ -112,7 +112,7 @@ When remote control is not enabled and called externally:
 ## How it works
 
 1. Check bundle ID is `net.kovidgoyal.kitty`.
-2. Run `kitty @ ls` — if it fails (remote control not enabled), return `NotApplicable`.
+2. Run `kitty @ ls` -- if it fails (remote control not enabled), return `NotApplicable`.
 3. Parse JSON, match window by PID (copilot PID or ancestor).
 4. Run `kitty @ focus-window --match pid:<matched_pid>`.
 
@@ -127,6 +127,6 @@ When remote control is not enabled and called externally:
 
 ## Notes
 
-- kitty's PID matching is the most precise of all non-tmux strategies — it matches the actual shell process PID.
+- kitty's PID matching is the most precise of all non-tmux strategies -- it matches the actual shell process PID.
 - `foreground_processes` in the JSON could also be used for matching, but `pid` is simpler.
-- The `allow_remote_control` requirement is the main adoption barrier — users must opt in.
+- The `allow_remote_control` requirement is the main adoption barrier -- users must opt in.

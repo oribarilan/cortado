@@ -2,7 +2,7 @@
 status: done
 ---
 
-# Sprint 03 — Per-feed notifications + config change notice
+# Sprint 03 -- Per-feed notifications + config change notice
 
 ## Theme
 
@@ -42,13 +42,13 @@ Add desktop notifications that are configurable per **Feed**, and detect runtime
 
 | # | File | Summary |
 |---|------|---------|
-| 01 | `.todo/done/sprint03/01-spec-contract.md` | Deferred — carry over notification-specific spec items |
-| 02 | `.todo/done/sprint03/02-notification-backend.md` | Deferred — notification backend wiring |
-| 03 | `.todo/done/sprint03/03-feed-notify-config.md` | Deferred — per-feed `notify` config parsing |
-| 04 | `.todo/done/sprint03/04-new-activity-notifier.md` | Deferred — new-activity notification dispatch |
-| 05 | `.todo/done/sprint03/05-config-change-tracker.md` | ✅ Done — Track `feeds.toml` changes during runtime without applying them live |
-| 06 | `.todo/done/sprint03/06-tray-config-change-warning.md` | ✅ Done — Surface persistent tray warning when config changes and restart is required |
-| 07 | `.todo/done/sprint03/07-notification-and-reload-tests.md` | Deferred — notification-focused tests and remaining coverage |
+| 01 | `.todo/done/sprint03/01-spec-contract.md` | Deferred -- carry over notification-specific spec items |
+| 02 | `.todo/done/sprint03/02-notification-backend.md` | Deferred -- notification backend wiring |
+| 03 | `.todo/done/sprint03/03-feed-notify-config.md` | Deferred -- per-feed `notify` config parsing |
+| 04 | `.todo/done/sprint03/04-new-activity-notifier.md` | Deferred -- new-activity notification dispatch |
+| 05 | `.todo/done/sprint03/05-config-change-tracker.md` | ✅ Done -- Track `feeds.toml` changes during runtime without applying them live |
+| 06 | `.todo/done/sprint03/06-tray-config-change-warning.md` | ✅ Done -- Surface persistent tray warning when config changes and restart is required |
+| 07 | `.todo/done/sprint03/07-notification-and-reload-tests.md` | Deferred -- notification-focused tests and remaining coverage |
 
 ## Outcome
 

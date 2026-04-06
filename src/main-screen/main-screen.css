@@ -111,6 +111,31 @@ body,
   color: var(--text-tertiary);
 }
 
+/* Disconnected feed state */
+.ms-feed-section.disconnected .ms-feed-header {
+  color: var(--text-tertiary);
+}
+
+.ms-feed-section .disconnected-label {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+  margin-left: var(--space-3);
+}
+
+/* Footer retry link */
+.ms-retry-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+.ms-retry-link:hover {
+  text-decoration: underline;
+}
+
 /* ── Activity rows ─────────────────────────────── */
 
 .ms-activity-row {
@@ -281,6 +306,13 @@ body,
   height: 100%;
   color: var(--text-tertiary);
   font-size: var(--text-sm);
+}
+
+.ms-detail .last-refreshed {
+  display: block;
+  margin-top: var(--space-5);
+  color: var(--text-tertiary);
+  font-size: var(--text-2xs);
 }
 
 /* ── Priority section ───────────────────────────── */

@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 03 — CSS Normalization: Panel
+# 03 -- CSS Normalization: Panel
 
 ## Goal
 
@@ -28,4 +28,4 @@ Same mapping as task 02 (panel and main-screen use identical token names).
 
 - Keep `--list-width`, `--dot-size`, `--row-h`, `--pad-x` as local vars if screen-specific.
 - Keep `@keyframes pulse` and `@media (prefers-reduced-motion)` blocks.
-- `--fz-title` is currently 12.5px here (vs 13px in panel). Both should snap to the same type-scale token — the slight visual shift is accepted.
+- `--fz-title` is currently 12.5px here (vs 13px in panel). Both should snap to the same type-scale token -- the slight visual shift is accepted.

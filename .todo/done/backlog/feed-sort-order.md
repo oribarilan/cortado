@@ -11,7 +11,7 @@ Let users reorder feeds in the settings feed list. The chosen order persists to 
 
 ## Context
 
-Feed order is currently determined by `[[feed]]` array order in `feeds.toml`. There is no `order`/`position` field and no reorder UI. The order chain is: TOML file order → feed registry → snapshot cache → tray/panel. Because `save_feeds_config` already serializes the `Vec<FeedConfigDto>` in array order, reordering the array before saving is enough to persist the new order — no backend schema changes needed.
+Feed order is currently determined by `[[feed]]` array order in `feeds.toml`. There is no `order`/`position` field and no reorder UI. The order chain is: TOML file order → feed registry → snapshot cache → tray/panel. Because `save_feeds_config` already serializes the `Vec<FeedConfigDto>` in array order, reordering the array before saving is enough to persist the new order -- no backend schema changes needed.
 
 ## Approach
 
@@ -28,13 +28,13 @@ Add drag-and-drop reordering (or up/down move buttons) to the feed list in setti
 
 ## Related files
 
-- `src/settings/SettingsApp.tsx` — feed list UI, `saveFeed()`, `loadFeeds()`
-- `src-tauri/src/settings_config.rs` — `FeedConfigDto`, `save_feeds_config`, `dto_to_toml_document()`
-- `src-tauri/src/feed/config.rs` — `FeedConfig`, `parse_feeds_config_toml()`
-- `src-tauri/src/feed/mod.rs` — `build_feed_registry_from_configs()`
-- `src-tauri/src/feed/runtime.rs` — `FeedSnapshotCache::upsert()`
-- `src/App.tsx` — tray feed rendering
-- `src/main-screen/MainScreenApp.tsx` — panel feed rendering
+- `src/settings/SettingsApp.tsx` -- feed list UI, `saveFeed()`, `loadFeeds()`
+- `src-tauri/src/settings_config.rs` -- `FeedConfigDto`, `save_feeds_config`, `dto_to_toml_document()`
+- `src-tauri/src/feed/config.rs` -- `FeedConfig`, `parse_feeds_config_toml()`
+- `src-tauri/src/feed/mod.rs` -- `build_feed_registry_from_configs()`
+- `src-tauri/src/feed/runtime.rs` -- `FeedSnapshotCache::upsert()`
+- `src/App.tsx` -- tray feed rendering
+- `src/main-screen/MainScreenApp.tsx` -- panel feed rendering
 
 ## Scope Estimate
 

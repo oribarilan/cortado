@@ -46,4 +46,6 @@ export type FeedSnapshot = {
   activities: Activity[];
   error: string | null;
   hide_when_empty: boolean;
+  last_refreshed?: number; // unix ms
+  is_disconnected?: boolean;
 };

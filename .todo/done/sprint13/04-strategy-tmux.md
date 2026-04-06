@@ -10,7 +10,7 @@ Implement the tmux focus strategy for the `TerminalFocusResolver`. When tmux is 
 
 ## How it works
 
-1. Check `FocusContext.tmux_server_pid` — if `None`, return `NotApplicable`.
+1. Check `FocusContext.tmux_server_pid` -- if `None`, return `NotApplicable`.
 2. Run `tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_pid}'`.
 3. Match `pane_pid` against `FocusContext.ancestors` to find the target pane.
 4. Run `tmux list-clients -F '#{client_tty} #{client_session} #{client_pid}'`.
@@ -32,4 +32,4 @@ If any tmux command fails (tmux not installed, not running, etc.), return `Faile
 
 ## Relevant files
 
-- `src-tauri/src/terminal_focus/tmux.rs` — new file
+- `src-tauri/src/terminal_focus/tmux.rs` -- new file

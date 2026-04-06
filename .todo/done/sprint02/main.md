@@ -2,7 +2,7 @@
 status: done
 ---
 
-# Sprint 02 — Real polling engine (non-UI)
+# Sprint 02 -- Real polling engine (non-UI)
 
 ## Theme
 

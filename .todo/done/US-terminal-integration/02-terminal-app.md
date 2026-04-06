@@ -16,9 +16,9 @@ Terminal.app exposes a mature AppleScript dictionary:
 
 - `application` > `windows` > `tabs`
 - Each `tab` has a `tty` property (read-only, returns e.g. `/dev/ttys003`)
-- `selected tab of window` — read/write, switches tabs
-- `frontmost` — brings window to front
-- `activate` — brings Terminal.app to foreground
+- `selected tab of window` -- read/write, switches tabs
+- `frontmost` -- brings window to front
+- `activate` -- brings Terminal.app to foreground
 
 ### Key properties
 
@@ -51,12 +51,12 @@ end tell
 
 Get copilot process TTY via `ps -p <pid> -o tty=` → returns e.g. `ttys003`. Prepend `/dev/` for the full device path.
 
-**Important**: when tmux is in use, the copilot process TTY is a tmux PTY (e.g., `/dev/ttys107`), which is *not* the terminal tab's TTY. TTY matching only works without tmux — the tmux strategy handles the tmux case.
+**Important**: when tmux is in use, the copilot process TTY is a tmux PTY (e.g., `/dev/ttys107`), which is *not* the terminal tab's TTY. TTY matching only works without tmux -- the tmux strategy handles the tmux case.
 
 ### Compatibility
 
 - Works on all macOS versions with Terminal.app (essentially all of them).
-- No version restrictions — `tty of tab` has been available for many years.
+- No version restrictions -- `tty of tab` has been available for many years.
 - No configuration required.
 - Bundle ID: `com.apple.Terminal`
 
@@ -73,12 +73,12 @@ Get copilot process TTY via `ps -p <pid> -o tty=` → returns e.g. `ttys003`. Pr
 - [ ] `src-tauri/src/terminal_focus/terminals/terminal_app.rs`
 - [ ] Matches by TTY (precise, no heuristics)
 - [ ] Returns `NotApplicable` when bundle ID doesn't match
-- [ ] Returns `NotApplicable` when tmux is in use (TTY won't match — tmux strategy handles this)
+- [ ] Returns `NotApplicable` when tmux is in use (TTY won't match -- tmux strategy handles this)
 - [ ] Unit tests: TTY path construction, bundle ID check
 - [ ] `just check` passes
 
 ## Notes
 
 - Terminal.app has the most mature and reliable AppleScript API on macOS.
-- TTY matching is precise — no ambiguity, no heuristics.
+- TTY matching is precise -- no ambiguity, no heuristics.
 - The only limitation is tmux (different PTY namespace).

@@ -8,17 +8,17 @@
 
 Runs on every push to `main`, every pull request, and every version tag (`v*`).
 
-1. `just check` — format, lint (clippy + tsc), tests
-2. `pnpm build` — frontend Vite bundle
+1. `just check` -- format, lint (clippy + tsc), tests
+2. `pnpm build` -- frontend Vite bundle
 
 ### Release (only on `v*` tags, after Check passes)
 
-1. **Sign** — imports the Apple Developer ID certificate into a temporary keychain
-2. **Notarize** — writes the App Store Connect API key for Apple notarization
-3. **Build** — runs `just build` with signing and notarization env vars set. Tauri handles code signing and notarization automatically during the build.
-4. **Release notes** — extracts the relevant section from `CHANGELOG.md`
-5. **Updater** — generates `latest.json` with version, platform URL, signature, and release notes
-6. **Publish** — creates a GitHub Release with all artifacts
+1. **Sign** -- imports the Apple Developer ID certificate into a temporary keychain
+2. **Notarize** -- writes the App Store Connect API key for Apple notarization
+3. **Build** -- runs `just build` with signing and notarization env vars set. Tauri handles code signing and notarization automatically during the build.
+4. **Release notes** -- extracts the relevant section from `CHANGELOG.md`
+5. **Updater** -- generates `latest.json` with version, platform URL, signature, and release notes
+6. **Publish** -- creates a GitHub Release with all artifacts
 
 ### CI Packaging (`ci-build.yml`)
 
@@ -38,10 +38,10 @@ Push a tag matching `v*` (e.g., `v0.5.0`). See `CONTRIBUTING.md` for the full re
 
 The release includes:
 
-- `Cortado_X.Y.Z_aarch64.dmg` — signed, notarized macOS Apple Silicon disk image
-- `Cortado.app.tar.gz` — compressed app bundle for Tauri updater
-- `Cortado.app.tar.gz.sig` — Ed25519 signature for updater verification
-- `latest.json` — Tauri updater endpoint (version, platform URL, signature, release notes)
+- `Cortado_X.Y.Z_aarch64.dmg` -- signed, notarized macOS Apple Silicon disk image
+- `Cortado.app.tar.gz` -- compressed app bundle for Tauri updater
+- `Cortado.app.tar.gz.sig` -- Ed25519 signature for updater verification
+- `latest.json` -- Tauri updater endpoint (version, platform URL, signature, release notes)
 
 ## Required GitHub Actions secrets
 
@@ -59,7 +59,7 @@ The release includes:
 
 ## Runner
 
-macOS ARM (`macos-latest`) — required for the Tauri macOS build and native dependencies.
+macOS ARM (`macos-latest`) -- required for the Tauri macOS build and native dependencies.
 
 ## Concurrency
 

@@ -9,7 +9,7 @@ import {
 } from "@tauri-apps/plugin-notification";
 import { useAppearance } from "../shared/useAppearance";
 import type { FeedSnapshot } from "../shared/types";
-import { FEED_CATALOG, findFeedType, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
+import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type CatalogFeedType, type CatalogProvider } from "../shared/feedTypes";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
@@ -274,7 +274,7 @@ function SettingsApp() {
     mode: "all",
     delivery: "grouped",
     notify_new_activities: true,
-    notify_removed_activities: true,
+    notify_removed_activities: false,
   });
   const [notifLoading, setNotifLoading] = useState(true);
   const [notifSaveError, setNotifSaveError] = useState<string | null>(null);
@@ -347,6 +347,7 @@ function SettingsApp() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [feedNavTransition, setFeedNavTransition] = useState<"idle" | "drill-in" | "drill-out">("idle");
   const [swapAnim, setSwapAnim] = useState<{ up: number; down: number } | null>(null);
+  const nameManuallyEdited = useRef(false);
 
   // Catalog state (for the new feed flow)
   const [catalogStep, setCatalogStep] = useState<"hidden" | "providers" | "types">("hidden");
@@ -610,6 +611,7 @@ function SettingsApp() {
     setEditingIndex(index);
     setEditingFeed(structuredClone(feeds[index]));
     setIsNewFeed(false);
+    nameManuallyEdited.current = true;
     setSaveError(null);
     setSaveSuccess(false);
     setRevealedTokens(new Set());
@@ -648,8 +650,13 @@ function SettingsApp() {
     setCatalogStep("hidden");
     setCatalogProvider(null);
     setEditingIndex(feeds.length);
-    setEditingFeed(emptyFeed(feedType, catalogType.defaultInterval));
+    const newFeed = emptyFeed(feedType, catalogType.defaultInterval);
+    // Auto-populate name for feed types with static patterns (no field placeholders)
+    const defaultName = generateDefaultName(feedType, {});
+    if (defaultName) newFeed.name = defaultName;
+    setEditingFeed(newFeed);
     setIsNewFeed(true);
+    nameManuallyEdited.current = false;
     setSaveError(null);
     setSaveSuccess(false);
     setRevealedTokens(new Set());
@@ -782,7 +789,16 @@ function SettingsApp() {
     });
 
     if (key === "name") {
-      setEditingFeed({ ...editingFeed, name: value });
+      // Track whether the user manually edited the name
+      if (value === "") {
+        nameManuallyEdited.current = false;
+        // Regenerate default name when field is cleared
+        const defaultName = generateDefaultName(editingFeed.type, editingFeed.type_specific);
+        setEditingFeed({ ...editingFeed, name: defaultName ?? "" });
+      } else {
+        nameManuallyEdited.current = true;
+        setEditingFeed({ ...editingFeed, name: value });
+      }
     } else if (key === "type") {
       setEditingFeed({ ...editingFeed, type: value, type_specific: {} });
       setTestResult(null);
@@ -799,10 +815,16 @@ function SettingsApp() {
     } else if (key === "retain") {
       setEditingFeed({ ...editingFeed, retain: value || undefined });
     } else {
-      setEditingFeed({
-        ...editingFeed,
-        type_specific: { ...editingFeed.type_specific, [key]: value },
-      });
+      const newTypeSpecific = { ...editingFeed.type_specific, [key]: value };
+      const updatedFeed = { ...editingFeed, type_specific: newTypeSpecific };
+      // Auto-populate name if user hasn't manually edited it
+      if (!nameManuallyEdited.current) {
+        const defaultName = generateDefaultName(editingFeed.type, newTypeSpecific);
+        if (defaultName) {
+          updatedFeed.name = defaultName;
+        }
+      }
+      setEditingFeed(updatedFeed);
     }
   }, [editingFeed]);
 
@@ -949,7 +971,7 @@ function SettingsApp() {
           className={`settings-nav ${section === "focus" ? "active" : ""}`}
           onClick={() => switchSection("focus")}
         >
-          <span className="settings-nav-icon">▸</span> Terminals
+          <span className="settings-nav-icon">&gt;_</span> Terminals
         </div>
         {restartNeeded && (
           <>
@@ -1798,7 +1820,7 @@ function SettingsApp() {
               </button>
             </div>
 
-            {/* T3 — Collapsible test results */}
+            {/* T3 -- Collapsible test results */}
             <div className={`test-panel-wrap ${testLoading || testResult ? "expanded" : ""}`}>
               <div className="test-panel-wrap-inner">
                 {testLoading && !testResult && (
@@ -1843,7 +1865,7 @@ function SettingsApp() {
               </div>
             </div>
 
-            {/* D4 — Footer dep note (when CLI is installed) */}
+            {/* D4 -- Footer dep note (when CLI is installed) */}
             {depInfo && depInstalled !== false && (
               <div className="dep-footer">
                 Requires <code>{depInfo.binary}</code> CLI{depInfo.authCommand ? <>, authenticated via <code>{depInfo.authCommand}</code></> : ""}.
@@ -1961,7 +1983,7 @@ function SettingsApp() {
                         <span className="feed-card-badge">{findFeedType(feed.type)?.label ?? feed.type}</span>
                       </div>
                       <div className="feed-card-meta">
-                        {feed.interval && (
+                        {feed.interval && !findFeedType(feed.type)?.hideInterval && (
                           <span className="feed-card-detail">
                             <span className="feed-card-detail-icon">↻</span> {feed.interval}
                           </span>
@@ -2032,7 +2054,7 @@ function SettingsApp() {
                       mode: "all",
                       delivery: "grouped",
                       notify_new_activities: true,
-                      notify_removed_activities: true,
+                      notify_removed_activities: false,
                     });
                   } else {
                     void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, showEmptyFeeds: false, theme: "system", textSize: "m" });

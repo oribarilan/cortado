@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 02 — List Pane
+# 02 -- List Pane
 
 ## Goal
 
@@ -28,6 +28,6 @@ Build the left-side activity list for the panel. Feed-grouped sections with comp
 
 ## Notes
 
-- Share TypeScript types (`FeedSnapshot`, `Activity`, `Field`, `StatusKind`, etc.) with the menubar panel — consider extracting to a shared module under `src/shared/` or `src/types.ts`
+- Share TypeScript types (`FeedSnapshot`, `Activity`, `Field`, `StatusKind`, etc.) with the menubar panel -- consider extracting to a shared module under `src/shared/` or `src/types.ts`
 - Utility functions like `deriveActivityKind`, `supportsOpen`, `kindPriority` should also be shared
-- The list doesn't show status chips — that's the detail pane's job. Keep rows minimal.
+- The list doesn't show status chips -- that's the detail pane's job. Keep rows minimal.

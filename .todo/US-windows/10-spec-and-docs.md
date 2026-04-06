@@ -15,7 +15,7 @@ Update the project specification and documentation to reflect cross-platform sup
 - [ ] `specs/main.md` menubar UX section: document platform differences (NSPanel on macOS vs standard window on Windows)
 - [ ] `specs/main.md` tray icon section: document template mode (macOS) vs colored icon (Windows)
 - [ ] `specs/main.md` notifications section: reference both macOS Notification Center and Windows notification system
-- [ ] `specs/main.md` non-goals: remove "Windows/Linux support" — Windows is now supported; Linux remains a non-goal
+- [ ] `specs/main.md` non-goals: remove "Windows/Linux support" -- Windows is now supported; Linux remains a non-goal
 - [ ] `specs/main.md` terminal focus: document as "macOS only" with note that Windows support may come later
 - [ ] `AGENTS.md` gotchas: macOS-specific gotchas (no `tokio::spawn` in setup, no `block_on`, PATH resolution, packaged app installs) are annotated as macOS-specific where applicable. Add any Windows-specific gotchas discovered during implementation.
 - [ ] `AGENTS.md` code organization: document cfg-dispatched module pairs pattern (e.g., `panel_macos.rs` / `panel_windows.rs` + dispatcher `panel.rs`)
@@ -29,9 +29,9 @@ Update the project specification and documentation to reflect cross-platform sup
 
 - Keep spec language platform-neutral where possible. Only call out platform differences where behavior actually differs.
 - Terminal focus should be documented as "macOS only" in the spec with a note that Windows support is a future enhancement.
-- The glossary entry for "Panel" currently says "floating NSPanel" — should reference both platforms.
+- The glossary entry for "Panel" currently says "floating NSPanel" -- should reference both platforms.
 - The "Gotchas" section in `AGENTS.md` is heavily macOS-focused. Some gotchas (like `tokio::spawn` in setup) may apply to both platforms; annotate accordingly.
-- Document the config directory difference prominently — it's a cross-cutting concern that affects users and developers.
+- Document the config directory difference prominently -- it's a cross-cutting concern that affects users and developers.
 
 ## Dependencies
 

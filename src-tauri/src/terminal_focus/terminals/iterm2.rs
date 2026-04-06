@@ -10,7 +10,7 @@ const BUNDLE_ID: &str = "com.googlecode.iterm2";
 /// Focus sequence: select window > select tab > select session > activate.
 /// Handles split panes naturally (sessions are siblings within a tab).
 ///
-/// Only works without tmux — when tmux is in the process ancestry the
+/// Only works without tmux -- when tmux is in the process ancestry the
 /// copilot TTY is a tmux PTY, not the terminal's.
 pub fn try_focus(ctx: &FocusContext) -> FocusResult {
     if ctx.terminal_app_bundle.as_deref() != Some(BUNDLE_ID) {
@@ -39,7 +39,7 @@ pub fn try_focus(ctx: &FocusContext) -> FocusResult {
 fn focus_session_by_tty(tty: &str) -> Result<bool, String> {
     let safe_tty = escape_applescript(tty);
 
-    // iTerm2 may be installed as "iTerm" or "iTerm2" — the AppleScript
+    // iTerm2 may be installed as "iTerm" or "iTerm2" -- the AppleScript
     // application name is "iTerm2" on modern versions. We use "iTerm2"
     // which covers the common case; macOS will match the bundle regardless
     // of the .app folder name.

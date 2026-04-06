@@ -28,6 +28,6 @@ Currently `open_settings` takes no parameters and always opens to the "General" 
 
 ## Relevant files
 
-- `src-tauri/src/command.rs` — `open_settings` command
-- `src/settings/SettingsApp.tsx` — section state, `startAdd()`, `selectFeedType()`
-- `src/main-screen/MainScreenApp.tsx` — will invoke `open_settings` with params (in task 03)
+- `src-tauri/src/command.rs` -- `open_settings` command
+- `src/settings/SettingsApp.tsx` -- section state, `startAdd()`, `selectFeedType()`
+- `src/main-screen/MainScreenApp.tsx` -- will invoke `open_settings` with params (in task 03)

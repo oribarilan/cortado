@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 03 — Config backend commands
+# 03 -- Config backend commands
 
 ## Goal
 
@@ -55,7 +55,7 @@ interface FieldOverride {
 
 ### TOML reconstruction
 
-Use `toml::Value` to build the TOML output (Option C — clean rewrite). The goal is to produce clean, readable TOML — not a direct serde dump. Comments and formatting from hand-edits will be lost; the old file is backed up as `feeds.toml.bak`. The output should look like hand-written config:
+Use `toml::Value` to build the TOML output (Option C -- clean rewrite). The goal is to produce clean, readable TOML -- not a direct serde dump. Comments and formatting from hand-edits will be lost; the old file is backed up as `feeds.toml.bak`. The output should look like hand-written config:
 
 ```toml
 [[feed]]

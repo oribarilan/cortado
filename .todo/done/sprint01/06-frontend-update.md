@@ -26,9 +26,9 @@ Replace all Bean/Watch terminology in the frontend with Feed/Activity. Fetch dat
 - The invoke call should happen on component mount (existing `useEffect` pattern).
 - Field rendering should handle all `FieldValue` variants: text, status (with severity styling), number, url (as link).
 - Status severity → CSS: success (green), warning (amber), error (red), pending (blue/gray), neutral (default).
-- Keep the existing panel layout (max-width, padding, etc.) — just update the data model.
+- Keep the existing panel layout (max-width, padding, etc.) -- just update the data model.
 
 ## Relevant files
 
-- `src/App.tsx` — types, data fetching, rendering
-- `src/styles.css` — class name updates, field/status styling
+- `src/App.tsx` -- types, data fetching, rendering
+- `src/styles.css` -- class name updates, field/status styling

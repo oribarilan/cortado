@@ -30,8 +30,8 @@ Establish a single source of truth for the app version, align existing mismatche
 
 ## Relevant files
 
-- `src-tauri/Cargo.toml` — `version = "0.2.0"`
-- `src-tauri/tauri.conf.json` — `"version": "0.0.0"`
-- `Justfile` — add `release` command
+- `src-tauri/Cargo.toml` -- `version = "0.2.0"`
+- `src-tauri/tauri.conf.json` -- `"version": "0.0.0"`
+- `Justfile` -- add `release` command
 - `CHANGELOG.md` (to create)
 - `CONTRIBUTING.md` (to create)

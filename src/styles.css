@@ -119,6 +119,22 @@ body {
   flex-shrink: 0;
 }
 
+/* Disconnected feed state */
+.feed-block.disconnected .feed-name {
+  color: var(--text-tertiary);
+}
+
+.disconnected-label {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+}
+
+/* Retry connection row in footer */
+.footer-row.retry-row {
+  color: var(--accent);
+}
+
 .feed-error {
   margin: 0 var(--space-4) var(--space-2);
   padding: var(--space-3) var(--space-4);
@@ -400,6 +416,12 @@ body {
 
 .field-value.status.kind-idle {
   color: var(--status-idle);
+}
+
+.detail-body .last-refreshed {
+  margin-top: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-2xs);
 }
 
 .panel-error {

@@ -5,7 +5,7 @@ mod terminals;
 pub(crate) mod tmux;
 
 /// Escapes a string for safe interpolation into an AppleScript double-quoted string.
-/// Handles backslashes and double quotes — the two special characters in AppleScript strings.
+/// Handles backslashes and double quotes -- the two special characters in AppleScript strings.
 pub(crate) fn escape_applescript(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
@@ -58,7 +58,7 @@ pub fn focus_terminal(
         .map_err(|e| format!("failed to build focus context: {e}"))?;
 
     eprintln!(
-        "focus: context for session {} — terminal={:?} bundle={:?} tmux={:?}",
+        "focus: context for session {} -- terminal={:?} bundle={:?} tmux={:?}",
         session.id, ctx.terminal_app_name, ctx.terminal_app_bundle, ctx.tmux_server_pid
     );
 
@@ -137,7 +137,7 @@ fn try_app_activation(ctx: &FocusContext) -> FocusResult {
 pub(crate) fn activate_app_by_pid(pid: u32) -> Result<(), String> {
     use std::process::Command;
 
-    // Use osascript to activate the app — avoids direct objc FFI.
+    // Use osascript to activate the app -- avoids direct objc FFI.
     let script = format!(
         r#"tell application "System Events"
     set targetProcess to first process whose unix id is {pid}
@@ -187,7 +187,7 @@ pub fn build_context_for_label(session: &SessionInfo) -> Option<FocusContext> {
 /// Queries current focus capabilities for the settings UI.
 ///
 /// Only performs cheap checks (tmux binary, AX permission, app detection).
-/// Does NOT do PID ancestry walks — those happen during poll/focus.
+/// Does NOT do PID ancestry walks -- those happen during poll/focus.
 pub fn get_capabilities() -> FocusCapabilities {
     FocusCapabilities {
         has_active_session: false,
@@ -237,7 +237,7 @@ const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
 
 /// Detects which known terminals are installed on this system.
 ///
-/// Uses `NSWorkspace::URLForApplicationWithBundleIdentifier` — an instant
+/// Uses `NSWorkspace::URLForApplicationWithBundleIdentifier` -- an instant
 /// lookup against the Launch Services database. No subprocess spawning,
 /// no Spotlight queries, no Accessibility permission required.
 fn detect_terminals() -> Vec<TerminalDetection> {

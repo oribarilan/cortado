@@ -21,13 +21,13 @@ Dev and production can run **side-by-side** (different bundle IDs). Two dev inst
 | Resource | Current value | Risk |
 |----------|---------------|------|
 | Bundle ID | `com.cortado.app` | macOS treats both builds as the same app (notifications, Gatekeeper, tray icon grouping). Should be `sh.oribi.cortado` for release. |
-| Config dir | `~/.config/cortado/` | Dev and release share `feeds.toml` and `settings.toml` — edits in one affect the other |
-| App name | `Cortado` | Both show as "Cortado" in Activity Monitor, Dock, tray — impossible to distinguish |
+| Config dir | `~/.config/cortado/` | Dev and release share `feeds.toml` and `settings.toml` -- edits in one affect the other |
+| App name | `Cortado` | Both show as "Cortado" in Activity Monitor, Dock, tray -- impossible to distinguish |
 | Tray icon ID | `"tray"` | Process-local, no collision across separate processes |
 | Window labels | `"main"`, `"main-screen"`, `"settings"` | Process-local, no collision |
 | Autostart | `tauri_plugin_autostart` | Dev build could register itself as the login item, replacing the release build |
 | Global hotkey | `tauri_plugin_global_shortcut` | Dev build could steal the hotkey from the release build |
-| Multiple dev instances | N/A | `just dev` and installed dev DMG share the same bundle ID — if both run, the second steals the global hotkey from the first |
+| Multiple dev instances | N/A | `just dev` and installed dev DMG share the same bundle ID -- if both run, the second steals the global hotkey from the first |
 
 ## Acceptance criteria
 
@@ -39,7 +39,7 @@ Dev and production can run **side-by-side** (different bundle IDs). Two dev inst
 - [ ] Dev builds show a clear visual indicator (e.g., colored "DEV" badge in the panel header or footer, tinted panel border, distinct tray icon) so the developer always knows which instance they're looking at
 - [ ] `tauri-plugin-single-instance` prevents running two dev instances simultaneously (packaged DMG + `just dev`). Second instance focuses the existing one.
 - [ ] Release builds continue using `sh.oribi.cortado` and `~/.config/cortado/`
-- [ ] The mechanism is automatic — developers don't need to manually toggle anything; `just dev` and `just build` use dev identity, production release uses production identity
+- [ ] The mechanism is automatic -- developers don't need to manually toggle anything; `just dev` and `just build` use dev identity, production release uses production identity
 - [ ] Document the isolation setup in `CONTRIBUTING.md`
 
 ## Implementation approach
@@ -75,15 +75,15 @@ Add `tauri-plugin-single-instance` to prevent two dev instances from running sim
 }))
 ```
 
-This applies to both dev and production builds — no duplicate production instances either.
+This applies to both dev and production builds -- no duplicate production instances either.
 
 ## Relevant files
 
-- `src-tauri/tauri.conf.json` — `identifier`, `productName`
+- `src-tauri/tauri.conf.json` -- `identifier`, `productName`
 - `src-tauri/tauri.dev.conf.json` (to create)
-- `src-tauri/Cargo.toml` — add `tauri-plugin-single-instance` dependency
-- `src-tauri/src/app_settings.rs` — `CONFIG_DIR` constant
-- `src-tauri/src/feed/config.rs` — `CONFIG_DIR` constant
-- `src-tauri/src/main.rs` — autostart plugin init, single-instance plugin init
-- `Justfile` — `dev` and `build` commands
-- `CONTRIBUTING.md` — document the setup
+- `src-tauri/Cargo.toml` -- add `tauri-plugin-single-instance` dependency
+- `src-tauri/src/app_settings.rs` -- `CONFIG_DIR` constant
+- `src-tauri/src/feed/config.rs` -- `CONFIG_DIR` constant
+- `src-tauri/src/main.rs` -- autostart plugin init, single-instance plugin init
+- `Justfile` -- `dev` and `build` commands
+- `CONTRIBUTING.md` -- document the setup

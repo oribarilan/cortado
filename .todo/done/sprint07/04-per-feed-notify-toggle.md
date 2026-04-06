@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 04 — Per-feed notify toggle
+# 04 -- Per-feed notify toggle
 
 ## Goal
 
@@ -30,11 +30,11 @@ notify = false  # Silence notifications for this feed
 ## Notes
 
 - `notify` is a per-feed override. It only takes effect when global notifications are enabled.
-- The settings UI feed editor already has a form with fields like `interval` and `retain` — `notify` is a new toggle in the same form.
+- The settings UI feed editor already has a form with fields like `interval` and `retain` -- `notify` is a new toggle in the same form.
 - Consider placement in the feed editor UI: near the top (prominent) or grouped with other behavior settings (interval, retain).
 
 ## Relevant files
 
-- `src-tauri/src/feed/config.rs` — `FeedConfig` struct, TOML parsing
-- `src-tauri/src/settings_config.rs` — DTO for settings UI
-- `src/settings/SettingsApp.tsx` — feed editor form
+- `src-tauri/src/feed/config.rs` -- `FeedConfig` struct, TOML parsing
+- `src-tauri/src/settings_config.rs` -- DTO for settings UI
+- `src/settings/SettingsApp.tsx` -- feed editor form

@@ -19,7 +19,7 @@ This plan assumes **Approach F (Self-Restart)** from task 01 and **settings dete
 
 - **FeedAction enum**: Keep. Add `FeedAction` enum to `FeedSnapshot` (Option A from Step 2). Typed and explicit.
 - **Change detection**: Use `notify` crate (already a dependency) with 500ms debounce, not poll-based `ConfigChangeTracker`. Sub-second detection vs 30-120s with polling.
-- **False positive suppression**: Content comparison is the primary guard (parse on-disk config, compare to running state). No baseline reset needed. For feeds: on-disk ≠ startup config → prompt (correct — feeds aren't reloaded). For settings: on-disk = in-memory RwLock → no prompt (correct — GUI saves update both).
+- **False positive suppression**: Content comparison is the primary guard (parse on-disk config, compare to running state). No baseline reset needed. For feeds: on-disk ≠ startup config → prompt (correct -- feeds aren't reloaded). For settings: on-disk = in-memory RwLock → no prompt (correct -- GUI saves update both).
 - **Config validation before prompting**: On file change, parse the new config. If invalid TOML → show `AttentionNegative` status (config error, no restart option). If valid and differs from running config → show `AttentionPositive` status (restart prompt). If valid but identical → no prompt.
 - **Settings GUI toast**: Keep the toast in `SettingsApp.tsx` but update text. Feed saves: "Saved (Restart Required)". Settings saves: "Saved (Changes Applied)". The Configuration feed provides the actionable restart mechanism; the toast gives immediate save feedback.
 - **hide_empty_feeds tray bug**: Separate task 04 in this story.
@@ -53,7 +53,7 @@ The flow replaces the existing poll-based `ConfigChangeTracker` with a `notify` 
 
 **Files:** new `feed/config_watcher.rs` (or extend `feed/config.rs`)
 
-Replace the poll-based `ConfigChangeTracker` (mtime + file size on each refresh tick) with a `notify`-based file watcher. The `notify` crate is already a dependency — reuse the `RecommendedWatcher` pattern from `harness_watcher.rs`.
+Replace the poll-based `ConfigChangeTracker` (mtime + file size on each refresh tick) with a `notify`-based file watcher. The `notify` crate is already a dependency -- reuse the `RecommendedWatcher` pattern from `harness_watcher.rs`.
 
 Changes:
 - Create a `ConfigWatcher` that watches both `feeds.toml` and `settings.toml` using `notify::RecommendedWatcher`.
@@ -124,7 +124,7 @@ Register it in `main.rs`'s `invoke_handler`. This is the same call used in `inst
 
 Complexity: Trivial.
 
-### Step 4: Frontend — make Configuration feed clickable
+### Step 4: Frontend -- make Configuration feed clickable
 
 **Files:** Tray (`App.tsx`), Panel (`main-screen/` components)
 
@@ -148,7 +148,7 @@ The message text should be clear and actionable:
 
 **Files:** `feed/config_watcher.rs` (or wherever the watcher callback lives), `app_settings.rs`
 
-When the watcher fires (from any source — external edit or GUI save), the response is always the same: parse the changed file and compare to the running config. This single mechanism handles all false positive scenarios without needing baseline resets or suppress flags.
+When the watcher fires (from any source -- external edit or GUI save), the response is always the same: parse the changed file and compare to the running config. This single mechanism handles all false positive scenarios without needing baseline resets or suppress flags.
 
 **For feeds.toml:**
 - Parse the new file into `Vec<FeedConfig>`.
@@ -163,9 +163,9 @@ When the watcher fires (from any source — external edit or GUI save), the resp
 - If different → prompt restart. This covers external edits where the in-memory state doesn't reflect the file.
 - If identical → ignore. This correctly handles GUI saves: the GUI updates both the file and the RwLock, so they match → no false prompt.
 
-**Known limitation:** `show_menubar` — when changed via GUI, the in-memory state IS updated but the tray icon isn't recreated. The comparison shows file = in-memory → no restart prompt, even though restart is actually needed. Accepted: this setting is toggled very rarely, and the user can manually restart.
+**Known limitation:** `show_menubar` -- when changed via GUI, the in-memory state IS updated but the tray icon isn't recreated. The comparison shows file = in-memory → no restart prompt, even though restart is actually needed. Accepted: this setting is toggled very rarely, and the user can manually restart.
 
-**Why not baseline reset?** With `notify` delivering events in milliseconds, a baseline-reset approach has a real race window (watcher fires before reset). Content comparison eliminates this entirely — the comparison result is always correct regardless of timing.
+**Why not baseline reset?** With `notify` delivering events in milliseconds, a baseline-reset approach has a real race window (watcher fires before reset). Content comparison eliminates this entirely -- the comparison result is always correct regardless of timing.
 
 Complexity: Low. Requires `PartialEq` on `FeedConfig` and `AppSettings` (or serialize-and-compare). The startup feed config must be retained for comparison (store `Vec<FeedConfig>` alongside `FeedRegistry`).
 
@@ -176,26 +176,26 @@ Complexity: Low. Requires `PartialEq` on `FeedConfig` and `AppSettings` (or seri
 - Update `specs/main.md` "Config loading" section (line 117-120) to describe the new behavior: "Config changes are detected automatically via file watching. A 'restart to apply' prompt appears in the Cortado Configuration feed when feeds.toml or settings.toml changes on disk."
 - Rename synthetic feed from "Configuration" to "Cortado Configuration" in `ui_snapshot.rs` (if not already done in Step 2).
 - Update the Settings GUI toast text in `SettingsApp.tsx`:
-  - **Feed saves:** "Saved (Restart Required)" — feeds are not hot-reloaded, so the user must restart.
-  - **Settings saves:** "Saved (Changes Applied)" — most settings take effect immediately via the RwLock / event system.
+  - **Feed saves:** "Saved (Restart Required)" -- feeds are not hot-reloaded, so the user must restart.
+  - **Settings saves:** "Saved (Changes Applied)" -- most settings take effect immediately via the RwLock / event system.
 - Remove any stale "Restart Cortado to apply changes" messaging that implies the *only* way to restart is manually quitting and relaunching.
 
 ## Edge Cases
 
 | Edge case | Handling |
 |-----------|---------|
-| Parse error in changed config | Don't show restart prompt — the restart would fail to load bad config. Instead, show a "Config error" warning with the parse error details. (This is the current behavior for startup parse errors.) |
+| Parse error in changed config | Don't show restart prompt -- the restart would fail to load bad config. Instead, show a "Config error" warning with the parse error details. (This is the current behavior for startup parse errors.) |
 | Rapid successive edits | 500ms debounce in `notify` watcher absorbs rapid FS events from editors. |
-| Config file deleted | Ignore — keep running with current config. Don't prompt restart. |
+| Config file deleted | Ignore -- keep running with current config. Don't prompt restart. |
 | Config file recreated (vim pattern) | `notify` with debounce handles the delete-then-create pattern. The debounce window captures both events and only the final state is compared. |
 | GUI save triggers watcher | Content comparison handles this: for feeds, on-disk ≠ startup config → prompt restart (correct). For settings, on-disk = in-memory → no prompt (correct). No suppress flag or baseline reset needed. |
 | Both files changed simultaneously | Show one "Config changed" prompt (not two). The watcher callback checks both files and produces a single synthetic feed snapshot. |
-| `show_menubar` changed via GUI | In-memory is updated but tray isn't recreated. Content comparison shows match → no restart prompt. Accepted limitation — very rare toggle. |
+| `show_menubar` changed via GUI | In-memory is updated but tray isn't recreated. Content comparison shows match → no restart prompt. Accepted limitation -- very rare toggle. |
 
 ## Testing Plan
 
-- **Unit tests:** Content comparison logic — feed config differs from startup → changed. Settings config matches in-memory → not changed. Invalid TOML → error, not restart.
-- **Unit tests:** `inject_config_warning_snapshot` — test actionable activity with `FeedAction::RestartApp` is included when changed, absent when not. Feed name is "Cortado Configuration".
+- **Unit tests:** Content comparison logic -- feed config differs from startup → changed. Settings config matches in-memory → not changed. Invalid TOML → error, not restart.
+- **Unit tests:** `inject_config_warning_snapshot` -- test actionable activity with `FeedAction::RestartApp` is included when changed, absent when not. Feed name is "Cortado Configuration".
 - **Manual test:** Edit `feeds.toml` in vim while app is running → verify "Cortado Configuration" feed appears with restart activity within ~1s → click → app restarts with new config.
 - **Manual test:** Edit `settings.toml` externally → same flow.
 - **Manual test:** Save feeds in Settings GUI → verify toast shows "Saved (Restart Required)" → verify "Cortado Configuration" feed appears with restart prompt.
@@ -205,5 +205,5 @@ Complexity: Low. Requires `PartialEq` on `FeedConfig` and `AppSettings` (or seri
 ## Open Questions
 
 - **Message specificity:** Should the prompt say which file changed ("Feed config changed" vs "Settings changed"), or just "Config changed"? The former is more informative; the latter is simpler.
-- **Auto-restart option:** Should there be a setting to auto-restart on config change (skip the user prompt)? Probably not — it's surprising behavior and could disrupt monitoring. But worth noting as a future option.
+- **Auto-restart option:** Should there be a setting to auto-restart on config change (skip the user prompt)? Probably not -- it's surprising behavior and could disrupt monitoring. But worth noting as a future option.
 - **Upgrade path to hot-reload:** If the restart UX proves insufficient, the file watching infrastructure and actionable feed pattern built here can be reused. The `ConfigChangeTracker` would trigger a `reload_feeds()` function instead of a restart prompt.

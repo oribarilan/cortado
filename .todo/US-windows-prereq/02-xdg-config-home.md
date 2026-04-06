@@ -6,7 +6,7 @@ status: done
 
 ## Goal
 
-Support the `$XDG_CONFIG_HOME` environment variable on macOS, falling back to `~/.config/` when unset. This is standard XDG Base Directory compliance — currently the app hardcodes `~/.config/` without checking the env var.
+Support the `$XDG_CONFIG_HOME` environment variable on macOS, falling back to `~/.config/` when unset. This is standard XDG Base Directory compliance -- currently the app hardcodes `~/.config/` without checking the env var.
 
 ## Acceptance criteria
 
@@ -19,7 +19,7 @@ Support the `$XDG_CONFIG_HOME` environment variable on macOS, falling back to `~
 
 ## Notes
 
-- This is a small change in `app_env.rs:init()` — check `std::env::var("XDG_CONFIG_HOME")` before falling back to `dirs::home_dir().join(".config")`.
+- This is a small change in `app_env.rs:init()` -- check `std::env::var("XDG_CONFIG_HOME")` before falling back to `dirs::home_dir().join(".config")`.
 - The `dirs` crate's `config_dir()` on macOS returns `~/Library/Application Support/` (Apple convention), NOT `~/.config/` (XDG convention). We deliberately use XDG on macOS, so we can't just switch to `dirs::config_dir()`.
 - On Windows, `dirs::config_dir()` returns `%APPDATA%` which is correct. No XDG needed.
 - This must land before `US-windows/01-cargo-platform-deps` adds the `#[cfg]` split for config directory, so the macOS path is clean.

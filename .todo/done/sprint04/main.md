@@ -2,7 +2,7 @@
 status: done
 ---
 
-# Sprint 04 — Retained activities + duration-string config
+# Sprint 04 -- Retained activities + duration-string config
 
 ## Theme
 

@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 05 — Backend: Theme + Text Size Settings
+# 05 -- Backend: Theme + Text Size Settings
 
 ## Goal
 
@@ -19,8 +19,8 @@ Add `theme` and `text_size` fields to `AppSettings` so the frontend can read and
 
 ## Files to Change
 
-- `src-tauri/src/app_settings.rs` — add fields, defaults, serde attributes
-- `src-tauri/src/command.rs` (or wherever `save_settings` is implemented) — emit event after save
+- `src-tauri/src/app_settings.rs` -- add fields, defaults, serde attributes
+- `src-tauri/src/command.rs` (or wherever `save_settings` is implemented) -- emit event after save
 
 ## Notes
 

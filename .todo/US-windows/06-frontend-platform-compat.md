@@ -17,9 +17,9 @@ Make the React frontend platform-aware so it renders correct keyboard shortcuts,
 - [ ] `⌘Q` and `⌘,` keyboard handlers in `MainScreenApp.tsx:343-375` use `e.metaKey` on macOS (unchanged), `e.ctrlKey` on Windows
 - [ ] Font stack in `tokens.css` includes Windows system fonts: add `"Segoe UI Variable", "Segoe UI"` to the stack alongside existing macOS fonts
 - [ ] `-webkit-font-smoothing` and `-moz-osx-font-smoothing` remain (they're no-ops on Windows, no harm)
-- [ ] All `invoke()` calls to panel commands (`init_panel`, `init_main_screen_panel`) continue working — backend handles the platform switch (from task 02)
+- [ ] All `invoke()` calls to panel commands (`init_panel`, `init_main_screen_panel`) continue working -- backend handles the platform switch (from task 02)
 - [ ] Config file path shown in empty state (`MainScreenApp.tsx:94` shows `~/.config/cortado/feeds.toml`) uses backend-provided path instead of hardcoded Unix path
-- [ ] Harness feed descriptions in `feedTypes.ts:226,256` hardcode `~/.config/cortado/harness/` — replace with platform-neutral text or a backend-provided path
+- [ ] Harness feed descriptions in `feedTypes.ts:226,256` hardcode `~/.config/cortado/harness/` -- replace with platform-neutral text or a backend-provided path
 - [ ] Both platforms build the frontend cleanly (`pnpm build`)
 
 ## Notes
@@ -29,11 +29,11 @@ Make the React frontend platform-aware so it renders correct keyboard shortcuts,
 - CSS `-webkit-appearance: none` resets work on Windows Chromium (Edge/WebView2) too.
 - Consider creating a `usePlatform()` React hook for ergonomic platform checks.
 - The `x-apple.systempreferences:` deep links are covered in task 07 (Settings UI).
-- `backdrop-filter: blur()` works in WebView2 (Chromium-based) — no changes needed.
+- `backdrop-filter: blur()` works in WebView2 (Chromium-based) -- no changes needed.
 
 ## Dependencies
 
-- Task 02 (platform window management — so backend invoke calls route correctly)
+- Task 02 (platform window management -- so backend invoke calls route correctly)
 
 ## Related files
 

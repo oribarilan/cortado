@@ -8,20 +8,20 @@ The tray icon should visually express the global rolled-up status kind across al
 
 Feed-level rollup (dot in feed header) is already implemented. This task adds the final level: all feeds → tray icon.
 
-The existing tray icon uses `icon_as_template(true)`, which means macOS controls the tinting (monochrome, adapts to light/dark menubar). Template icons cannot have color — the OS strips it.
+The existing tray icon uses `icon_as_template(true)`, which means macOS controls the tinting (monochrome, adapts to light/dark menubar). Template icons cannot have color -- the OS strips it.
 
 ## Approach
 
-1. **Disable template mode** — use `icon_as_template(false)` so we control the pixel data.
-2. **Generate icon with dot overlay** — composite a small colored dot (matching the status kind color) in the corner of the base icon. Use raw RGBA pixel data via `tauri::image::Image::new_owned()`.
-3. **Handle light/dark theme** — the base icon needs different tints for light vs dark menubar. Listen for theme changes and regenerate.
-4. **Swap icon on snapshot update** — compute global rollup from `FeedSnapshotCache`, generate the composited icon, call `tray.set_icon()`.
+1. **Disable template mode** -- use `icon_as_template(false)` so we control the pixel data.
+2. **Generate icon with dot overlay** -- composite a small colored dot (matching the status kind color) in the corner of the base icon. Use raw RGBA pixel data via `tauri::image::Image::new_owned()`.
+3. **Handle light/dark theme** -- the base icon needs different tints for light vs dark menubar. Listen for theme changes and regenerate.
+4. **Swap icon on snapshot update** -- compute global rollup from `FeedSnapshotCache`, generate the composited icon, call `tray.set_icon()`.
 
 ## API Notes (Tauri 2.5.1)
 
-- `app_handle.tray_by_id("tray")` — retrieve the tray icon at runtime
-- `tray.set_icon(Some(image))` — swap the icon
-- `Image::new_owned(rgba_bytes, width, height)` — create from raw RGBA
+- `app_handle.tray_by_id("tray")` -- retrieve the tray icon at runtime
+- `tray.set_icon(Some(image))` -- swap the icon
+- `Image::new_owned(rgba_bytes, width, height)` -- create from raw RGBA
 - Base icon: `src-tauri/icons/tray.png` (24×24, RGBA)
 
 ## Design Decisions
@@ -35,14 +35,14 @@ The existing tray icon uses `icon_as_template(true)`, which means macOS controls
 
 - Dot placement: bottom-right corner? How many pixels?
 - Should Idle show no dot at all (cleaner) or a gray dot (consistent)?
-- Theme detection mechanism on macOS — `NSAppearance` observation or Tauri API?
+- Theme detection mechanism on macOS -- `NSAppearance` observation or Tauri API?
 
 ## Related Files
 
-- `src-tauri/src/panel.rs` — tray icon creation, `TrayIconBuilder`
-- `src-tauri/src/main.rs` — app setup, snapshot update loop
-- `src-tauri/src/feed/mod.rs` — `StatusKind`, `FeedSnapshot`
-- `src-tauri/icons/tray.png` — base icon (24×24)
+- `src-tauri/src/panel.rs` -- tray icon creation, `TrayIconBuilder`
+- `src-tauri/src/main.rs` -- app setup, snapshot update loop
+- `src-tauri/src/feed/mod.rs` -- `StatusKind`, `FeedSnapshot`
+- `src-tauri/icons/tray.png` -- base icon (24×24)
 
 ## Acceptance Criteria
 

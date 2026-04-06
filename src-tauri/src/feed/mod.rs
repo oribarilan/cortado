@@ -18,6 +18,7 @@ pub mod ado_pr;
 pub mod concurrent;
 pub mod config;
 pub mod config_watcher;
+pub mod connectivity;
 pub mod cortado_update;
 pub mod dependency;
 pub mod field_overrides;
@@ -53,10 +54,10 @@ pub enum FieldType {
 /// Semantic status indicating who needs to act next.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StatusKind {
-    /// My turn — something's wrong (red).
+    /// My turn -- something's wrong (red).
     #[serde(rename = "attention-negative")]
     AttentionNegative,
-    /// My turn — go do the thing (green).
+    /// My turn -- go do the thing (green).
     #[serde(rename = "attention-positive")]
     AttentionPositive,
     /// Someone else's turn (yellow).
@@ -217,6 +218,21 @@ pub struct FeedSnapshot {
     pub error: Option<String>,
     /// When true, the UI should hide this feed if it has no activities.
     pub hide_when_empty: bool,
+    /// Unix timestamp (milliseconds) of the last successful poll.
+    /// `None` for feeds that have never been polled.
+    pub last_refreshed: Option<u64>,
+    /// Whether this feed is currently disconnected due to network unavailability.
+    /// Set by the UI snapshot layer when the app is offline and this is a network feed.
+    #[serde(default)]
+    pub is_disconnected: bool,
+}
+
+/// Returns true for feed types that require network connectivity.
+pub fn is_network_feed_type(feed_type: &str) -> bool {
+    matches!(
+        feed_type,
+        "github-pr" | "github-actions" | "ado-pr" | "http-health"
+    )
 }
 
 /// Feed contract implemented by each feed type.
@@ -272,6 +288,8 @@ impl FeedRegistry {
             provided_fields: Vec::new(),
             error: Some(error),
             hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
         });
     }
 
@@ -323,6 +341,8 @@ impl FeedRegistry {
                 provided_fields: feed.provided_fields(),
                 error: None,
                 hide_when_empty: feed.hide_when_empty(),
+                last_refreshed: None,
+                is_disconnected: false,
             });
         }
 
@@ -355,7 +375,7 @@ pub fn build_feed_registry_from_configs(
                 continue;
             }
             Err(e) => {
-                // "unknown harness feed type" means it's not a harness feed — try standard.
+                // "unknown harness feed type" means it's not a harness feed -- try standard.
                 // Any other error is a real config error for a known harness type.
                 let msg = e.to_string();
                 if !msg.contains("unknown harness feed type") {
@@ -417,7 +437,7 @@ pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>>
 }
 
 /// Creates a feed from config, dispatching to the correct factory.
-/// This is the single entry point — callers don't need to know whether
+/// This is the single entry point -- callers don't need to know whether
 /// a feed type is a harness feed or a standard feed.
 pub fn create_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
     if let Ok(harness) = instantiate_harness_feed(config) {
@@ -800,6 +820,8 @@ mod tests {
             provided_fields: Vec::new(),
             error: None,
             hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
         }
     }
 
@@ -817,6 +839,8 @@ mod tests {
             provided_fields: Vec::new(),
             error: Some("oops".to_string()),
             hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
         };
         assert_eq!(StatusKind::rollup_for_feeds(&[snapshot]), StatusKind::Idle);
     }
@@ -858,5 +882,31 @@ mod tests {
             StatusKind::rollup_for_feeds(&[snapshot]),
             StatusKind::Running
         );
+    }
+
+    #[test]
+    fn network_feed_types_are_identified() {
+        assert!(is_network_feed_type("github-pr"));
+        assert!(is_network_feed_type("github-actions"));
+        assert!(is_network_feed_type("ado-pr"));
+        assert!(is_network_feed_type("http-health"));
+        assert!(!is_network_feed_type("copilot-session"));
+        assert!(!is_network_feed_type("opencode-session"));
+        assert!(!is_network_feed_type("unknown"));
+    }
+
+    #[test]
+    fn is_disconnected_serializes_correctly() {
+        let mut snapshot = snapshot_with_activities("feed", Vec::new());
+        snapshot.is_disconnected = true;
+        let json = serde_json::to_value(&snapshot).unwrap();
+        assert_eq!(json["is_disconnected"], true);
+    }
+
+    #[test]
+    fn is_disconnected_defaults_to_false() {
+        let snapshot = snapshot_with_activities("feed", Vec::new());
+        let json = serde_json::to_value(&snapshot).unwrap();
+        assert_eq!(json["is_disconnected"], false);
     }
 }

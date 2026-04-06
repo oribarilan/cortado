@@ -25,7 +25,7 @@ struct FocusInfo {
 /// Generic feed that delegates session discovery to a `HarnessProvider`.
 ///
 /// Maps provider-agnostic `SessionInfo` into `Activity` for the UI.
-/// Adding a new harness requires only a new `HarnessProvider` implementation —
+/// Adding a new harness requires only a new `HarnessProvider` implementation --
 /// zero changes to this struct.
 pub struct HarnessFeed {
     name: String,
@@ -79,7 +79,7 @@ impl HarnessFeed {
     }
 
     /// Resolves focus info for a session, caching the result.
-    /// The PID ancestry walk only runs once per session — the terminal app
+    /// The PID ancestry walk only runs once per session -- the terminal app
     /// doesn't change for a given process tree.
     fn resolve_focus_info(&self, session: &SessionInfo) -> FocusInfo {
         if let Ok(cache) = self.cached_focus_info.lock() {
@@ -221,7 +221,7 @@ fn status_priority(status: SessionStatus) -> u8 {
 /// Deduplicates sessions by working directory with status-priority selection.
 ///
 /// Multiple sessions can exist for the same cwd (e.g., two OpenCode instances
-/// in the same repo). We keep the session with the most urgent status — so
+/// in the same repo). We keep the session with the most urgent status -- so
 /// "question" or "approval" (attention needed) beats "working", which beats
 /// "idle". Ties in status priority are broken by `last_active_at` (most recent
 /// wins).
@@ -248,7 +248,7 @@ fn deduplicate_sessions(sessions: Vec<SessionInfo>) -> Vec<SessionInfo> {
                 let replace = if existing_prio != session_prio {
                     session_prio > existing_prio
                 } else {
-                    // Same priority — keep the more recently active one.
+                    // Same priority -- keep the more recently active one.
                     session.last_active_at > existing.last_active_at
                 };
 
@@ -647,7 +647,7 @@ mod tests {
                 status: SessionStatus::Working,
                 pid: 1,
                 summary: None,
-                // More recent — but lower priority status.
+                // More recent -- but lower priority status.
                 last_active_at: Some("2026-01-02T00:00:00Z".to_string()),
             },
             SessionInfo {
@@ -729,7 +729,7 @@ mod tests {
 
     #[test]
     fn deduplicate_same_priority_uses_recency() {
-        // Both Working — tiebreak by last_active_at.
+        // Both Working -- tiebreak by last_active_at.
         let sessions = vec![
             SessionInfo {
                 id: "old".to_string(),
@@ -867,7 +867,7 @@ mod tests {
 
     #[test]
     fn deduplicate_no_last_active_keeps_last_seen() {
-        // Both have None for last_active_at — should keep one deterministically.
+        // Both have None for last_active_at -- should keep one deterministically.
         let sessions = vec![
             SessionInfo {
                 id: "first".to_string(),
@@ -922,7 +922,7 @@ mod tests {
             summary: None,
             last_active_at: None,
         };
-        // "/" has no non-empty path component — should fall back to "session".
+        // "/" has no non-empty path component -- should fall back to "session".
         assert_eq!(format_activity_title(&session), "session");
     }
 

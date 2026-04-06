@@ -28,7 +28,7 @@ Expand cortado's feed ecosystem with three new curated feed types covering diffe
 |---|------|-----------|---------|---------|
 | 01 | `01-github-actions-feed.md` | `github-actions` | CLI (`gh`) | Workflow run status. Same CLI/auth as `github-pr`. |
 | 02 | `02-http-health-feed.md` | `http-health` | Pure Rust | HTTP endpoint monitoring. Adds `reqwest` dependency. |
-| 03 | `03-feed-catalog-ui.md` | — | Frontend | Replace "+ New feed" dropdown with provider grid → feed type catalog. |
+| 03 | `03-feed-catalog-ui.md` | -- | Frontend | Replace "+ New feed" dropdown with provider grid → feed type catalog. |
 
 ## Cross-cutting notes
 

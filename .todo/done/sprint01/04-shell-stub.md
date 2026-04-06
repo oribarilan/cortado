@@ -21,10 +21,10 @@ Implement a `ShellFeed` struct that satisfies the `Feed` trait. Returns hardcode
 
 - This is a stub. No process spawning, no real command execution.
 - A shell feed always has exactly one activity (the command itself).
-- Field definition comes from the config — the user decides what the field is called and labeled. For the stub, default to a field named "output" with label "Output".
+- Field definition comes from the config -- the user decides what the field is called and labeled. For the stub, default to a field named "output" with label "Output".
 - The constructor should extract `command` from the config's type-specific table and return an error if missing.
 
 ## Relevant files
 
-- `src-tauri/src/feed/shell.rs` — new file
-- `src-tauri/src/feed/mod.rs` — add `pub mod shell;`
+- `src-tauri/src/feed/shell.rs` -- new file
+- `src-tauri/src/feed/mod.rs` -- add `pub mod shell;`

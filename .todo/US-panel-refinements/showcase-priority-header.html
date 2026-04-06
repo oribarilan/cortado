@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Priority Section Header -- Design Alternatives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════
+   Showcase Page Styles
+   ════════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background: #0e0e10;
+  color: #ccc;
+  padding: 60px 40px 100px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.showcase-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #f0f0f2;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.showcase-subtitle {
+  font-size: 15px;
+  color: #888;
+  margin-bottom: 56px;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.showcase-subtitle code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px;
+  color: #aaa;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── Current (reference) ───────────────────────── */
+
+.current-label {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #666;
+  background: rgba(255,255,255,0.05);
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+
+/* ── Alternative sections ──────────────────────── */
+
+.alt-section {
+  margin-bottom: 72px;
+}
+
+.alt-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.alt-number {
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.alt-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e0e0e4;
+  letter-spacing: -0.01em;
+}
+
+.alt-desc {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 24px;
+  max-width: 560px;
+  line-height: 1.55;
+}
+
+/* ── Theme pair container ──────────────────────── */
+
+.theme-pair {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.theme-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.theme-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #555;
+}
+
+/* ════════════════════════════════════════════════════
+   Panel mock -- faithfully replicating Cortado's
+   list pane styling from main-screen.css
+   ════════════════════════════════════════════════════ */
+
+.panel-mock {
+  width: 310px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--mock-border);
+  background: var(--mock-surface);
+  box-shadow:
+    0 0 0 0.5px var(--mock-border-outer),
+    0 8px 28px rgba(0,0,0,0.18),
+    0 2px 6px rgba(0,0,0,0.08);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  padding: 6px 0;
+}
+
+/* Dark theme tokens */
+.panel-mock.dark {
+  --mock-surface: oklch(22% 0.008 250 / 0.93);
+  --mock-border: oklch(33% 0.01 250 / 0.78);
+  --mock-border-outer: oklch(33% 0.01 250 / 0.4);
+  --mock-text-primary: oklch(92% 0.01 250);
+  --mock-text-secondary: oklch(70% 0.01 250);
+  --mock-text-tertiary: oklch(62% 0.01 250);
+  --mock-separator: oklch(36% 0.01 250 / 0.75);
+  --mock-hover: oklch(100% 0 0 / 0.08);
+  --mock-attn-neg: oklch(70% 0.2 25);
+  --mock-attn-neg-chip-bg: oklch(70% 0.2 25 / 0.12);
+  --mock-waiting: oklch(80% 0.16 78);
+  --mock-waiting-chip-bg: oklch(80% 0.16 78 / 0.12);
+  --mock-running: oklch(72% 0.16 259);
+  --mock-idle: oklch(67% 0.01 250);
+  --mock-accent: oklch(72% 0.14 178);
+  --mock-accent-soft: oklch(22% 0.03 178);
+  --mock-danger: oklch(70% 0.18 25);
+  --mock-attn-neg-muted: oklch(70% 0.10 25);
+  --mock-surface-raised: oklch(17% 0.01 250);
+}
+
+/* Light theme tokens */
+.panel-mock.light {
+  --mock-surface: oklch(97% 0.004 250 / 0.94);
+  --mock-border: oklch(84% 0.01 250 / 0.78);
+  --mock-border-outer: oklch(84% 0.01 250 / 0.4);
+  --mock-text-primary: oklch(20% 0.01 250);
+  --mock-text-secondary: oklch(43% 0.01 250);
+  --mock-text-tertiary: oklch(58% 0.01 250);
+  --mock-separator: oklch(82% 0.01 250 / 0.72);
+  --mock-hover: oklch(64% 0.01 250 / 0.08);
+  --mock-attn-neg: oklch(62% 0.24 27);
+  --mock-attn-neg-chip-bg: oklch(62% 0.24 27 / 0.12);
+  --mock-waiting: oklch(76% 0.18 75);
+  --mock-waiting-chip-bg: oklch(76% 0.18 75 / 0.12);
+  --mock-running: oklch(58% 0.2 258);
+  --mock-idle: oklch(58% 0.01 250);
+  --mock-accent: oklch(65% 0.12 178);
+  --mock-accent-soft: oklch(94% 0.03 178);
+  --mock-danger: oklch(62% 0.2 25);
+  --mock-attn-neg-muted: oklch(62% 0.12 27);
+  --mock-surface-raised: oklch(96% 0.006 250);
+}
+
+/* ── Feed header (shared base for all headers) ── */
+
+.mock-feed-header {
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--mock-text-tertiary);
+  cursor: default;
+  line-height: 1.35;
+}
+
+/* ── Activity row ──────────────────────────────── */
+
+.mock-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  margin: 0 6px;
+  border-radius: 5px;
+  cursor: default;
+}
+
+.mock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.mock-dot.attn-neg { background: var(--mock-attn-neg); }
+.mock-dot.waiting { background: var(--mock-waiting); }
+.mock-dot.running { background: var(--mock-running); }
+.mock-dot.idle { background: var(--mock-idle); }
+
+.mock-title {
+  font-size: 13px;
+  color: var(--mock-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.28;
+}
+
+.mock-chip {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.mock-chip.attn-neg {
+  color: var(--mock-attn-neg);
+  background: var(--mock-attn-neg-chip-bg);
+}
+
+.mock-chip.waiting {
+  color: var(--mock-waiting);
+  background: var(--mock-waiting-chip-bg);
+}
+
+.mock-hint {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--mock-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Priority separator ────────────────────────── */
+
+.mock-separator {
+  margin: 4px 10px 2px;
+  height: 1px;
+  background: var(--mock-separator);
+}
+
+/* ── Feed section spacing ──────────────────────── */
+
+.mock-feed-section + .mock-feed-section {
+  margin-top: 6px;
+}
+
+
+/* ════════════════════════════════════════════════════
+   Alternative-specific header styles
+   ════════════════════════════════════════════════════ */
+
+/* -- Current: red text with flag icon -- */
+.priority-current .mock-feed-header.priority {
+  color: var(--mock-attn-neg) !important;
+}
+
+/* -- Alt A: Pure minimal, identical to feed headers -- */
+.priority-a .mock-feed-header.priority {
+  /* no overrides at all -- inherits base .mock-feed-header */
+}
+
+/* -- Alt B: Subtle left border accent -- */
+.priority-b .mock-feed-header.priority {
+  border-left: 2px solid var(--mock-attn-neg);
+  padding-left: 8px;
+  color: var(--mock-text-tertiary);
+}
+
+/* -- Alt C: Muted warm tint (desaturated) -- */
+.priority-c .mock-feed-header.priority {
+  color: var(--mock-attn-neg-muted);
+}
+
+/* -- Alt D: Dot indicator prefix -- */
+.priority-d .mock-feed-header.priority {
+  color: var(--mock-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.priority-d .header-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--mock-attn-neg);
+  flex-shrink: 0;
+}
+
+/* -- Alt E: Structural background region -- */
+.priority-e .mock-priority-region {
+  background: color-mix(in oklch, var(--mock-attn-neg), transparent 94%);
+  margin: 0 4px;
+  border-radius: 6px;
+  padding: 2px 0;
+}
+
+.priority-e .mock-feed-header.priority {
+  color: var(--mock-text-tertiary);
+}
+
+.priority-e .mock-row {
+  margin: 0 2px;
+}
+
+.priority-e .mock-separator {
+  display: none;
+}
+
+/* ── Annotation callouts ───────────────────────── */
+
+.annotation {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  max-width: 400px;
+}
+
+.annotation-arrow {
+  color: #444;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.annotation-text {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.annotation-text strong {
+  color: #999;
+  font-weight: 600;
+}
+
+/* ── Recommendation badge ──────────────────────── */
+
+.rec-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.rec-badge.top-pick {
+  color: oklch(85% 0.14 178);
+  background: oklch(72% 0.14 178 / 0.12);
+}
+
+.rec-badge.runner-up {
+  color: oklch(80% 0.10 250);
+  background: oklch(80% 0.10 250 / 0.10);
+}
+
+/* ── Horizontal rule between sections ──────────── */
+
+.showcase-hr {
+  border: none;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  margin: 48px 0 56px;
+}
+
+/* ── Comparison note ───────────────────────────── */
+.comparison-note {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* ── Summary section ───────────────────────────── */
+.summary-section {
+  margin-top: 72px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.summary-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e0e0e4;
+  margin-bottom: 20px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1fr;
+  gap: 1px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+  max-width: 680px;
+}
+
+.summary-cell {
+  padding: 10px 14px;
+  background: #0e0e10;
+}
+
+.summary-cell.header {
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  background: rgba(255,255,255,0.02);
+}
+
+.summary-cell.label {
+  color: #aaa;
+  font-weight: 500;
+}
+
+.summary-cell .dot-good {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: oklch(80% 0.14 150);
+  margin-right: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.summary-cell .dot-ok {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: oklch(80% 0.16 78);
+  margin-right: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.summary-cell .dot-meh {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: oklch(62% 0.01 250);
+  margin-right: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.summary-cell p {
+  color: #666;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<h1 class="showcase-title">Priority Section Header -- Alternatives</h1>
+<p class="showcase-subtitle">
+  The <code>⚑ Needs Attention</code> header currently uses full
+  <code>--status-attention-negative</code> red, which feels out of place
+  next to the muted, uppercase feed headers. Here are five directions
+  for bringing it into visual harmony.
+</p>
+
+<!-- ════════════════════════════════════════════════════
+     CURRENT (baseline for comparison)
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <span class="current-label">Current</span>
+  <div class="alt-header">
+    <span class="alt-title">Existing Design (Baseline)</span>
+  </div>
+  <p class="alt-desc">
+    Full attention-negative red on the header text with the ⚑ flag icon.
+    Every other feed header is tertiary/uppercase -- this one breaks the pattern.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-current">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">⚑ NEEDS ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-current">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">⚑ NEEDS ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="showcase-hr">
+
+<!-- ════════════════════════════════════════════════════
+     ALT A: Pure Minimal
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <div class="alt-header">
+    <span class="alt-number">A</span>
+    <span class="alt-title">Pure Minimal</span>
+  </div>
+  <p class="alt-desc">
+    Identical styling to every other feed header -- same tertiary color,
+    same weight, no icon. The priority status shows only through the
+    activity rows' dots and chips. Text reads "FLAGGED" to be terse
+    and consistent with the short feed-name style.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-a">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">FLAGGED</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-a">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">FLAGGED</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <span class="annotation-arrow">&#9654;</span>
+    <span class="annotation-text">
+      <strong>Tradeoff:</strong> Maximum consistency -- but the section
+      loses its sense of urgency. Users must rely entirely on the row
+      dots/chips to understand priority. May feel too passive.
+    </span>
+  </div>
+</div>
+
+<hr class="showcase-hr">
+
+<!-- ════════════════════════════════════════════════════
+     ALT B: Subtle Left Border
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <div class="alt-header">
+    <span class="alt-number">B</span>
+    <span class="alt-title">Subtle Left Border</span>
+    <span class="rec-badge top-pick">Recommended</span>
+  </div>
+  <p class="alt-desc">
+    Header text stays tertiary-colored like all other feed headers.
+    A thin 2px left border in the attention-negative color provides
+    a quiet but unmistakable signal. Text reads "ATTENTION" -- short,
+    direct, consistent with the terse feed-name convention.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-b">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-b">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <span class="annotation-arrow">&#9654;</span>
+    <span class="annotation-text">
+      <strong>Why this works:</strong> The border is a structural cue, not a
+      typographic one -- it doesn't fight the header's role as a quiet label.
+      The color carries the urgency without making the text itself shout.
+      CSS change is one property addition.
+    </span>
+  </div>
+</div>
+
+<hr class="showcase-hr">
+
+<!-- ════════════════════════════════════════════════════
+     ALT C: Muted Warm Tint
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <div class="alt-header">
+    <span class="alt-number">C</span>
+    <span class="alt-title">Muted Warm Tint</span>
+    <span class="rec-badge runner-up">Runner-up</span>
+  </div>
+  <p class="alt-desc">
+    Instead of full-saturation red, use a desaturated warm tone --
+    halfway between tertiary grey and attention-negative.
+    Reads as "this section is different" without screaming. Keeps the
+    "NEEDS ATTENTION" wording but drops the flag icon.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-c">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">NEEDS ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-c">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority">NEEDS ATTENTION</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <span class="annotation-arrow">&#9654;</span>
+    <span class="annotation-text">
+      <strong>Key detail:</strong> The color is <code style="font-family:'SF Mono',monospace; font-size:11px; color:#999; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:2px;">oklch(70% 0.10 25)</code>
+      in dark -- same hue as attention-negative but chroma halved from 0.20 to 0.10.
+      It whispers "warm" without reading as an alert color.
+      Minimal code change (swap one color value).
+    </span>
+  </div>
+</div>
+
+<hr class="showcase-hr">
+
+<!-- ════════════════════════════════════════════════════
+     ALT D: Dot Indicator
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <div class="alt-header">
+    <span class="alt-number">D</span>
+    <span class="alt-title">Dot Indicator</span>
+  </div>
+  <p class="alt-desc">
+    Header text is standard tertiary, prefixed with a small 5px dot
+    in the attention-negative color. The dot echoes the activity rows'
+    status dots, creating a visual thread from header to content.
+    Text reads "ACTION NEEDED" for variety; any short label works.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-d">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority"><span class="header-dot"></span>ACTION NEEDED</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-d">
+        <div class="mock-feed-section">
+          <header class="mock-feed-header priority"><span class="header-dot"></span>ACTION NEEDED</header>
+          <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+          <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          <div class="mock-separator"></div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <span class="annotation-arrow">&#9654;</span>
+    <span class="annotation-text">
+      <strong>Visual rhythm:</strong> The dot mirrors the row-level status dots,
+      tying header to content without color on the text. The header becomes
+      a flex container -- minor markup change (add a <code style="font-family:'SF Mono',monospace; font-size:11px; color:#999; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:2px;">span</code>).
+    </span>
+  </div>
+</div>
+
+<hr class="showcase-hr">
+
+<!-- ════════════════════════════════════════════════════
+     ALT E: Structural Background Region
+     ════════════════════════════════════════════════════ -->
+
+<div class="alt-section">
+  <div class="alt-header">
+    <span class="alt-number">E</span>
+    <span class="alt-title">Structural Background Region</span>
+  </div>
+  <p class="alt-desc">
+    No special header styling at all. Instead, the entire priority section
+    sits inside a subtly tinted background region (6% attention-negative
+    wash). The header stays plain tertiary. The region itself communicates
+    "this group is different." The bottom separator is replaced by the
+    region's edge.
+  </p>
+
+  <div class="theme-pair">
+    <div class="theme-col">
+      <span class="theme-label">Dark</span>
+      <div class="panel-mock dark priority-e">
+        <div class="mock-feed-section">
+          <div class="mock-priority-region">
+            <header class="mock-feed-header priority">ATTENTION</header>
+            <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+            <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          </div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="theme-col">
+      <span class="theme-label">Light</span>
+      <div class="panel-mock light priority-e">
+        <div class="mock-feed-section">
+          <div class="mock-priority-region">
+            <header class="mock-feed-header priority">ATTENTION</header>
+            <div class="mock-row"><span class="mock-dot attn-neg"></span><span class="mock-title">Fix auth token refresh loop</span><span class="mock-chip attn-neg">failing</span><span class="mock-hint">CI</span></div>
+            <div class="mock-row"><span class="mock-dot waiting"></span><span class="mock-title">Add retry logic for webhooks</span><span class="mock-chip waiting">review requested</span><span class="mock-hint">PRS</span></div>
+          </div>
+        </div>
+        <div class="mock-feed-section">
+          <header class="mock-feed-header">MY PRS</header>
+          <div class="mock-row"><span class="mock-dot idle"></span><span class="mock-title">Refactor config parser</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <span class="annotation-arrow">&#9654;</span>
+    <span class="annotation-text">
+      <strong>Tradeoff:</strong> Strongest visual grouping, but the background
+      tint adds visual weight and may feel heavy in a utility panel where
+      everything else is flat. Also requires wrapping markup change (new container
+      div) and interacts with the grid-based collapse animation.
+    </span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SUMMARY / COMPARISON
+     ════════════════════════════════════════════════════ -->
+
+<div class="summary-section">
+  <h2 class="summary-title">Comparison</h2>
+
+  <div class="summary-grid">
+    <div class="summary-cell header">Alternative</div>
+    <div class="summary-cell header">Consistency</div>
+    <div class="summary-cell header">Urgency Signal</div>
+    <div class="summary-cell header">Code Change</div>
+
+    <div class="summary-cell label">A -- Pure Minimal</div>
+    <div class="summary-cell"><span class="dot-good"></span> Perfect</div>
+    <div class="summary-cell"><span class="dot-meh"></span> Low</div>
+    <div class="summary-cell"><p>Remove color override + icon</p></div>
+
+    <div class="summary-cell label">B -- Left Border</div>
+    <div class="summary-cell"><span class="dot-good"></span> High</div>
+    <div class="summary-cell"><span class="dot-good"></span> Clear</div>
+    <div class="summary-cell"><p>Add border-left, swap color, rename text</p></div>
+
+    <div class="summary-cell label">C -- Muted Warm</div>
+    <div class="summary-cell"><span class="dot-ok"></span> Good</div>
+    <div class="summary-cell"><span class="dot-ok"></span> Moderate</div>
+    <div class="summary-cell"><p>Add token, swap color, drop icon</p></div>
+
+    <div class="summary-cell label">D -- Dot Indicator</div>
+    <div class="summary-cell"><span class="dot-good"></span> High</div>
+    <div class="summary-cell"><span class="dot-ok"></span> Moderate</div>
+    <div class="summary-cell"><p>Add span + flex + dot styles</p></div>
+
+    <div class="summary-cell label">E -- Background</div>
+    <div class="summary-cell"><span class="dot-ok"></span> Good</div>
+    <div class="summary-cell"><span class="dot-good"></span> Strong</div>
+    <div class="summary-cell"><p>Wrapper div, region styles, adjust collapse anim</p></div>
+  </div>
+
+  <div style="margin-top: 28px; max-width: 560px;">
+    <p style="font-size: 13px; color: #888; line-height: 1.6; margin-bottom: 12px;">
+      <strong style="color:#bbb;">Recommendation: B (Subtle Left Border).</strong>
+      It keeps the header visually consistent with feed headers (same color,
+      same weight, same case) while adding a single structural cue that is
+      unmistakable but not loud. The border uses a visual language distinct
+      from the text -- it doesn't compete with the row-level status colors.
+      The code change is minimal (one CSS property, one text change, remove
+      the icon).
+    </p>
+    <p style="font-size: 13px; color: #888; line-height: 1.6;">
+      <strong style="color:#bbb;">Runner-up: C (Muted Warm Tint).</strong>
+      Even simpler code change, and the desaturated warmth is beautifully
+      subtle. The risk is that it's <em>too</em> subtle -- the hue shift
+      may be imperceptible on some displays, especially in light mode.
+      If chosen, consider pairing it with a slightly wider letter-spacing
+      or a new <code style="font-family:'SF Mono',monospace; font-size:11px; color:#999; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:2px;">--text-tertiary-warm</code>
+      token to make the intent explicit.
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

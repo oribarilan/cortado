@@ -14,6 +14,7 @@ import {
   supportsRestart,
   formatFieldValue,
   activityKey,
+  formatRelativeTime,
 } from "../shared/utils";
 
 type AppSettings = {
@@ -39,6 +40,7 @@ function buildFlatList(
 
   if (showPriority) {
     for (const feed of feeds) {
+      if (feed.is_disconnected) continue;
       for (const activity of feed.activities) {
         if (activity.retained) continue;
         const kind = deriveActivityKind(activity);
@@ -57,6 +59,7 @@ function buildFlatList(
   }
 
   for (const feed of feeds) {
+    if (feed.is_disconnected) continue;
     for (const activity of feed.activities) {
       const key = activityKey(feed, activity);
       if (!priorityKeys.has(key)) {
@@ -138,7 +141,7 @@ function DetailPane({ item }: { item: ListItem | null }) {
     );
   }
 
-  const { activity } = item;
+  const { feed, activity } = item;
   const focus = supportsFocus(activity);
   const openUrl = supportsOpen(activity);
   const canOpen = focus || openUrl;
@@ -185,6 +188,9 @@ function DetailPane({ item }: { item: ListItem | null }) {
             })}
           </div>
         ) : null}
+        {feed.last_refreshed != null ? (
+          <span className="last-refreshed">Updated {formatRelativeTime(feed.last_refreshed)}</span>
+        ) : null}
       </div>
     </div>
   );
@@ -204,6 +210,13 @@ function MainScreenApp() {
   const [appVersion, setAppVersion] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Tick counter to keep relative timestamps fresh.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Filter out empty feeds when the setting is off
   const visibleFeeds = useMemo(() => {
@@ -476,42 +489,51 @@ function MainScreenApp() {
 
               {/* Feed sections */}
               {feedSections.map(({ feed, items }) => (
-                <section className="ms-feed-section" key={`${feed.name}::${feed.feed_type}`}>
-                  <header className="ms-feed-header">{feed.name}</header>
+                <section className={`ms-feed-section ${feed.is_disconnected ? "disconnected" : ""}`} key={`${feed.name}::${feed.feed_type}`}>
+                  <header className="ms-feed-header">
+                    {feed.name}
+                    {feed.is_disconnected ? (
+                      <span className="disconnected-label">disconnected</span>
+                    ) : null}
+                  </header>
 
-                  {feed.error ? (
-                    <div className="ms-feed-error">{feed.error}</div>
-                  ) : items.length === 0 ? (
-                    <div className="ms-feed-empty">No activities</div>
-                  ) : (
-                    items.map(({ activity, kind, key, index }) => {
-                      const isFocused = index === focusIndex;
-                      const topStatus = highestStatusField(activity);
+                  {feed.is_disconnected ? null : (
+                    <>
+                      {feed.error ? (
+                        <div className="ms-feed-error">{feed.error}</div>
+                      ) : items.length === 0 ? (
+                        <div className="ms-feed-empty">No activities</div>
+                      ) : (
+                        items.map(({ activity, kind, key, index }) => {
+                          const isFocused = index === focusIndex;
+                          const topStatus = highestStatusField(activity);
 
-                      return (
-                        <div
-                          key={key}
-                          data-index={index}
-                          className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
-                          onClick={() => setFocusIndex(index)}
-                          onDoubleClick={() => {
-                            const focus = supportsFocus(activity);
-                            if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
-                            const url = supportsOpen(activity);
-                            if (url) invoke("open_activity", { url }).catch(console.error);
-                          }}
-                        >
-                          <span
-                            className={`ms-dot ${activity.retained ? "retained" : ""}`}
-                            aria-hidden="true"
-                          />
-                          <span className="ms-activity-title">{activity.title}</span>
-                          {topStatus && topStatus.value.type === "status" ? (
-                            <span className={`ms-chip kind-${topStatus.value.kind}`}>{topStatus.value.value}</span>
-                          ) : null}
-                        </div>
-                      );
-                    })
+                          return (
+                            <div
+                              key={key}
+                              data-index={index}
+                              className={`ms-activity-row kind-${kind} ${isFocused ? "focused" : ""}`}
+                              onClick={() => setFocusIndex(index)}
+                              onDoubleClick={() => {
+                                const focus = supportsFocus(activity);
+                                if (focus) { invoke("focus_session", { sessionId: focus.sessionId }).catch(console.error); return; }
+                                const url = supportsOpen(activity);
+                                if (url) invoke("open_activity", { url }).catch(console.error);
+                              }}
+                            >
+                              <span
+                                className={`ms-dot ${activity.retained ? "retained" : ""}`}
+                                aria-hidden="true"
+                              />
+                              <span className="ms-activity-title">{activity.title}</span>
+                              {topStatus && topStatus.value.type === "status" ? (
+                                <span className={`ms-chip kind-${topStatus.value.kind}`}>{topStatus.value.value}</span>
+                              ) : null}
+                            </div>
+                          );
+                        })
+                      )}
+                    </>
                   )}
                 </section>
               ))}
@@ -529,6 +551,8 @@ function MainScreenApp() {
         <span className="ms-footer-hints">
           {refreshing ? (
             <><span className="ms-footer-spinner" />Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
+          ) : feeds.some(f => f.is_disconnected) ? (
+            <>No connection · <button className="ms-retry-link" onClick={() => invoke("retry_connection").catch(console.error)}>Retry</button></>
           ) : (
             <><kbd>↑/↓</kbd><kbd>j/k</kbd> navigate · <kbd>↵</kbd> open · <kbd>r</kbd> refresh · <kbd>esc</kbd> close</>
           )}

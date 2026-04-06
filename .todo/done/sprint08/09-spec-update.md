@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 09 — Spec Update
+# 09 -- Spec Update
 
 ## Goal
 
@@ -23,5 +23,5 @@ Document the panel feature in the app specification.
 
 ## Notes
 
-- This can be done at any point during the sprint — doesn't depend on implementation
+- This can be done at any point during the sprint -- doesn't depend on implementation
 - Keep the spec focused on behavior and UX contract, not implementation details

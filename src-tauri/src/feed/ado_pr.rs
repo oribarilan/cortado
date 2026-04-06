@@ -502,7 +502,7 @@ fn status_field(value: &str, kind: StatusKind) -> FieldValue {
 
 /// Fetches policy evaluation states for a single PR via `az repos pr policy list`.
 ///
-/// Note: `az repos pr policy list` does not accept `--project` — the PR ID
+/// Note: `az repos pr policy list` does not accept `--project` -- the PR ID
 /// is unique within an organization, so only `--organization` is needed.
 async fn fetch_policy_status(
     runner: &dyn ProcessRunner,
@@ -573,7 +573,7 @@ fn is_expired_build(policy: &AdoPolicyEvaluation) -> bool {
 
 /// Rolls up policy evaluation states into a single checks status field.
 ///
-/// Only Build and Status (external check) policies are considered — reviewer,
+/// Only Build and Status (external check) policies are considered -- reviewer,
 /// work-item-linking, and other policy types are excluded. The `review` field
 /// already covers reviewer status.
 ///
@@ -699,7 +699,7 @@ const STATUS_POLICY_TYPE_ID: &str = "cbdc66da-9728-4af8-aada-9a5a32e4a226";
 struct AdoPolicyEvaluation {
     status: Option<String>,
     configuration: Option<AdoPolicyConfiguration>,
-    /// Polymorphic context — shape varies by policy type. For Build policies
+    /// Polymorphic context -- shape varies by policy type. For Build policies
     /// this contains `isExpired` and `buildIsNotCurrent` among other fields.
     context: Option<serde_json::Value>,
 }
@@ -1303,7 +1303,7 @@ mod tests {
 
     #[test]
     fn checks_rollup_ignores_reviewer_rejected_policy() {
-        // Reviewer policy is "rejected" but it's not a CI check — should not affect rollup.
+        // Reviewer policy is "rejected" but it's not a CI check -- should not affect rollup.
         let policies = vec![build_policy("approved"), reviewer_policy("rejected")];
         let FieldValue::Status { value, kind } = map_checks_rollup(&policies) else {
             panic!("expected status");

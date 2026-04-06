@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 03 — Notification config types
+# 03 -- Notification config types
 
 ## Goal
 
@@ -12,11 +12,11 @@ Define the Rust types that represent notification configuration and wire them in
 
 Notification behavior is controlled by several settings:
 
-1. **Master toggle** — enable/disable all notifications
-2. **Notification mode** — which status changes trigger notifications
-3. **Delivery preset** — how notifications are batched
-4. **New activity toggle** — notify when new activities appear
-5. **Removed activity toggle** — notify when activities disappear
+1. **Master toggle** -- enable/disable all notifications
+2. **Notification mode** -- which status changes trigger notifications
+3. **Delivery preset** -- how notifications are batched
+4. **New activity toggle** -- notify when new activities appear
+5. **Removed activity toggle** -- notify when activities disappear
 
 ## Types to define
 
@@ -61,9 +61,9 @@ struct NotificationSettings {
   ```
 - The `EscalationOnly` mode uses the existing priority order: `AttentionNegative > Waiting > Running > AttentionPositive > Idle`
 - These types will be consumed by the dispatch logic (task 06) and exposed in the settings UI (task 08).
-- Digest delivery preset is deferred to backlog — only Immediate and Grouped are in scope.
+- Digest delivery preset is deferred to backlog -- only Immediate and Grouped are in scope.
 
 ## Relevant files
 
-- `src-tauri/src/feed/mod.rs` — `StatusKind` enum (reuse for `SpecificKinds`)
-- Task 01 output — `AppSettings` struct and settings.toml parser
+- `src-tauri/src/feed/mod.rs` -- `StatusKind` enum (reuse for `SpecificKinds`)
+- Task 01 output -- `AppSettings` struct and settings.toml parser

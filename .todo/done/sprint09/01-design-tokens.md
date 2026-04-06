@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 01 — Design Tokens + Font Loading
+# 01 -- Design Tokens + Font Loading
 
 ## Goal
 
@@ -22,9 +22,9 @@ Establish the shared design token system and font loading that all other tasks d
 ## Token Inventory
 
 **Colors (semantic):**
-- `--surface` — main background
-- `--surface-raised` — sidebar, cards
-- `--surface-inset` — deeper card areas
+- `--surface` -- main background
+- `--surface-raised` -- sidebar, cards
+- `--surface-inset` -- deeper card areas
 - `--text-primary`, `--text-secondary`, `--text-tertiary`
 - `--border`, `--separator`, `--hover`, `--expanded-bg`
 

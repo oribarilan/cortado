@@ -18,26 +18,26 @@ AttentionNegative > Waiting > Running > AttentionPositive > Idle
 
 The per-activity rollup (fields → activity dot) already exists. This task adds:
 
-1. **Feed-level rollup** — the feed header shows the worst-case status kind across its activities.
-2. **Tray icon rollup** — the tray icon reflects the worst-case status kind across all feeds.
+1. **Feed-level rollup** -- the feed header shows the worst-case status kind across its activities.
+2. **Tray icon rollup** -- the tray icon reflects the worst-case status kind across all feeds.
 
 ## Design Decisions
 
-- **Same algorithm everywhere.** No special logic at any level — just highest kind wins.
+- **Same algorithm everywhere.** No special logic at any level -- just highest kind wins.
 - **Retained activities always roll up as Idle.** They are no longer actively monitored, so they should not affect the feed or tray rollup. `deriveActivityKind` must check `activity.retained` and return `Idle` without inspecting fields.
 - **Errored feeds roll up as Idle.** Poll/config errors are surfaced inline in the panel, not through the rollup. A feed with no activities due to an error contributes `Idle`.
 - **Tray icon always expresses the global rollup.** When everything is Idle, the tray shows Idle (gray/neutral). The tray icon is the global at-a-glance signal.
 
 ## Open Questions
 
-- **Feed header visual** — dot? colored text? subtle background tint?
-- **Tray icon visual** — colored dot overlay on template icon. Requires non-template mode + theme handling. See `.todo/backlog/tray-icon-rollup.md`.
+- **Feed header visual** -- dot? colored text? subtle background tint?
+- **Tray icon visual** -- colored dot overlay on template icon. Requires non-template mode + theme handling. See `.todo/backlog/tray-icon-rollup.md`.
 
 ## Related Files
 
-- `src/App.tsx` — `deriveActivityKind` (per-activity rollup, already exists), feed header rendering
-- `src-tauri/src/main.rs` — tray icon setup
-- `specs/status.md` — status model spec
+- `src/App.tsx` -- `deriveActivityKind` (per-activity rollup, already exists), feed header rendering
+- `src-tauri/src/main.rs` -- tray icon setup
+- `specs/status.md` -- status model spec
 
 ## Acceptance Criteria
 

@@ -29,6 +29,6 @@ Create a `FeedRegistry` that holds active feeds, wire it into the Tauri app as m
 
 ## Relevant files
 
-- `src-tauri/src/feed/mod.rs` — add registry
-- `src-tauri/src/command.rs` — add `list_feeds` command
-- `src-tauri/src/main.rs` — load config, build registry, manage state, register command
+- `src-tauri/src/feed/mod.rs` -- add registry
+- `src-tauri/src/command.rs` -- add `list_feeds` command
+- `src-tauri/src/main.rs` -- load config, build registry, manage state, register command

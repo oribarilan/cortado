@@ -14,7 +14,7 @@ Add a "Focus" section to the Settings sidebar that helps users understand and im
 
 Add a fourth top-level section to the settings sidebar (alongside General, Feeds, Notifications):
 
-**Focus** — controls how cortado focuses terminal windows when opening a copilot session activity.
+**Focus** -- controls how cortado focuses terminal windows when opening a copilot session activity.
 
 ### Section content
 
@@ -110,16 +110,16 @@ accessibility_enabled = false    # User opt-in for accessibility strategy
 
 ## Notes
 
-- The focus capabilities query involves a PID ancestry walk, which needs an active copilot session. If no copilot sessions are active, show "No active sessions — start a Copilot session to detect capabilities" with a brief explanation that the terminal and tmux are detected from session processes.
-- No caching of last-known state — keep it simple. Capabilities are live-detected only.
+- The focus capabilities query involves a PID ancestry walk, which needs an active copilot session. If no copilot sessions are active, show "No active sessions -- start a Copilot session to detect capabilities" with a brief explanation that the terminal and tmux are detected from session processes.
+- No caching of last-known state -- keep it simple. Capabilities are live-detected only.
 - The settings section should follow existing settings UI patterns (same styling, spacing, component structure).
-- Keep the copy concise and actionable — avoid jargon. Each strategy should have a one-line description and a clear status indicator.
+- Keep the copy concise and actionable -- avoid jargon. Each strategy should have a one-line description and a clear status indicator.
 
 ## Relevant files
 
-- `src/settings/SettingsApp.tsx` — add Focus section
-- `src/settings/settings.css` — styling if needed
-- `src-tauri/src/app_settings.rs` — `FocusSettings` struct
-- `src-tauri/src/command.rs` — `get_focus_capabilities` command
-- `src-tauri/src/terminal_focus/mod.rs` — expose capability query
-- `specs/main.md` — document Focus settings
+- `src/settings/SettingsApp.tsx` -- add Focus section
+- `src/settings/settings.css` -- styling if needed
+- `src-tauri/src/app_settings.rs` -- `FocusSettings` struct
+- `src-tauri/src/command.rs` -- `get_focus_capabilities` command
+- `src-tauri/src/terminal_focus/mod.rs` -- expose capability query
+- `specs/main.md` -- document Focus settings

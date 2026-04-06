@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# Optional — Digest delivery preset for notifications
+# Optional -- Digest delivery preset for notifications
 
 ## Goal
 
@@ -10,7 +10,7 @@ Add a "Digest" delivery preset that collects notification events across a config
 
 ## Context
 
-Sprint 07 ships Immediate and Grouped delivery presets. Digest was deferred to reduce complexity — it requires a background timer, event buffer, and flush logic.
+Sprint 07 ships Immediate and Grouped delivery presets. Digest was deferred to reduce complexity -- it requires a background timer, event buffer, and flush logic.
 
 ## Design
 

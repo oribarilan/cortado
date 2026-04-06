@@ -136,7 +136,7 @@ impl Default for NotificationSettings {
             mode: NotificationMode::default(),
             delivery: DeliveryPreset::default(),
             notify_new_activities: true,
-            notify_removed_activities: true,
+            notify_removed_activities: false,
         }
     }
 }
@@ -358,7 +358,7 @@ mod tests {
         assert_eq!(settings.notifications.mode, NotificationMode::All);
         assert_eq!(settings.notifications.delivery, DeliveryPreset::Grouped);
         assert!(settings.notifications.notify_new_activities);
-        assert!(settings.notifications.notify_removed_activities);
+        assert!(!settings.notifications.notify_removed_activities);
     }
 
     #[test]

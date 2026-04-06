@@ -250,7 +250,7 @@ mod tests {
             }],
         }];
 
-        // ancestors: [30, 20, 10] — 30 comes first, should match first.
+        // ancestors: [30, 20, 10] -- 30 comes first, should match first.
         assert_eq!(find_matching_pid(&os_windows, 42, &[30, 20, 10]), Some(30));
     }
 

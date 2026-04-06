@@ -4,7 +4,7 @@
 
 The app spec lives in `specs/main.md`. Read it before starting any work.
 
-UX design patterns, animation tokens, and feedback conventions are in `specs/ux_design.md`. Read it before any UI or UX work — it captures consistency rules (inline save feedback, reset-to-defaults, reduced-motion coverage) that are easy to miss.
+UX design patterns, animation tokens, and feedback conventions are in `specs/ux_design.md`. Read it before any UI or UX work -- it captures consistency rules (inline save feedback, reset-to-defaults, reduced-motion coverage) that are easy to miss.
 
 The spec is the source of truth. If during implementation you notice the code diverging from the spec (or vice versa), stop and ask the user whether to update the spec or the implementation. Do not silently let them drift apart.
 
@@ -17,9 +17,9 @@ Canonical definitions live in `specs/glossary.md`. Read it before starting any w
 | **Feed** | A configured data source (e.g., "GitHub PRs for repo X") |
 | **Activity** | One tracked item within a feed (e.g., PR #42) |
 | **Field** | A typed data point on an activity (e.g., `review: awaiting`) |
-| **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) — see `specs/status.md` |
+| **Status Kind** | Semantic classification of a status field (e.g., `AttentionNegative`, `Waiting`) -- see `specs/status.md` |
 | **Status Value** | Feed-specific display text for a status field (e.g., "approved", "failing") |
-| **Panel** | The main app window — a floating NSPanel opened by global hotkey (⌘⇧Space). Split layout with list + detail panes. Config section: `[panel]` |
+| **Panel** | The main app window -- a floating NSPanel opened by global hotkey (⌘⇧Space). Split layout with list + detail panes. Config section: `[panel]` |
 | **Tray** | The menu opened by left-clicking the menubar icon. Shows feeds and activities in a compact list with inline disclosure. |
 
 ### Terminology discipline
@@ -60,7 +60,7 @@ Legacy sprints (`sprint01`–`sprint13`) live in `.todo/done/` and follow the ol
 ### User story workflow
 
 1. Before starting a story, read `.todo/US-<name>/main.md` to understand the theme and sequencing.
-2. Tasks within a story are numbered for suggested ordering but may be parallelizable — `main.md` clarifies.
+2. Tasks within a story are numbered for suggested ordering but may be parallelizable -- `main.md` clarifies.
 3. Each task file describes the goal, acceptance criteria, and relevant files.
 4. Mark tasks done by adding `status: done` to the task frontmatter, then move completed story files to `.todo/done/US-<name>/`.
 5. Do not skip ahead to the next story without completing (or explicitly deferring) the current one.
@@ -106,7 +106,7 @@ Any context, decisions, or gotchas.
 
 ### DRY
 - Extract shared logic into reusable functions.
-- Don't over-abstract — wait for the Rule of Three.
+- Don't over-abstract -- wait for the Rule of Three.
 - If duplicating code intentionally, explain why.
 
 ### Single Responsibility
@@ -119,29 +119,29 @@ Any context, decisions, or gotchas.
 - This app must use minimal resources and be extremely responsive. These are non-negotiable.
 - If a proposed requirement or change would degrade performance or resource usage, inform the user and warn against it before proceeding.
 - Prefer efficient data structures and algorithms. Avoid unnecessary allocations, copies, and blocking operations.
-- Profile before optimizing — but never ignore obvious inefficiencies.
+- Profile before optimizing -- but never ignore obvious inefficiencies.
 
 ### Security
 - Never store secrets in code or logs.
-- Validate and sanitize all inputs — user-facing and internal boundaries.
+- Validate and sanitize all inputs -- user-facing and internal boundaries.
 - Follow the principle of least privilege.
 - When in doubt, choose the more secure option.
 
 ### Testing
 
-**Unit tests** — write many, with good coverage:
+**Unit tests** -- write many, with good coverage:
 - Every non-trivial function and struct should have unit tests.
-- Tests must be well-isolated — no shared mutable state, no dependency on external services.
+- Tests must be well-isolated -- no shared mutable state, no dependency on external services.
 - Test edge cases, error paths, and boundary conditions, not just the happy path.
 
-**Integration tests** — write fewer, scoped carefully:
+**Integration tests** -- write fewer, scoped carefully:
 - Integration tests verify that components work together correctly.
-- Isolate only the components under test — mock or stub everything else.
+- Isolate only the components under test -- mock or stub everything else.
 - Keep integration tests focused; they should not turn into end-to-end tests.
 
 ### Code Comments
 - Write doc comments for all public APIs (Rust: `///`, TypeScript: `/** */`).
-- Comments should explain *why*, not *what* — the code itself should be readable enough to show *what*.
+- Comments should explain *why*, not *what* -- the code itself should be readable enough to show *what*.
 - Don't over-comment obvious code. Don't under-comment non-obvious decisions.
 
 ### Don't Reinvent
@@ -162,7 +162,7 @@ src/                     # Frontend (React + TypeScript)
   main.tsx               # React entry point
   styles.css             # Tray panel styles
   shared/
-    feedTypes.ts         # Feed type catalog — single source of truth for all feed metadata
+    feedTypes.ts         # Feed type catalog -- single source of truth for all feed metadata
     types.ts             # Shared TypeScript types
     utils.ts             # Shared utilities
     tokens.css           # Design tokens
@@ -235,14 +235,14 @@ Always run `just check` before considering work done. It must pass cleanly (no w
 
 ### Package manager
 
-Use `pnpm`, not npm or yarn. The Tauri CLI is a local devDependency — run it via `pnpm exec tauri`, not `pnpm tauri`.
+Use `pnpm`, not npm or yarn. The Tauri CLI is a local devDependency -- run it via `pnpm exec tauri`, not `pnpm tauri`.
 
 ## Code Style
 
 ### Rust
 - `cargo fmt` for formatting (runs via `just format`).
-- `cargo clippy` with `-D warnings` — all warnings are errors.
-- The `cargo-clippy` feature in `Cargo.toml` is a workaround for transitive dep warnings — don't remove it.
+- `cargo clippy` with `-D warnings` -- all warnings are errors.
+- The `cargo-clippy` feature in `Cargo.toml` is a workaround for transitive dep warnings -- don't remove it.
 
 ### TypeScript
 - `tsc --noEmit` for type checking.
@@ -253,7 +253,7 @@ Use `pnpm`, not npm or yarn. The Tauri CLI is a local devDependency — run it v
 - **Never commit or push unless the user explicitly asks.** Wait for an explicit "commit", "commit and push", or similar instruction.
 - Summarize the "why" in 1-2 sentences.
 - Use conventional-ish prefixes when natural: `add`, `fix`, `update`, `remove`, `refactor`.
-- Don't commit generated files in `src-tauri/gen/schemas/` manually — they're auto-generated by Tauri.
+- Don't commit generated files in `src-tauri/gen/schemas/` manually -- they're auto-generated by Tauri.
 
 ## Changelog
 
@@ -283,13 +283,13 @@ Then verify with `git status --short --branch`.
 
 ## References
 
-- [awesome-tauri](https://github.com/tauri-apps/awesome-tauri) — curated list of Tauri examples, plugins, and apps. Refer to this when stuck on Tauri-specific issues or looking for implementation patterns.
+- [awesome-tauri](https://github.com/tauri-apps/awesome-tauri) -- curated list of Tauri examples, plugins, and apps. Refer to this when stuck on Tauri-specific issues or looking for implementation patterns.
 
 ## Gotchas
 
 ### No `tokio::spawn` inside Tauri `setup()`
 
-Use `tauri::async_runtime::spawn()`, not `tokio::spawn()`, for any async work initiated from the `setup()` closure. The setup closure runs on the main thread via the Cocoa `didFinishLaunching` callback, which has **no tokio runtime context**. Calling `tokio::spawn` will panic at runtime with "there is no reactor running." The app compiles fine — the error only surfaces at launch.
+Use `tauri::async_runtime::spawn()`, not `tokio::spawn()`, for any async work initiated from the `setup()` closure. The setup closure runs on the main thread via the Cocoa `didFinishLaunching` callback, which has **no tokio runtime context**. Calling `tokio::spawn` will panic at runtime with "there is no reactor running." The app compiles fine -- the error only surfaces at launch.
 
 This also applies to any function called from setup that internally spawns (e.g., `spawn_config_watcher`). The spawn call must use `tauri::async_runtime::spawn` all the way down.
 
@@ -297,7 +297,7 @@ Code spawned via `tauri::async_runtime::spawn` runs inside the Tauri-managed tok
 
 ### No `block_on` inside Tauri `setup()`
 
-Never use `tauri::async_runtime::block_on()` inside the `setup()` closure. Tauri's setup runs on the main thread within an active tokio runtime. Calling `block_on` from inside a tokio context will deadlock or panic — especially when the awaited future spawns its own tokio tasks (process I/O, timers, etc.). The app will compile fine but silently hang at launch with no tray icon and no visible error.
+Never use `tauri::async_runtime::block_on()` inside the `setup()` closure. Tauri's setup runs on the main thread within an active tokio runtime. Calling `block_on` from inside a tokio context will deadlock or panic -- especially when the awaited future spawns its own tokio tasks (process I/O, timers, etc.). The app will compile fine but silently hang at launch with no tray icon and no visible error.
 
 **Instead**, use `tauri::async_runtime::spawn()` for any async work in setup. If the UI depends on the result (e.g., populating the tray), set up a watch channel or callback so the spawned task can notify the UI when data is ready, rather than blocking the main thread to wait for it.
 
@@ -307,15 +307,15 @@ macOS apps launched from Finder/Spotlight/Raycast inherit PATH from `launchd`, w
 
 **Fix:** At startup (before any feed polling), resolve the user's login shell PATH with `$SHELL -l -c 'printf "%s" "$PATH"'` and apply it via `std::env::set_var`. This runs in `main()` before Tauri is initialized.
 
-**Do NOT use the `-i` (interactive) flag.** Packaged apps have no TTY, and `-i` causes zsh to fail with "not a terminal". The `-l` (login) flag is sufficient — it sources `/etc/zprofile`, `~/.zprofile`, and `~/.zshrc` on zsh.
+**Do NOT use the `-i` (interactive) flag.** Packaged apps have no TTY, and `-i` causes zsh to fail with "not a terminal". The `-l` (login) flag is sufficient -- it sources `/etc/zprofile`, `~/.zprofile`, and `~/.zshrc` on zsh.
 
 **Do NOT use `fix-path-env-rs`.** The Tauri crate `fix-path-env` uses `-ilc` (interactive + login) which fails for the same reason. Our hand-rolled approach with `-l` only works correctly.
 
 ### Installing packaged builds over a running app
 
-`cp -R` over a running `.app` bundle **silently fails** to replace the binary — macOS locks the running executable. Always quit the app first, `rm -rf` the old bundle, then copy the new one. The `just build` output goes to `src-tauri/target/release/bundle/`, not `/Applications/`.
+`cp -R` over a running `.app` bundle **silently fails** to replace the binary -- macOS locks the running executable. Always quit the app first, `rm -rf` the old bundle, then copy the new one. The `just build` output goes to `src-tauri/target/release/bundle/`, not `/Applications/`.
 
 ## Known Quirks
 
-- `src-tauri/gen/schemas/` files contain "template" and "example" in Tauri's own doc strings — don't try to rename them.
+- `src-tauri/gen/schemas/` files contain "template" and "example" in Tauri's own doc strings -- don't try to rename them.
 - `tauri-nspanel` and `tauri-toolkit` come from git branches (`v2`), not crates.io.

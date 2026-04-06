@@ -4,10 +4,10 @@
 //! that the harness interchange files are created, contain correct data,
 //! and transition through the expected lifecycle.
 //!
-//! All tests are `#[ignore]` — they require the respective CLI tools
+//! All tests are `#[ignore]` -- they require the respective CLI tools
 //! installed and authenticated. Run with `just e2e`.
 //!
-//! Tests will **fail loudly** if a required binary is missing — this is
+//! Tests will **fail loudly** if a required binary is missing -- this is
 //! intentional so test setup issues are immediately visible.
 
 use std::path::PathBuf;
@@ -79,7 +79,7 @@ fn wait_for_new_harness_file(
                 if before.contains(&name) {
                     continue;
                 }
-                // New file — try to parse it.
+                // New file -- try to parse it.
                 if let Ok(content) = fs::read_to_string(entry.path()) {
                     if let Ok(interchange) = serde_json::from_str::<InterchangeFile>(&content) {
                         if interchange.harness == harness_name {

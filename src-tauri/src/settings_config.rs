@@ -299,7 +299,7 @@ pub(crate) fn opencode_plugins_dir() -> Option<std::path::PathBuf> {
 /// Returns the path to the Copilot CLI installed-plugins directory for the
 /// Cortado plugin.
 ///
-/// `~/.copilot/installed-plugins/_direct/copilot/` — where `copilot plugin install`
+/// `~/.copilot/installed-plugins/_direct/copilot/` -- where `copilot plugin install`
 /// places plugins installed from a local directory named `copilot`.
 pub(crate) fn copilot_plugin_dir() -> Option<std::path::PathBuf> {
     dirs::home_dir().map(|h| h.join(".copilot/installed-plugins/_direct/copilot"))
@@ -519,7 +519,7 @@ pub fn check_copilot_extension() -> SetupCheckResult {
         };
     }
 
-    // Plugin is installed — check if the hook script is outdated.
+    // Plugin is installed -- check if the hook script is outdated.
     let outdated = copilot_plugin_dir()
         .map(|dir| dir.join("cortado-hook.sh"))
         .and_then(|path| std::fs::read_to_string(path).ok())
@@ -583,7 +583,7 @@ pub fn install_copilot_extension() -> SetupInstallResult {
         }
     }
 
-    // Uninstall any existing version first (ignore errors — may not be installed).
+    // Uninstall any existing version first (ignore errors -- may not be installed).
     let _ = Command::new("copilot")
         .args(["plugin", "uninstall", "cortado"])
         .output();
@@ -1069,7 +1069,7 @@ mod tests {
         std::fs::create_dir_all(&plugins_dir).unwrap();
         let plugin_path = plugins_dir.join(OPENCODE_PLUGIN_FILENAME);
 
-        // Write twice — should succeed both times with same content.
+        // Write twice -- should succeed both times with same content.
         std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE).unwrap();
         std::fs::write(&plugin_path, OPENCODE_PLUGIN_SOURCE).unwrap();
 

@@ -25,7 +25,7 @@ pub async fn process_feed_update(
     new: &FeedSnapshot,
     feed_notify_enabled: bool,
 ) {
-    // Skip errored polls — they don't represent real status changes.
+    // Skip errored polls -- they don't represent real status changes.
     if new.error.is_some() {
         return;
     }

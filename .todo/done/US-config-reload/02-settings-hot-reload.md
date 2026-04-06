@@ -31,14 +31,14 @@ Assess whether hot-reloading `settings.toml` is worth pursuing alongside feeds h
 
 | Setting | Why | Impact |
 |---------|-----|--------|
-| `general.show_menubar` | Tray icon creation is startup-only (`main.rs:142`) | Low — one-time setup. Users rarely toggle this. |
+| `general.show_menubar` | Tray icon creation is startup-only (`main.rs:142`) | Low -- one-time setup. Users rarely toggle this. |
 
 ### Gaps (not restart-required, but not fully live)
 
 | Gap | Description | Severity |
 |-----|-------------|----------|
-| `hide_empty_feeds` in tray | `App.tsx:159` reads it once at bootstrap, never re-fetches | Low — standalone bugfix (add pull-on-show or listen for settings-changed event) |
-| External `settings.toml` edits | "Open in editor" button exists (`app_settings.rs:289`), but edits are not detected | Low — rare workflow, and the GUI is the primary editing path |
+| `hide_empty_feeds` in tray | `App.tsx:159` reads it once at bootstrap, never re-fetches | Low -- standalone bugfix (add pull-on-show or listen for settings-changed event) |
+| External `settings.toml` edits | "Open in editor" button exists (`app_settings.rs:289`), but edits are not detected | Low -- rare workflow, and the GUI is the primary editing path |
 
 ## Approach A: File Watcher on settings.toml
 
@@ -54,11 +54,11 @@ Add a `notify` watcher on `settings.toml`. On change:
 
 - Handles external edits (text editor, scripting, dotfiles sync).
 - Consistent with feeds hot-reload if implemented.
-- Single source of truth — file is always authoritative.
+- Single source of truth -- file is always authoritative.
 
 ### Cons
 
-- **Race condition with GUI saves.** The GUI writes to the same file. The watcher would fire on GUI-initiated writes, triggering a redundant reload. Need to either: (a) suppress watcher events during GUI saves (fragile), or (b) make the reload idempotent (compare parsed result to current state — skip if identical).
+- **Race condition with GUI saves.** The GUI writes to the same file. The watcher would fire on GUI-initiated writes, triggering a redundant reload. Need to either: (a) suppress watcher events during GUI saves (fragile), or (b) make the reload idempotent (compare parsed result to current state -- skip if identical).
 - **Merge conflicts.** If the GUI has unsaved local state and an external edit arrives, which wins? The GUI currently holds settings in local `useState` and writes the full object on every change. An external edit would silently overwrite any in-flight GUI state.
 - **Partial writes.** Not all editors use atomic write (write-to-temp + rename). Vim does; VS Code doesn't always. Could read a truncated file.
 - **Complexity for low impact.** Very few users edit settings.toml by hand.
@@ -80,14 +80,14 @@ Don't add a file watcher. Instead, extend the existing `appearance-changed` even
 ### Pros
 
 - No file watcher complexity.
-- No race conditions — the GUI is the only writer.
+- No race conditions -- the GUI is the only writer.
 - Simple: one event, all consumers update.
 - Already partially implemented (just extend `appearance-changed`).
 
 ### Cons
 
 - Doesn't handle external edits (but this is rare and low-impact).
-- Doesn't change the backend flow — just improves frontend consistency.
+- Doesn't change the backend flow -- just improves frontend consistency.
 
 ### Complexity: Low
 
@@ -135,19 +135,19 @@ One bugfix (`hide_empty_feeds`), zero architecture changes.
 
 ### Rationale
 
-Approach F already proposes watching `feeds.toml` for changes and surfacing a "Restart to apply changes" activity. Extending this to also watch `settings.toml` is near-zero marginal effort — it's one additional file path in the same watcher. And since the response to a change is "restart the whole app" (not hot-reload specific settings), all the complexity concerns from Approach A evaporate:
+Approach F already proposes watching `feeds.toml` for changes and surfacing a "Restart to apply changes" activity. Extending this to also watch `settings.toml` is near-zero marginal effort -- it's one additional file path in the same watcher. And since the response to a change is "restart the whole app" (not hot-reload specific settings), all the complexity concerns from Approach A evaporate:
 
-- **No race conditions with GUI saves.** The watcher doesn't try to reload settings into memory — it just sets a "changed" flag. The GUI still writes and updates the RwLock as before. The watcher's flag only matters for *external* edits (text editor, dotfiles sync).
+- **No race conditions with GUI saves.** The watcher doesn't try to reload settings into memory -- it just sets a "changed" flag. The GUI still writes and updates the RwLock as before. The watcher's flag only matters for *external* edits (text editor, dotfiles sync).
 - **No merge conflicts.** No partial reload, no state reconciliation. The restart picks up whatever is on disk.
 - **No partial writes.** The debounce handles editor save patterns. The actual file is only read at startup (after restart).
-- **`show_menubar` works.** Since the whole app restarts, the tray icon creation runs again with the new value. This is the one setting that genuinely required restart — and now it gets it for free.
+- **`show_menubar` works.** Since the whole app restarts, the tray icon creation runs again with the new value. This is the one setting that genuinely required restart -- and now it gets it for free.
 
 ### What this looks like
 
 1. `ConfigChangeTracker` (or a `notify` watcher) watches both `feeds.toml` and `settings.toml`.
 2. When either file changes, the synthetic "Configuration" activity appears: "Config changed. Click to restart and apply."
 3. The user clicks (tray) or presses Enter (panel) to restart.
-4. All settings — including `show_menubar`, external edits, everything — take effect.
+4. All settings -- including `show_menubar`, external edits, everything -- take effect.
 
 ### What remains out of scope
 
@@ -160,6 +160,6 @@ The original recommendation was **Approach C (Do Nothing)**, which remains corre
 
 ## Notes
 
-- `show_menubar` is the one setting that genuinely needs restart. With Approach F, it gets restart for free — no special handling needed.
-- The "whole-object save" pattern in the frontend (`SettingsApp.tsx` assembles full `AppSettings` on every save) is a design choice that makes partial updates impossible via the current Tauri command. This is fine — Approach F doesn't require partial updates.
+- `show_menubar` is the one setting that genuinely needs restart. With Approach F, it gets restart for free -- no special handling needed.
+- The "whole-object save" pattern in the frontend (`SettingsApp.tsx` assembles full `AppSettings` on every save) is a design choice that makes partial updates impossible via the current Tauri command. This is fine -- Approach F doesn't require partial updates.
 - The GUI save → watcher fire → "restart needed" false positive is handled by comparing the in-memory state to the on-disk state. If the GUI just wrote what's already in memory, the fingerprint matches and no restart prompt appears. Alternatively, suppress the watcher for a short window after GUI saves.

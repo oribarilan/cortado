@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 07 — Panel Lifecycle
+# 07 -- Panel Lifecycle
 
 ## Goal
 
@@ -20,10 +20,10 @@ Polish the panel's show/hide behavior to feel instant and correct across all edg
 - [ ] Panel appears on the monitor where the cursor is (centered)
 - [ ] Multi-monitor: correct centering when displays have different sizes/arrangements
 - [ ] Panel does not steal focus from the menubar panel (both can exist but only one is key at a time)
-- [ ] Two NSPanels coexisting: verify that resign-key events are scoped — showing/hiding the panel must not interfere with the menubar panel's visibility, and vice versa. Each panel's delegate should check its own window label before acting.
+- [ ] Two NSPanels coexisting: verify that resign-key events are scoped -- showing/hiding the panel must not interfere with the menubar panel's visibility, and vice versa. Each panel's delegate should check its own window label before acting.
 
 ## Notes
 
-- The menubar panel already handles most of these concerns in `fns.rs` — reuse or adapt those patterns
-- The spotlight reference handles `window_did_resign_key` to auto-hide, and uses `ActivationPolicy::Prohibited` — these should already be in place from task 01
+- The menubar panel already handles most of these concerns in `fns.rs` -- reuse or adapt those patterns
+- The spotlight reference handles `window_did_resign_key` to auto-hide, and uses `ActivationPolicy::Prohibited` -- these should already be in place from task 01
 - Test with multiple displays if possible

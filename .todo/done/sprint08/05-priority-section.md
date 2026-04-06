@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 05 — Priority Section (Needs Attention)
+# 05 -- Priority Section (Needs Attention)
 
 ## Goal
 
@@ -28,4 +28,4 @@ Add an optional "Needs Attention" section at the top of the activity list that a
 ## Notes
 
 - The deduplication approach: when priority section is on, attention-negative activities are removed from their feed groups and only appear in the priority section. This avoids confusion about duplicates.
-- Strictly `AttentionNegative` only — do not include `Waiting` or other status kinds.
+- Strictly `AttentionNegative` only -- do not include `Waiting` or other status kinds.

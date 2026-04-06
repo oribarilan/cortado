@@ -15,7 +15,7 @@ CortadoUpdateFeed (implements Feed trait)
   |
   |- poll(): fetches latest.json from GitHub Releases via reqwest
   |- compares remote version with current app version (semver)
-  |- returns Vec<Activity> — one activity if update available, empty if current
+  |- returns Vec<Activity> -- one activity if update available, empty if current
   |- activity has StatusKind::AttentionPositive
   |- frontend "Install update" button triggers install_update Tauri command
   |- install_update uses tauri-plugin-updater to download, verify, install, restart
@@ -37,11 +37,11 @@ CortadoUpdateFeed (implements Feed trait)
 
 **Activity title**: `Cortado vX.Y.Z available`
 
-**Activity identity**: `cortado-update-vX.Y.Z` — unique per version.
+**Activity identity**: `cortado-update-vX.Y.Z` -- unique per version.
 
 **Behavior**:
 - When app is up to date: feed produces no activities (hidden from view).
-- When update available: one activity with `AttentionPositive` status. No dismiss — stays visible until installed or app restarts at the new version.
+- When update available: one activity with `AttentionPositive` status. No dismiss -- stays visible until installed or app restarts at the new version.
 - Expanding the activity shows release notes and an "Install update" action button.
 - Clicking "Install update" triggers the Tauri updater plugin to download, verify signature, install, and restart the app.
 
@@ -57,7 +57,7 @@ src/shared/utils.ts                   # supportsUpdate() helper
 
 ## Harness feeds
 
-A **harness** is a terminal-based AI coding agent — GitHub Copilot CLI, Claude Code, or similar. Harness feeds track active coding sessions as activities, showing their status, context, and providing one-click terminal focus.
+A **harness** is a terminal-based AI coding agent -- GitHub Copilot CLI, Claude Code, or similar. Harness feeds track active coding sessions as activities, showing their status, context, and providing one-click terminal focus.
 
 ### Architecture
 
@@ -71,7 +71,7 @@ HarnessProvider (trait)          HarnessFeed (generic Feed impl)
   '-- GenericProvider("...")        '-- registered in instantiate_harness_feed()
 ```
 
-**Adding a new harness** requires only a new `HarnessProvider` implementation — zero changes to `HarnessFeed`, the UI, or the config format. The provider discovers sessions and returns `Vec<SessionInfo>`; the feed handles everything else. All current harness feeds use `GenericProvider` backed by the interchange format; agent-specific logic lives in plugins that write the interchange files.
+**Adding a new harness** requires only a new `HarnessProvider` implementation -- zero changes to `HarnessFeed`, the UI, or the config format. The provider discovers sessions and returns `Vec<SessionInfo>`; the feed handles everything else. All current harness feeds use `GenericProvider` backed by the interchange format; agent-specific logic lives in plugins that write the interchange files.
 
 ### `copilot-session` feed type
 
@@ -123,31 +123,31 @@ In prompt mode (`-p`), `userPromptSubmitted` fires before `sessionStart`. The pl
 
 When a user opens a harness feed activity (any coding agent session), Cortado focuses the terminal containing that session rather than opening a URL. The focus system resolves which terminal and strategy to use via a PID ancestry walk.
 
-Focus eligibility is detected by the presence of a `focus_app` field on the activity — any harness feed that provides a PID gets focus support automatically.
+Focus eligibility is detected by the presence of a `focus_app` field on the activity -- any harness feed that provides a PID gets focus support automatically.
 
 #### Focus context
 
 On first poll for each session, Cortado walks the process tree from the session PID upward to discover:
 
-- **Terminal app** — the GUI application (e.g., Ghostty, iTerm2, Terminal.app) identified via `NSRunningApplication`
-- **tmux** — detected by process name in the ancestry chain
+- **Terminal app** -- the GUI application (e.g., Ghostty, iTerm2, Terminal.app) identified via `NSRunningApplication`
+- **tmux** -- detected by process name in the ancestry chain
 
 This context is cached per session ID for the session's lifetime (the terminal and tmux state don't change while a session is alive).
 
-The context is surfaced as the `focus_label` field — e.g., "Open in Ghostty (via tmux)" — and used as the action button label in the UI.
+The context is surfaced as the `focus_label` field -- e.g., "Open in Ghostty (via tmux)" -- and used as the action button label in the UI.
 
 #### Two-phase focus
 
 When the user triggers focus, the system runs two phases:
 
-**Phase 1 — tmux pre-step** (if tmux detected and enabled): navigates to the exact pane within tmux. Does not activate the terminal app.
+**Phase 1 -- tmux pre-step** (if tmux detected and enabled): navigates to the exact pane within tmux. Does not activate the terminal app.
 
-**Phase 2 — terminal strategy waterfall**: tries terminal-specific strategies by bundle ID, then falls back to app activation.
+**Phase 2 -- terminal strategy waterfall**: tries terminal-specific strategies by bundle ID, then falls back to app activation.
 
 | # | Strategy | Precision | Condition |
 |---|----------|-----------|-----------|
 | 1 | Terminal-specific scripting | Tab/window | Scriptable terminal (Ghostty, iTerm2, etc.) |
-| 2 | Accessibility window focus | Window by title | AX permission granted (stretch — stubbed) |
+| 2 | Accessibility window focus | Window by title | AX permission granted (stretch -- stubbed) |
 | 3 | **App activation** (fallback) | App-level | Always available |
 
 The first strategy that returns `Focused` wins. Strategies return `NotApplicable` (skip) or `Failed` (try next).
@@ -158,14 +158,14 @@ See `specs/terminal_integration.md` for the full architecture, supported termina
 
 When tmux is detected:
 
-1. `tmux list-panes -a` — find the pane whose PID matches the session process (or its ancestor)
-2. `tmux list-clients` — find a client, preferring one already attached to the target session
-3. `tmux switch-client` + `tmux select-pane` — switch to the exact pane
+1. `tmux list-panes -a` -- find the pane whose PID matches the session process (or its ancestor)
+2. `tmux list-clients` -- find a client, preferring one already attached to the target session
+3. `tmux switch-client` + `tmux select-pane` -- switch to the exact pane
 4. Activate the terminal app
 
 #### App activation fallback
 
-Activates the terminal app via `System Events` AppleScript. Brings the app to front but can't target a specific window — may focus the wrong one if multiple are open.
+Activates the terminal app via `System Events` AppleScript. Brings the app to front but can't target a specific window -- may focus the wrong one if multiple are open.
 
 ### Implementation
 

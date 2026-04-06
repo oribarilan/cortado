@@ -4,7 +4,7 @@ use super::FocusContext;
 
 /// tmux pane navigation: navigates to the exact pane containing the copilot session.
 ///
-/// This is a pre-step, not a competing strategy — it handles tmux-level navigation
+/// This is a pre-step, not a competing strategy -- it handles tmux-level navigation
 /// while terminal strategies handle app-level focus (tab switching, activation).
 ///
 /// When the target session already has a client attached, uses select-window + select-pane
@@ -32,10 +32,10 @@ pub fn try_navigate(ctx: &FocusContext) -> Result<bool, String> {
     let has_own_client = clients.iter().any(|c| c.client_session == target_session);
 
     if has_own_client {
-        // Target session already has a client viewing it — just navigate within it.
+        // Target session already has a client viewing it -- just navigate within it.
         select_within_session(&target_pane.pane_id)?;
     } else {
-        // No client on this session — switch an existing client to it.
+        // No client on this session -- switch an existing client to it.
         let client = &clients[0];
         switch_client_to_pane(&client.client_tty, &target_pane.pane_id)?;
     }
@@ -296,7 +296,7 @@ mod tests {
             },
         ];
 
-        // ancestors: [60, 50] — 60 comes first, should match first.
+        // ancestors: [60, 50] -- 60 comes first, should match first.
         let result = find_target_pane(&panes, &[60, 50], 999);
         assert_eq!(result.unwrap().pane_pid, 60);
     }

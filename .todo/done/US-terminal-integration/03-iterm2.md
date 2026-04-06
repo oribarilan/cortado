@@ -32,9 +32,9 @@ iTerm2 exposes a comprehensive AppleScript dictionary (`iTerm2.sdef`):
 
 ### Commands available
 
-- `select` on window, tab, and session — focuses that object
-- `split vertically` / `split horizontally` on session — creates split panes
-- `write text` on session — sends text input
+- `select` on window, tab, and session -- focuses that object
+- `split vertically` / `split horizontally` on session -- creates split panes
+- `write text` on session -- sends text input
 
 ### Focus script
 
@@ -97,7 +97,7 @@ The correct order for reliable focus:
 
 ## Notes
 
-- iTerm2's session model naturally handles split panes — `select` on a session activates the correct pane.
+- iTerm2's session model naturally handles split panes -- `select` on a session activates the correct pane.
 - TTY matching only works without tmux. With tmux, the copilot TTY is a tmux PTY.
 - iTerm2 also has a Python API, but AppleScript is sufficient and requires no setup.
-- **App name caveat**: the macOS app may be installed as `iTerm.app` (not `iTerm2.app`). The AppleScript application name is `"iTerm"` or `"iTerm2"` depending on version — test both. The E2E test in `e2e.rs` already handles this with a fallback check.
+- **App name caveat**: the macOS app may be installed as `iTerm.app` (not `iTerm2.app`). The AppleScript application name is `"iTerm"` or `"iTerm2"` depending on version -- test both. The E2E test in `e2e.rs` already handles this with a fallback check.

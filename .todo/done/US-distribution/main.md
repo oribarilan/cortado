@@ -2,7 +2,7 @@
 status: done
 ---
 
-# US: App Distribution (Part 1 — DMG Release)
+# US: App Distribution (Part 1 -- DMG Release)
 
 ## Theme
 
@@ -29,7 +29,7 @@ Auto-update (Tauri updater, install script, update feed) is deferred to US-distr
 05-remove-nix      Remove Nix flake (can start anytime, no deps)
 ```
 
-Tasks 01–04 are sequential. Task 05 is independent — can start anytime.
+Tasks 01–04 are sequential. Task 05 is independent -- can start anytime.
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ Tasks 01–04 are sequential. Task 05 is independent — can start anytime.
 | 02 | Semantic versioning | Single source of truth for version. `just release` command. `CONTRIBUTING.md` + `CHANGELOG.md`. |
 | 03 | CD pipeline | GitHub Actions: on `v*` tag, build DMG, create GitHub Release with DMG artifact. Document in `specs/cd.md`. |
 | 04 | Notarization | Apple Developer account setup, code signing identity, notarization in CI. Gatekeeper-clean installs. |
-| 05 | Remove Nix | Remove `flake.nix`, `flake.lock`, `.envrc`, `.direnv/` — not used, simplifies repo and CI. |
+| 05 | Remove Nix | Remove `flake.nix`, `flake.lock`, `.envrc`, `.direnv/` -- not used, simplifies repo and CI. |
 
 ## Cross-cutting notes
 

@@ -2,7 +2,7 @@
 status: done
 ---
 
-# US: App Distribution (Part 2 — Auto-Update)
+# US: App Distribution (Part 2 -- Auto-Update)
 
 ## Theme
 
@@ -52,12 +52,12 @@ Single task. Depends on updater infrastructure (signing, `latest.json`) which bu
 - Formal docs: https://v2.tauri.app/plugin/updater/
 
 ### Update feed UX
-- The update feed is a standard feed implementing the existing `Feed` trait — no new event feed architecture needed.
+- The update feed is a standard feed implementing the existing `Feed` trait -- no new event feed architecture needed.
 - Activities use `AttentionPositive` StatusKind and participate in normal rollup.
-- No dismiss option — the update activity stays visible until installed.
+- No dismiss option -- the update activity stays visible until installed.
 - Expanding the activity shows release notes; an action triggers the update.
 
 ### Install script considerations
-- Removed from scope — not implementing `curl | bash` install script.
+- Removed from scope -- not implementing `curl | bash` install script.
 - First-time install remains manual (DMG from GitHub Releases).
 - The updater handles all subsequent updates in-app.

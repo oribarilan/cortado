@@ -24,7 +24,7 @@ Add backend support for checking whether the Cortado extension is installed in C
   - Idempotent (overwrites existing file)
   - Returns `SetupInstallResult { success: bool, error: Option<String> }`
 - [ ] Both commands registered in the Tauri builder (`main.rs` or wherever commands are registered)
-- [ ] `cargo build` succeeds with the embedded extension source (build depends on task 01 — `include_str!` will fail at compile time if the file doesn't exist)
+- [ ] `cargo build` succeeds with the embedded extension source (build depends on task 01 -- `include_str!` will fail at compile time if the file doesn't exist)
 - [ ] Reuses existing `SetupCheckResult`, `SetupInstallResult`, `parse_plugin_version()`, `is_plugin_outdated()` -- no duplication
 
 ## Notes

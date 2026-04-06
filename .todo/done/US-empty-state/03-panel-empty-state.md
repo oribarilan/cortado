@@ -48,12 +48,12 @@ See `showcases/empty-state-showcase.html` variant C2 for the visual reference.
 ## Notes
 
 - The existing `ms-empty-state` div in `MainScreenApp.tsx` (lines 334-337) is the replacement target.
-- Feed type data (names, icons, descriptions) can be hardcoded in the component — it mirrors the `FEED_TYPE_LABELS` in SettingsApp but with descriptions added.
-- The "or edit ~/.config/cortado/feeds.toml" link should be a plain text button (not a real link — it's informational).
-- No new CSS file needed — add styles to `main-screen.css`.
+- Feed type data (names, icons, descriptions) can be hardcoded in the component -- it mirrors the `FEED_TYPE_LABELS` in SettingsApp but with descriptions added.
+- The "or edit ~/.config/cortado/feeds.toml" link should be a plain text button (not a real link -- it's informational).
+- No new CSS file needed -- add styles to `main-screen.css`.
 
 ## Relevant files
 
-- `src/main-screen/MainScreenApp.tsx` — replace empty state rendering
-- `src/main-screen/main-screen.css` — empty state styles
-- `src-tauri/src/command.rs` — `open_settings` with deep-link params (from task 02)
+- `src/main-screen/MainScreenApp.tsx` -- replace empty state rendering
+- `src/main-screen/main-screen.css` -- empty state styles
+- `src-tauri/src/command.rs` -- `open_settings` with deep-link params (from task 02)

@@ -11,9 +11,9 @@ Replace the current "+ New feed" flow (which opens a form with a feed type dropd
 ## Flow
 
 1. User clicks "+ New feed" (or "Add your first feed" in empty state).
-2. **Step 1 — Provider grid:** Cards in a responsive grid. Each card shows the provider SVG icon, name, feed type count, and a list of feed type names. Clicking a card advances to step 2.
+2. **Step 1 -- Provider grid:** Cards in a responsive grid. Each card shows the provider SVG icon, name, feed type count, and a list of feed type names. Clicking a card advances to step 2.
    - **Auto-skip:** Providers with only one feed type (Azure DevOps, HTTP, Shell) skip step 2 and go directly to the form with the feed type pre-selected.
-3. **Step 2 — Feed type list:** Cards for each feed type under the selected provider. Each card shows a representative SVG icon, name, and short description. Clicking a card advances to the form.
+3. **Step 2 -- Feed type list:** Cards for each feed type under the selected provider. Each card shows a representative SVG icon, name, and short description. Clicking a card advances to the form.
 4. **Form:** The existing feed edit form, but with the feed type pre-selected and the type dropdown removed (or disabled/hidden). Breadcrumb shows the full path: Feeds → New Feed → {Provider} → {Feed Type}.
 
 ## Providers and feed types
@@ -71,7 +71,7 @@ All icons use `currentColor` for theme adaptation.
 ## Navigation
 
 - Breadcrumb replaces the title area during the catalog flow:
-  - Step 1: `New Feed` (no back link — this is the root)
+  - Step 1: `New Feed` (no back link -- this is the root)
   - Step 2: `New Feed > GitHub` (clicking "New Feed" returns to step 1)
   - Form: `Feeds > New Feed` remains as-is (existing breadcrumb pattern)
 - The existing slide-in animation (`feed-slide-in-right` / `feed-slide-in-left`) should be used for transitions between steps.
@@ -86,13 +86,13 @@ The `FeedType` union must be expanded to include new feed types:
 type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "shell";
 ```
 
-### Registry maps — add entries for new feed types
+### Registry maps -- add entries for new feed types
 
-**`FEED_TYPE_LABELS`** — add display names:
+**`FEED_TYPE_LABELS`** -- add display names:
 - `"github-actions"`: `"GitHub Actions"`
 - `"http-health"`: `"HTTP Health Check"`
 
-**`FEED_TYPE_FIELDS`** — add type-specific config fields:
+**`FEED_TYPE_FIELDS`** -- add type-specific config fields:
 - `"github-actions"`:
   - `repo` (required, mono, placeholder: `owner/repo`)
   - `branch` (optional, mono, placeholder: `main`)
@@ -104,7 +104,7 @@ type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "she
   - `expected_status` (optional, mono, placeholder: `200`)
   - `timeout` (optional, mono, placeholder: `10s`)
 
-**`FEED_TYPE_DEPS`** — add dependency info:
+**`FEED_TYPE_DEPS`** -- add dependency info:
 - `"github-actions"`: same as `"github-pr"` (gh CLI, `gh auth login`)
 - `"http-health"`: no entry (no external CLI dependency)
 
@@ -112,8 +112,8 @@ type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "she
 
 - Remove or hide the feed type `<select>` dropdown. The type is now pre-determined by the catalog selection.
 - `emptyFeed()` receives the selected feed type from the catalog flow instead of defaulting to `"github-pr"`. Use `defaultInterval` from the catalog entry (e.g., `"2m"` for GitHub Actions, `"1m"` for HTTP Health) instead of the hardcoded `"5m"`.
-- `startAdd()` no longer immediately calls `check_feed_dependency` for `"github-pr"` — it opens the catalog instead. Dependency checking happens after the feed type is selected, only if the type has a `FEED_TYPE_DEPS` entry.
-- `validateFeed()` works unchanged — it already validates based on `FEED_TYPE_FIELDS[feed.type]`, so adding entries to that map is sufficient.
+- `startAdd()` no longer immediately calls `check_feed_dependency` for `"github-pr"` -- it opens the catalog instead. Dependency checking happens after the feed type is selected, only if the type has a `FEED_TYPE_DEPS` entry.
+- `validateFeed()` works unchanged -- it already validates based on `FEED_TYPE_FIELDS[feed.type]`, so adding entries to that map is sufficient.
 - For feed types with no external dependency (e.g., `http-health`), the dependency banner is not shown.
 
 ## Acceptance criteria
@@ -143,13 +143,13 @@ type FeedType = "github-pr" | "github-actions" | "ado-pr" | "http-health" | "she
 ## Notes
 
 - This task is frontend-only (React + CSS in `src/settings/`).
-- No backend changes needed — the catalog is a static data structure in the frontend.
+- No backend changes needed -- the catalog is a static data structure in the frontend.
 - The provider/feed-type catalog data structure should be easy to extend when new feeds are added. Adding a new feed type should require: (1) adding a `FEED_TYPE_FIELDS` entry, (2) adding a `FEED_TYPE_DEPS` entry if the feed has an external CLI, (3) adding a catalog entry with icon/description/defaultInterval.
 - Keep the catalog data co-located with the existing `FEED_TYPE_LABELS` and `FEED_TYPE_FIELDS` maps in `SettingsApp.tsx` (or extract to a separate file if `SettingsApp.tsx` is getting too large).
 - Per-type default intervals should mirror the backend defaults: `github-pr` = `2m`, `github-actions` = `2m`, `ado-pr` = `2m`, `http-health` = `1m`, `shell` = `30s`.
 
 ## Relevant files
 
-- `src/settings/SettingsApp.tsx` — main changes (catalog state, rendering, data)
-- `src/settings/settings.css` — catalog grid, cards, breadcrumb styles
-- `showcases/feed-catalog-showcase.html` — reference implementation for Variant A
+- `src/settings/SettingsApp.tsx` -- main changes (catalog state, rendering, data)
+- `src/settings/settings.css` -- catalog grid, cards, breadcrumb styles
+- `showcases/feed-catalog-showcase.html` -- reference implementation for Variant A

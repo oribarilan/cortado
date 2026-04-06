@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 06 — Styling & Polish
+# 06 -- Styling & Polish
 
 ## Goal
 
@@ -20,11 +20,11 @@ Match the Clean Split showcase visual design. Ensure the panel feels native, coh
 - [ ] Detail pane field grid aligned and readable
 - [ ] Footer keyboard hints styled with `kbd` tags
 - [ ] Panel border, shadow, and border-radius matching the showcase (~12px radius)
-- [ ] No popover arrow — unlike the menubar panel, the panel is centered, not attached to the tray icon. Use rounded corners only, no `popover` crate.
+- [ ] No popover arrow -- unlike the menubar panel, the panel is centered, not attached to the tray icon. Use rounded corners only, no `popover` crate.
 - [ ] Reduced-motion media query disables animations
 - [ ] No horizontal scrollbars anywhere
 
 ## Notes
 
-- The panel should feel like it belongs to the same app as the menubar panel, but it's not a copy — it's wider and split, so spacing/sizing will differ
+- The panel should feel like it belongs to the same app as the menubar panel, but it's not a copy -- it's wider and split, so spacing/sizing will differ
 - Consider extracting shared CSS variables into a common file that both panels import

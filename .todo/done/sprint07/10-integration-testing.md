@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 10 — Integration testing & edge cases
+# 10 -- Integration testing & edge cases
 
 ## Goal
 

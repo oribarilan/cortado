@@ -2,16 +2,16 @@
 status: pending
 ---
 
-# Menubar Icon Status Indicator — Exploration & Alternatives
+# Menubar Icon Status Indicator -- Exploration & Alternatives
 
 ## Problem
 
-The tray icon is static — it doesn't reflect the global rollup status. Users must click the tray or open the panel to know if anything needs attention. The menubar icon should serve as a passive, glanceable signal of the highest-priority status across all feeds.
+The tray icon is static -- it doesn't reflect the global rollup status. Users must click the tray or open the panel to know if anything needs attention. The menubar icon should serve as a passive, glanceable signal of the highest-priority status across all feeds.
 
 ## Current State
 
 - Tray icon: `src-tauri/icons/tray.png` (22x22 RGBA), loaded in `panel.rs`
-- Uses `icon_as_template(true)` — macOS auto-tints for light/dark menubar (monochrome only)
+- Uses `icon_as_template(true)` -- macOS auto-tints for light/dark menubar (monochrome only)
 - Per-activity rollup exists (`rollup_for_activity` in `feed/mod.rs`)
 - No feed-level or global rollup is implemented yet
 - Status kinds: `AttentionNegative` (red) > `Waiting` (yellow) > `Running` (blue) > `AttentionPositive` (green) > `Idle` (gray)
@@ -53,7 +53,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 }
 ```
 
-**Dependencies:** None new — raw RGBA pixel manipulation, no image crate needed for a simple circle.
+**Dependencies:** None new -- raw RGBA pixel manipulation, no image crate needed for a simple circle.
 
 **Complexity:** Medium
 - RGBA compositing: simple (draw filled circle into pixel buffer)
@@ -61,13 +61,13 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 - Retina support: need @2x variant (44x44) for HiDPI displays
 
 **Pros:**
-- Dynamic — single base asset, colors computed at runtime
+- Dynamic -- single base asset, colors computed at runtime
 - Matches well-known pattern (Teams, Slack, Discord)
-- Compact — no extra menubar space
-- Most expressive — can show any status color
+- Compact -- no extra menubar space
+- Most expressive -- can show any status color
 
 **Cons:**
-- Loses template image auto-tinting — must handle light/dark manually
+- Loses template image auto-tinting -- must handle light/dark manually
 - Dot may be small at 22px (but 44px @2x helps)
 - Animation (e.g., pulse for `Running`) not feasible without rapid icon swaps
 
@@ -75,7 +75,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 
 ### Alternative B: Pre-Rendered Icon Set (Static Assets)
 
-**How it looks:** Identical to Alternative A visually — dot overlay in the corner. But the icons are pre-made PNG files rather than generated at runtime.
+**How it looks:** Identical to Alternative A visually -- dot overlay in the corner. But the icons are pre-made PNG files rather than generated at runtime.
 
 **How it works:**
 1. Create icon variants: `tray.png`, `tray-attention-neg.png`, `tray-waiting.png`, `tray-running.png`, `tray-attention-pos.png` (x2 for light/dark = 10 files, x2 for @2x = 20 files)
@@ -83,7 +83,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 3. Swap via `tray.set_icon()` on status change
 
 **Complexity:** Low (code) / Medium (design)
-- Code is trivial — just `match status { ... }` and `set_icon`
+- Code is trivial -- just `match status { ... }` and `set_icon`
 - Design work: creating 10-20 pixel-perfect icon variants
 - Theme detection still needed to pick light vs dark variant
 
@@ -96,7 +96,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 - Many assets to maintain (10-20 PNGs)
 - Adding a new status kind requires new icon files
 - Still need theme detection for light/dark variants
-- Inflexible — can't adjust dot size/position without regenerating all assets
+- Inflexible -- can't adjust dot size/position without regenerating all assets
 
 ---
 
@@ -115,14 +115,14 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 - Dot icon is non-template, pure color
 
 **Pros:**
-- Base icon keeps template mode — zero theme handling
+- Base icon keeps template mode -- zero theme handling
 - Very simple implementation
 - Dot can be hidden entirely when `Idle`
 
 **Cons:**
 - Takes extra menubar space (~10px)
-- Looks disconnected — not a cohesive single icon
-- Unusual pattern — no major macOS apps do this
+- Looks disconnected -- not a cohesive single icon
+- Unusual pattern -- no major macOS apps do this
 - User might not associate the dot with Cortado
 - Two clickable tray items could confuse right-click menu
 
@@ -143,12 +143,12 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 - Must be legible in both light and dark menubar
 
 **Pros:**
-- Keeps template image mode — perfect light/dark handling
-- No color in menubar — respects macOS HIG strictly
+- Keeps template image mode -- perfect light/dark handling
+- No color in menubar -- respects macOS HIG strictly
 - No theme detection code needed
 
 **Cons:**
-- Monochrome only — less glanceable than color
+- Monochrome only -- less glanceable than color
 - Hard to design 5 meaningfully different silhouettes at 22px
 - Users must learn the icon vocabulary
 - Loses the instant "red = bad, green = good" recognition
@@ -157,7 +157,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 
 ### Alternative E: NSStatusItem Custom Subview (Native)
 
-**How it looks:** Most polished — a native colored dot rendered as a subview on top of the template icon, with potential for smooth animations (pulse for `Running`).
+**How it looks:** Most polished -- a native colored dot rendered as a subview on top of the template icon, with potential for smooth animations (pulse for `Running`).
 
 **How it works:**
 1. Via `objc` crate, access the `NSStatusItem`'s button
@@ -167,19 +167,19 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 
 **Complexity:** High
 - Requires unsafe Objective-C interop via `objc`/`objc2` crate
-- Fragile — depends on internal `NSStatusBarButton` structure
+- Fragile -- depends on internal `NSStatusBarButton` structure
 - The app already uses `objc` for NSPanel swizzling, so the pattern exists
 - Needs careful lifecycle management (subview must survive icon updates)
 
 **Pros:**
-- Best visual quality — native rendering, smooth animations
+- Best visual quality -- native rendering, smooth animations
 - Base icon stays as template (auto light/dark)
 - Most like how native macOS apps would do it
 - Can animate (pulse, fade) natively
 
 **Cons:**
 - Most complex implementation
-- Fragile — Apple could change internal view hierarchy
+- Fragile -- Apple could change internal view hierarchy
 - Hard to test
 - May conflict with Tauri's tray icon management
 
@@ -206,7 +206,7 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 
 - Best balance of visual quality, flexibility, and implementation complexity
 - Matches the well-known Teams/Slack pattern users already understand
-- Single base asset, dynamic colors — easy to maintain
+- Single base asset, dynamic colors -- easy to maintain
 - Theme detection is the main complexity, but manageable
 
 **Fallback:** If theme detection proves too brittle, **Alternative B** (pre-rendered set) achieves the same visual result with more assets but simpler code.
@@ -223,12 +223,12 @@ fn generate_tray_icon(base: &[u8], status: StatusKind, is_dark: bool) -> Vec<u8>
 
 ## Related Files
 
-- `src-tauri/src/panel.rs` — tray icon creation, `TrayIconBuilder`
-- `src-tauri/src/main.rs` — app setup, snapshot update loop
-- `src-tauri/src/feed/mod.rs` — `StatusKind`, `rollup_for_activity`, `FeedSnapshot`
-- `src-tauri/icons/tray.png` — base icon (22x22)
-- `src-tauri/icons/tray.svg` — source SVG
-- `src/shared/tokens.css` — status color definitions
+- `src-tauri/src/panel.rs` -- tray icon creation, `TrayIconBuilder`
+- `src-tauri/src/main.rs` -- app setup, snapshot update loop
+- `src-tauri/src/feed/mod.rs` -- `StatusKind`, `rollup_for_activity`, `FeedSnapshot`
+- `src-tauri/icons/tray.png` -- base icon (22x22)
+- `src-tauri/icons/tray.svg` -- source SVG
+- `src/shared/tokens.css` -- status color definitions
 
 ## Visual Showcase
 
@@ -238,9 +238,9 @@ Open in a browser to toggle between status kinds and see each approach in both d
 
 ## Related Backlog Items
 
-- `.todo/backlog/tray-icon-rollup.md` — implementation details for the rollup computation
-- `.todo/backlog/status-kind-rollup.md` — three-level rollup architecture
-- `.todo/backlog/tray-icon-status-indicator.md` — earlier notes on this feature
+- `.todo/backlog/tray-icon-rollup.md` -- implementation details for the rollup computation
+- `.todo/backlog/status-kind-rollup.md` -- three-level rollup architecture
+- `.todo/backlog/tray-icon-status-indicator.md` -- earlier notes on this feature
 
 ## Acceptance Criteria
 

@@ -8,7 +8,7 @@ const BUNDLE_ID: &str = "com.github.wez.wezterm";
 /// activate the one matching by CWD (primary) or TTY (fallback).
 ///
 /// `activate-pane` focuses within WezTerm's internal mux but doesn't
-/// raise the OS window — app activation is handled by the parent waterfall.
+/// raise the OS window -- app activation is handled by the parent waterfall.
 pub fn try_focus(ctx: &FocusContext) -> FocusResult {
     if ctx.terminal_app_bundle.as_deref() != Some(BUNDLE_ID) {
         return FocusResult::NotApplicable;
@@ -108,7 +108,7 @@ fn parse_panes_json(json_str: &str) -> Result<Vec<WezPane>, String> {
 }
 
 /// Extracts the filesystem path from a WezTerm CWD URL.
-/// WezTerm reports CWD as `file://hostname/path` — we extract `/path`.
+/// WezTerm reports CWD as `file://hostname/path` -- we extract `/path`.
 fn extract_cwd_path(cwd_url: &str) -> String {
     if let Some(rest) = cwd_url.strip_prefix("file://") {
         // Skip the hostname: find the next '/' after the authority.
@@ -116,7 +116,7 @@ fn extract_cwd_path(cwd_url: &str) -> String {
             return rest[slash_idx..].to_string();
         }
     }
-    // Not a file:// URL — return as-is (may already be a plain path).
+    // Not a file:// URL -- return as-is (may already be a plain path).
     cwd_url.to_string()
 }
 

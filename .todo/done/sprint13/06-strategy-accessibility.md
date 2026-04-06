@@ -13,7 +13,7 @@ Implement the Accessibility API focus strategy. When the user has granted Access
 1. Check if Accessibility permission is granted (`AXIsProcessTrusted()`).
 2. If not granted, return `NotApplicable`.
 3. Create `AXUIElementCreateApplication(terminal_app_pid)`.
-4. Get `kAXWindowsAttribute` — list of windows.
+4. Get `kAXWindowsAttribute` -- list of windows.
 5. For each window, get `kAXTitleAttribute`.
 6. Match window title against known patterns (CWD path, repo name, session summary, etc.).
 7. Call `AXUIElementPerformAction(window, kAXRaiseAction)` on the matching window.
@@ -46,16 +46,16 @@ The matching algorithm:
 3. Try substring match on `copilot` (the running command)
 4. If multiple matches, prefer the one with the most specific match
 
-This is inherently heuristic — window titles vary by terminal config and shell prompt.
+This is inherently heuristic -- window titles vary by terminal config and shell prompt.
 
 ## Acceptance criteria
 
 - [ ] `src-tauri/src/terminal_focus/accessibility.rs` with `try_focus(ctx: &FocusContext) -> FocusResult`
-- [ ] Checks `AXIsProcessTrusted()` — returns `NotApplicable` if not granted
+- [ ] Checks `AXIsProcessTrusted()` -- returns `NotApplicable` if not granted
 - [ ] Enumerates windows of terminal app via `AXUIElement`
 - [ ] Matches window by title (CWD, repo name, or command)
 - [ ] Raises the matched window with `kAXRaiseAction`
-- [ ] Never prompts for permission — only checks
+- [ ] Never prompts for permission -- only checks
 - [ ] Unit tests: title matching logic
 - [ ] `just check` passes
 
@@ -64,8 +64,8 @@ This is inherently heuristic — window titles vary by terminal config and shell
 - The `AXUIElement` API requires `ApplicationServices` framework. Check if this is already linked by Tauri/AppKit.
 - `AXIsProcessTrusted()` is in `ApplicationServices/HIServices`.
 - This strategy is lower precision than tmux or terminal scripting, but works across any terminal app without per-app scripting.
-- On macOS Sonoma+, the first call to an AX API may trigger a system permission dialog. Since we check `AXIsProcessTrusted()` first, this shouldn't happen — but test carefully.
+- On macOS Sonoma+, the first call to an AX API may trigger a system permission dialog. Since we check `AXIsProcessTrusted()` first, this shouldn't happen -- but test carefully.
 
 ## Relevant files
 
-- `src-tauri/src/terminal_focus/accessibility.rs` — new file
+- `src-tauri/src/terminal_focus/accessibility.rs` -- new file

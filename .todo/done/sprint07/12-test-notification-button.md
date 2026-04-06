@@ -36,7 +36,7 @@ Add a `test_notification` Tauri command that calls the same `send_notification()
 
 ## Recommendation
 
-**Option A** — frontend-only via JS API. It directly answers the user's question ("are notifications working on my machine?") with minimal code. If the notification shows up, the plugin + OS permissions are correctly configured.
+**Option A** -- frontend-only via JS API. It directly answers the user's question ("are notifications working on my machine?") with minimal code. If the notification shows up, the plugin + OS permissions are correctly configured.
 
 ## Acceptance criteria
 

@@ -16,6 +16,7 @@ import {
   isPluginUpdate,
   formatFieldValue,
   activityKey,
+  formatRelativeTime,
 } from "./shared/utils";
 
 function App() {
@@ -31,6 +32,13 @@ function App() {
   const [showEmptyFeeds, setShowEmptyFeeds] = useState(false);
   const panelContentRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
+
+  // Tick counter to keep relative timestamps fresh.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const root = panelRootRef.current;
@@ -286,12 +294,18 @@ function App() {
               const isConfigWarning = feed.feed_type === "app";
 
               return (
-                <section className="feed-block" key={`${feed.name}::${feed.feed_type}`}>
+                <section className={`feed-block ${feed.is_disconnected ? "disconnected" : ""}`} key={`${feed.name}::${feed.feed_type}`}>
                   <header className="feed-header">
                     <span className="feed-name">{feed.name}</span>
-                    {!hasError ? <span className="feed-count">{feed.activities.length}</span> : null}
+                    {feed.is_disconnected ? (
+                      <span className="disconnected-label">disconnected</span>
+                    ) : !hasError ? (
+                      <span className="feed-count">{feed.activities.length}</span>
+                    ) : null}
                   </header>
 
+                  {!feed.is_disconnected && (
+                    <>
                   {hasError ? (
                     <p className={`feed-error ${isConfigWarning ? "config" : "poll"}`}>{feed.error}</p>
                   ) : null}
@@ -396,6 +410,9 @@ function App() {
                                       </div>
                                     );
                                   })}
+                                  {feed.last_refreshed != null ? (
+                                    <span className="last-refreshed">Updated {formatRelativeTime(feed.last_refreshed)}</span>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>
@@ -404,6 +421,8 @@ function App() {
                       })}
                     </div>
                   ) : null}
+                    </>
+                  )}
                 </section>
               );
             })
@@ -439,6 +458,14 @@ function App() {
               <><span className="refresh-spinner" /> Refreshing{refreshProgress ? ` (${refreshProgress[0]}/${refreshProgress[1]})` : ""}…</>
             ) : "Refresh feeds"}
           </button>
+          {feeds.some(f => f.is_disconnected) ? (
+            <button
+              className="footer-row retry-row"
+              onClick={() => { invoke("retry_connection").catch(console.error); }}
+            >
+              ↻ Retry connection
+            </button>
+          ) : null}
           <button
             className="footer-row"
             onClick={() => {

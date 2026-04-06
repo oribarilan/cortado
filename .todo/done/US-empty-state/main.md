@@ -2,7 +2,7 @@
 
 ## Problem
 
-When Cortado has zero configured feeds — whether on first launch or after a user deletes all feeds — the panel and tray show blank content with no guidance. There's nothing explaining what the app does, what feeds are, or how to get started.
+When Cortado has zero configured feeds -- whether on first launch or after a user deletes all feeds -- the panel and tray show blank content with no guidance. There's nothing explaining what the app does, what feeds are, or how to get started.
 
 ## Goal
 
@@ -10,7 +10,7 @@ Provide a clear, welcoming empty state in the panel that helps users understand 
 
 ## Trigger
 
-The empty state shows whenever **zero feeds are configured**. It's not a one-time event — if a user deletes all feeds, the empty state reappears. The same welcome copy is used regardless of whether this is a first launch or a re-entry.
+The empty state shows whenever **zero feeds are configured**. It's not a one-time event -- if a user deletes all feeds, the empty state reappears. The same welcome copy is used regardless of whether this is a first launch or a re-entry.
 
 ## Chosen Approach: Panel Empty State with Settings Deep Links
 
@@ -18,7 +18,7 @@ The panel shows a welcoming empty state with feed type discovery. Actions naviga
 
 ### Panel behavior
 
-The panel auto-opens when the app launches (regardless of feed count — this is a general behavior, not empty-state-specific).
+The panel auto-opens when the app launches (regardless of feed count -- this is a general behavior, not empty-state-specific).
 
 When zero feeds are configured, the panel's split layout shows:
 
@@ -31,7 +31,7 @@ When zero feeds are configured, the panel's split layout shows:
 
 **Detail pane (right):**
 - Feed types list with icons and one-line descriptions
-- Each feed type is clickable — acts as a deep link that opens Settings to the add-feed form with that feed type pre-selected
+- Each feed type is clickable -- acts as a deep link that opens Settings to the add-feed form with that feed type pre-selected
 
 Once a feed exists, the empty state is replaced by the normal feed/activity list.
 
@@ -65,12 +65,12 @@ Unchanged from current behavior. No special empty state items in the tray for no
 
 ## Showcase
 
-See `showcases/empty-state-showcase.html` — variant C2 is closest to the chosen approach, though the final implementation uses Settings for creation rather than inline forms.
+See `showcases/empty-state-showcase.html` -- variant C2 is closest to the chosen approach, though the final implementation uses Settings for creation rather than inline forms.
 
 ## Task Sequencing
 
-Tasks are sequential — each builds on the previous:
+Tasks are sequential -- each builds on the previous:
 
-1. **Auto-open panel** — make the panel open on app launch (general improvement, not empty-state-specific)
-2. **Settings deep-link** — extend `open_settings` to accept section + feed type params, so the panel can deep-link into the add-feed flow
-3. **Panel empty state UI** — build the rich empty state with welcome message, feed type cards, and deep links to Settings
+1. **Auto-open panel** -- make the panel open on app launch (general improvement, not empty-state-specific)
+2. **Settings deep-link** -- extend `open_settings` to accept section + feed type params, so the panel can deep-link into the add-feed flow
+3. **Panel empty state UI** -- build the rich empty state with welcome message, feed type cards, and deep links to Settings

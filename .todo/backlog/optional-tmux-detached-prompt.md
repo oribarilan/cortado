@@ -12,7 +12,7 @@ When a user tries to open a copilot-session activity that is in a detached tmux 
 
 Detached tmux sessions have no terminal tab viewing them. Without tmux commands, the only option is app activation (brings the terminal to front but can't show the detached session). The tmux strategy is the only way to reattach a detached session.
 
-Currently, the waterfall silently falls through to app activation, which isn't helpful — the user expects to see their session but gets a generic terminal focus instead.
+Currently, the waterfall silently falls through to app activation, which isn't helpful -- the user expects to see their session but gets a generic terminal focus instead.
 
 ## Proposed UX
 
@@ -31,6 +31,6 @@ Show a dialog:
 
 ## Notes
 
-- This requires the backend to distinguish "detached tmux session" from "no terminal detected" — currently both result in app activation.
+- This requires the backend to distinguish "detached tmux session" from "no terminal detected" -- currently both result in app activation.
 - The frontend needs a way to receive the "detached session" signal and show a dialog before falling back.
 - Consider: should we also offer "Enable tmux integration" as a third button to change the setting permanently?

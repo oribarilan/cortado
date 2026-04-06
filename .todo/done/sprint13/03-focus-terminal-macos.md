@@ -81,8 +81,8 @@ pub fn focus_terminal(session: &SessionInfo) -> Result<(), String> {
 
 - `get_parent_pid(pid) -> Option<u32>` via `libc::sysctl(KERN_PROC_PID)`
 - `get_process_name(pid) -> Option<String>` via `kinfo_proc.kp_proc.p_comm`
-- `is_gui_app(pid) -> Option<(String, String)>` via `NSRunningApplication` — returns (name, bundle_id) if the PID is a regular GUI app
-- `build_focus_context(session: &SessionInfo) -> Result<FocusContext>` — takes full `SessionInfo`, uses `pid` for ancestry walk and `cwd` for context. Walks ancestry, collects PIDs, detects tmux, resolves terminal app (direct or via tmux client).
+- `is_gui_app(pid) -> Option<(String, String)>` via `NSRunningApplication` -- returns (name, bundle_id) if the PID is a regular GUI app
+- `build_focus_context(session: &SessionInfo) -> Result<FocusContext>` -- takes full `SessionInfo`, uses `pid` for ancestry walk and `cwd` for context. Walks ancestry, collects PIDs, detects tmux, resolves terminal app (direct or via tmux client).
 
 ### Frontend integration
 
@@ -93,7 +93,7 @@ New Tauri command in `command.rs`:
 async fn focus_session(session_id: String) -> Result<(), String>
 ```
 
-The command accepts a session ID (not a raw PID). The backend looks up the `SessionInfo` from cached poll results in `HarnessFeed` and passes it directly to `focus_terminal(&session)`. `SessionInfo` carries pid, cwd, repo, branch — everything strategies need today and in the future.
+The command accepts a session ID (not a raw PID). The backend looks up the `SessionInfo` from cached poll results in `HarnessFeed` and passes it directly to `focus_terminal(&session)`. `SessionInfo` carries pid, cwd, repo, branch -- everything strategies need today and in the future.
 
 Frontend: add a parallel action path so `copilot-session` activities call `focus_session` instead of `open_activity`. Store the session ID in the activity's `id` field (already the session UUID).
 
@@ -110,16 +110,16 @@ Frontend: add a parallel action path so `copilot-session` activities call `focus
 
 ## Notes
 
-- **`libc`** — already added in task 01 (used here for `sysctl(KERN_PROC_PID)` ancestry walk).
+- **`libc`** -- already added in task 01 (used here for `sysctl(KERN_PROC_PID)` ancestry walk).
 - `cocoa`/`objc` via `tauri_nspanel` (already used in `fns.rs`).
-- The resolver is the integration point — individual strategies are separate tasks.
-- The `app_activation` fallback strategy (just `NSRunningApplication.activate()`) is trivial and implemented directly in this task — no separate task file needed. It activates the terminal app without targeting a specific window/pane.
+- The resolver is the integration point -- individual strategies are separate tasks.
+- The `app_activation` fallback strategy (just `NSRunningApplication.activate()`) is trivial and implemented directly in this task -- no separate task file needed. It activates the terminal app without targeting a specific window/pane.
 
 ## Relevant files
 
-- `src-tauri/src/terminal_focus/` — new module
-- `src-tauri/src/command.rs` — new `focus_session` command
-- `src-tauri/src/feed/harness/` — cache last poll results for session lookup
-- `src/App.tsx`, `src/main-screen/MainScreenApp.tsx` — wire focus action for `copilot-session` activities
-- `src/shared/utils.ts` — add `supportsFocus()` or parallel action path
-- `src-tauri/Cargo.toml` — add `libc`
+- `src-tauri/src/terminal_focus/` -- new module
+- `src-tauri/src/command.rs` -- new `focus_session` command
+- `src-tauri/src/feed/harness/` -- cache last poll results for session lookup
+- `src/App.tsx`, `src/main-screen/MainScreenApp.tsx` -- wire focus action for `copilot-session` activities
+- `src/shared/utils.ts` -- add `supportsFocus()` or parallel action path
+- `src-tauri/Cargo.toml` -- add `libc`

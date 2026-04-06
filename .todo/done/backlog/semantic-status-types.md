@@ -4,7 +4,7 @@
 
 The current `StatusKind` enum (`Success`, `Error`, `Pending`, `Warning`, `Neutral`) maps directly to 5 UI colors. It works but has two problems:
 
-1. **`Pending` is overloaded.** "Waiting for a reviewer" and "CI is running" are both `Pending` (blue). They mean different things — one requires a human to act, the other just needs time.
+1. **`Pending` is overloaded.** "Waiting for a reviewer" and "CI is running" are both `Pending` (blue). They mean different things -- one requires a human to act, the other just needs time.
 
 2. **Inconsistent vocabulary across feeds.** Same semantic meaning gets different display text (`"passing"` vs `"succeeded"`, `"pending"` vs `"running"`, `"failing"` vs `"failed"`). The current model doesn't normalize this.
 
@@ -20,8 +20,8 @@ Each status variant answers one question: **who needs to act next?**
 
 ```rust
 enum StatusKind {
-    AttentionNegative,  // My turn — something's wrong
-    AttentionPositive,  // My turn — go do the thing
+    AttentionNegative,  // My turn -- something's wrong
+    AttentionPositive,  // My turn -- go do the thing
     Waiting,            // Someone else's turn
     Running,            // Machine working
     Idle,               // Nothing happening
@@ -52,10 +52,10 @@ AttentionNegative > Waiting > Running > AttentionPositive > Idle
 
 ### Why Not a "Neutral" Sub-flavor?
 
-An `AttentionNeutral` variant was considered for cases like "draft PR" or "agent asked a question" — situations where the user needs to act but nothing is good or bad. It was dropped because:
+An `AttentionNeutral` variant was considered for cases like "draft PR" or "agent asked a question" -- situations where the user needs to act but nothing is good or bad. It was dropped because:
 
 - It would need a 6th color or share blue with `Running`, which is confusing (one means "sit tight," the other means "your turn").
-- These scenarios map cleanly to `AttentionPositive` — "your move, nothing's wrong" is effectively green/"go."
+- These scenarios map cleanly to `AttentionPositive` -- "your move, nothing's wrong" is effectively green/"go."
 - The label text disambiguates the nature of the action needed.
 
 ### Scenario Mapping
@@ -93,23 +93,23 @@ Validated against PR and coding agent workflows:
 These should be fixed as part of (or before) this work:
 
 - GitHub `draft` field is in `provided_fields()` but excluded from tray menu (ADO shows it, GitHub doesn't)
-- `github_pr_url_for_id` handles ADO URLs too — misleading function name
-- GitHub `mergeable: "unknown"` maps to either blue or gray depending on API source — same display text, different color
+- `github_pr_url_for_id` handles ADO URLs too -- misleading function name
+- GitHub `mergeable: "unknown"` maps to either blue or gray depending on API source -- same display text, different color
 
 ### What This Does NOT Include
 
-- **Normalizing status display strings** (e.g., `"passing"` vs `"succeeded"`) — this is a small follow-up, not part of the enum redesign
-- **Full "semantic type system"** with per-feed-type vocabulary declarations — rejected as over-engineering for current needs
+- **Normalizing status display strings** (e.g., `"passing"` vs `"succeeded"`) -- this is a small follow-up, not part of the enum redesign
+- **Full "semantic type system"** with per-feed-type vocabulary declarations -- rejected as over-engineering for current needs
 
 ## Related Files
-- `src-tauri/src/feed/mod.rs` — `StatusKind` enum, `FieldValue::Status { value, kind }`
-- `src-tauri/src/feed/ado_pr.rs` — ADO PR status field mappings
-- `src-tauri/src/feed/github_pr.rs` — GitHub PR status field mappings
-- `src-tauri/src/feed/shell.rs` — Shell feed status parsing, `status_kind_from_output`
-- `src/App.tsx` — `kindPriority`, `deriveActivityKind`, dot rendering
-- `src/styles.css` — status kind color CSS variables, dot styles, pulse animation
-- `specs/status.md` — status model spec (types, values, rationale)
-- `specs/main.md` — field type definitions, ADO mapping contract
+- `src-tauri/src/feed/mod.rs` -- `StatusKind` enum, `FieldValue::Status { value, kind }`
+- `src-tauri/src/feed/ado_pr.rs` -- ADO PR status field mappings
+- `src-tauri/src/feed/github_pr.rs` -- GitHub PR status field mappings
+- `src-tauri/src/feed/shell.rs` -- Shell feed status parsing, `status_kind_from_output`
+- `src/App.tsx` -- `kindPriority`, `deriveActivityKind`, dot rendering
+- `src/styles.css` -- status kind color CSS variables, dot styles, pulse animation
+- `specs/status.md` -- status model spec (types, values, rationale)
+- `specs/main.md` -- field type definitions, ADO mapping contract
 
 ## Dependencies
 - None

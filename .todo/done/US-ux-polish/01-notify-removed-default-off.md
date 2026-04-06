@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Default "Removed activities" notification toggle to OFF
@@ -18,8 +18,8 @@ Change the default value of `notify_removed_activities` from `true` to `false`. 
 
 ## Tests to update
 
-- `src-tauri/src/app_settings.rs` — default assertion tests
-- `src-tauri/src/notification/integration_tests.rs` — any tests asserting the default is `true`
+- `src-tauri/src/app_settings.rs` -- default assertion tests
+- `src-tauri/src/notification/integration_tests.rs` -- any tests asserting the default is `true`
 
 ## Acceptance criteria
 

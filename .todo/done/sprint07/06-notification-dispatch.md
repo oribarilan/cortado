@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 06 — Notification dispatch
+# 06 -- Notification dispatch
 
 ## Goal
 
@@ -14,7 +14,7 @@ Wire the status change detection engine (task 05) to actual OS notifications via
 Poll result
   → detect_changes() (task 05)
   → filter by per-feed notify toggle
-  → filter by global enabled (checked immediately — master toggle is live)
+  → filter by global enabled (checked immediately -- master toggle is live)
   → filter by notification mode (All / EscalationOnly / SpecificKinds)
   → batch by delivery preset (Immediate / Grouped)
   → send via tauri-plugin-notification
@@ -38,15 +38,15 @@ Poll result
 ## Notes
 
 - For `Grouped` mode (the default and simplest): one notification per feed per poll. This is the natural boundary since each feed polls independently.
-- `Digest` mode is deferred to backlog — do not implement here.
+- `Digest` mode is deferred to backlog -- do not implement here.
 - The master `enabled` toggle must be checked live (not cached at poll start) so toggling it off takes effect immediately.
 - For click actions, `tauri-plugin-notification` supports action types. Check the plugin docs for how to register a URL-open action on macOS.
 - Consider a `NotificationDispatcher` struct that holds the `AppHandle`, `NotificationSettings`, and manages the digest buffer.
 
 ## Relevant files
 
-- Task 02 output — notification plugin setup
-- Task 03 output — notification config types
-- Task 05 output — `detect_changes()` function
-- `src-tauri/src/feed/runtime.rs` — poll loop integration point
-- `src-tauri/src/main.rs` — app handle access
+- Task 02 output -- notification plugin setup
+- Task 03 output -- notification config types
+- Task 05 output -- `detect_changes()` function
+- `src-tauri/src/feed/runtime.rs` -- poll loop integration point
+- `src-tauri/src/main.rs` -- app handle access

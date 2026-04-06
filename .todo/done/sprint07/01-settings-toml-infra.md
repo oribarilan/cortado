@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 01 — settings.toml infrastructure
+# 01 -- settings.toml infrastructure
 
 ## Goal
 
@@ -26,12 +26,12 @@ Currently, Cortado has no global settings file. Feed config lives in `feeds.toml
 ## Notes
 
 - Follow the same pattern as `feeds.toml` config: load at startup, persist to file.
-- The `AppSettings` struct should be extensible — use `#[serde(default)]` liberally so missing fields get defaults.
+- The `AppSettings` struct should be extensible -- use `#[serde(default)]` liberally so missing fields get defaults.
 - **Reload behavior**: The master notification toggle takes effect immediately (watched via `Arc<RwLock<...>>` or similar). All other notification settings take effect on next poll cycle. This means `AppSettings` needs a shared-state mechanism for at least the `enabled` flag.
 
 ## Relevant files
 
-- `src-tauri/src/feed/config.rs` — reference for TOML parsing pattern
-- `src-tauri/src/settings_config.rs` — existing settings DTO (for feed config in settings UI)
-- `src-tauri/src/command.rs` — Tauri commands
-- `src-tauri/capabilities/settings.json` — capability permissions
+- `src-tauri/src/feed/config.rs` -- reference for TOML parsing pattern
+- `src-tauri/src/settings_config.rs` -- existing settings DTO (for feed config in settings UI)
+- `src-tauri/src/command.rs` -- Tauri commands
+- `src-tauri/capabilities/settings.json` -- capability permissions

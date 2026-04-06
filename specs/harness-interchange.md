@@ -28,8 +28,8 @@ PID-based filenames are always immediately available, unique per running process
 
 **PID strategy varies by integration type:**
 
-- **In-process plugins** (e.g., OpenCode): use `process.pid` — the plugin runs inside the agent process, so the agent's PID is directly available.
-- **Plugin hooks (child process)** (e.g., Copilot CLI): use `process.ppid` — the hook runs as a child process spawned by the agent, so the parent PID is the agent's PID. This ensures the interchange file is named after the agent process (for PID liveness checks and terminal focus), not the short-lived hook process.
+- **In-process plugins** (e.g., OpenCode): use `process.pid` -- the plugin runs inside the agent process, so the agent's PID is directly available.
+- **Plugin hooks (child process)** (e.g., Copilot CLI): use `process.ppid` -- the hook runs as a child process spawned by the agent, so the parent PID is the agent's PID. This ensures the interchange file is named after the agent process (for PID liveness checks and terminal focus), not the short-lived hook process.
 
 ## Schema
 
@@ -50,7 +50,7 @@ Each file is a flat JSON object:
 
 ### Examples
 
-**OpenCode** (in-process plugin — `pid` is the agent's own PID):
+**OpenCode** (in-process plugin -- `pid` is the agent's own PID):
 
 ```json
 {
@@ -67,7 +67,7 @@ Each file is a flat JSON object:
 }
 ```
 
-**Copilot CLI** (plugin hook (child process) — `pid` is the parent Copilot process via `process.ppid`):
+**Copilot CLI** (plugin hook (child process) -- `pid` is the parent Copilot process via `process.ppid`):
 
 ```json
 {
@@ -131,9 +131,9 @@ When multiple sessions share the same `cwd` (e.g., two OpenCode instances in the
 
 | Priority | Statuses              | Rationale |
 |----------|-----------------------|-----------|
-| Highest  | `question`, `approval`| User action required — must surface |
-| Medium   | `working`             | Agent is active — informational |
-| Lowest   | `idle`, unknown       | Nothing happening — least urgent |
+| Highest  | `question`, `approval`| User action required -- must surface |
+| Medium   | `working`             | Agent is active -- informational |
+| Lowest   | `idle`, unknown       | Nothing happening -- least urgent |
 
 Within the same priority tier, the session with the most recent `last_active_at` wins.
 
@@ -143,7 +143,7 @@ When dedup collapses multiple sessions, the surviving activity gets a **stable C
 
 - **Set status accurately.** Status drives which session surfaces in the UI when multiple exist. A session stuck on `working` when it's actually waiting for a question will hide a sibling's `question` status.
 - **Always update `last_active_at`.** It's the tiebreaker within the same priority tier.
-- **`idle` is the "I'm done" signal.** Transition to `idle` promptly when the agent finishes — don't leave stale `working` statuses that could mask a sibling's attention-needed state.
+- **`idle` is the "I'm done" signal.** Transition to `idle` promptly when the agent finishes -- don't leave stale `working` statuses that could mask a sibling's attention-needed state.
 
 ## Versioning
 

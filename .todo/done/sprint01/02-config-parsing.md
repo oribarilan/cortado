@@ -21,7 +21,7 @@ Parse `~/.config/cortado/feeds.toml` into structured Rust types. The config modu
 
 ## Notes
 
-- Config path: `~/.config/cortado/feeds.toml`. Use `dirs::home_dir()` + `.config/cortado/feeds.toml`. Don't use platform-specific app support dirs — `~/.config` is the intended location (dev-tool convention).
+- Config path: `~/.config/cortado/feeds.toml`. Use `dirs::home_dir()` + `.config/cortado/feeds.toml`. Don't use platform-specific app support dirs -- `~/.config` is the intended location (dev-tool convention).
 - Type-specific fields are flat in the TOML (not nested under `[feed.config]`). The config parser collects known common fields (`name`, `type`, `interval`) and passes the rest as a `toml::Table` for the feed implementation to interpret.
 - Field overrides use `[feed.fields.<name>]` with optional `visible` and `label`.
 
@@ -46,5 +46,5 @@ interval = 30
 
 ## Relevant files
 
-- `src-tauri/src/feed/config.rs` — new file
-- `src-tauri/src/feed/mod.rs` — add `pub mod config;`
+- `src-tauri/src/feed/config.rs` -- new file
+- `src-tauri/src/feed/mod.rs` -- add `pub mod config;`

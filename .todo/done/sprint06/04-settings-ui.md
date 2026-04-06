@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 04 — Settings UI: Feeds config
+# 04 -- Settings UI: Feeds config
 
 ## Goal
 
@@ -37,11 +37,11 @@ The UI needs to know which fields are required/optional per feed type. This can 
 - A static map in the frontend (simplest, since feed types are curated)
 - Or a Tauri command that returns the schema per type
 
-Recommend the static map approach for now — the feed types are known and stable.
+Recommend the static map approach for now -- the feed types are known and stable.
 
 ### UX flow
 
-**Pattern: F2 — Breadcrumb Replace** (see `showcases/settings-edit-flow-refined-showcase.html`)
+**Pattern: F2 -- Breadcrumb Replace** (see `showcases/settings-edit-flow-refined-showcase.html`)
 
 1. User opens Settings → Feeds section (sidebar)
 2. Sees L5b two-line card list of feeds (or empty state with "Add your first feed" prompt)
@@ -54,18 +54,18 @@ Recommend the static map approach for now — the feed types are known and stabl
 
 ### Design specs
 
-- **Layout**: L5b — sidebar nav + two-line feed cards with left-edge indicator + type badge
+- **Layout**: L5b -- sidebar nav + two-line feed cards with left-edge indicator + type badge
 - **Color**: Teal accent (hue 178), blue-gray neutrals (hue 250), light/dark via system preference
 - **Typography**: Space Grotesk for settings window (SF Pro Text remains for panel)
-- **Edit pattern**: F2 breadcrumb replace — form replaces list, breadcrumb for navigation
+- **Edit pattern**: F2 breadcrumb replace -- form replaces list, breadcrumb for navigation
 - References: `showcases/settings-l5-sidebar-cards-showcase.html`, `showcases/settings-color-theme-showcase.html`, `showcases/settings-edit-flow-refined-showcase.html`
 
 ### Sensitive fields (tokens)
 
 - Token fields should use `<input type="password">` with a toggle to reveal
-- Tokens are stored in the TOML file as-is (no encryption — same as current behavior)
+- Tokens are stored in the TOML file as-is (no encryption -- same as current behavior)
 - Future: consider moving tokens to the system keychain (out of scope for this sprint)
 
 ### Design
 
-Design decisions are finalized — see `.todo/sprint06/main.md` for full details.
+Design decisions are finalized -- see `.todo/sprint06/main.md` for full details.

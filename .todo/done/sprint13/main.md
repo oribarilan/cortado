@@ -12,16 +12,16 @@ Add a `copilot-session` feed type that tracks GitHub Copilot CLI sessions as act
 
 The Copilot CLI writes session data to `~/.copilot/session-state/<session-id>/`:
 
-- **`workspace.yaml`** — session metadata: id, cwd, repo, branch, summary, timestamps, host_type.
-- **`events.jsonl`** — chronological event stream. Each line is a JSON object with `type`, `data`, `timestamp`.
-- **`inuse.<PID>.lock`** — lock file present while the owning Copilot CLI process is alive. Contains the PID as text. Removed on clean shutdown.
+- **`workspace.yaml`** -- session metadata: id, cwd, repo, branch, summary, timestamps, host_type.
+- **`events.jsonl`** -- chronological event stream. Each line is a JSON object with `type`, `data`, `timestamp`.
+- **`inuse.<PID>.lock`** -- lock file present while the owning Copilot CLI process is alive. Contains the PID as text. Removed on clean shutdown.
 
 ### Active session detection
 
 The lock file is the authoritative signal for "session is open":
 
 1. Scan `~/.copilot/session-state/*/inuse.*.lock` files.
-2. Extract the PID from the filename (or file contents — both contain it).
+2. Extract the PID from the filename (or file contents -- both contain it).
 3. Check if the PID is still alive (`kill(pid, 0)` on Unix).
 4. If alive → session is active. If dead → stale lock, skip.
 
@@ -57,7 +57,7 @@ A single Copilot CLI process can own multiple sessions (via `/resume`). The feed
 | `abort`                                              | `ended`         | Idle              |
 | No events.jsonl / unparseable                        | `unknown`       | Idle              |
 
-Note: `session.shutdown` and `abort` rows are documentation-only — sessions with no lock file are not discovered, so these statuses are unreachable in practice.
+Note: `session.shutdown` and `abort` rows are documentation-only -- sessions with no lock file are not discovered, so these statuses are unreachable in practice.
 
 ## Sequencing
 
@@ -79,19 +79,19 @@ Note: `session.shutdown` and `abort` rows are documentation-only — sessions wi
 
 - Tasks 01-03 are sequential (each depends on the previous).
 - Task 04 (tmux strategy) depends on 03 (resolver infra).
-- Tasks 05 and 06 are independent strategies — can be done in parallel, each depends on 03.
+- Tasks 05 and 06 are independent strategies -- can be done in parallel, each depends on 03.
 - Task 07 (settings UI) depends on 03 (needs the capability query), but can be built in parallel with 04-06.
 
 ### Sprint 13 scope vs future
 
-Tasks 01-04 and 07 are the sprint 13 core. Tasks 05 and 06 are stretch goals — the resolver stubs them as `NotApplicable` until implemented, so they can ship in a follow-up without blocking.
+Tasks 01-04 and 07 are the sprint 13 core. Tasks 05 and 06 are stretch goals -- the resolver stubs them as `NotApplicable` until implemented, so they can ship in a follow-up without blocking.
 
 ## Tasks
 
 | # | File | Summary |
 |---|------|---------|
 | 01 | `01-session-state-reader.md` | `HarnessProvider` trait + `CopilotProvider` (session discovery, status inference) |
-| 02 | `02-copilot-session-feed.md` | `HarnessFeed` — generic Feed impl over any provider. Registered as `copilot-session`. |
+| 02 | `02-copilot-session-feed.md` | `HarnessFeed` -- generic Feed impl over any provider. Registered as `copilot-session`. |
 | 03 | `03-focus-terminal-macos.md` | `TerminalFocusResolver` module, PID ancestry walk, frontend integration |
 | 04 | `04-strategy-tmux.md` | tmux pane switching strategy |
 | 05 | `05-strategy-terminal-script.md` | Per-terminal AppleScript strategy (Terminal.app, iTerm2, Ghostty) |
@@ -100,7 +100,7 @@ Tasks 01-04 and 07 are the sprint 13 core. Tasks 05 and 06 are stretch goals —
 
 ## Cross-cutting notes
 
-- This feed has **no external CLI dependency** — it reads local files only.
+- This feed has **no external CLI dependency** -- it reads local files only.
 - **Harness** = terminal-based AI coding agent (Copilot CLI, Claude Code, etc.). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. Adding a new harness = new provider file + registration in `instantiate_feed()`.
 - Keep parsing resilient: unknown event types and missing/malformed fields should degrade gracefully to `unknown`/`Idle`, never panic or error the whole feed.
 - The `~/.copilot/session-state/` directory can contain 2500+ directories, but only a handful have lock files (~12 observed). The glob for `inuse.*.lock` is fast.

@@ -2,7 +2,7 @@
 status: done
 ---
 
-# 01 — Settings window infrastructure
+# 01 -- Settings window infrastructure
 
 ## Goal
 

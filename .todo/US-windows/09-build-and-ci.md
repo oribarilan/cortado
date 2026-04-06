@@ -10,9 +10,9 @@ Configure the build system, Tauri config, and CI/CD pipeline to produce Windows 
 
 ## Acceptance criteria
 
-- [ ] `tauri.conf.json` bundle targets updated: `"targets": ["dmg", "app", "nsis"]` — Tauri auto-selects per platform (dmg/app on macOS, nsis on Windows)
+- [ ] `tauri.conf.json` bundle targets updated: `"targets": ["dmg", "app", "nsis"]` -- Tauri auto-selects per platform (dmg/app on macOS, nsis on Windows)
 - [ ] `tauri.conf.json` has a `"windows"` section with NSIS config (installer name, icon, etc.)
-- [ ] Windows `.ico` icon verified for correct sizes (16x16, 32x32, 48x48, 256x256) — already at `icons/icon.ico`
+- [ ] Windows `.ico` icon verified for correct sizes (16x16, 32x32, 48x48, 256x256) -- already at `icons/icon.ico`
 - [ ] `justfile` commands audited for cross-platform compatibility. Shell commands that use Unix-isms (`rm`, pipes, etc.) either work on Windows or have platform-conditional recipes.
 - [ ] CI pipeline (`.github/workflows/ci.yml`) includes a Windows build job on `windows-latest` runner producing NSIS installer artifacts
 - [ ] CI Windows build job includes code signing step (with placeholder secrets if no certificate yet)
@@ -29,9 +29,9 @@ Configure the build system, Tauri config, and CI/CD pipeline to produce Windows 
 - Windows code signing uses Authenticode (`.pfx` certificate). Azure SignTool or `signtool.exe` via the `tauri-plugin-sign` or Tauri's built-in signing.
 - The updater plugin handles Windows `.nsis.zip` artifacts if `latest.json` includes them with the correct platform key.
 - GitHub Actions `windows-latest` runners include the Windows SDK and MSVC toolchain.
-- The `justfile` uses shell commands — `just` supports `[windows]` and `[unix]` attributes for platform-conditional recipes.
+- The `justfile` uses shell commands -- `just` supports `[windows]` and `[unix]` attributes for platform-conditional recipes.
 - Existing CI secret variables for Apple signing won't interfere with Windows builds, but Windows-specific secrets need to be added.
-- The `#[cfg(unix)]` in `settings_config.rs` for copilot hook file permissions (`set_permissions(0o755)`) — Windows doesn't use Unix permissions. Either use `.bat`/`.ps1` hooks on Windows or skip the permission step.
+- The `#[cfg(unix)]` in `settings_config.rs` for copilot hook file permissions (`set_permissions(0o755)`) -- Windows doesn't use Unix permissions. Either use `.bat`/`.ps1` hooks on Windows or skip the permission step.
 
 ## Dependencies
 
@@ -40,9 +40,9 @@ Configure the build system, Tauri config, and CI/CD pipeline to produce Windows 
 ## Related files
 
 - `src-tauri/tauri.conf.json` (bundle config)
-- `.github/workflows/ci.yml` (release pipeline — currently macOS-only)
-- `.github/workflows/ci-build.yml` (build smoke test — currently macOS-only)
+- `.github/workflows/ci.yml` (release pipeline -- currently macOS-only)
+- `.github/workflows/ci-build.yml` (build smoke test -- currently macOS-only)
 - `justfile` (build commands)
 - `src-tauri/icons/` (icon assets)
 - `src-tauri/src/settings_config.rs:573` (`#[cfg(unix)]` copilot hook permissions)
-- `specs/ci_cd.md` (CI/CD pipeline spec — update in task 10)
+- `specs/ci_cd.md` (CI/CD pipeline spec -- update in task 10)

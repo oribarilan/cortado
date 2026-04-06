@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 08 — Integration Testing
+# 08 -- Integration Testing
 
 ## Goal
 
@@ -23,6 +23,6 @@ End-to-end verification that the panel works correctly alongside the existing me
 
 ## Notes
 
-- Manual testing is primary here — the NSPanel and global shortcut behaviors can't be unit-tested easily
+- Manual testing is primary here -- the NSPanel and global shortcut behaviors can't be unit-tested easily
 - Add unit tests for any shared utility functions extracted during this sprint
 - Verify no regressions in existing menubar panel behavior

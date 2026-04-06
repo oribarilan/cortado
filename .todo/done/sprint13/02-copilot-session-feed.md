@@ -6,7 +6,7 @@ status: done
 
 ## Goal
 
-Implement the generic `HarnessFeed` — a single `Feed` trait implementation that works with any `HarnessProvider`. The first registered instance uses `CopilotProvider` with feed type `copilot-session`. Future harnesses (Claude Code, etc.) register additional instances with their own providers.
+Implement the generic `HarnessFeed` -- a single `Feed` trait implementation that works with any `HarnessProvider`. The first registered instance uses `CopilotProvider` with feed type `copilot-session`. Future harnesses (Claude Code, etc.) register additional instances with their own providers.
 
 ## Architecture
 
@@ -38,7 +38,7 @@ In `instantiate_feed()`, `"copilot-session"` creates a `HarnessFeed` with `Copil
 
 ## Auth & preflight
 
-None required. If the session state directory doesn't exist, the provider returns an empty list — the feed shows no activities (not an error).
+None required. If the session state directory doesn't exist, the provider returns an empty list -- the feed shows no activities (not an error).
 
 ## Provided fields
 
@@ -97,7 +97,7 @@ New provider category in `FEED_CATALOG`:
 {
   id: "coding-agents",
   name: "Coding Agents",
-  icon: `<svg .../>`,       // TBD — simple terminal/agent icon
+  icon: `<svg .../>`,       // TBD -- simple terminal/agent icon
   types: [
     {
       feedType: "copilot-session",
@@ -128,6 +128,6 @@ Also update:
 
 ## Relevant files
 
-- `src-tauri/src/feed/harness/feed.rs` — new (generic feed impl)
-- `src-tauri/src/feed/mod.rs` — register `"copilot-session"` in `instantiate_feed()`
-- `specs/main.md` — add feed type documentation
+- `src-tauri/src/feed/harness/feed.rs` -- new (generic feed impl)
+- `src-tauri/src/feed/mod.rs` -- register `"copilot-session"` in `instantiate_feed()`
+- `specs/main.md` -- add feed type documentation

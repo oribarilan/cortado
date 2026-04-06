@@ -74,6 +74,15 @@ fn main() {
     let feed_registry = Arc::new(feed_registry);
     let feed_cache = FeedSnapshotCache::from_registry(feed_registry.as_ref());
     let poller = BackgroundPoller::new(feed_cache.clone());
+
+    // Count network-based feeds for connectivity detection.
+    let network_feed_count = feed_registry
+        .active_feeds()
+        .iter()
+        .filter(|f| feed::is_network_feed_type(f.feed_type()))
+        .count();
+    let connectivity_mgr = feed::connectivity::ConnectivityManager::new(network_feed_count);
+
     let config_change_state = ConfigChangeState::new();
     let initial_settings = load_settings().unwrap_or_else(|err| {
         eprintln!("failed to load settings, using defaults: {err}");
@@ -98,6 +107,7 @@ fn main() {
         .manage(feed_cache.clone())
         .manage(feed_registry.clone())
         .manage(poller.clone())
+        .manage(connectivity_mgr.clone())
         .manage(config_change_state.clone())
         .manage(app_settings_state.clone())
         .invoke_handler(tauri::generate_handler![
@@ -135,7 +145,8 @@ fn main() {
             command::get_focus_capabilities,
             command::is_dev_mode,
             command::restart_app,
-            command::install_update
+            command::install_update,
+            command::retry_connection
         ])
         .setup({
             let feed_registry = feed_registry.clone();
@@ -143,6 +154,7 @@ fn main() {
             let poller = poller.clone();
             let app_settings_state = app_settings_state.clone();
             let feed_notify_map = Arc::new(feed_notify_map);
+            let connectivity_mgr = connectivity_mgr.clone();
 
             move |app| {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -154,7 +166,7 @@ fn main() {
                 }
 
                 // Register global shortcut plugin with handler; then register
-                // the user-configured hotkey — but only in production mode
+                // the user-configured hotkey -- but only in production mode
                 // to avoid stealing the hotkey from a running release build.
                 {
                     use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -193,7 +205,9 @@ fn main() {
                     settings_state: app_settings_state,
                     feed_notify_map,
                 };
-                let poller = poller.with_notifications(notify_ctx);
+                let poller = poller
+                    .with_notifications(notify_ctx)
+                    .with_connectivity(connectivity_mgr.clone());
 
                 // Seed feeds and start polling in the background.
                 // The refresh loop will update the tray once the seed completes.
@@ -204,6 +218,9 @@ fn main() {
                         .await;
                     poller.start(feed_registry);
                 });
+
+                // Spawn connectivity checker for offline detection.
+                tauri::async_runtime::spawn(connectivity_mgr.run_checker());
 
                 Ok(())
             }

@@ -45,7 +45,7 @@ fn resolve_config_dir(dir_name: &str) -> PathBuf {
     resolve_config_dir_from(std::env::var("XDG_CONFIG_HOME").ok().as_deref(), dir_name)
 }
 
-/// Pure config directory resolution — takes XDG value as parameter for testability.
+/// Pure config directory resolution -- takes XDG value as parameter for testability.
 fn resolve_config_dir_from(xdg_config_home: Option<&str>, dir_name: &str) -> PathBuf {
     if let Some(xdg) = xdg_config_home {
         if !xdg.is_empty() {

@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# 15 — Simplify ADO PR Feed Config to Single URL
+# 15 -- Simplify ADO PR Feed Config to Single URL
 
 ## Goal
 
@@ -17,7 +17,7 @@ Replace the three separate ADO PR config fields (`org`, `project`, `repo`) with 
 - [ ] The `az` CLI invocations still receive the correct individual arguments
 - [ ] Activity IDs (URLs) are still constructed correctly
 - [ ] Settings UI updated: single "Repository URL" field with placeholder and hint
-- [ ] Existing TOML configs using `org` + `project` + `repo` stop working (breaking change) — document migration in error message
+- [ ] Existing TOML configs using `org` + `project` + `repo` stop working (breaking change) -- document migration in error message
 - [ ] Unit tests updated for the new config shape
 - [ ] `specs/main.md` config examples updated
 

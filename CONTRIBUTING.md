@@ -56,15 +56,15 @@ just build
 
 The DMG is output to `src-tauri/target/release/bundle/dmg/Cortado_<version>_aarch64.dmg`.
 
-The build is unsigned and unnotarized — macOS will show a Gatekeeper warning.
+The build is unsigned and unnotarized -- macOS will show a Gatekeeper warning.
 To open it: right-click the app > Open, or run `xattr -cr` on the `.app` bundle.
 
 ## Version
 
 The version lives in two files and must be kept in sync:
 
-- `src-tauri/Cargo.toml` — `version` under `[package]`
-- `src-tauri/tauri.conf.json` — `version` at the top level
+- `src-tauri/Cargo.toml` -- `version` under `[package]`
+- `src-tauri/tauri.conf.json` -- `version` at the top level
 
 ### Releasing
 
@@ -86,21 +86,21 @@ Maintain `CHANGELOG.md` incrementally using [Keep a Changelog](https://keepachan
 
 Changelog entries should be:
 - **1 line per feature, 2 lines max.** Concise and user-focused, not implementation details.
-- Written from the user's perspective — what changed for them, not how it was built.
+- Written from the user's perspective -- what changed for them, not how it was built.
 - When in doubt, ask the developer to phrase the entry before writing it.
 
 ## Code quality
 
 Always run `just check` before committing. It must pass with zero warnings:
 
-- `cargo fmt` — formatting
-- `tsc --noEmit` — TypeScript type checking
-- `cargo clippy -D warnings` — all Clippy warnings are errors
-- `cargo test` — all tests must pass
+- `cargo fmt` -- formatting
+- `tsc --noEmit` -- TypeScript type checking
+- `cargo clippy -D warnings` -- all Clippy warnings are errors
+- `cargo test` -- all tests must pass
 
 ## Package manager
 
-Use **pnpm**, not npm or yarn. The Tauri CLI is a local devDependency — run it via `pnpm exec tauri`, not `pnpm tauri`.
+Use **pnpm**, not npm or yarn. The Tauri CLI is a local devDependency -- run it via `pnpm exec tauri`, not `pnpm tauri`.
 
 ## Commit style
 

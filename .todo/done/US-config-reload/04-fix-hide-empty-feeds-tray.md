@@ -15,6 +15,6 @@ The `hide_empty_feeds` setting in the tray (`App.tsx`) is read once during boots
 
 ## Notes
 
-- `App.tsx:30` — `hideEmptyFeeds` state initialized once in `bootstrap()` useEffect (line 159-161)
-- `MainScreen` already does pull-on-show for `show_priority_section` — follow the same pattern
+- `App.tsx:30` -- `hideEmptyFeeds` state initialized once in `bootstrap()` useEffect (line 159-161)
+- `MainScreen` already does pull-on-show for `show_priority_section` -- follow the same pattern
 - This is a standalone bugfix, not related to the restart mechanism, but grouped here since it's a settings reactivity gap

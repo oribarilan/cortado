@@ -6,16 +6,16 @@ status: done
 
 ## Goal
 
-Evaluate implementation approaches for hot-reloading feed configuration. Determine how to detect config changes, reconcile old and new state, and manage feed task lifecycles — without restarting the app.
+Evaluate implementation approaches for hot-reloading feed configuration. Determine how to detect config changes, reconcile old and new state, and manage feed task lifecycles -- without restarting the app.
 
 ## Current Architecture (relevant details)
 
 ### Data structures
 
-- `FeedConfig` — parsed TOML entry (name, type, interval, retain, type_specific fields, field overrides). Defined in `feed/config.rs:24-32`.
-- `FeedRegistry` — holds `Vec<Arc<dyn Feed>>` + `Vec<FeedSnapshot>` for config errors. Wrapped in `Arc<FeedRegistry>` (immutable). Defined in `feed/mod.rs:227-321`.
-- `FeedSnapshotCache` — `Arc<RwLock<Vec<FeedSnapshot>>>` of latest snapshots. The runtime upserts snapshots here. Defined in `feed/runtime.rs:17-47`.
-- `BackgroundPoller` — owns the cache, a `watch::Sender<u64>` update counter, and optional `NotificationContext`. Spawns one tokio task per feed. Defined in `feed/runtime.rs:59-64`.
+- `FeedConfig` -- parsed TOML entry (name, type, interval, retain, type_specific fields, field overrides). Defined in `feed/config.rs:24-32`.
+- `FeedRegistry` -- holds `Vec<Arc<dyn Feed>>` + `Vec<FeedSnapshot>` for config errors. Wrapped in `Arc<FeedRegistry>` (immutable). Defined in `feed/mod.rs:227-321`.
+- `FeedSnapshotCache` -- `Arc<RwLock<Vec<FeedSnapshot>>>` of latest snapshots. The runtime upserts snapshots here. Defined in `feed/runtime.rs:17-47`.
+- `BackgroundPoller` -- owns the cache, a `watch::Sender<u64>` update counter, and optional `NotificationContext`. Spawns one tokio task per feed. Defined in `feed/runtime.rs:59-64`.
 
 ### Feed identity
 
@@ -25,7 +25,7 @@ Feeds are identified by `name` (unique within config). The feed name is the key 
 
 | State | Where | Impact of loss |
 |-------|-------|----------------|
-| Retained activities | In-memory in `FeedSnapshot` | Activities that disappeared < retain window are lost. Minor — they'll re-appear if still active, or naturally expire. |
+| Retained activities | In-memory in `FeedSnapshot` | Activities that disappeared < retain window are lost. Minor -- they'll re-appear if still active, or naturally expire. |
 | Notification baseline | `NotificationTracker` per-feed map | First poll after reload would be treated as "seed" (no notifications). Need startup suppression logic. |
 | Poll timer phase | tokio `sleep()` in `poll_feed_loop` | Feed re-polls immediately or after a full interval. Minor. |
 
@@ -54,16 +54,16 @@ On config change, tear down everything and rebuild from scratch:
 ### Pros
 
 - **Simple.** No diffing logic. The reload path is essentially the same as startup.
-- **Complete.** Guaranteed to pick up any config change — type changes, name changes, field changes, everything.
+- **Complete.** Guaranteed to pick up any config change -- type changes, name changes, field changes, everything.
 - **Easy to test.** One code path: load → build → start.
 - **Low risk of stale state.** No zombie tasks, no orphaned feeds.
 
 ### Cons
 
-- **Loses all in-memory state.** Retained activities, notification baselines, accumulated snapshots — all gone.
+- **Loses all in-memory state.** Retained activities, notification baselines, accumulated snapshots -- all gone.
 - **Brief monitoring gap.** Between teardown and re-seed, there's a window (potentially seconds) where no data is available. The UI would flash empty.
 - **Unnecessary work.** If only one feed changed out of ten, all ten re-poll.
-- **Notification spam risk.** First poll after rebuild would see all activities as "new" unless startup suppression is applied (which it already is — `seed_startup_best_effort` sets is_seed=true).
+- **Notification spam risk.** First poll after rebuild would see all activities as "new" unless startup suppression is applied (which it already is -- `seed_startup_best_effort` sets is_seed=true).
 - **Harness watcher churn.** FSEvents watchers for harness feeds would be torn down and recreated.
 
 ### Complexity: Low
@@ -101,9 +101,9 @@ A feed is "modified" when any config field differs from the current version. Sim
 ### Cons
 
 - **Diffing complexity.** Need to define equality for `FeedConfig`, handle edge cases:
-  - Feed renamed (old name gone, new name appears) — is it a rename or remove+add? Must treat as remove+add since name is identity.
-  - Feed type changed but name kept — must fully re-instantiate.
-  - Only interval changed — could just update the sleep duration without re-instantiating the feed, but that's another layer of granularity.
+  - Feed renamed (old name gone, new name appears) -- is it a rename or remove+add? Must treat as remove+add since name is identity.
+  - Feed type changed but name kept -- must fully re-instantiate.
+  - Only interval changed -- could just update the sleep duration without re-instantiating the feed, but that's another layer of granularity.
 - **Mutable registry.** `FeedRegistry` must become mutable (`RwLock<FeedRegistry>` or similar). Every reader needs to handle the lock.
 - **Task lifecycle management.** Need per-feed `CancellationToken` or `AbortHandle` to stop individual tasks.
 - **State transfer edge cases.** Preserving retained activities across a feed re-instantiation requires matching activities by ID, which may change if the feed type's identity scheme differs.
@@ -111,7 +111,7 @@ A feed is "modified" when any config field differs from the current version. Sim
 
 ### Complexity: Medium-High
 
-Significant refactoring of `FeedRegistry` (immutable → mutable), `BackgroundPoller` (static start → dynamic add/remove), and the runtime. But the logic is straightforward — it's bookkeeping, not algorithmic complexity.
+Significant refactoring of `FeedRegistry` (immutable → mutable), `BackgroundPoller` (static start → dynamic add/remove), and the runtime. But the logic is straightforward -- it's bookkeeping, not algorithmic complexity.
 
 ---
 
@@ -147,7 +147,7 @@ This is essentially a rewrite of the feed runtime. Not justified by the current 
 
 ---
 
-## Approach D: Hybrid — Full Rebuild with State Preservation
+## Approach D: Hybrid -- Full Rebuild with State Preservation
 
 ### Description
 
@@ -166,10 +166,10 @@ A pragmatic middle ground: rebuild the registry from scratch (like Approach A), 
 
 ### Pros
 
-- **Simple as Approach A** — still a full rebuild, same code path as startup.
-- **Preserves important state** — retained activities and notification baselines survive for unchanged feeds.
-- **Clean error handling** — bad config = keep running, show error. No partial state.
-- **Low risk** — full rebuild means no zombie tasks or orphaned state.
+- **Simple as Approach A** -- still a full rebuild, same code path as startup.
+- **Preserves important state** -- retained activities and notification baselines survive for unchanged feeds.
+- **Clean error handling** -- bad config = keep running, show error. No partial state.
+- **Low risk** -- full rebuild means no zombie tasks or orphaned state.
 
 ### Cons
 
@@ -207,7 +207,7 @@ No state transfer for modified feeds. No rename detection. No partial updates (e
 
 - **Mutable registry** still required (same as Approach B).
 - **Per-feed task cancellation** still required.
-- **Modified feeds lose state** (retained activities, notification baseline). Acceptable — the user just changed the config, so a fresh start for that feed makes sense.
+- **Modified feeds lose state** (retained activities, notification baseline). Acceptable -- the user just changed the config, so a fresh start for that feed makes sense.
 - **Config equality** needs a reliable comparison. Can derive `PartialEq` on `FeedConfig` or hash it.
 
 ### Complexity: Medium
@@ -223,20 +223,20 @@ Less than full Approach B (no state transfer, no rename detection), but requires
 Instead of hot-reloading feeds at runtime, detect config file changes and let the user trigger a full app restart:
 
 1. Watch both `feeds.toml` and `settings.toml` with `notify` (or extend the existing `ConfigChangeTracker` to cover both files).
-2. On change: surface a clickable "Restart to apply changes" activity in the existing synthetic "Configuration" feed (already exists — `ui_snapshot.rs:7-68`).
+2. On change: surface a clickable "Restart to apply changes" activity in the existing synthetic "Configuration" feed (already exists -- `ui_snapshot.rs:7-68`).
 3. In the tray: clicking the activity calls `app_handle.restart()`.
 4. In the panel: pressing Enter on the activity calls `app_handle.restart()`.
 5. The app restarts, picks up the new config through the normal startup path.
 
 ### How restart works
 
-`app_handle.restart()` is already used in the updater (`command.rs:291`). It's a Tauri built-in via `tauri-plugin-process` — it exits the current process and relaunches the same binary. On macOS this is effectively instantaneous for a lightweight app like Cortado.
+`app_handle.restart()` is already used in the updater (`command.rs:291`). It's a Tauri built-in via `tauri-plugin-process` -- it exits the current process and relaunches the same binary. On macOS this is effectively instantaneous for a lightweight app like Cortado.
 
 ### Pros
 
 - **Dramatically simpler.** No mutable registry, no per-feed task cancellation, no diffing, no state transfer, no reload handler. Zero changes to `FeedRegistry`, `BackgroundPoller`, or the feed runtime.
 - **Covers both feeds AND settings.** Since the entire app restarts, settings changes (including `show_menubar`) are also picked up. No need for a separate settings hot-reload analysis.
-- **Zero risk of stale state.** A fresh startup is guaranteed clean — no zombie tasks, no orphaned watchers, no half-applied config.
+- **Zero risk of stale state.** A fresh startup is guaranteed clean -- no zombie tasks, no orphaned watchers, no half-applied config.
 - **Already proven.** `app_handle.restart()` is battle-tested in the updater flow.
 - **Minimal code changes.** Extend the existing `ConfigChangeTracker` to watch `settings.toml`, make the synthetic "Configuration" activity clickable, wire click to `restart()`.
 - **User stays in control.** The user decides when to restart, so an accidental half-finished edit doesn't immediately disrupt monitoring.
@@ -244,7 +244,7 @@ Instead of hot-reloading feeds at runtime, detect config file changes and let th
 ### Cons
 
 - **Brief interruption.** The app disappears and reappears. On macOS, restart takes ~1-2s. During that window, no monitoring occurs.
-- **All state is lost.** Retained activities, notification baselines, poll timer phases — all reset. First poll after restart suppresses notifications (existing startup behavior), so no notification spam.
+- **All state is lost.** Retained activities, notification baselines, poll timer phases -- all reset. First poll after restart suppresses notifications (existing startup behavior), so no notification spam.
 - **Not fully "hot".** The user must take an action (click/Enter). This is arguably a pro (no surprise disruption), but it's not seamless.
 - **Restart required for any change.** Even a trivial interval change requires full restart. With hot-reload (Approaches B/E), only the changed feed would restart.
 
@@ -257,7 +257,7 @@ The simplest approach by far. The main pieces are:
 
 ### Why this may be the right choice
 
-The fundamental question is: **how often do users change feed config?** If the answer is "rarely, and usually a batch of changes at once" (which matches the current UX — users edit config in settings, then want it applied), then a single restart is a better UX than watching individual feeds flicker through reload cycles. The user edits, clicks restart, and gets a clean slate.
+The fundamental question is: **how often do users change feed config?** If the answer is "rarely, and usually a batch of changes at once" (which matches the current UX -- users edit config in settings, then want it applied), then a single restart is a better UX than watching individual feeds flicker through reload cycles. The user edits, clicks restart, and gets a clean slate.
 
 Hot-reload (Approaches B/E) is more elegant but introduces significant complexity for a scenario that happens infrequently. The restart approach can always be upgraded to hot-reload later if the UX proves insufficient.
 
@@ -283,7 +283,7 @@ Hot-reload (Approaches B/E) is more elegant but introduces significant complexit
 
 **Approach F (Detect Changes + Self-Restart)** is the recommended approach.
 
-The core argument: hot-reload (Approaches A-E) solves a problem that happens infrequently (config changes) with significant architectural complexity. Approach F delivers the same end-user value — "I edited config, now it works" — with a fraction of the implementation cost. The ~1-2s restart is imperceptible for a menubar utility app.
+The core argument: hot-reload (Approaches A-E) solves a problem that happens infrequently (config changes) with significant architectural complexity. Approach F delivers the same end-user value -- "I edited config, now it works" -- with a fraction of the implementation cost. The ~1-2s restart is imperceptible for a menubar utility app.
 
 Key advantages over the previous recommendation (Approach E):
 - **No registry refactoring.** `FeedRegistry` stays immutable `Arc<FeedRegistry>`.
@@ -296,8 +296,8 @@ Key advantages over the previous recommendation (Approach E):
 
 ## Notes
 
-- The `notify` crate is already a dependency — no new deps needed.
-- `app_handle.restart()` is already used in `install_update` (`command.rs:291`) — proven in production.
-- The existing synthetic "Configuration" feed (`ui_snapshot.rs`) already surfaces change detection — just needs to become actionable.
-- Startup suppression logic already exists in `seed_startup_best_effort()` — no notification spam after restart.
+- The `notify` crate is already a dependency -- no new deps needed.
+- `app_handle.restart()` is already used in `install_update` (`command.rs:291`) -- proven in production.
+- The existing synthetic "Configuration" feed (`ui_snapshot.rs`) already surfaces change detection -- just needs to become actionable.
+- Startup suppression logic already exists in `seed_startup_best_effort()` -- no notification spam after restart.
 - The Settings GUI's "restart required" message (`SettingsApp.tsx`) becomes accurate and actionable rather than a dead-end warning.

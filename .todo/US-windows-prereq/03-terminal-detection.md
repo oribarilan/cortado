@@ -30,7 +30,7 @@ Determine the best approach for detecting which terminal emulators are installed
 **Existing detection**: tmux is already checked via `tmux -V` in `get_capabilities()`. Ghostty version is checked similarly. But there's no general "is this app installed?" check.
 
 **Constraints**:
-- Must work in a packaged `.app` (minimal PATH — see AGENTS.md gotchas)
+- Must work in a packaged `.app` (minimal PATH -- see AGENTS.md gotchas)
 - Must be fast enough to call from settings UI without visible delay
 - Should not require Accessibility permissions just to check if an app exists
 

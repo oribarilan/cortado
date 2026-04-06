@@ -90,5 +90,5 @@ end tell
 
 ## Relevant files
 
-- `src-tauri/src/terminal_focus/terminal_script.rs` — new file
-- `src-tauri/src/terminal_focus/pid_ancestry.rs` — may need to add TTY lookup
+- `src-tauri/src/terminal_focus/terminal_script.rs` -- new file
+- `src-tauri/src/terminal_focus/pid_ancestry.rs` -- may need to add TTY lookup

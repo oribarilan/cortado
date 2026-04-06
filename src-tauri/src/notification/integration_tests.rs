@@ -1,7 +1,7 @@
 /// Integration tests for the notification pipeline.
 ///
 /// Tests the full flow from snapshot changes through detection, filtering,
-/// and content formatting — everything except actual OS notification delivery
+/// and content formatting -- everything except actual OS notification delivery
 /// (which requires an AppHandle and is tested manually).
 #[cfg(test)]
 mod tests {
@@ -42,6 +42,8 @@ mod tests {
             provided_fields: Vec::new(),
             error: None,
             hide_when_empty: false,
+            last_refreshed: None,
+            is_disconnected: false,
         }
     }
 
@@ -376,7 +378,7 @@ mod tests {
             ],
         );
 
-        // This IS detected as "new activities" — but the startup seed
+        // This IS detected as "new activities" -- but the startup seed
         // populates the cache before the poll loop starts. The poll loop
         // then compares against the seeded snapshot (which has activities),
         // not the empty one. So no notifications fire on the first
