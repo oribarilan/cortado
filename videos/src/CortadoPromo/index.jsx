@@ -51,13 +51,13 @@ export const CortadoPromo = () => {
         from={SCENES.panel.from}
         durationInFrames={SCENES.panel.duration}
       >
-        {/* Keyboard click when shortcut keys appear */}
+        {/* Keyboard toggle when shortcut keys appear */}
         <Sequence from={10} durationInFrames={30}>
-          <Audio src="https://remotion.media/switch.wav" volume={0.4} />
+          <Audio src={staticFile("switch_002.ogg")} volume={3} />
         </Sequence>
         {/* Mouse click when OpenCode row gets selected */}
         <Sequence from={75} durationInFrames={30}>
-          <Audio src="https://remotion.media/mouse-click.wav" volume={0.5} />
+          <Audio src="https://remotion.media/mouse-click.wav" volume={3} />
         </Sequence>
         <PanelDemo />
       </Sequence>

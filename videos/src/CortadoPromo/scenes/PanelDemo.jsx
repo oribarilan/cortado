@@ -36,58 +36,71 @@ const PanelRow = ({
   selected,
   pulse,
   feedHint,
-}) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 21px",
-      backgroundColor: selected ? COLORS.accentDim : "transparent",
-      borderLeft: selected
+  flash = 0,
+}) => {
+  const flashBg =
+    selected && flash > 0
+      ? `rgba(78, 205, 196, ${0.12 + flash * 0.18})`
+      : selected
+        ? COLORS.accentDim
+        : "transparent";
+  const flashBorder =
+    selected && flash > 0
+      ? `3px solid rgba(78, 205, 196, ${0.6 + flash * 0.4})`
+      : selected
         ? `3px solid ${COLORS.accent}`
-        : "3px solid transparent",
-    }}
-  >
-    <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-      <StatusDot color={dot} size={9} pulse={pulse} />
-      <span
-        style={{
-          fontSize: 17.5,
-          color: selected ? COLORS.text : COLORS.textSecondary,
-          fontWeight: selected ? 500 : 400,
-        }}
-      >
-        {title}
-      </span>
-    </div>
-    <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-      <span
-        style={{
-          fontSize: 15,
-          color: statusColor,
-          backgroundColor: `${statusColor}1a`,
-          padding: "3px 13px",
-          borderRadius: 13,
-        }}
-      >
-        {status}
-      </span>
-      {feedHint && (
+        : "3px solid transparent";
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 21px",
+        backgroundColor: flashBg,
+        borderLeft: flashBorder,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+        <StatusDot color={dot} size={9} pulse={pulse} />
         <span
           style={{
-            fontSize: 11,
-            color: COLORS.textTertiary,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
+            fontSize: 17.5,
+            color: selected ? COLORS.text : COLORS.textSecondary,
+            fontWeight: selected ? 500 : 400,
           }}
         >
-          {feedHint}
+          {title}
         </span>
-      )}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+        <span
+          style={{
+            fontSize: 15,
+            color: statusColor,
+            backgroundColor: `${statusColor}1a`,
+            padding: "3px 13px",
+            borderRadius: 13,
+          }}
+        >
+          {status}
+        </span>
+        {feedHint && (
+          <span
+            style={{
+              fontSize: 11,
+              color: COLORS.textTertiary,
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {feedHint}
+          </span>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const DetailField = ({ label, value, color }) => (
   <div
@@ -169,6 +182,11 @@ export const PanelDemo = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+  // Key press visual — keys depress at frame 10 (synced with click SFX)
+  const keyPress = interpolate(frame, [10, 12, 16], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   // Panel appears (frames 30-70)
   const panelProgress = spring({
@@ -184,6 +202,11 @@ export const PanelDemo = () => {
 
   // Selection highlights OpenCode row (frame 75)
   const selectionOn = frame >= 75;
+  // Row click flash — brief bright highlight at moment of click
+  const rowFlash = interpolate(frame, [75, 77, 83], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   // Panel slides away (frame 120)
   const panelExit = interpolate(frame, [118, 135], [1, 0], {
@@ -248,22 +271,30 @@ export const PanelDemo = () => {
           ...or a full view
         </div>
         <div style={{ display: "flex", gap: 13, alignItems: "center" }}>
-          {["⌘", "⇧", "Space"].map((key) => (
-            <div
-              key={key}
-              style={{
-                padding: "13px 26px",
-                backgroundColor: COLORS.bgRaised,
-                border: `1px solid ${COLORS.borderLight}`,
-                borderRadius: 13,
-                fontSize: 39,
-                color: COLORS.text,
-                fontWeight: 500,
-              }}
-            >
-              {key}
-            </div>
-          ))}
+          {["⌘", "⇧", "Space"].map((key) => {
+            const pressY = interpolate(keyPress, [0, 1], [0, 3]);
+            const pressScale = interpolate(keyPress, [0, 1], [1, 0.93]);
+            const pressBg = interpolate(keyPress, [0, 1], [0, 0.15]);
+            return (
+              <div
+                key={key}
+                style={{
+                  padding: "13px 26px",
+                  backgroundColor: `rgba(255,255,255,${0.04 + pressBg})`,
+                  border: `1px solid ${keyPress > 0.5 ? COLORS.accent : COLORS.borderLight}`,
+                  borderRadius: 13,
+                  fontSize: 39,
+                  color: COLORS.text,
+                  fontWeight: 500,
+                  transform: `translateY(${pressY}px) scale(${pressScale})`,
+                  boxShadow:
+                    keyPress > 0.5 ? `0 0 16px ${COLORS.accentDim}` : "none",
+                }}
+              >
+                {key}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -339,6 +370,7 @@ export const PanelDemo = () => {
               statusColor={COLORS.statusGreen}
               feedHint="opencode"
               selected={selectionOn}
+              flash={rowFlash}
             />
           </div>
 
