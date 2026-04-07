@@ -190,226 +190,324 @@ const NotificationBanner = ({ opacity, y, flash }) => (
 
 // --- OpenCode TUI terminal ---
 
-const OpenCodeTerminal = ({ opacity, scale, y }) => (
-  <div
-    style={{
-      width: 1365,
-      height: 806,
-      backgroundColor: "#0a0a0a",
-      borderRadius: 18,
-      border: "1px solid rgba(255,255,255,0.1)",
-      boxShadow: "0 31px 104px rgba(0,0,0,0.55)",
-      overflow: "hidden",
-      opacity,
-      transform: `scale(${scale}) translateY(${y}px)`,
-      display: "flex",
-      flexDirection: "column",
-      position: "absolute",
-      fontFamily: FONT_MONO,
-    }}
-  >
-    {/* Header bar */}
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "10px 21px",
-        backgroundColor: "#141414",
-        borderBottom: "1px solid #484848",
-      }}
-    >
-      <span style={{ fontSize: 15, fontWeight: 700, color: "#eeeeee" }}>
-        # Error handling strategy for cortado-backend
-      </span>
-      <span style={{ fontSize: 15, color: "#808080" }}>
-        42,817 &middot; 24% &middot; ($0.31)
-      </span>
-    </div>
+const OpenCodeTerminal = ({ opacity, scale, y, frame: sceneFrame }) => {
+  // Question interaction timeline (relative to terminal appearing at frame 118)
+  // Frame 145: down arrow → selection moves to option 2
+  // Frame 155: enter → option 2 confirmed, question dismissed
+  // Frame 162+: generating output
+  const selectedOption = sceneFrame >= 145 ? 2 : 1;
+  const confirmed = sceneFrame >= 155;
+  const generating = sceneFrame >= 162;
 
-    {/* Message area */}
+  return (
     <div
       style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        padding: "21px 26px",
-        gap: 16,
+        width: 1365,
+        height: 806,
+        backgroundColor: "#0a0a0a",
+        borderRadius: 18,
+        border: "1px solid rgba(255,255,255,0.1)",
+        boxShadow: "0 31px 104px rgba(0,0,0,0.55)",
         overflow: "hidden",
-      }}
-    >
-      {/* User message */}
-      <div
-        style={{
-          backgroundColor: "#141414",
-          padding: "13px 18px",
-          borderLeft: "3px solid #fab283",
-        }}
-      >
-        <span style={{ fontSize: 16, color: "#eeeeee" }}>
-          Which approach should I use for error handling in the API handlers?
-        </span>
-      </div>
-
-      {/* Assistant message */}
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ fontSize: 15, color: "#808080", lineHeight: 1.7 }}>
-          <div>
-            <span style={{ color: "#fab283" }}>*</span> Grep
-            &quot;error.*handling|anyhow|thiserror&quot;
-          </div>
-          <div>
-            <span style={{ color: "#fab283" }}>*</span> Read src/api/handlers.rs{" "}
-            <span style={{ color: "#808080" }}>(247 lines)</span>
-          </div>
-        </div>
-
-        <div style={{ height: 10 }} />
-
-        <div style={{ fontSize: 16, color: "#eeeeee", lineHeight: 1.6 }}>
-          I found two potential approaches for error handling.
-        </div>
-      </div>
-    </div>
-
-    {/* Question prompt — replaces normal input when question tool is active */}
-    <div
-      style={{
-        backgroundColor: "#141414",
-        borderLeft: "3px solid #9d7cd8",
-        padding: "14px 21px",
+        opacity,
+        transform: `scale(${scale}) translateY(${y}px)`,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        position: "absolute",
+        fontFamily: FONT_MONO,
       }}
     >
-      {/* Question text */}
-      <div style={{ fontSize: 15, color: "#eeeeee", fontWeight: 500 }}>
-        Which approach do you prefer?
-      </div>
-
-      {/* Options */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* Option 1 — active/highlighted */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 8,
-            backgroundColor: "#1e1e1e",
-            padding: "6px 10px",
-            borderRadius: 4,
-          }}
-        >
-          <span style={{ fontSize: 14, color: "#8a8abf" }}>1.</span>
-          <div>
-            <span style={{ fontSize: 15, color: "#5c9cf5", fontWeight: 500 }}>
-              Use anyhow::Result with context
-            </span>
-            <div
-              style={{
-                fontSize: 13,
-                color: "#808080",
-                marginTop: 2,
-                paddingLeft: 0,
-              }}
-            >
-              Simple, ergonomic error propagation with .context()
-            </div>
-          </div>
-        </div>
-
-        {/* Option 2 — inactive */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 8,
-            padding: "6px 10px",
-          }}
-        >
-          <span style={{ fontSize: 14, color: "#808080" }}>2.</span>
-          <div>
-            <span style={{ fontSize: 15, color: "#eeeeee" }}>
-              Define custom error types with thiserror
-            </span>
-            <div style={{ fontSize: 13, color: "#808080", marginTop: 2 }}>
-              Type-safe, pattern-matchable error variants
-            </div>
-          </div>
-        </div>
-
-        {/* Option 3 — custom answer, inactive */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 8,
-            padding: "6px 10px",
-          }}
-        >
-          <span style={{ fontSize: 14, color: "#808080" }}>3.</span>
-          <span style={{ fontSize: 15, color: "#eeeeee" }}>
-            Type your own answer
-          </span>
-        </div>
-      </div>
-
-      {/* Hint bar */}
+      {/* Header bar */}
       <div
         style={{
           display: "flex",
-          gap: 18,
-          fontSize: 12,
-          marginTop: 4,
-          paddingTop: 6,
-          borderTop: "1px solid #3c3c3c",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "10px 21px",
+          backgroundColor: "#141414",
+          borderBottom: "1px solid #484848",
         }}
       >
-        <span>
-          <span style={{ color: "#eeeeee" }}>{"\u2191\u2193"}</span>{" "}
-          <span style={{ color: "#808080" }}>select</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#eeeeee" }}>
+          # Error handling strategy for cortado-backend
         </span>
-        <span>
-          <span style={{ color: "#eeeeee" }}>enter</span>{" "}
-          <span style={{ color: "#808080" }}>confirm</span>
-        </span>
-        <span>
-          <span style={{ color: "#eeeeee" }}>esc</span>{" "}
-          <span style={{ color: "#808080" }}>dismiss</span>
+        <span style={{ fontSize: 15, color: "#808080" }}>
+          42,817 &middot; 24% &middot; ($0.31)
         </span>
       </div>
-    </div>
 
-    {/* Footer */}
-    <div
-      style={{
-        backgroundColor: "#141414",
-        padding: "6px 21px",
-        borderTop: "1px solid #484848",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      <span style={{ fontSize: 12, color: "#808080" }}>esc interrupt</span>
-      <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
-        <span>
-          <span style={{ color: "#eeeeee" }}>ctrl+t</span>{" "}
-          <span style={{ color: "#808080" }}>variants</span>
-        </span>
-        <span>
-          <span style={{ color: "#eeeeee" }}>tab</span>{" "}
-          <span style={{ color: "#808080" }}>agents</span>
-        </span>
-        <span>
-          <span style={{ color: "#eeeeee" }}>ctrl+p</span>{" "}
-          <span style={{ color: "#808080" }}>commands</span>
-        </span>
+      {/* Message area */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          padding: "21px 26px",
+          gap: 16,
+          overflow: "hidden",
+        }}
+      >
+        {/* User message */}
+        <div
+          style={{
+            backgroundColor: "#141414",
+            padding: "13px 18px",
+            borderLeft: "3px solid #fab283",
+          }}
+        >
+          <span style={{ fontSize: 16, color: "#eeeeee" }}>
+            Which approach should I use for error handling in the API handlers?
+          </span>
+        </div>
+
+        {/* Assistant message */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: 15, color: "#808080", lineHeight: 1.7 }}>
+            <div>
+              <span style={{ color: "#fab283" }}>*</span> Grep
+              &quot;error.*handling|anyhow|thiserror&quot;
+            </div>
+            <div>
+              <span style={{ color: "#fab283" }}>*</span> Read
+              src/api/handlers.rs{" "}
+              <span style={{ color: "#808080" }}>(247 lines)</span>
+            </div>
+          </div>
+
+          <div style={{ height: 10 }} />
+
+          <div style={{ fontSize: 16, color: "#eeeeee", lineHeight: 1.6 }}>
+            I found two potential approaches for error handling.
+          </div>
+        </div>
+      </div>
+
+      {/* Question prompt / generating output — replaces normal input */}
+      {!generating ? (
+        <div
+          style={{
+            backgroundColor: "#141414",
+            borderLeft: "3px solid #9d7cd8",
+            padding: "14px 21px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          {/* Question text */}
+          <div style={{ fontSize: 15, color: "#eeeeee", fontWeight: 500 }}>
+            Which approach do you prefer?
+          </div>
+
+          {/* Options */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Option 1 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 8,
+                backgroundColor:
+                  selectedOption === 1 && !confirmed
+                    ? "#1e1e1e"
+                    : "transparent",
+                padding: "6px 10px",
+                borderRadius: 4,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 14,
+                  color:
+                    selectedOption === 1 && !confirmed ? "#8a8abf" : "#808080",
+                }}
+              >
+                1.
+              </span>
+              <div>
+                <span
+                  style={{
+                    fontSize: 15,
+                    color:
+                      selectedOption === 1 && !confirmed
+                        ? "#5c9cf5"
+                        : "#eeeeee",
+                    fontWeight: selectedOption === 1 ? 500 : 400,
+                  }}
+                >
+                  Use anyhow::Result with context
+                </span>
+                <div style={{ fontSize: 13, color: "#808080", marginTop: 2 }}>
+                  Simple, ergonomic error propagation with .context()
+                </div>
+              </div>
+            </div>
+
+            {/* Option 2 */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 8,
+                backgroundColor:
+                  selectedOption === 2 && !confirmed
+                    ? "#1e1e1e"
+                    : "transparent",
+                padding: "6px 10px",
+                borderRadius: 4,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 14,
+                  color:
+                    selectedOption === 2 && !confirmed ? "#8a8abf" : "#808080",
+                }}
+              >
+                2.
+              </span>
+              <div>
+                <span
+                  style={{
+                    fontSize: 15,
+                    fontWeight: selectedOption === 2 ? 500 : 400,
+                  }}
+                >
+                  <span
+                    style={{
+                      color:
+                        selectedOption === 2 && !confirmed
+                          ? "#5c9cf5"
+                          : confirmed
+                            ? "#7fd88f"
+                            : "#eeeeee",
+                    }}
+                  >
+                    Define custom error types with thiserror
+                  </span>
+                  {confirmed && (
+                    <span style={{ color: "#7fd88f", marginLeft: 8 }}>
+                      {"\u2713"}
+                    </span>
+                  )}
+                </span>
+                <div style={{ fontSize: 13, color: "#808080", marginTop: 2 }}>
+                  Type-safe, pattern-matchable error variants
+                </div>
+              </div>
+            </div>
+
+            {/* Option 3 — custom answer */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 8,
+                padding: "6px 10px",
+              }}
+            >
+              <span style={{ fontSize: 14, color: "#808080" }}>3.</span>
+              <span style={{ fontSize: 15, color: "#eeeeee" }}>
+                Type your own answer
+              </span>
+            </div>
+          </div>
+
+          {/* Hint bar */}
+          <div
+            style={{
+              display: "flex",
+              gap: 18,
+              fontSize: 12,
+              marginTop: 4,
+              paddingTop: 6,
+              borderTop: "1px solid #3c3c3c",
+            }}
+          >
+            <span>
+              <span style={{ color: "#eeeeee" }}>{"\u2191\u2193"}</span>{" "}
+              <span style={{ color: "#808080" }}>select</span>
+            </span>
+            <span>
+              <span style={{ color: "#eeeeee" }}>enter</span>{" "}
+              <span style={{ color: "#808080" }}>confirm</span>
+            </span>
+            <span>
+              <span style={{ color: "#eeeeee" }}>esc</span>{" "}
+              <span style={{ color: "#808080" }}>dismiss</span>
+            </span>
+          </div>
+        </div>
+      ) : (
+        /* Generating output — after question is answered */
+        <div
+          style={{
+            backgroundColor: "#141414",
+            borderTop: "1px solid #484848",
+            padding: "13px 21px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          <div style={{ fontSize: 15, color: "#808080", lineHeight: 1.7 }}>
+            <div>
+              <span style={{ color: "#fab283" }}>*</span> Edit
+              src/api/handlers.rs
+            </div>
+            <div>
+              <span style={{ color: "#fab283" }}>*</span> Edit src/api/errors.rs
+            </div>
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 2,
+            }}
+          >
+            <span style={{ color: "#5c9cf5" }}>{"\u25C9"}</span>
+            <span style={{ color: "#eeeeee" }}>Build</span>
+            <span style={{ color: "#808080" }}>&middot; claude-opus-4-5</span>
+            <span style={{ color: "#808080", marginLeft: 8 }}>
+              generating...
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div
+        style={{
+          backgroundColor: "#141414",
+          padding: "6px 21px",
+          borderTop: "1px solid #484848",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <span style={{ fontSize: 12, color: "#808080" }}>esc interrupt</span>
+        <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+          <span>
+            <span style={{ color: "#eeeeee" }}>ctrl+t</span>{" "}
+            <span style={{ color: "#808080" }}>variants</span>
+          </span>
+          <span>
+            <span style={{ color: "#eeeeee" }}>tab</span>{" "}
+            <span style={{ color: "#808080" }}>agents</span>
+          </span>
+          <span>
+            <span style={{ color: "#eeeeee" }}>ctrl+p</span>{" "}
+            <span style={{ color: "#808080" }}>commands</span>
+          </span>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- Main scene ---
 
@@ -494,7 +592,7 @@ export const PanelDemo = () => {
   const termY = interpolate(termProgress, [0, 1], [31, 0]);
 
   // Subtitle
-  const subtitleOpacity = interpolate(frame, [140, 160], [0, 1], {
+  const subtitleOpacity = interpolate(frame, [175, 195], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -616,7 +714,12 @@ export const PanelDemo = () => {
       </div>
 
       {/* OpenCode terminal */}
-      <OpenCodeTerminal opacity={termOpacity} scale={termScale} y={termY} />
+      <OpenCodeTerminal
+        opacity={termOpacity}
+        scale={termScale}
+        y={termY}
+        frame={frame}
+      />
 
       {/* Subtitle — mid-screen, prominent */}
       <div

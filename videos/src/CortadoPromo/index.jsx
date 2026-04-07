@@ -55,6 +55,14 @@ export const CortadoPromo = () => {
         <Sequence from={95} durationInFrames={30}>
           <Audio src="https://remotion.media/mouse-click.wav" volume={3} />
         </Sequence>
+        {/* Down arrow keypress in OpenCode question */}
+        <Sequence from={145} durationInFrames={30}>
+          <Audio src={staticFile("switch_002.ogg")} volume={3} />
+        </Sequence>
+        {/* Enter keypress to confirm selection */}
+        <Sequence from={155} durationInFrames={30}>
+          <Audio src={staticFile("switch_002.ogg")} volume={3} />
+        </Sequence>
         <PanelDemo />
       </Sequence>
       <Sequence
