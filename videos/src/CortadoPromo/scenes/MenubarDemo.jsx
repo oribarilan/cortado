@@ -37,6 +37,7 @@ const ActivityRow = ({
   delay,
   totalFrame,
   pulse,
+  flash = 0,
 }) => {
   const opacity = interpolate(totalFrame, [delay, delay + 12], [0, 1], {
     extrapolateLeft: "clamp",
@@ -46,6 +47,8 @@ const ActivityRow = ({
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+  const flashBg =
+    flash > 0 ? `rgba(92, 184, 122, ${flash * 0.2})` : "transparent";
 
   return (
     <div
@@ -56,6 +59,7 @@ const ActivityRow = ({
         padding: "9px 21px",
         opacity,
         transform: `translateX(${x}px)`,
+        backgroundColor: flashBg,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
@@ -174,9 +178,10 @@ const DROPDOWN_TOP = 98;
 const DROPDOWN_WIDTH = 403;
 const DROPDOWN_HEIGHT = 442; // approx rendered height
 
-// The point we zoom into (center of dropdown)
-const FOCUS_X = DROPDOWN_LEFT + DROPDOWN_WIDTH / 2; // ~1340
-const FOCUS_Y = DROPDOWN_TOP + DROPDOWN_HEIGHT / 2; // ~319
+// The point we zoom into (the approved PR row)
+// PR row is first row: dropdown top + header height + half row height ≈ 98 + 35 + 18 = 151
+const PR_ROW_X = DROPDOWN_LEFT + DROPDOWN_WIDTH / 2; // center of dropdown
+const PR_ROW_Y = DROPDOWN_TOP + 53; // center of first PR row
 
 // Screen center
 const SCREEN_CX = 960;
@@ -219,37 +224,79 @@ export const MenubarDemo = () => {
   // Stagger frame for dropdown items
   const dropFrame = Math.max(0, frame - 40);
 
-  // --- Mouse cursor (frame 80-105) ---
+  // --- Mouse cursor — two phases ---
+  // Phase 1 (80-100): move to approved PR row in tray
+  // Phase 2 (140-165): move to merge button in GitHub mockup
   const cursorOpacity = interpolate(frame, [80, 88, 200, 215], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const cursorX = interpolate(frame, [80, 100], [960, FOCUS_X - 10], {
+  // Phase 1: toward PR row (in zoomable coords, so won't match after zoom)
+  const phase1X = interpolate(frame, [80, 100], [960, PR_ROW_X - 10], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
   });
-  const cursorY = interpolate(frame, [80, 100], [450, FOCUS_Y + 30], {
+  const phase1Y = interpolate(frame, [80, 100], [450, PR_ROW_Y + 10], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  // Phase 2: move to merge button (screen coords, ~center-left of GitHub mockup)
+  const cursorPhase = frame < 120 ? 1 : 2;
+  const phase2X = interpolate(frame, [140, 165], [700, 660], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  const phase2Y = interpolate(frame, [140, 165], [400, 620], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
   });
 
-  // --- Zoom (frame 98-118, fast ~0.7s with ease-out) ---
-  // Math: with transformOrigin at (0,0), scale(S) moves point (x,y) to (x*S, y*S).
-  // To place FOCUS at a target screen position, we add translate AFTER scale:
-  //   translate = (target - FOCUS * S)
-  // At S=1, target=FOCUS → translate=(0,0). At S=max, target=SCREEN_CENTER.
+  // Click flash on PR row (frame 100)
+  const rowClickFlash = interpolate(frame, [100, 102, 108], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Dropdown + menubar fade out after click (frame 108-120)
+  const trayFadeOut = interpolate(frame, [108, 120], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // --- Zoom into PR row (frame 98-118) ---
   const zoomProgress = interpolate(frame, [98, 118], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
   });
   const zoomScale = interpolate(zoomProgress, [0, 1], [1, 2.2]);
-  const targetX = interpolate(zoomProgress, [0, 1], [FOCUS_X, SCREEN_CX]);
-  const targetY = interpolate(zoomProgress, [0, 1], [FOCUS_Y, SCREEN_CY]);
-  const zoomTx = targetX - FOCUS_X * zoomScale;
-  const zoomTy = targetY - FOCUS_Y * zoomScale;
+  const targetX = interpolate(zoomProgress, [0, 1], [PR_ROW_X, SCREEN_CX]);
+  const targetY = interpolate(zoomProgress, [0, 1], [PR_ROW_Y, SCREEN_CY]);
+  const zoomTx = targetX - PR_ROW_X * zoomScale;
+  const zoomTy = targetY - PR_ROW_Y * zoomScale;
+
+  // --- GitHub merge mockup (frame 125+) ---
+  const ghProgress = spring({
+    frame: frame - 125,
+    fps,
+    config: { damping: 14, mass: 0.7 },
+  });
+  const ghOpacity = interpolate(ghProgress, [0, 0.3], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+  const ghScale = interpolate(ghProgress, [0, 1], [0.93, 1]);
+  const ghY = interpolate(ghProgress, [0, 1], [31, 0]);
+
+  // Merge button click (frame 170)
+  const mergeClick = interpolate(frame, [170, 172, 178], [0, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const merged = frame >= 175;
 
   return (
     <AbsoluteFill
@@ -258,13 +305,14 @@ export const MenubarDemo = () => {
         opacity: fadeIn * fadeOut,
       }}
     >
-      {/* Zoomable container — origin at (0,0), translate computed to keep focus point centered */}
+      {/* Zoomable container */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           transformOrigin: "0 0",
           transform: `translate(${zoomTx}px, ${zoomTy}px) scale(${zoomScale})`,
+          opacity: trayFadeOut,
         }}
       >
         {/* macOS Menubar */}
@@ -373,7 +421,7 @@ export const MenubarDemo = () => {
         >
           <FeedHeader
             title="GitHub PRs"
-            count="3"
+            count="2"
             delay={0}
             totalFrame={dropFrame}
           />
@@ -384,6 +432,7 @@ export const MenubarDemo = () => {
             statusColor={COLORS.statusGreen}
             delay={5}
             totalFrame={dropFrame}
+            flash={rowClickFlash}
           />
           <ActivityRow
             dot={COLORS.statusGray}
@@ -391,14 +440,6 @@ export const MenubarDemo = () => {
             status="draft"
             statusColor={COLORS.statusGray}
             delay={10}
-            totalFrame={dropFrame}
-          />
-          <ActivityRow
-            dot={COLORS.statusGray}
-            title="docs: update readme"
-            status="draft"
-            statusColor={COLORS.statusGray}
-            delay={15}
             totalFrame={dropFrame}
           />
 
@@ -411,25 +452,25 @@ export const MenubarDemo = () => {
           />
 
           <FeedHeader
-            title="CI Runs"
+            title="GitHub Actions"
             count="2"
-            delay={20}
+            delay={15}
             totalFrame={dropFrame}
           />
           <ActivityRow
             dot={COLORS.statusGray}
-            title="main -- deploy"
+            title="deploy (main)"
             status="passing"
             statusColor={COLORS.statusGray}
-            delay={25}
+            delay={20}
             totalFrame={dropFrame}
           />
           <ActivityRow
             dot={COLORS.statusBlue}
-            title="feat/auth -- test"
+            title="test (feat/auth)"
             status="running"
             statusColor={COLORS.statusBlue}
-            delay={30}
+            delay={25}
             totalFrame={dropFrame}
             pulse
           />
@@ -445,7 +486,7 @@ export const MenubarDemo = () => {
           <FeedHeader
             title="HTTP Health"
             count="2"
-            delay={35}
+            delay={30}
             totalFrame={dropFrame}
           />
           <ActivityRow
@@ -453,7 +494,7 @@ export const MenubarDemo = () => {
             title="api.example.com"
             status="healthy"
             statusColor={COLORS.statusGray}
-            delay={40}
+            delay={35}
             totalFrame={dropFrame}
           />
           <ActivityRow
@@ -461,16 +502,27 @@ export const MenubarDemo = () => {
             title="staging.example.com"
             status="degraded"
             statusColor={COLORS.statusRed}
-            delay={45}
+            delay={40}
             totalFrame={dropFrame}
           />
 
           <div style={{ height: 10 }} />
         </div>
 
-        {/* Mouse cursor (inside zoom container so it tracks with content) */}
-        <Cursor x={cursorX} y={cursorY} opacity={cursorOpacity} />
+        {/* Mouse cursor — phase 1: inside zoom container */}
+        <Cursor
+          x={phase1X}
+          y={phase1Y}
+          opacity={cursorPhase === 1 ? cursorOpacity : 0}
+        />
       </div>
+
+      {/* Mouse cursor — phase 2: outside zoom, in screen coords */}
+      <Cursor
+        x={phase2X}
+        y={phase2Y}
+        opacity={cursorPhase === 2 ? cursorOpacity : 0}
+      />
 
       {/* Scene subtitle — shown before zoom */}
       <div
@@ -500,6 +552,109 @@ export const MenubarDemo = () => {
           }}
         >
           Everything at a glance.
+        </div>
+      </div>
+
+      {/* GitHub merge mockup */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: `translate(-50%, -50%) scale(${ghScale}) translateY(${ghY}px)`,
+          opacity: ghOpacity,
+          width: 700,
+          backgroundColor: "#0d1117",
+          borderRadius: 16,
+          border: "1px solid #30363d",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+          overflow: "hidden",
+          fontFamily: FONT,
+        }}
+      >
+        {/* PR header */}
+        <div
+          style={{
+            padding: "24px 28px 16px",
+            borderBottom: "1px solid #30363d",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="#3fb950">
+              <path d="M1.5 3.25a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z" />
+            </svg>
+            <span style={{ fontSize: 22, fontWeight: 600, color: "#e6edf3" }}>
+              feat: add dark mode
+            </span>
+            <span style={{ fontSize: 16, color: "#7d8590" }}>#412</span>
+          </div>
+          <div style={{ fontSize: 14, color: "#7d8590", marginTop: 8 }}>
+            <span style={{ color: "#3fb950" }}>Open</span> &middot; 2 approvals
+            &middot; All checks passed
+          </div>
+        </div>
+
+        {/* Merge area */}
+        <div
+          style={{
+            padding: "20px 28px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          {/* Status checks */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
+              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+            </svg>
+            <span style={{ fontSize: 14, color: "#e6edf3" }}>
+              All checks have passed
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
+              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+            </svg>
+            <span style={{ fontSize: 14, color: "#e6edf3" }}>
+              2 approving reviews
+            </span>
+          </div>
+
+          {/* Merge button */}
+          <div style={{ marginTop: 8 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 24px",
+                backgroundColor: merged
+                  ? "#238636"
+                  : mergeClick > 0
+                    ? "#2ea043"
+                    : "#238636",
+                borderRadius: 8,
+                fontSize: 16,
+                fontWeight: 600,
+                color: "white",
+                transform: `scale(${mergeClick > 0 ? 0.95 : 1})`,
+                boxShadow:
+                  mergeClick > 0 ? "0 0 20px rgba(35, 134, 54, 0.5)" : "none",
+              }}
+            >
+              {merged ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+                    <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+                  </svg>
+                  Merged
+                </>
+              ) : (
+                "Merge pull request"
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </AbsoluteFill>
