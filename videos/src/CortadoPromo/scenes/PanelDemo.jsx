@@ -644,12 +644,6 @@ export const PanelDemo = () => {
     }),
   );
 
-  // Subtitle
-  const subtitleOpacity = interpolate(frame, [205, 215], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
   return (
     <AbsoluteFill
       style={{
@@ -880,34 +874,6 @@ export const PanelDemo = () => {
               cursorVisible={returnCursorVisible}
             />
           ))}
-        </div>
-      </div>
-
-      {/* Subtitle — mid-screen, prominent */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          textAlign: "center",
-          opacity: subtitleOpacity,
-          zIndex: 30,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 42,
-            color: "#4ecdc4",
-            fontWeight: 500,
-            letterSpacing: "-0.01em",
-            backgroundColor: "rgba(78, 205, 196, 0.1)",
-            padding: "16px 36px",
-            borderRadius: 14,
-            border: "1px solid rgba(78, 205, 196, 0.2)",
-          }}
-        >
-          Let agents reach out when it matters.
         </div>
       </div>
     </AbsoluteFill>
