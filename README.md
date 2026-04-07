@@ -5,7 +5,7 @@
 <h1 align="center">Cortado</h1>
 
 <p align="center">
-  <em>A feed for the busy builder</em>
+  <em>Attention, spent wisely.</em>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/Windows-coming_soon-gray?style=for-the-badge&logo=windows&logoColor=white" alt="Windows - coming soon" />
 </p>
 
-https://github.com/user-attachments/assets/e7130a2a-e770-4973-911a-5ca8934f6cd4
+https://github.com/user-attachments/assets/08a2f0e5-51af-4e53-b277-6cb2d020abc1
 
 Cortado is a lightweight macOS app that tracks your PRs, CI runs, and services in one place. Set up **feeds** for the things you care about and glance at their status without leaving your flow.
 

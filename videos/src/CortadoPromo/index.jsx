@@ -57,11 +57,11 @@ export const CortadoPromo = () => {
         </Sequence>
         {/* Down arrow keypress in OpenCode question */}
         <Sequence from={145} durationInFrames={30}>
-          <Audio src={staticFile("switch_002.ogg")} volume={3} />
+          <Audio src={staticFile("switch_002.ogg")} volume={1.5} />
         </Sequence>
         {/* Enter keypress to confirm selection */}
         <Sequence from={155} durationInFrames={30}>
-          <Audio src={staticFile("switch_002.ogg")} volume={3} />
+          <Audio src={staticFile("switch_002.ogg")} volume={1.5} />
         </Sequence>
         <PanelDemo />
       </Sequence>
