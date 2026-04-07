@@ -244,7 +244,7 @@ export const Closing = () => {
             marginBottom: 10,
           }}
         >
-          Track what matters. Ignore the rest.
+          Configure once. Stay informed.
         </div>
         <div
           style={{
@@ -265,10 +265,10 @@ export const Closing = () => {
         </div>
         <div
           style={{
-            fontSize: 18,
-            color: COLORS.textTertiary,
+            fontSize: 36,
+            color: COLORS.textSecondary,
             opacity: moreOpacity,
-            fontStyle: "italic",
+            fontWeight: 400,
           }}
         >
           ...and more

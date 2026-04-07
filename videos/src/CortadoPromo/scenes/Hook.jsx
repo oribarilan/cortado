@@ -97,7 +97,7 @@ const NotificationCard = ({
   });
   const dropY = interpolate(appearProgress, [0, 1], [52, 0]);
 
-  // Scatter: fly outward and shrink (frames 138-156)
+  // Scatter: blown outward from center (frames 138-156)
   const scatterProgress = interpolate(frame, [138, 156], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -150,32 +150,42 @@ export const Hook = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Logo reveal (frames 156-210)
+  // Logo reveal — emerges as it punches notifications outward (frame 138)
   const logoProgress = spring({
-    frame: frame - 158,
+    frame: frame - 138,
     fps,
-    config: { damping: 12, mass: 0.8 },
+    config: { damping: 10, mass: 0.5, stiffness: 200 },
   });
-  const logoScale = interpolate(logoProgress, [0, 1], [0.5, 1]);
-  const logoOpacity = interpolate(frame, [158, 172], [0, 1], {
+  const logoScale = interpolate(logoProgress, [0, 1], [0.3, 1]);
+  const logoOpacity = interpolate(frame, [138, 145], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const nameOpacity = interpolate(frame, [170, 184], [0, 1], {
+  // Convergence flash — shockwave as logo punches through
+  const flashOpacity = interpolate(frame, [138, 142, 155], [0, 0.7, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const nameY = interpolate(frame, [170, 184], [23, 0], {
+  const flashScale = interpolate(frame, [138, 158], [0.3, 3], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const taglineOpacity = interpolate(frame, [182, 196], [0, 1], {
+  const nameOpacity = interpolate(frame, [152, 166], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const taglineY = interpolate(frame, [182, 196], [16, 0], {
+  const nameY = interpolate(frame, [152, 166], [23, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const taglineOpacity = interpolate(frame, [164, 178], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const taglineY = interpolate(frame, [164, 178], [16, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -238,6 +248,20 @@ export const Hook = () => {
         </div>
       </div>
 
+      {/* Convergence flash */}
+      <div
+        style={{
+          position: "absolute",
+          width: 200,
+          height: 200,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${COLORS.accent} 0%, transparent 70%)`,
+          opacity: flashOpacity,
+          transform: `scale(${flashScale})`,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Logo reveal */}
       <div
         style={{
@@ -281,7 +305,7 @@ export const Hook = () => {
             transform: `translateY(${taglineY}px)`,
           }}
         >
-          A feed for the busy builder
+          Attention, spent wisely.
         </div>
       </div>
     </AbsoluteFill>
