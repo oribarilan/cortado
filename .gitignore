@@ -29,3 +29,7 @@ dist-ssr
 .env
 skills-lock.json
 showcases/
+art/panel-dark.png
+art/panel-light.png
+art/tray-dark.png
+art/tray-light.png
