@@ -24,6 +24,10 @@ https://github.com/user-attachments/assets/08a2f0e5-51af-4e53-b277-6cb2d020abc1
 
 Cortado is a lightweight macOS app that tracks your PRs, CI runs, and services in one place. Set up **feeds** for the things you care about and glance at their status without leaving your flow.
 
+<p align="center">
+  <img src="art/panel-dark.png" width="650" alt="Cortado panel" />
+</p>
+
 - **Menubar tray + floating panel**: quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
 - **Multiple feed types**: GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
 - **Lightweight**: minimal CPU and memory footprint
