@@ -40,7 +40,7 @@ export const DURATION_FRAMES = 945; // 31.5 seconds
 // Scene timings (in frames)
 export const SCENES = {
   hook: { from: 0, duration: 195 }, // 0-6.5s (logo lingers)
-  menubar: { from: 195, duration: 240 }, // 6.5-14.5s
-  panel: { from: 435, duration: 240 }, // 14.5-22.5s
+  panel: { from: 195, duration: 240 }, // 6.5-14.5s (notification + OpenCode)
+  menubar: { from: 435, duration: 240 }, // 14.5-22.5s (tray demo)
   closing: { from: 675, duration: 270 }, // 22.5-31.5s
 };

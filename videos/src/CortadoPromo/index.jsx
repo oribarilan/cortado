@@ -42,12 +42,6 @@ export const CortadoPromo = () => {
         <Hook />
       </Sequence>
       <Sequence
-        from={SCENES.menubar.from}
-        durationInFrames={SCENES.menubar.duration}
-      >
-        <MenubarDemo />
-      </Sequence>
-      <Sequence
         from={SCENES.panel.from}
         durationInFrames={SCENES.panel.duration}
       >
@@ -60,6 +54,12 @@ export const CortadoPromo = () => {
           <Audio src="https://remotion.media/mouse-click.wav" volume={3} />
         </Sequence>
         <PanelDemo />
+      </Sequence>
+      <Sequence
+        from={SCENES.menubar.from}
+        durationInFrames={SCENES.menubar.duration}
+      >
+        <MenubarDemo />
       </Sequence>
       <Sequence
         from={SCENES.closing.from}
