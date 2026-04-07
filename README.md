@@ -18,6 +18,8 @@
   </a>
 </p>
 
+https://github.com/user-attachments/assets/e7130a2a-e770-4973-911a-5ca8934f6cd4
+
 Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about (PRs, CI runs, health checks) and glance at their status without leaving your flow.
 
 - **Menubar tray + floating panel**: quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
@@ -40,14 +42,14 @@ Your feeds appear in the menubar tray and the main panel (toggle with **Cmd+Shif
 
 A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities**: for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.
 
-| Feed type | What it tracks |
-|-----------|---------------|
-| `github-pr` | Open pull requests with review status, checks, and mergeability |
-| `github-actions` | CI/CD workflow runs |
-| `ado-pr` | Azure DevOps pull requests |
-| `http-health` | Endpoint availability and response time |
-| `copilot-session` | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
-| `opencode-session` | Active OpenCode coding sessions |
+| Feed type          | What it tracks                                                        |
+| ------------------ | --------------------------------------------------------------------- |
+| `github-pr`        | Open pull requests with review status, checks, and mergeability       |
+| `github-actions`   | CI/CD workflow runs                                                   |
+| `ado-pr`           | Azure DevOps pull requests                                            |
+| `http-health`      | Endpoint availability and response time                               |
+| `copilot-session`  | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
+| `opencode-session` | Active OpenCode coding sessions                                       |
 
 ### Terminal focus
 
@@ -62,12 +64,12 @@ Each feed is a `[[feed]]` block.
 
 ### Shared keys
 
-| Key | Required | Default | Description |
-|-----|----------|---------|-------------|
-| `name` | Yes | | Display name (must be unique) |
-| `type` | Yes | | One of the feed types above |
-| `interval` | No | varies | Poll interval (e.g., `"30s"`, `"5m"`) |
-| `retain` | No | off | Keep disappeared activities for this duration |
+| Key        | Required | Default | Description                                   |
+| ---------- | -------- | ------- | --------------------------------------------- |
+| `name`     | Yes      |         | Display name (must be unique)                 |
+| `type`     | Yes      |         | One of the feed types above                   |
+| `interval` | No       | varies  | Poll interval (e.g., `"30s"`, `"5m"`)         |
+| `retain`   | No       | off     | Keep disappeared activities for this duration |
 
 ### `github-pr`
 
