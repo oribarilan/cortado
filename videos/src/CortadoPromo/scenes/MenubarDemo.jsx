@@ -244,12 +244,12 @@ export const MenubarDemo = () => {
   });
   // Phase 2: move to merge button — faster, curved arc
   const cursorPhase = frame < 120 ? 1 : 2;
-  const phase2X = interpolate(frame, [130, 148], [700, 400], {
+  const phase2X = interpolate(frame, [130, 148], [700, 430], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.quad),
   });
-  const phase2Y = interpolate(frame, [130, 148], [300, 455], {
+  const phase2Y = interpolate(frame, [130, 148], [300, 520], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
