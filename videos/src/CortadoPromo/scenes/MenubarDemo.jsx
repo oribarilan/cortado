@@ -244,12 +244,12 @@ export const MenubarDemo = () => {
   });
   // Phase 2: move to merge button — faster, curved arc
   const cursorPhase = frame < 120 ? 1 : 2;
-  const phase2X = interpolate(frame, [130, 148], [800, 660], {
+  const phase2X = interpolate(frame, [130, 148], [800, 680], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.quad),
   });
-  const phase2Y = interpolate(frame, [130, 148], [350, 620], {
+  const phase2Y = interpolate(frame, [130, 148], [350, 650], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
@@ -279,7 +279,7 @@ export const MenubarDemo = () => {
   const zoomTx = targetX - PR_ROW_X * zoomScale;
   const zoomTy = targetY - PR_ROW_Y * zoomScale;
 
-  // --- GitHub merge mockup (frame 125+) ---
+  // --- GitHub merge mockup (frame 125+) — starts zoomed in ---
   const ghProgress = spring({
     frame: frame - 125,
     fps,
@@ -288,23 +288,23 @@ export const MenubarDemo = () => {
   const ghOpacity = interpolate(ghProgress, [0, 0.3], [0, 1], {
     extrapolateRight: "clamp",
   });
-  const ghScale = interpolate(ghProgress, [0, 1], [0.93, 1]);
-  const ghY = interpolate(ghProgress, [0, 1], [31, 0]);
+  const ghScale = interpolate(ghProgress, [0, 1], [1.2, 1.3]);
+  const ghY = interpolate(ghProgress, [0, 1], [20, 0]);
 
-  // Merge button click (frame 170)
+  // Merge button click (frame 155)
   const mergeClick = interpolate(frame, [155, 157, 163], [0, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
   const merged = frame >= 160;
 
-  // Zoom into merge button area (frame 135-155, before click at 155)
+  // Subtle zoom toward merge button (frame 135-155, before click)
   const mergeZoom = interpolate(frame, [135, 155], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
   });
-  const mergeZoomScale = interpolate(mergeZoom, [0, 1], [1, 1.8]);
+  const mergeZoomScale = interpolate(mergeZoom, [0, 1], [1, 1.25]);
   // Merge button is at bottom-left of centered card (~x=640, y=640)
   const MERGE_BTN_X = 640;
   const MERGE_BTN_Y = 640;
@@ -547,37 +547,6 @@ export const MenubarDemo = () => {
           y={phase2Y}
           opacity={cursorPhase === 2 ? cursorOpacity : 0}
         />
-
-        {/* GitHub merge mockup */}
-        <div
-          style={{
-            position: "absolute",
-            top: 319,
-            right: 1920 - 1138.5 + 30,
-            transform: "translateY(-50%)",
-            textAlign: "center",
-            opacity: interpolate(frame, [0, 10, 90, 98], [0, 1, 1, 0], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }),
-            zIndex: 30,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 42,
-              color: "#4ecdc4",
-              fontWeight: 500,
-              letterSpacing: "-0.01em",
-              backgroundColor: "rgba(78, 205, 196, 0.1)",
-              padding: "16px 36px",
-              borderRadius: 14,
-              border: "1px solid rgba(78, 205, 196, 0.2)",
-            }}
-          >
-            Everything at a glance.
-          </div>
-        </div>
 
         {/* GitHub merge mockup */}
         <div
