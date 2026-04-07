@@ -567,6 +567,27 @@ export const PanelDemo = () => {
     extrapolateRight: "clamp",
   });
 
+  // --- Mouse cursor on notification (frames 82-100) ---
+  const notifCursorOpacity = interpolate(
+    frame,
+    [82, 88, 100, 108],
+    [0, 1, 1, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    },
+  );
+  const notifCursorX = interpolate(frame, [82, 93], [1400, 1670], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  const notifCursorY = interpolate(frame, [82, 93], [300, 54], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+
   // --- Zoom into notification (frames 60-80) ---
   // Notification center: right=40, width=420 → centerX ≈ 1920-40-210 = 1670
   // top=20, height≈68 → centerY ≈ 54
@@ -743,6 +764,30 @@ export const PanelDemo = () => {
           y={notifY}
           flash={notifFlash}
         />
+
+        {/* Mouse cursor clicking notification */}
+        <svg
+          width="26"
+          height="31"
+          viewBox="0 0 20 24"
+          style={{
+            position: "absolute",
+            left: notifCursorX,
+            top: notifCursorY,
+            opacity: notifCursorOpacity,
+            filter: "drop-shadow(0 2.6px 5.2px rgba(0,0,0,0.5))",
+            zIndex: 100,
+            pointerEvents: "none",
+          }}
+        >
+          <path
+            d="M2 1 L2 18 L6.5 13.5 L11 21 L13.5 19.5 L9 12 L15 12 Z"
+            fill="white"
+            stroke="black"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
 
       {/* OpenCode terminal */}
