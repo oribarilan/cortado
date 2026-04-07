@@ -16,15 +16,17 @@
   <a href="https://github.com/oribarilan/cortado/releases/latest">
     <img src="https://img.shields.io/badge/Download_for_macOS-blue?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" />
   </a>
+  &nbsp;&nbsp;
+  <img src="https://img.shields.io/badge/Windows-coming_soon-gray?style=for-the-badge&logo=windows&logoColor=white" alt="Windows - coming soon" />
 </p>
 
 https://github.com/user-attachments/assets/e7130a2a-e770-4973-911a-5ca8934f6cd4
 
-Cortado is a lightweight macOS app that keeps you in the know. Set up **feeds** for the things you care about (PRs, CI runs, health checks) and glance at their status without leaving your flow.
+Cortado is a lightweight macOS app that tracks your PRs, CI runs, and services in one place. Set up **feeds** for the things you care about and glance at their status without leaving your flow.
 
 - **Menubar tray + floating panel**: quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
 - **Multiple feed types**: GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
-- **Lightweight**: minimal CPU and memory footprint; stays out of your way
+- **Lightweight**: minimal CPU and memory footprint
 - **Auto-updates**: checks for new versions and lets you install in one click
 - **Text-based config**: everything is plain TOML under `~/.config/cortado/` (or `$XDG_CONFIG_HOME/cortado/`), editable through the built-in settings UI or by hand
 
