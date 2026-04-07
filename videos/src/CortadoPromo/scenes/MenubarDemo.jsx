@@ -267,8 +267,8 @@ export const MenubarDemo = () => {
     extrapolateRight: "clamp",
   });
 
-  // --- Zoom into PR row (frame 98-118) ---
-  const zoomProgress = interpolate(frame, [98, 118], [0, 1], {
+  // --- Zoom into PR row (frame 80-100, before click at 100) ---
+  const zoomProgress = interpolate(frame, [80, 100], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
@@ -297,6 +297,21 @@ export const MenubarDemo = () => {
     extrapolateRight: "clamp",
   });
   const merged = frame >= 160;
+
+  // Zoom into merge button area (frame 135-155, before click at 155)
+  const mergeZoom = interpolate(frame, [135, 155], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  const mergeZoomScale = interpolate(mergeZoom, [0, 1], [1, 1.8]);
+  // Merge button is at bottom-left of centered card (~x=640, y=640)
+  const MERGE_BTN_X = 640;
+  const MERGE_BTN_Y = 640;
+  const mzTargetX = interpolate(mergeZoom, [0, 1], [MERGE_BTN_X, SCREEN_CX]);
+  const mzTargetY = interpolate(mergeZoom, [0, 1], [MERGE_BTN_Y, SCREEN_CY]);
+  const mzTx = mzTargetX - MERGE_BTN_X * mergeZoomScale;
+  const mzTy = mzTargetY - MERGE_BTN_Y * mergeZoomScale;
 
   return (
     <AbsoluteFill
@@ -517,142 +532,157 @@ export const MenubarDemo = () => {
         />
       </div>
 
-      {/* Mouse cursor — phase 2: outside zoom, in screen coords */}
-      <Cursor
-        x={phase2X}
-        y={phase2Y}
-        opacity={cursorPhase === 2 ? cursorOpacity : 0}
-      />
-
-      {/* Scene subtitle — shown before zoom */}
+      {/* Merge zoom container */}
       <div
         style={{
           position: "absolute",
-          top: 319,
-          right: 1920 - 1138.5 + 30,
-          transform: "translateY(-50%)",
-          textAlign: "center",
-          opacity: interpolate(frame, [0, 10, 90, 98], [0, 1, 1, 0], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          }),
-          zIndex: 30,
+          inset: 0,
+          transformOrigin: "0 0",
+          transform: `translate(${mzTx}px, ${mzTy}px) scale(${mergeZoomScale})`,
         }}
       >
-        <div
-          style={{
-            fontSize: 42,
-            color: "#4ecdc4",
-            fontWeight: 500,
-            letterSpacing: "-0.01em",
-            backgroundColor: "rgba(78, 205, 196, 0.1)",
-            padding: "16px 36px",
-            borderRadius: 14,
-            border: "1px solid rgba(78, 205, 196, 0.2)",
-          }}
-        >
-          Everything at a glance.
-        </div>
-      </div>
+        {/* Mouse cursor — phase 2 */}
+        <Cursor
+          x={phase2X}
+          y={phase2Y}
+          opacity={cursorPhase === 2 ? cursorOpacity : 0}
+        />
 
-      {/* GitHub merge mockup */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: `translate(-50%, -50%) scale(${ghScale}) translateY(${ghY}px)`,
-          opacity: ghOpacity,
-          width: 700,
-          backgroundColor: "#0d1117",
-          borderRadius: 16,
-          border: "1px solid #30363d",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
-          overflow: "hidden",
-          fontFamily: FONT,
-        }}
-      >
-        {/* PR header */}
+        {/* GitHub merge mockup */}
         <div
           style={{
-            padding: "24px 28px 16px",
-            borderBottom: "1px solid #30363d",
+            position: "absolute",
+            top: 319,
+            right: 1920 - 1138.5 + 30,
+            transform: "translateY(-50%)",
+            textAlign: "center",
+            opacity: interpolate(frame, [0, 10, 90, 98], [0, 1, 1, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
+            zIndex: 30,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="#3fb950">
-              <path d="M1.5 3.25a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z" />
-            </svg>
-            <span style={{ fontSize: 22, fontWeight: 600, color: "#e6edf3" }}>
-              feat: add dark mode
-            </span>
-            <span style={{ fontSize: 16, color: "#7d8590" }}>#412</span>
-          </div>
-          <div style={{ fontSize: 14, color: "#7d8590", marginTop: 8 }}>
-            <span style={{ color: "#3fb950" }}>Open</span> &middot; 2 approvals
-            &middot; All checks passed
+          <div
+            style={{
+              fontSize: 42,
+              color: "#4ecdc4",
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              backgroundColor: "rgba(78, 205, 196, 0.1)",
+              padding: "16px 36px",
+              borderRadius: 14,
+              border: "1px solid rgba(78, 205, 196, 0.2)",
+            }}
+          >
+            Everything at a glance.
           </div>
         </div>
 
-        {/* Merge area */}
+        {/* GitHub merge mockup */}
         <div
           style={{
-            padding: "20px 28px 24px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: `translate(-50%, -50%) scale(${ghScale}) translateY(${ghY}px)`,
+            opacity: ghOpacity,
+            width: 700,
+            backgroundColor: "#0d1117",
+            borderRadius: 16,
+            border: "1px solid #30363d",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+            overflow: "hidden",
+            fontFamily: FONT,
           }}
         >
-          {/* Status checks */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
-              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
-            </svg>
-            <span style={{ fontSize: 14, color: "#e6edf3" }}>
-              All checks have passed
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
-              <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
-            </svg>
-            <span style={{ fontSize: 14, color: "#e6edf3" }}>
-              2 approving reviews
-            </span>
+          {/* PR header */}
+          <div
+            style={{
+              padding: "24px 28px 16px",
+              borderBottom: "1px solid #30363d",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="#3fb950">
+                <path d="M1.5 3.25a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z" />
+              </svg>
+              <span style={{ fontSize: 22, fontWeight: 600, color: "#e6edf3" }}>
+                feat: add dark mode
+              </span>
+              <span style={{ fontSize: 16, color: "#7d8590" }}>#412</span>
+            </div>
+            <div style={{ fontSize: 14, color: "#7d8590", marginTop: 8 }}>
+              <span style={{ color: "#3fb950" }}>Open</span> &middot; 2
+              approvals &middot; All checks passed
+            </div>
           </div>
 
-          {/* Merge button */}
-          <div style={{ marginTop: 8 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 24px",
-                backgroundColor: merged
-                  ? "#238636"
-                  : mergeClick > 0
-                    ? "#2ea043"
-                    : "#238636",
-                borderRadius: 8,
-                fontSize: 16,
-                fontWeight: 600,
-                color: "white",
-                transform: `scale(${mergeClick > 0 ? 0.95 : 1})`,
-                boxShadow:
-                  mergeClick > 0 ? "0 0 20px rgba(35, 134, 54, 0.5)" : "none",
-              }}
-            >
-              {merged ? (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
-                    <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
-                  </svg>
-                  Merged
-                </>
-              ) : (
-                "Merge pull request"
-              )}
+          {/* Merge area */}
+          <div
+            style={{
+              padding: "20px 28px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+            }}
+          >
+            {/* Status checks */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
+                <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+              </svg>
+              <span style={{ fontSize: 14, color: "#e6edf3" }}>
+                All checks have passed
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="#3fb950">
+                <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+              </svg>
+              <span style={{ fontSize: 14, color: "#e6edf3" }}>
+                2 approving reviews
+              </span>
+            </div>
+
+            {/* Merge button */}
+            <div style={{ marginTop: 8 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 24px",
+                  backgroundColor: merged
+                    ? "#238636"
+                    : mergeClick > 0
+                      ? "#2ea043"
+                      : "#238636",
+                  borderRadius: 8,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "white",
+                  transform: `scale(${mergeClick > 0 ? 0.95 : 1})`,
+                  boxShadow:
+                    mergeClick > 0 ? "0 0 20px rgba(35, 134, 54, 0.5)" : "none",
+                }}
+              >
+                {merged ? (
+                  <>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="white"
+                    >
+                      <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.751.751 0 01.018-1.042.751.751 0 011.042-.018L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
+                    </svg>
+                    Merged
+                  </>
+                ) : (
+                  "Merge pull request"
+                )}
+              </div>
             </div>
           </div>
         </div>
