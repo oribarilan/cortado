@@ -203,8 +203,8 @@ export const MenubarDemo = () => {
     extrapolateRight: "clamp",
   });
 
-  // Menubar slides in
-  const menubarY = interpolate(frame, [0, 22], [-47, 0], {
+  // Menubar fades in
+  const menubarOpacity = interpolate(frame, [0, 15], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -346,7 +346,7 @@ export const MenubarDemo = () => {
             paddingRight: 21,
             paddingLeft: 21,
             gap: 18,
-            transform: `translateY(${menubarY}px)`,
+            opacity: menubarOpacity,
             border: `1.3px solid ${COLORS.border}`,
           }}
         >
