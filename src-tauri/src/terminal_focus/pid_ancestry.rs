@@ -134,6 +134,7 @@ fn get_process_name(pid: u32) -> Option<String> {
 
 /// Known terminal app process names and their display names / bundle IDs.
 const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
+    ("cmux", "cmux", "com.cmuxterm.app"),
     ("ghostty", "Ghostty", "com.mitchellh.ghostty"),
     ("Ghostty", "Ghostty", "com.mitchellh.ghostty"),
     ("iTerm2", "iTerm2", "com.googlecode.iterm2"),
@@ -262,6 +263,15 @@ mod tests {
     }
 
     // --- Known terminal detection ---
+
+    #[test]
+    fn is_terminal_app_cmux() {
+        let result = is_terminal_app("cmux");
+        assert!(result.is_some());
+        let (name, bundle) = result.unwrap();
+        assert_eq!(name, "cmux");
+        assert_eq!(bundle, "com.cmuxterm.app");
+    }
 
     #[test]
     fn is_terminal_app_ghostty() {

@@ -6,6 +6,7 @@
 ///
 /// Adding a new terminal: create a new file, implement `try_focus`, add one
 /// line to the `STRATEGIES` array below.
+mod cmux;
 pub(crate) mod ghostty;
 mod iterm2;
 mod kitty;
@@ -20,6 +21,7 @@ type Strategy = fn(&FocusContext) -> FocusResult;
 /// Registered terminal strategies, tried in order.
 /// Each entry: (human label, function).
 const STRATEGIES: &[(&str, Strategy)] = &[
+    ("cmux", cmux::try_focus),
     ("ghostty", ghostty::try_focus),
     ("terminal_app", terminal_app::try_focus),
     ("iterm2", iterm2::try_focus),
@@ -123,6 +125,7 @@ mod tests {
     #[test]
     fn registry_has_all_expected_strategies() {
         let names: Vec<&str> = STRATEGIES.iter().map(|(n, _)| *n).collect();
+        assert!(names.contains(&"cmux"), "missing cmux");
         assert!(names.contains(&"ghostty"), "missing ghostty");
         assert!(names.contains(&"terminal_app"), "missing terminal_app");
         assert!(names.contains(&"iterm2"), "missing iterm2");

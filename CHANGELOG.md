@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Terminal focus: cmux support -- clicking an agent activity focuses the exact terminal by working directory
+
+### Changed
+- README updated with screenshot and demo video
+
 ## [0.10.0] - 2026-04-06
 
 ### Added

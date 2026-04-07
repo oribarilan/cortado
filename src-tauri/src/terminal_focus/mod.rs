@@ -228,6 +228,7 @@ pub struct TerminalDetection {
 
 /// Known macOS terminal emulators with their bundle identifiers.
 const KNOWN_TERMINALS: &[(&str, &str, &str)] = &[
+    ("cmux", "cmux", "com.cmuxterm.app"),
     ("ghostty", "Ghostty", "com.mitchellh.ghostty"),
     ("iterm2", "iTerm2", "com.googlecode.iterm2"),
     ("terminal_app", "Terminal.app", "com.apple.Terminal"),
@@ -271,7 +272,12 @@ fn is_app_installed(bundle_id: &str) -> bool {
 fn is_scriptable_terminal(bundle_id: Option<&str>) -> bool {
     matches!(
         bundle_id,
-        Some("com.apple.Terminal" | "com.googlecode.iterm2" | "com.mitchellh.ghostty")
+        Some(
+            "com.apple.Terminal"
+                | "com.googlecode.iterm2"
+                | "com.mitchellh.ghostty"
+                | "com.cmuxterm.app"
+        )
     )
 }
 
@@ -669,6 +675,7 @@ mod tests {
             "com.apple.Terminal",
             "com.googlecode.iterm2",
             "com.mitchellh.ghostty",
+            "com.cmuxterm.app",
         ];
         for bundle in &scriptable {
             assert!(
