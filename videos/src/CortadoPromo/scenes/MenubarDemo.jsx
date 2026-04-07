@@ -473,6 +473,35 @@ export const MenubarDemo = () => {
       </div>
 
       {/* Scene subtitle (outside zoom container so it stays readable) */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          textAlign: "center",
+          opacity: interpolate(frame, [125, 145], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          }),
+          zIndex: 30,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 42,
+            color: "#4ecdc4",
+            fontWeight: 500,
+            letterSpacing: "-0.01em",
+            backgroundColor: "rgba(78, 205, 196, 0.1)",
+            padding: "16px 36px",
+            borderRadius: 14,
+            border: "1px solid rgba(78, 205, 196, 0.2)",
+          }}
+        >
+          Everything at a glance. Nothing in the way.
+        </div>
+      </div>
     </AbsoluteFill>
   );
 };

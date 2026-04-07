@@ -245,6 +245,24 @@ export const Hook = () => {
         >
           A feed for the busy builder
         </div>
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 400,
+            color: COLORS.accent,
+            marginTop: 32,
+            opacity: taglineOpacity,
+            transform: `translateY(${taglineY}px)`,
+            textAlign: "center",
+            lineHeight: 1.5,
+            backgroundColor: "rgba(78, 205, 196, 0.1)",
+            padding: "12px 28px",
+            borderRadius: 12,
+            border: "1px solid rgba(78, 205, 196, 0.2)",
+          }}
+        >
+          Your attention is priceless. Stop wasting it between tabs.
+        </div>
       </div>
     </AbsoluteFill>
   );
