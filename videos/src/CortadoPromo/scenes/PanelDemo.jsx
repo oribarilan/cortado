@@ -577,15 +577,15 @@ export const PanelDemo = () => {
       extrapolateRight: "clamp",
     },
   );
-  const notifCursorX = interpolate(frame, [82, 93], [1400, 1670], {
+  const notifCursorX = interpolate(frame, [82, 92], [1580, 1670], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
+    easing: Easing.inOut(Easing.quad),
   });
-  const notifCursorY = interpolate(frame, [82, 93], [300, 54], {
+  const notifCursorY = interpolate(frame, [82, 92], [120, 54], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
+    easing: Easing.out(Easing.cubic),
   });
 
   // --- Zoom into notification (frames 60-80) ---
