@@ -15,9 +15,9 @@ import { COLORS, FONT, FONT_MONO } from "../constants";
 const SlackIcon = () => (
   <div
     style={{
-      width: 42,
-      height: 42,
-      borderRadius: 10,
+      width: 52,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: "#4A154B",
       display: "flex",
       alignItems: "center",
@@ -25,7 +25,7 @@ const SlackIcon = () => (
       flexShrink: 0,
     }}
   >
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <path
         d="M5.5 9.5a2 2 0 1 1 0-4h2v2a2 2 0 0 1-2 2zm4 0a2 2 0 0 1-2-2V3.5a2 2 0 1 1 4 0v4a2 2 0 0 1-2 2z"
         fill="#E01E5A"
@@ -49,9 +49,9 @@ const SlackIcon = () => (
 const GitHubIcon = () => (
   <div
     style={{
-      width: 42,
-      height: 42,
-      borderRadius: 10,
+      width: 52,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: "#24292e",
       display: "flex",
       alignItems: "center",
@@ -59,7 +59,7 @@ const GitHubIcon = () => (
       flexShrink: 0,
     }}
   >
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
       <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" />
     </svg>
   </div>
@@ -68,9 +68,9 @@ const GitHubIcon = () => (
 const WhatsAppIcon = () => (
   <div
     style={{
-      width: 42,
-      height: 42,
-      borderRadius: 10,
+      width: 52,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: "#25D366",
       display: "flex",
       alignItems: "center",
@@ -78,7 +78,7 @@ const WhatsAppIcon = () => (
       flexShrink: 0,
     }}
   >
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
     </svg>
   </div>
@@ -87,9 +87,9 @@ const WhatsAppIcon = () => (
 const MailIcon = () => (
   <div
     style={{
-      width: 42,
-      height: 42,
-      borderRadius: 10,
+      width: 52,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: "#1A8CFF",
       display: "flex",
       alignItems: "center",
@@ -98,8 +98,8 @@ const MailIcon = () => (
     }}
   >
     <svg
-      width="22"
-      height="22"
+      width="28"
+      height="28"
       viewBox="0 0 24 24"
       fill="none"
       stroke="white"
@@ -116,9 +116,9 @@ const MailIcon = () => (
 const LinearIcon = () => (
   <div
     style={{
-      width: 42,
-      height: 42,
-      borderRadius: 10,
+      width: 52,
+      height: 52,
+      borderRadius: 12,
       backgroundColor: "#5E6AD2",
       display: "flex",
       alignItems: "center",
@@ -126,7 +126,7 @@ const LinearIcon = () => (
       flexShrink: 0,
     }}
   >
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
       <path d="M2.886 4.18A11.982 11.982 0 0 1 11.99 0C18.624 0 24 5.376 24 12.009c0 3.64-1.62 6.903-4.18 9.105L2.887 4.18ZM1.817 5.626l16.556 16.556c-.524.33-1.075.62-1.65.866L.951 7.277c.247-.575.537-1.126.866-1.65ZM.322 9.163l14.515 14.515c-.71.172-1.443.282-2.195.322L0 11.358a12 12 0 0 1 .322-2.195Zm-.17 4.862 9.823 9.824a12.02 12.02 0 0 1-9.824-9.824Z" />
     </svg>
   </div>
@@ -248,14 +248,14 @@ const NotificationCard = ({
         position: "absolute",
         transform: `translate(${x + sx}px, ${y + dropY + sy}px) rotate(${rotate}deg) scale(${cardScale * scatterScale})`,
         opacity: cardOpacity * scatterOpacity,
-        width: 460,
+        width: 575,
         backgroundColor: "rgba(50, 50, 55, 0.95)",
-        borderRadius: 18,
-        padding: "16px 20px",
+        borderRadius: 22,
+        padding: "20px 25px",
         display: "flex",
         alignItems: "flex-start",
-        gap: 14,
-        boxShadow: "0 10px 50px rgba(0,0,0,0.5)",
+        gap: 18,
+        boxShadow: "0 12px 62px rgba(0,0,0,0.5)",
         border: "1px solid rgba(255,255,255,0.08)",
       }}
     >
@@ -267,7 +267,7 @@ const NotificationCard = ({
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 3,
+          gap: 4,
           flex: 1,
           overflow: "hidden",
         }}
@@ -282,7 +282,7 @@ const NotificationCard = ({
         >
           <span
             style={{
-              fontSize: 14,
+              fontSize: 18,
               fontWeight: 600,
               color: "#eeeeee",
               textTransform: "uppercase",
@@ -291,18 +291,17 @@ const NotificationCard = ({
           >
             {app}
           </span>
-          <span style={{ fontSize: 12, color: "#808080" }}>{time}</span>
+          <span style={{ fontSize: 15, color: "#808080" }}>{time}</span>
         </div>
         {/* Sender */}
-        <span style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0" }}>
+        <span style={{ fontSize: 20, fontWeight: 600, color: "#e0e0e0" }}>
           {sender}
         </span>
         {/* Message */}
         <span
           style={{
-            fontSize: 15,
+            fontSize: 19,
             color: "#b0b0b0",
-            lineHeight: 1.35,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
