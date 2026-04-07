@@ -368,11 +368,13 @@ export const Hook = () => {
   });
 
   // Phrase — alone on screen (frames 0-60), before notifications and music
-  const phraseOpacity = interpolate(frame, [0, 10, 48, 60], [0, 1, 1, 0], {
+  // Line 1: "Your attention is priceless."
+  const line1Opacity = interpolate(frame, [0, 10, 48, 60], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const phraseY = interpolate(frame, [0, 10], [16, 0], {
+  // Line 2: "Stop wasting it between tabs." — appears after a pause
+  const line2Opacity = interpolate(frame, [18, 28, 48, 60], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -391,31 +393,43 @@ export const Hook = () => {
         <NotificationCard key={i} {...notif} />
       ))}
 
-      {/* Phrase overlay */}
+      {/* Opening phrase */}
       <div
         style={{
           position: "absolute",
           top: "50%",
           left: "50%",
-          transform: `translate(-50%, -50%) translateY(${phraseY}px)`,
-          opacity: phraseOpacity,
+          transform: "translate(-50%, -50%)",
           zIndex: 10,
           textAlign: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 12,
         }}
       >
         <div
           style={{
             fontSize: 42,
             fontWeight: 500,
-            color: COLORS.accent,
+            color: COLORS.textSecondary,
             letterSpacing: "-0.01em",
-            backgroundColor: "rgba(78, 205, 196, 0.1)",
-            padding: "16px 36px",
-            borderRadius: 14,
-            border: "1px solid rgba(78, 205, 196, 0.2)",
+            opacity: line1Opacity,
           }}
         >
-          Your attention is priceless. Stop wasting it between tabs.
+          Your{" "}
+          <span style={{ color: COLORS.accent }}>attention is priceless.</span>
+        </div>
+        <div
+          style={{
+            fontSize: 42,
+            fontWeight: 500,
+            color: COLORS.textSecondary,
+            letterSpacing: "-0.01em",
+            opacity: line2Opacity,
+          }}
+        >
+          Stop wasting it between tabs.
         </div>
       </div>
 
