@@ -579,20 +579,43 @@ export const PanelDemo = () => {
   const zoomTx = zoomTargetX - NOTIF_CX * zoomScale;
   const zoomTy = zoomTargetY - NOTIF_CY * zoomScale;
 
-  // --- Terminal phase (frames 115-240) ---
+  // --- Terminal phase (frames 118-195) ---
   const termProgress = spring({
     frame: frame - 118,
     fps,
     config: { damping: 14, mass: 0.7 },
   });
-  const termOpacity = interpolate(termProgress, [0, 0.3], [0, 1], {
+  const termFadeOut = interpolate(frame, [190, 200], [1, 0], {
+    extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+  const termOpacity =
+    interpolate(termProgress, [0, 0.3], [0, 1], {
+      extrapolateRight: "clamp",
+    }) * termFadeOut;
   const termScale = interpolate(termProgress, [0, 1], [0.93, 1]);
   const termY = interpolate(termProgress, [0, 1], [31, 0]);
 
+  // --- Return to IDE phase (frames 200-240) ---
+  const returnEditorOpacity = interpolate(
+    frame,
+    [200, 210, 225, 240],
+    [0, 1, 1, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    },
+  );
+  const returnCursorVisible = Math.floor(frame * 0.08) % 2 === 0;
+  const returnCursorLine = Math.floor(
+    interpolate(frame, [200, 230], [14, 18], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }),
+  );
+
   // Subtitle
-  const subtitleOpacity = interpolate(frame, [175, 195], [0, 1], {
+  const subtitleOpacity = interpolate(frame, [205, 215], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -720,6 +743,89 @@ export const PanelDemo = () => {
         y={termY}
         frame={frame}
       />
+
+      {/* Return to IDE after answering */}
+      <div
+        style={{
+          width: 1365,
+          height: 806,
+          backgroundColor: "#0d0f16",
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 31px 104px rgba(0,0,0,0.55)",
+          overflow: "hidden",
+          opacity: returnEditorOpacity,
+          position: "absolute",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "10px 18px",
+            backgroundColor: "#181b26",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            gap: 10,
+          }}
+        >
+          <div style={{ display: "flex", gap: 7 }}>
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                backgroundColor: "#e05545",
+              }}
+            />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                backgroundColor: "#d4a838",
+              }}
+            />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                backgroundColor: "#5cb87a",
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: 13,
+              color: "#808080",
+              fontFamily: "'Space Mono', monospace",
+              marginLeft: 12,
+            }}
+          >
+            handlers.rs -- cortado-backend
+          </span>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            padding: "12px 0",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {CODE_LINES.map((line, i) => (
+            <CodeLine
+              key={i}
+              {...line}
+              lineNum={i + 1}
+              cursorLine={returnCursorLine}
+              cursorVisible={returnCursorVisible}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Subtitle — mid-screen, prominent */}
       <div

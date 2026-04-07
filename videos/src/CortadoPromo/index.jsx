@@ -69,6 +69,14 @@ export const CortadoPromo = () => {
         from={SCENES.menubar.from}
         durationInFrames={SCENES.menubar.duration}
       >
+        {/* Click sound on PR row */}
+        <Sequence from={100} durationInFrames={30}>
+          <Audio src="https://remotion.media/mouse-click.wav" volume={3} />
+        </Sequence>
+        {/* Click sound on merge button */}
+        <Sequence from={155} durationInFrames={30}>
+          <Audio src="https://remotion.media/mouse-click.wav" volume={3} />
+        </Sequence>
         <MenubarDemo />
       </Sequence>
       <Sequence

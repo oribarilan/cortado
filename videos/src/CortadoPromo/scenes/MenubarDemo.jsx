@@ -198,7 +198,7 @@ export const MenubarDemo = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const fadeOut = interpolate(frame, [225, 240], [1, 0], {
+  const fadeOut = interpolate(frame, [210, 225], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -242,17 +242,17 @@ export const MenubarDemo = () => {
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
   });
-  // Phase 2: move to merge button (screen coords, ~center-left of GitHub mockup)
+  // Phase 2: move to merge button — faster, curved arc
   const cursorPhase = frame < 120 ? 1 : 2;
-  const phase2X = interpolate(frame, [140, 165], [700, 660], {
+  const phase2X = interpolate(frame, [130, 148], [800, 660], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
+    easing: Easing.inOut(Easing.quad),
   });
-  const phase2Y = interpolate(frame, [140, 165], [400, 620], {
+  const phase2Y = interpolate(frame, [130, 148], [350, 620], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.out(Easing.quad),
+    easing: Easing.out(Easing.cubic),
   });
 
   // Click flash on PR row (frame 100)
@@ -292,11 +292,11 @@ export const MenubarDemo = () => {
   const ghY = interpolate(ghProgress, [0, 1], [31, 0]);
 
   // Merge button click (frame 170)
-  const mergeClick = interpolate(frame, [170, 172, 178], [0, 1, 0], {
+  const mergeClick = interpolate(frame, [155, 157, 163], [0, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const merged = frame >= 175;
+  const merged = frame >= 160;
 
   return (
     <AbsoluteFill
