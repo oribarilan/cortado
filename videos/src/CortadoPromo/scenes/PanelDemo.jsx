@@ -190,7 +190,13 @@ const NotificationBanner = ({ opacity, y, flash }) => (
 
 // --- OpenCode TUI terminal ---
 
-const OpenCodeTerminal = ({ opacity, scale, y, frame: sceneFrame }) => {
+const OpenCodeTerminal = ({
+  opacity,
+  scale,
+  y,
+  frame: sceneFrame,
+  swipeX = 0,
+}) => {
   // Question interaction timeline (relative to terminal appearing at frame 118)
   // Frame 145: down arrow → selection moves to option 2
   // Frame 155: enter → option 2 confirmed, question dismissed
@@ -210,7 +216,7 @@ const OpenCodeTerminal = ({ opacity, scale, y, frame: sceneFrame }) => {
         boxShadow: "0 31px 104px rgba(0,0,0,0.55)",
         overflow: "hidden",
         opacity,
-        transform: `scale(${scale}) translateY(${y}px)`,
+        transform: `scale(${scale}) translateY(${y}px) translateX(${swipeX}px)`,
         display: "flex",
         flexDirection: "column",
         position: "absolute",
@@ -579,27 +585,30 @@ export const PanelDemo = () => {
   const zoomTx = zoomTargetX - NOTIF_CX * zoomScale;
   const zoomTy = zoomTargetY - NOTIF_CY * zoomScale;
 
-  // --- Terminal phase (frames 118-195) ---
+  // --- Terminal phase (frames 118-205) ---
   const termProgress = spring({
     frame: frame - 118,
     fps,
     config: { damping: 14, mass: 0.7 },
   });
-  const termFadeOut = interpolate(frame, [190, 200], [1, 0], {
+  // Swipe transition: terminal slides left, IDE slides in from right (frames 190-205)
+  const swipeProgress = interpolate(frame, [190, 205], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.quad),
   });
-  const termOpacity =
-    interpolate(termProgress, [0, 0.3], [0, 1], {
-      extrapolateRight: "clamp",
-    }) * termFadeOut;
+  const termSwipeX = interpolate(swipeProgress, [0, 1], [0, -1920]);
+  const termOpacity = interpolate(termProgress, [0, 0.3], [0, 1], {
+    extrapolateRight: "clamp",
+  });
   const termScale = interpolate(termProgress, [0, 1], [0.93, 1]);
   const termY = interpolate(termProgress, [0, 1], [31, 0]);
 
-  // --- Return to IDE phase (frames 200-240) ---
+  // --- Return to IDE phase (frames 190-240) ---
+  const returnSwipeX = interpolate(swipeProgress, [0, 1], [1920, 0]);
   const returnEditorOpacity = interpolate(
     frame,
-    [200, 210, 225, 240],
+    [190, 191, 225, 240],
     [0, 1, 1, 0],
     {
       extrapolateLeft: "clamp",
@@ -742,9 +751,10 @@ export const PanelDemo = () => {
         scale={termScale}
         y={termY}
         frame={frame}
+        swipeX={termSwipeX}
       />
 
-      {/* Return to IDE after answering */}
+      {/* Return to IDE after answering — slides in from right */}
       <div
         style={{
           width: 1365,
@@ -756,6 +766,7 @@ export const PanelDemo = () => {
           overflow: "hidden",
           opacity: returnEditorOpacity,
           position: "absolute",
+          transform: `translateX(${returnSwipeX}px)`,
           display: "flex",
           flexDirection: "column",
         }}
