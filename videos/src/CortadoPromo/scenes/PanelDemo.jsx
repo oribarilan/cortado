@@ -190,7 +190,7 @@ const NotificationBanner = ({ opacity, y, flash }) => (
 
 // --- OpenCode TUI terminal ---
 
-const OpenCodeTerminal = ({ opacity, scale, y, cursorVisible }) => (
+const OpenCodeTerminal = ({ opacity, scale, y }) => (
   <div
     style={{
       width: 1365,
@@ -267,71 +267,117 @@ const OpenCodeTerminal = ({ opacity, scale, y, cursorVisible }) => (
         <div style={{ height: 10 }} />
 
         <div style={{ fontSize: 16, color: "#eeeeee", lineHeight: 1.6 }}>
-          I found two potential approaches:
-        </div>
-
-        <div style={{ height: 8 }} />
-
-        <div
-          style={{
-            fontSize: 15,
-            color: "#eeeeee",
-            paddingLeft: 21,
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-            lineHeight: 1.6,
-          }}
-        >
-          <div>
-            1. Use <span style={{ color: "#7fd88f" }}>anyhow::Result</span> with
-            context
-          </div>
-          <div>
-            2. Define custom error types with{" "}
-            <span style={{ color: "#7fd88f" }}>thiserror</span>
-          </div>
-        </div>
-
-        <div style={{ height: 10 }} />
-
-        <div style={{ fontSize: 14, color: "#808080" }}>
-          <span style={{ color: "#f5a742" }}>~</span> Asking question...
+          I found two potential approaches for error handling.
         </div>
       </div>
     </div>
 
-    {/* Input area */}
+    {/* Question prompt — replaces normal input when question tool is active */}
     <div
       style={{
-        borderTop: "1px solid #484848",
         backgroundColor: "#141414",
-        padding: "13px 21px",
+        borderLeft: "3px solid #9d7cd8",
+        padding: "14px 21px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
       }}
     >
-      <div>
-        <span
+      {/* Question text */}
+      <div style={{ fontSize: 15, color: "#eeeeee", fontWeight: 500 }}>
+        Which approach do you prefer?
+      </div>
+
+      {/* Options */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {/* Option 1 — active/highlighted */}
+        <div
           style={{
-            fontSize: 16,
-            color: "#fab283",
-            opacity: cursorVisible ? 1 : 0,
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            backgroundColor: "#1e1e1e",
+            padding: "6px 10px",
+            borderRadius: 4,
           }}
         >
-          {"\u2588"}
-        </span>
+          <span style={{ fontSize: 14, color: "#8a8abf" }}>1.</span>
+          <div>
+            <span style={{ fontSize: 15, color: "#5c9cf5", fontWeight: 500 }}>
+              Use anyhow::Result with context
+            </span>
+            <div
+              style={{
+                fontSize: 13,
+                color: "#808080",
+                marginTop: 2,
+                paddingLeft: 0,
+              }}
+            >
+              Simple, ergonomic error propagation with .context()
+            </div>
+          </div>
+        </div>
+
+        {/* Option 2 — inactive */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            padding: "6px 10px",
+          }}
+        >
+          <span style={{ fontSize: 14, color: "#808080" }}>2.</span>
+          <div>
+            <span style={{ fontSize: 15, color: "#eeeeee" }}>
+              Define custom error types with thiserror
+            </span>
+            <div style={{ fontSize: 13, color: "#808080", marginTop: 2 }}>
+              Type-safe, pattern-matchable error variants
+            </div>
+          </div>
+        </div>
+
+        {/* Option 3 — custom answer, inactive */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            padding: "6px 10px",
+          }}
+        >
+          <span style={{ fontSize: 14, color: "#808080" }}>3.</span>
+          <span style={{ fontSize: 15, color: "#eeeeee" }}>
+            Type your own answer
+          </span>
+        </div>
       </div>
+
+      {/* Hint bar */}
       <div
         style={{
-          fontSize: 13,
-          marginTop: 4,
           display: "flex",
-          alignItems: "center",
-          gap: 6,
+          gap: 18,
+          fontSize: 12,
+          marginTop: 4,
+          paddingTop: 6,
+          borderTop: "1px solid #3c3c3c",
         }}
       >
-        <span style={{ color: "#5c9cf5" }}>{"\u25C9"}</span>
-        <span style={{ color: "#eeeeee" }}>Build</span>
-        <span style={{ color: "#808080" }}>&middot; claude-opus-4-5</span>
+        <span>
+          <span style={{ color: "#eeeeee" }}>{"\u2191\u2193"}</span>{" "}
+          <span style={{ color: "#808080" }}>select</span>
+        </span>
+        <span>
+          <span style={{ color: "#eeeeee" }}>enter</span>{" "}
+          <span style={{ color: "#808080" }}>confirm</span>
+        </span>
+        <span>
+          <span style={{ color: "#eeeeee" }}>esc</span>{" "}
+          <span style={{ color: "#808080" }}>dismiss</span>
+        </span>
       </div>
     </div>
 
@@ -446,7 +492,6 @@ export const PanelDemo = () => {
   });
   const termScale = interpolate(termProgress, [0, 1], [0.93, 1]);
   const termY = interpolate(termProgress, [0, 1], [31, 0]);
-  const termCursorVisible = Math.floor(frame * 0.06) % 2 === 0;
 
   // Subtitle
   const subtitleOpacity = interpolate(frame, [140, 160], [0, 1], {
@@ -571,12 +616,7 @@ export const PanelDemo = () => {
       </div>
 
       {/* OpenCode terminal */}
-      <OpenCodeTerminal
-        opacity={termOpacity}
-        scale={termScale}
-        y={termY}
-        cursorVisible={termCursorVisible}
-      />
+      <OpenCodeTerminal opacity={termOpacity} scale={termScale} y={termY} />
 
       {/* Subtitle — mid-screen, prominent */}
       <div
