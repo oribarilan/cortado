@@ -172,7 +172,17 @@ const NotificationBanner = ({ opacity, y, flash }) => (
           fontWeight: 400,
         }}
       >
-        cortado-backend: question asked
+        OpenCode agent asked a question
+      </span>
+      <span
+        style={{
+          fontSize: 12,
+          color: "#808080",
+          fontFamily: FONT_MONO,
+          fontWeight: 400,
+        }}
+      >
+        cortado-backend &middot; feat/error-handling
       </span>
     </div>
   </div>
