@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Backend: per-feed notification mode override

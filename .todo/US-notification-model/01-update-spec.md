@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Update spec with new notification model

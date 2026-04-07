@@ -373,24 +373,45 @@ The tray icon reflects the global rollup status -- the highest-priority `StatusK
 
 ## Notifications
 
-Cortado sends macOS Notification Center alerts when activity statuses change. Notification behavior is configurable at two levels: global preferences in `settings.toml` and per-feed toggles in `feeds.toml`.
+Cortado sends macOS Notification Center alerts when activity statuses change. Notification behavior is configurable at two levels: global preferences in `settings.toml` and per-feed overrides in `feeds.toml`.
 
 ### Trigger model
 
-Notifications fire when an activity's **rollup kind** changes -- the highest-priority `StatusKind` across all its status fields shifts (e.g., Waiting → AttentionNegative). New and removed activities are also optionally notifiable.
+Notifications fire when an activity's **rollup kind** changes -- the highest-priority `StatusKind` across all its status fields shifts (e.g., Waiting → AttentionNegative). New and removed activities are also optionally notifiable (controlled by `notify_new_activities` and `notify_removed_activities`, not the notification mode).
 
 ### Configuration layers
 
 1. **Global settings** (`~/.config/cortado/settings.toml`) -- master toggle, notification mode, delivery preset, new/removed activity toggles.
-2. **Per-feed toggle** (`feeds.toml`) -- `notify = false` disables notifications for a specific feed. Default is `true` (opt-out model).
+2. **Per-feed override** (`feeds.toml`) -- `notify` accepts `bool` or a mode name string. See "Per-feed notification override" below.
 
 ### Notification modes
 
-| Mode | Behavior |
-|------|----------|
-| `all` (default) | Any rollup kind change fires a notification |
-| `escalation_only` | Only when the new kind is higher priority than the old kind |
-| `specific_kinds` | Only when the new kind is in the configured set |
+| Mode | Config value | Behavior | Default |
+|------|-------------|----------|---------|
+| Worth Knowing | `worth_knowing` | Notify when `new_kind` is Idle, AttentionPositive, or AttentionNegative | **Yes** |
+| Need Attention | `need_attention` | Notify when `new_kind` is AttentionPositive or AttentionNegative | |
+| All changes | `all` | Any rollup kind change fires a notification | |
+| Specific kinds | `specific_kinds` | Only when `new_kind` is in the configured set | |
+
+**Worth Knowing** is the default because it matches user intent across all feed types: notify on completion (Idle) and when attention is needed (AttentionPositive, AttentionNegative), but not on transient in-progress states (Running, Waiting). See the transition audit in `.todo/backlog/revisit-notification-model.md`.
+
+When mode is `specific_kinds`, the `kinds` array specifies which status kinds to notify on. The settings UI presents 4 chips: Attention, Waiting, Running, Idle. The Attention chip maps to both `AttentionPositive` and `AttentionNegative` internally (they are always toggled together).
+
+### Per-feed notification override
+
+The per-feed `notify` field accepts three value types:
+
+| Value | Runtime resolution | Meaning |
+|-------|-------------------|---------|
+| `false` | `FeedNotifyOverride::Off` | Suppress all notifications for this feed |
+| `true` or absent | `FeedNotifyOverride::Global` | Use the global notification mode |
+| `"worth_knowing"`, `"need_attention"`, `"all"`, `"specific_kinds"` | `FeedNotifyOverride::Mode(m)` | Override with a specific mode for this feed |
+
+When using `notify = "specific_kinds"` per-feed, the sibling field `notify_kinds` carries the kinds list (same format as global `kinds`).
+
+The dispatch pipeline resolves the effective mode per feed: Off skips notification processing entirely, Global uses the global mode from settings, Mode uses the feed-specific mode.
+
+Per-feed override changes require an app restart.
 
 ### Delivery presets
 
@@ -425,21 +446,42 @@ show_priority_section = true
 
 [notifications]
 enabled = true
-mode = "all"               # "all", "escalation_only", or "specific_kinds"
+mode = "worth_knowing"     # "worth_knowing", "need_attention", "all", or "specific_kinds"
 # kinds = ["attention-negative", "attention-positive"]  # only when mode = "specific_kinds"
 delivery = "grouped"       # "grouped" or "immediate"
 notify_new_activities = true
 notify_removed_activities = true
 ```
 
-### Per-feed notify toggle
+### Per-feed notify examples
 
 ```toml
 [[feed]]
-name = "Noisy feed"
+name = "Production health"
+type = "http-health"
+notify = "all"              # Override: every change matters for this feed
+
+[[feed]]
+name = "Agent sessions"
+type = "copilot"
+notify = true               # Uses global mode (worth_knowing by default)
+
+[[feed]]
+name = "Noisy monorepo PRs"
 type = "github-pr"
 repo = "org/mono"
-notify = false  # Suppress notifications for this feed
+notify = "need_attention"   # Only when it's my turn
+
+[[feed]]
+name = "Logs feed"
+type = "http-health"
+notify = false              # Suppress notifications entirely
+
+[[feed]]
+name = "Custom alerts"
+type = "github-actions"
+notify = "specific_kinds"
+notify_kinds = ["attention-negative", "attention-positive", "idle"]  # Only attention and idle transitions
 ```
 
 ## Non-goals (Phase 1)

@@ -340,6 +340,7 @@ mod tests {
     use tokio::sync::Mutex;
     use toml::{Table, Value};
 
+    use crate::app_settings::FeedNotifyOverride;
     use crate::feed::{
         config::{FeedConfig, FieldOverride},
         github_common::{GH_MISSING_MESSAGE, GH_UNAUTHENTICATED_MESSAGE},
@@ -947,7 +948,7 @@ mod tests {
             feed_type: "github-actions".to_string(),
             interval: Some(Duration::from_secs(60)),
             retain: None,
-            notify: None,
+            notify: FeedNotifyOverride::Global,
             type_specific,
             field_overrides: HashMap::new(),
         }

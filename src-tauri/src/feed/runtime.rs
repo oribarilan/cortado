@@ -6,7 +6,7 @@ use std::{
 
 use tokio::sync::{watch, RwLock};
 
-use crate::app_settings::AppSettingsState;
+use crate::app_settings::{AppSettingsState, FeedNotifyOverride};
 use crate::feed::connectivity::ConnectivityManager;
 use crate::feed::{Activity, Feed, FeedRegistry, FeedSnapshot, StatusKind};
 use crate::notification;
@@ -52,8 +52,8 @@ impl FeedSnapshotCache {
 pub struct NotificationContext {
     pub app_handle: tauri::AppHandle,
     pub settings_state: AppSettingsState,
-    /// Per-feed notify override: feed name → notify enabled.
-    pub feed_notify_map: Arc<std::collections::HashMap<String, bool>>,
+    /// Per-feed notification override: feed name → override setting.
+    pub feed_notify_map: Arc<std::collections::HashMap<String, FeedNotifyOverride>>,
 }
 
 /// Background poller that seeds and continuously refreshes snapshots.
@@ -236,18 +236,18 @@ async fn poll_feed_loop(
                 .find(|s| s.name == feed.name() && s.feed_type == feed.feed_type());
 
             if let Some(prev) = prev {
-                let feed_notify = ctx
+                let feed_override = ctx
                     .feed_notify_map
                     .get(feed.name())
-                    .copied()
-                    .unwrap_or(true);
+                    .cloned()
+                    .unwrap_or(FeedNotifyOverride::Global);
 
                 notification::dispatch::process_feed_update(
                     &ctx.app_handle,
                     &ctx.settings_state,
                     &prev,
                     &snapshot,
-                    feed_notify,
+                    &feed_override,
                 )
                 .await;
             }

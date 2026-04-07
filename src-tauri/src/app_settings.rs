@@ -94,11 +94,14 @@ impl Default for PanelSettings {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum NotificationMode {
-    /// Any rollup kind change fires a notification.
+    /// Notify on completion and attention: Idle, AttentionPositive, AttentionNegative.
+    /// Skips transient in-progress states (Running, Waiting).
     #[default]
+    WorthKnowing,
+    /// Only when it's my turn: AttentionPositive, AttentionNegative.
+    NeedAttention,
+    /// Any rollup kind change fires a notification.
     All,
-    /// Only when the new kind is higher priority than the old kind.
-    EscalationOnly,
     /// Only when the new kind is in the configured set.
     SpecificKinds {
         #[serde(default)]
@@ -115,6 +118,20 @@ pub enum DeliveryPreset {
     /// At most one notification per feed per poll cycle.
     #[default]
     Grouped,
+}
+
+/// Per-feed notification override resolved from config.
+///
+/// Determines whether a feed uses the global notification mode, overrides it
+/// with a feed-specific mode, or disables notifications entirely.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FeedNotifyOverride {
+    /// Notifications disabled for this feed (`notify = false`).
+    Off,
+    /// Use the global notification mode (`notify = true` or absent).
+    Global,
+    /// Override with a specific notification mode (`notify = "worth_knowing"` etc.).
+    Mode(NotificationMode),
 }
 
 /// Notification preferences within global settings.
@@ -355,7 +372,7 @@ mod tests {
 
         let settings = load_settings_from_path(&path).expect("should return defaults");
         assert!(settings.notifications.enabled);
-        assert_eq!(settings.notifications.mode, NotificationMode::All);
+        assert_eq!(settings.notifications.mode, NotificationMode::WorthKnowing);
         assert_eq!(settings.notifications.delivery, DeliveryPreset::Grouped);
         assert!(settings.notifications.notify_new_activities);
         assert!(!settings.notifications.notify_removed_activities);
@@ -368,7 +385,7 @@ mod tests {
         let settings = AppSettings {
             notifications: NotificationSettings {
                 enabled: false,
-                mode: NotificationMode::EscalationOnly,
+                mode: NotificationMode::NeedAttention,
                 delivery: DeliveryPreset::Immediate,
                 notify_new_activities: false,
                 notify_removed_activities: true,
@@ -380,7 +397,7 @@ mod tests {
         let loaded = load_settings_from_path(&path).expect("load should succeed");
 
         assert!(!loaded.notifications.enabled);
-        assert_eq!(loaded.notifications.mode, NotificationMode::EscalationOnly);
+        assert_eq!(loaded.notifications.mode, NotificationMode::NeedAttention);
         assert_eq!(loaded.notifications.delivery, DeliveryPreset::Immediate);
         assert!(!loaded.notifications.notify_new_activities);
         assert!(loaded.notifications.notify_removed_activities);
@@ -453,7 +470,7 @@ mod tests {
 
         let settings = load_settings_from_path(&path).expect("should use defaults");
         assert!(settings.notifications.enabled);
-        assert_eq!(settings.notifications.mode, NotificationMode::All);
+        assert_eq!(settings.notifications.mode, NotificationMode::WorthKnowing);
 
         let _ = fs::remove_file(&path);
     }

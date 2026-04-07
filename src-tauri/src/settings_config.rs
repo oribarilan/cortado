@@ -6,7 +6,20 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
+use crate::app_settings::{FeedNotifyOverride, NotificationMode};
 use crate::feed::{self, config, Activity};
+
+/// Untyped notify value for JSON round-tripping with the frontend.
+///
+/// - `Bool(false)` → notifications off
+/// - `Bool(true)` / absent → use global mode
+/// - `Mode("worth_knowing")` etc. → per-feed mode override
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum FeedNotifyDto {
+    Bool(bool),
+    Mode(String),
+}
 
 /// Frontend-friendly feed config entry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,7 +32,9 @@ pub struct FeedConfigDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retain: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub notify: Option<bool>,
+    pub notify: Option<FeedNotifyDto>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notify_kinds: Option<Vec<String>>,
     #[serde(default)]
     pub type_specific: HashMap<String, serde_json::Value>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
@@ -72,14 +87,51 @@ fn feed_config_to_dto(config: &config::FeedConfig) -> FeedConfigDto {
         })
         .collect();
 
+    let (notify, notify_kinds) = notify_override_to_dto(&config.notify);
+
     FeedConfigDto {
         name: config.name.clone(),
         feed_type: config.feed_type.clone(),
         interval: config.interval.map(duration_to_string),
         retain: config.retain.map(duration_to_string),
-        notify: config.notify,
+        notify,
+        notify_kinds,
         type_specific,
         fields,
+    }
+}
+
+/// Converts a `FeedNotifyOverride` to the DTO representation.
+fn notify_override_to_dto(
+    notify: &FeedNotifyOverride,
+) -> (Option<FeedNotifyDto>, Option<Vec<String>>) {
+    match notify {
+        FeedNotifyOverride::Off => (Some(FeedNotifyDto::Bool(false)), None),
+        FeedNotifyOverride::Global => (None, None),
+        FeedNotifyOverride::Mode(mode) => {
+            let mode_str = match mode {
+                NotificationMode::WorthKnowing => "worth_knowing".to_string(),
+                NotificationMode::NeedAttention => "need_attention".to_string(),
+                NotificationMode::All => "all".to_string(),
+                NotificationMode::SpecificKinds { .. } => "specific_kinds".to_string(),
+            };
+            let kinds = if let NotificationMode::SpecificKinds { kinds } = mode {
+                let kind_strings: Vec<String> = kinds
+                    .iter()
+                    .map(|k| {
+                        serde_json::to_value(k)
+                            .unwrap()
+                            .as_str()
+                            .unwrap()
+                            .to_string()
+                    })
+                    .collect();
+                Some(kind_strings)
+            } else {
+                None
+            };
+            (Some(FeedNotifyDto::Mode(mode_str)), kinds)
+        }
     }
 }
 
@@ -124,8 +176,15 @@ fn dto_to_toml_document(feeds: &[FeedConfigDto]) -> String {
             output.push_str(&format!("retain = {}\n", toml_quote(retain)));
         }
 
-        if let Some(notify) = feed.notify {
-            output.push_str(&format!("notify = {notify}\n"));
+        if let Some(ref notify) = feed.notify {
+            match notify {
+                FeedNotifyDto::Bool(b) => output.push_str(&format!("notify = {b}\n")),
+                FeedNotifyDto::Mode(m) => output.push_str(&format!("notify = {}\n", toml_quote(m))),
+            }
+        }
+        if let Some(ref kinds) = feed.notify_kinds {
+            let items: Vec<String> = kinds.iter().map(|k| toml_quote(k)).collect();
+            output.push_str(&format!("notify_kinds = [{}]\n", items.join(", ")));
         }
 
         // Field overrides
@@ -793,6 +852,7 @@ mod tests {
                 interval: Some("5m".into()),
                 retain: None,
                 notify: None,
+                notify_kinds: None,
                 type_specific: [("repo".into(), serde_json::json!("org/frontend"))]
                     .into_iter()
                     .collect(),
@@ -803,7 +863,8 @@ mod tests {
                 feed_type: "http-health".into(),
                 interval: Some("30s".into()),
                 retain: Some("1h".into()),
-                notify: Some(false),
+                notify: Some(FeedNotifyDto::Bool(false)),
+                notify_kinds: None,
                 type_specific: [(
                     "url".into(),
                     serde_json::json!("https://example.com/health"),
@@ -873,6 +934,7 @@ mod tests {
 
     #[test]
     fn feed_config_to_dto_preserves_all_fields() {
+        use crate::app_settings::FeedNotifyOverride;
         use crate::feed::config::{FeedConfig, FieldOverride};
 
         let mut type_specific = toml::Table::new();
@@ -886,7 +948,7 @@ mod tests {
             feed_type: "github-pr".to_string(),
             interval: Some(Duration::from_secs(300)),
             retain: Some(Duration::from_secs(7200)),
-            notify: Some(false),
+            notify: FeedNotifyOverride::Off,
             type_specific,
             field_overrides: [(
                 "labels".to_string(),
@@ -904,7 +966,7 @@ mod tests {
         assert_eq!(dto.feed_type, "github-pr");
         assert_eq!(dto.interval.as_deref(), Some("5m"));
         assert_eq!(dto.retain.as_deref(), Some("2h"));
-        assert_eq!(dto.notify, Some(false));
+        assert_eq!(dto.notify, Some(FeedNotifyDto::Bool(false)));
         assert_eq!(
             dto.type_specific.get("repo"),
             Some(&serde_json::json!("org/repo"))
@@ -924,6 +986,7 @@ mod tests {
             interval: None,
             retain: None,
             notify: None,
+            notify_kinds: None,
             type_specific: [("url".into(), serde_json::json!("https://example.com"))]
                 .into_iter()
                 .collect(),

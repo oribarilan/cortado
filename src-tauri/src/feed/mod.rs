@@ -455,6 +455,7 @@ impl Default for FeedRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app_settings::FeedNotifyOverride;
 
     fn activity_with_statuses(statuses: &[(&str, StatusKind)]) -> Activity {
         let fields = statuses
@@ -699,7 +700,7 @@ mod tests {
                 feed_type: "http-health".to_string(),
                 interval: None,
                 retain: None,
-                notify: None,
+                notify: FeedNotifyOverride::Global,
                 type_specific: {
                     let mut t = Table::new();
                     t.insert(
@@ -715,7 +716,7 @@ mod tests {
                 feed_type: "nonexistent-type".to_string(),
                 interval: None,
                 retain: None,
-                notify: None,
+                notify: FeedNotifyOverride::Global,
                 type_specific: Table::new(),
                 field_overrides: HashMap::new(),
             },
@@ -743,7 +744,7 @@ mod tests {
             feed_type: "nonexistent-type".to_string(),
             interval: None,
             retain: None,
-            notify: None,
+            notify: FeedNotifyOverride::Global,
             type_specific: Table::new(),
             field_overrides: HashMap::new(),
         }];
@@ -768,7 +769,7 @@ mod tests {
             feed_type: "foobar".to_string(),
             interval: None,
             retain: None,
-            notify: None,
+            notify: FeedNotifyOverride::Global,
             type_specific: Table::new(),
             field_overrides: HashMap::new(),
         };

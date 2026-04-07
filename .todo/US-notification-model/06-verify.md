@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Verify: full check passes

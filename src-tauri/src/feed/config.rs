@@ -9,6 +9,9 @@ use anyhow::{anyhow, bail, Context, Result};
 use jiff::SignedDuration;
 use toml::{Table, Value};
 
+use crate::app_settings::{FeedNotifyOverride, NotificationMode};
+use crate::feed::StatusKind;
+
 const CONFIG_FILE: &str = "feeds.toml";
 
 /// Optional display overrides for a specific field.
@@ -25,7 +28,7 @@ pub struct FeedConfig {
     pub feed_type: String,
     pub interval: Option<Duration>,
     pub retain: Option<Duration>,
-    pub notify: Option<bool>,
+    pub notify: FeedNotifyOverride,
     pub type_specific: Table,
     pub field_overrides: HashMap<String, FieldOverride>,
 }
@@ -94,13 +97,7 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
 
         let interval = optional_duration_string(feed_table, "interval", index)?;
         let retain = optional_duration_string(feed_table, "retain", index)?;
-        let notify = feed_table
-            .get("notify")
-            .map(|v| {
-                v.as_bool()
-                    .ok_or_else(|| anyhow!("feed[{index}].notify must be a boolean"))
-            })
-            .transpose()?;
+        let notify = parse_feed_notify(feed_table, index)?;
         let field_overrides = parse_field_overrides(feed_table, index)?;
 
         let mut type_specific = feed_table.clone();
@@ -109,6 +106,7 @@ fn parse_feeds_config_toml(raw: &str) -> Result<Vec<FeedConfig>> {
         type_specific.remove("interval");
         type_specific.remove("retain");
         type_specific.remove("notify");
+        type_specific.remove("notify_kinds");
         type_specific.remove("fields");
 
         configs.push(FeedConfig {
@@ -202,6 +200,78 @@ fn optional_duration_string(
     Ok(Some(parsed.unsigned_abs()))
 }
 
+/// Parses the per-feed `notify` field which accepts `bool | mode_name`.
+///
+/// - absent → `FeedNotifyOverride::Global`
+/// - `true` → `FeedNotifyOverride::Global`
+/// - `false` → `FeedNotifyOverride::Off`
+/// - `"worth_knowing"` etc. → `FeedNotifyOverride::Mode(..)`
+/// - `"specific_kinds"` → reads sibling `notify_kinds` array
+fn parse_feed_notify(feed_table: &Table, index: usize) -> Result<FeedNotifyOverride> {
+    let Some(value) = feed_table.get("notify") else {
+        return Ok(FeedNotifyOverride::Global);
+    };
+
+    if let Some(b) = value.as_bool() {
+        return Ok(if b {
+            FeedNotifyOverride::Global
+        } else {
+            FeedNotifyOverride::Off
+        });
+    }
+
+    let mode_str = value
+        .as_str()
+        .ok_or_else(|| anyhow!("feed[{index}].notify must be a boolean or mode name string"))?;
+
+    let mode = match mode_str {
+        "worth_knowing" => NotificationMode::WorthKnowing,
+        "need_attention" => NotificationMode::NeedAttention,
+        "all" => NotificationMode::All,
+        "specific_kinds" => {
+            let kinds = parse_notify_kinds(feed_table, index)?;
+            NotificationMode::SpecificKinds { kinds }
+        }
+        other => bail!("feed[{index}].notify has unknown mode `{other}`"),
+    };
+
+    Ok(FeedNotifyOverride::Mode(mode))
+}
+
+/// Parses the optional `notify_kinds` array for per-feed `specific_kinds` mode.
+fn parse_notify_kinds(feed_table: &Table, index: usize) -> Result<Vec<StatusKind>> {
+    let Some(value) = feed_table.get("notify_kinds") else {
+        return Ok(Vec::new());
+    };
+
+    let arr = value
+        .as_array()
+        .ok_or_else(|| anyhow!("feed[{index}].notify_kinds must be an array of strings"))?;
+
+    let mut kinds = Vec::with_capacity(arr.len());
+    for item in arr {
+        let s = item
+            .as_str()
+            .ok_or_else(|| anyhow!("feed[{index}].notify_kinds entries must be strings"))?;
+
+        let kind = match s {
+            "attention-negative" => StatusKind::AttentionNegative,
+            "attention-positive" => StatusKind::AttentionPositive,
+            "waiting" => StatusKind::Waiting,
+            "running" => StatusKind::Running,
+            "idle" => StatusKind::Idle,
+            other => bail!(
+                "feed[{index}].notify_kinds contains unknown kind `{other}`. \
+                 Valid values: attention-negative, attention-positive, waiting, running, idle"
+            ),
+        };
+
+        kinds.push(kind);
+    }
+
+    Ok(kinds)
+}
+
 #[cfg(test)]
 mod tests {
     use std::{
@@ -212,6 +282,8 @@ mod tests {
     };
 
     use super::{load_feeds_config_from_path, parse_feeds_config_toml};
+    use crate::app_settings::{FeedNotifyOverride, NotificationMode};
+    use crate::feed::StatusKind;
 
     #[test]
     fn parse_valid_config_with_overrides() {
@@ -416,16 +488,31 @@ repo = "personal/cortado"
     }
 
     #[test]
-    fn parse_errors_on_non_bool_notify() {
+    fn parse_errors_on_invalid_notify_value() {
         let raw = r#"
 [[feed]]
 name = "Bad notify"
 type = "http-health"
 url = "https://example.com"
-notify = "yes"
+notify = 42
 "#;
-        let err = parse_feeds_config_toml(raw).expect_err("non-bool notify should fail");
-        assert!(err.to_string().contains("notify must be a boolean"));
+        let err = parse_feeds_config_toml(raw).expect_err("non-bool/string notify should fail");
+        assert!(err
+            .to_string()
+            .contains("notify must be a boolean or mode name"));
+    }
+
+    #[test]
+    fn parse_errors_on_unknown_notify_mode() {
+        let raw = r#"
+[[feed]]
+name = "Bad mode"
+type = "http-health"
+url = "https://example.com"
+notify = "escalation_only"
+"#;
+        let err = parse_feeds_config_toml(raw).expect_err("unknown mode should fail");
+        assert!(err.to_string().contains("unknown mode `escalation_only`"));
     }
 
     #[test]
@@ -487,6 +574,68 @@ notify = false
         let configs = parse_feeds_config_toml(raw).expect("should parse");
         assert_eq!(configs.len(), 1);
         assert_eq!(configs[0].retain, Some(Duration::from_secs(3600)));
-        assert_eq!(configs[0].notify, Some(false));
+        assert_eq!(configs[0].notify, FeedNotifyOverride::Off);
+    }
+
+    #[test]
+    fn parse_notify_mode_string() {
+        let raw = r#"
+[[feed]]
+name = "Overridden"
+type = "http-health"
+url = "https://example.com"
+notify = "need_attention"
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        assert_eq!(
+            configs[0].notify,
+            FeedNotifyOverride::Mode(NotificationMode::NeedAttention)
+        );
+    }
+
+    #[test]
+    fn parse_notify_specific_kinds_with_notify_kinds() {
+        let raw = r#"
+[[feed]]
+name = "Custom"
+type = "http-health"
+url = "https://example.com"
+notify = "specific_kinds"
+notify_kinds = ["attention-negative", "idle"]
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        match &configs[0].notify {
+            FeedNotifyOverride::Mode(NotificationMode::SpecificKinds { kinds }) => {
+                assert_eq!(kinds.len(), 2);
+                assert!(kinds.contains(&StatusKind::AttentionNegative));
+                assert!(kinds.contains(&StatusKind::Idle));
+            }
+            other => panic!("expected Mode(SpecificKinds), got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_notify_absent_defaults_to_global() {
+        let raw = r#"
+[[feed]]
+name = "Default"
+type = "http-health"
+url = "https://example.com"
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        assert_eq!(configs[0].notify, FeedNotifyOverride::Global);
+    }
+
+    #[test]
+    fn parse_notify_true_is_global() {
+        let raw = r#"
+[[feed]]
+name = "Explicit"
+type = "http-health"
+url = "https://example.com"
+notify = true
+"#;
+        let configs = parse_feeds_config_toml(raw).expect("should parse");
+        assert_eq!(configs[0].notify, FeedNotifyOverride::Global);
     }
 }

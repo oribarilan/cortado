@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Frontend: per-feed notification override UI

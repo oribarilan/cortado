@@ -729,6 +729,7 @@ mod tests {
     use tokio::sync::Mutex;
     use toml::{Table, Value};
 
+    use crate::app_settings::FeedNotifyOverride;
     use crate::feed::{
         config::FeedConfig,
         process::{CommandError, CommandInvocation, CommandOutput, ProcessRunner},
@@ -1105,7 +1106,7 @@ mod tests {
             feed_type: "ado-pr".to_string(),
             interval: Some(Duration::from_secs(120)),
             retain: None,
-            notify: None,
+            notify: FeedNotifyOverride::Global,
             type_specific,
             field_overrides: HashMap::new(),
         }

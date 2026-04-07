@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Frontend: global notification mode selector

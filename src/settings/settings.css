@@ -1241,6 +1241,19 @@ body {
   font-weight: var(--font-medium);
 }
 
+/* Animated expand/collapse for notification sub-sections (kind chips, per-feed modes). */
+.notif-expand-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-normal) var(--ease-out);
+}
+.notif-expand-wrap.expanded {
+  grid-template-rows: 1fr;
+}
+.notif-expand-inner {
+  overflow: hidden;
+}
+
 /* ===== Modal ===== */
 .modal-backdrop {
   position: fixed;

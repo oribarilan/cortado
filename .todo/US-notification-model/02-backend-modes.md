@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # Backend: new notification modes

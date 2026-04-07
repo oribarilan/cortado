@@ -51,10 +51,11 @@ fn main() {
 
     let feed_configs = config::load_feeds_config().unwrap_or_default();
     let startup_feed_configs = Arc::new(feed_configs.clone());
-    let feed_notify_map: std::collections::HashMap<String, bool> = feed_configs
-        .iter()
-        .map(|c| (c.name.clone(), c.notify.unwrap_or(true)))
-        .collect();
+    let feed_notify_map: std::collections::HashMap<String, app_settings::FeedNotifyOverride> =
+        feed_configs
+            .iter()
+            .map(|c| (c.name.clone(), c.notify.clone()))
+            .collect();
 
     let mut feed_registry = load_feed_registry(RegistryBuildMode::Tolerant)
         .unwrap_or_else(|err| panic!("failed to initialize feeds: {err}"));

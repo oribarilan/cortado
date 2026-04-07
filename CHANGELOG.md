@@ -5,8 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-08
+
 ### Added
 - Terminal focus: cmux support -- clicking an agent activity focuses the exact terminal by working directory
+- Notification modes: "Worth Knowing" (default) notifies on completions and attention, skipping in-progress noise. "Need Attention" limits to things requiring your action. Per-feed overrides let individual feeds use a different mode than the global setting.
 
 ### Changed
 - README updated with screenshot and demo video

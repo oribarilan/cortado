@@ -168,8 +168,16 @@ mod tests {
     }
 
     #[test]
-    fn mode_escalation_only_fires_on_severity_increase() {
+    fn mode_worth_knowing_fires_on_completion_and_attention() {
         let prev = snapshot(
+            "Feed",
+            vec![activity(
+                "1",
+                "A",
+                vec![status_field("s", "running", StatusKind::Running)],
+            )],
+        );
+        let new_idle = snapshot(
             "Feed",
             vec![activity(
                 "1",
@@ -177,23 +185,47 @@ mod tests {
                 vec![status_field("s", "idle", StatusKind::Idle)],
             )],
         );
-        let escalation = snapshot(
-            "Feed",
-            vec![activity(
-                "1",
-                "A",
-                vec![status_field("s", "failing", StatusKind::AttentionNegative)],
-            )],
-        );
 
-        let events = detect_changes(&prev, &escalation);
-        let mode = NotificationMode::EscalationOnly;
+        let events = detect_changes(&prev, &new_idle);
+        let mode = NotificationMode::WorthKnowing;
         assert!(matches_mode(&mode, &events[0]));
     }
 
     #[test]
-    fn mode_escalation_only_does_not_fire_on_severity_decrease() {
+    fn mode_worth_knowing_skips_transient_states() {
         let prev = snapshot(
+            "Feed",
+            vec![activity(
+                "1",
+                "A",
+                vec![status_field("s", "idle", StatusKind::Idle)],
+            )],
+        );
+        let new_running = snapshot(
+            "Feed",
+            vec![activity(
+                "1",
+                "A",
+                vec![status_field("s", "running", StatusKind::Running)],
+            )],
+        );
+
+        let events = detect_changes(&prev, &new_running);
+        let mode = NotificationMode::WorthKnowing;
+        assert!(!matches_mode(&mode, &events[0]));
+    }
+
+    #[test]
+    fn mode_need_attention_fires_only_on_attention_kinds() {
+        let prev = snapshot(
+            "Feed",
+            vec![activity(
+                "1",
+                "A",
+                vec![status_field("s", "idle", StatusKind::Idle)],
+            )],
+        );
+        let new_neg = snapshot(
             "Feed",
             vec![activity(
                 "1",
@@ -201,7 +233,23 @@ mod tests {
                 vec![status_field("s", "failing", StatusKind::AttentionNegative)],
             )],
         );
-        let de_escalation = snapshot(
+
+        let events = detect_changes(&prev, &new_neg);
+        let mode = NotificationMode::NeedAttention;
+        assert!(matches_mode(&mode, &events[0]));
+    }
+
+    #[test]
+    fn mode_need_attention_skips_idle() {
+        let prev = snapshot(
+            "Feed",
+            vec![activity(
+                "1",
+                "A",
+                vec![status_field("s", "running", StatusKind::Running)],
+            )],
+        );
+        let new_idle = snapshot(
             "Feed",
             vec![activity(
                 "1",
@@ -210,8 +258,8 @@ mod tests {
             )],
         );
 
-        let events = detect_changes(&prev, &de_escalation);
-        let mode = NotificationMode::EscalationOnly;
+        let events = detect_changes(&prev, &new_idle);
+        let mode = NotificationMode::NeedAttention;
         assert!(!matches_mode(&mode, &events[0]));
     }
 
@@ -536,6 +584,8 @@ mod tests {
 
     #[test]
     fn notify_field_parses_from_toml() {
+        use crate::app_settings::{FeedNotifyOverride, NotificationMode};
+
         let raw = r#"
 [[feed]]
 name = "Silent feed"
@@ -553,14 +603,24 @@ notify = true
 name = "Default feed"
 type = "http-health"
 url = "https://example.com"
+
+[[feed]]
+name = "Override feed"
+type = "http-health"
+url = "https://example.com"
+notify = "need_attention"
 "#;
 
         let configs =
             crate::feed::config::parse_feeds_config_str(raw).expect("valid config should parse");
-        assert_eq!(configs.len(), 3);
-        assert_eq!(configs[0].notify, Some(false));
-        assert_eq!(configs[1].notify, Some(true));
-        assert_eq!(configs[2].notify, None); // absent = default (true)
+        assert_eq!(configs.len(), 4);
+        assert_eq!(configs[0].notify, FeedNotifyOverride::Off);
+        assert_eq!(configs[1].notify, FeedNotifyOverride::Global);
+        assert_eq!(configs[2].notify, FeedNotifyOverride::Global); // absent = Global
+        assert_eq!(
+            configs[3].notify,
+            FeedNotifyOverride::Mode(NotificationMode::NeedAttention)
+        );
     }
 
     // ========================================================================
@@ -572,8 +632,9 @@ url = "https://example.com"
         use crate::app_settings::AppSettings;
 
         for mode in [
+            NotificationMode::WorthKnowing,
+            NotificationMode::NeedAttention,
             NotificationMode::All,
-            NotificationMode::EscalationOnly,
             NotificationMode::SpecificKinds {
                 kinds: vec![StatusKind::AttentionNegative, StatusKind::Waiting],
             },

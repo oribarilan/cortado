@@ -347,6 +347,7 @@ mod tests {
 
     use toml::Table;
 
+    use crate::app_settings::FeedNotifyOverride;
     use crate::feed::{
         config::{FeedConfig, FieldOverride},
         Feed, FieldValue, StatusKind,
@@ -390,7 +391,7 @@ mod tests {
             feed_type: "http-health".to_string(),
             interval: None,
             retain: None,
-            notify: None,
+            notify: FeedNotifyOverride::Global,
             type_specific: Table::new(),
             field_overrides: HashMap::new(),
         }

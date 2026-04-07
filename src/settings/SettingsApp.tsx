@@ -13,6 +13,27 @@ import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type Ca
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
+/** Notification mode options shared between global settings and per-feed override. */
+const NOTIFICATION_MODES: readonly { key: string; label: string; hint: string }[] = [
+  { key: "worth_knowing", label: "Worth knowing", hint: "Completions and attention needed (skips in-progress)" },
+  { key: "need_attention", label: "Need attention", hint: "Only when something needs your action" },
+  { key: "all", label: "All changes", hint: "Any status change" },
+  { key: "specific_kinds", label: "Specific kinds", hint: "Only selected status kinds" },
+] as const;
+
+/** Kind chip definitions shared between global and per-feed specific-kinds selectors. */
+const KIND_CHIPS: readonly { chip: string; label: string }[] = [
+  { chip: "attention", label: "Attention" },
+  { chip: "waiting", label: "Waiting" },
+  { chip: "running", label: "In progress" },
+  { chip: "idle", label: "Idle" },
+] as const;
+
+/** Returns the display label for a notification mode key. */
+function modeLabelFor(modeKey: string): string {
+  return NOTIFICATION_MODES.find((m) => m.key === modeKey)?.label ?? modeKey;
+}
+
 type NotificationSettings = {
   enabled: boolean;
   mode: string;
@@ -51,7 +72,8 @@ type FeedConfigDto = {
   type: string;
   interval?: string;
   retain?: string;
-  notify?: boolean;
+  notify?: boolean | string;
+  notify_kinds?: string[];
   type_specific: Record<string, unknown>;
   fields: Record<string, FieldOverrideDto>;
 };
@@ -412,7 +434,7 @@ function SettingsApp() {
   // Notification settings state
   const [notifSettings, setNotifSettings] = useState<NotificationSettings>({
     enabled: true,
-    mode: "all",
+    mode: "worth_knowing",
     delivery: "grouped",
     notify_new_activities: true,
     notify_removed_activities: false,
@@ -1340,62 +1362,61 @@ function SettingsApp() {
                   </div>
                   <div className="section-hint">Which status changes trigger notifications</div>
 
-                  <div
-                    className={`option-row ${notifSettings.mode === "all" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "all", kinds: undefined }); }}
-                  >
-                    <span className="option-indicator" />
-                    <div className="option-body">
-                      <div className="option-label">All</div>
-                      <div className="option-hint">Any status change</div>
+                  {NOTIFICATION_MODES.map(({ key, label, hint }) => (
+                    <div
+                      key={key}
+                      className={`option-row ${notifSettings.mode === key ? "selected" : ""}`}
+                      onClick={() => {
+                        void saveNotifSettings({
+                          ...notifSettings,
+                          mode: key,
+                          kinds: key === "specific_kinds" ? (notifSettings.kinds ?? []) : undefined,
+                        });
+                      }}
+                    >
+                      <span className="option-indicator" />
+                      <div className="option-body">
+                        <div className="option-label">{label}</div>
+                        <div className="option-hint">{hint}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    className={`option-row ${notifSettings.mode === "escalation_only" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "escalation_only", kinds: undefined }); }}
-                  >
-                    <span className="option-indicator" />
-                    <div className="option-body">
-                      <div className="option-label">Escalation only</div>
-                      <div className="option-hint">Only when status worsens</div>
-                    </div>
-                  </div>
-                  <div
-                    className={`option-row ${notifSettings.mode === "specific_kinds" ? "selected" : ""}`}
-                    onClick={() => { void saveNotifSettings({ ...notifSettings, mode: "specific_kinds", kinds: notifSettings.kinds ?? [] }); }}
-                  >
-                    <span className="option-indicator" />
-                    <div className="option-body">
-                      <div className="option-label">Specific kinds</div>
-                      <div className="option-hint">Only selected status types</div>
-                    </div>
-                  </div>
+                  ))}
 
-                  {notifSettings.mode === "specific_kinds" && (
-                    <div className="kind-chips">
-                      {([
-                        ["attention-negative", "Needs attention"],
-                        ["attention-positive", "Ready to go"],
-                        ["waiting", "Waiting"],
-                        ["running", "In progress"],
-                        ["idle", "Idle"],
-                      ] as [StatusKindKey, string][]).map(([kind, label]) => (
-                        <button
-                          className={`kind-chip ${notifSettings.kinds?.includes(kind) ? "active" : ""}`}
-                          key={kind}
-                          onClick={() => {
-                            const current = notifSettings.kinds ?? [];
-                            const updated = current.includes(kind)
-                              ? current.filter((k) => k !== kind)
-                              : [...current, kind];
-                            void saveNotifSettings({ ...notifSettings, kinds: updated });
-                          }}
-                        >
-                          {label}
-                        </button>
-                      ))}
+                  <div className={`notif-expand-wrap ${notifSettings.mode === "specific_kinds" ? "expanded" : ""}`}>
+                    <div className="notif-expand-inner">
+                      <div className="kind-chips">
+                        {KIND_CHIPS.map(({ chip, label }) => {
+                          const isActive = chip === "attention"
+                            ? (notifSettings.kinds?.includes("attention-negative") || notifSettings.kinds?.includes("attention-positive")) ?? false
+                            : notifSettings.kinds?.includes(chip as StatusKindKey) ?? false;
+                          return (
+                            <button
+                              className={`kind-chip ${isActive ? "active" : ""}`}
+                              key={chip}
+                              onClick={() => {
+                                const current = notifSettings.kinds ?? [];
+                                if (chip === "attention") {
+                                  const has = current.includes("attention-negative") || current.includes("attention-positive");
+                                  const updated = has
+                                    ? current.filter((k) => k !== "attention-negative" && k !== "attention-positive")
+                                    : [...current, "attention-negative" as StatusKindKey, "attention-positive" as StatusKindKey];
+                                  void saveNotifSettings({ ...notifSettings, kinds: updated });
+                                } else {
+                                  const kind = chip as StatusKindKey;
+                                  const updated = current.includes(kind)
+                                    ? current.filter((k) => k !== kind)
+                                    : [...current, kind];
+                                  void saveNotifSettings({ ...notifSettings, kinds: updated });
+                                }
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  )}
+                  </div>
 
                   <div className="section-header">
                     Delivery
@@ -1947,12 +1968,102 @@ function SettingsApp() {
                 className={`toggle ${editingFeed.notify !== false ? "on" : ""}`}
                 onClick={() => {
                   setSaveSuccess(false);
-                  const current = editingFeed.notify !== false;
-                  setEditingFeed({ ...editingFeed, notify: current ? false : undefined });
+                  const isOn = editingFeed.notify !== false;
+                  setEditingFeed({ ...editingFeed, notify: isOn ? false : undefined, notify_kinds: isOn ? undefined : editingFeed.notify_kinds });
                 }}
                 aria-pressed={editingFeed.notify !== false}
                 aria-label="Enable notifications for this feed"
               />
+            </div>
+
+            <div className={`setting-row ${editingFeed.notify === false ? "section-disabled" : ""}`}>
+              <div className="setting-info">
+                <div className="setting-label">Use specific notification settings</div>
+                <div className="setting-hint">
+                  {typeof editingFeed.notify === "string"
+                    ? "Override the global notification mode for this feed"
+                    : `Uses global mode (${modeLabelFor(notifSettings.mode)})`}
+                </div>
+              </div>
+              <button
+                className={`toggle ${typeof editingFeed.notify === "string" ? "on" : ""}`}
+                disabled={editingFeed.notify === false}
+                onClick={() => {
+                  setSaveSuccess(false);
+                  if (typeof editingFeed.notify === "string") {
+                    setEditingFeed({ ...editingFeed, notify: undefined, notify_kinds: undefined });
+                  } else {
+                    setEditingFeed({ ...editingFeed, notify: "worth_knowing" });
+                  }
+                }}
+                aria-pressed={typeof editingFeed.notify === "string"}
+                aria-label="Use feed-specific notification settings"
+              />
+            </div>
+
+            <div className={`notif-expand-wrap ${typeof editingFeed.notify === "string" ? "expanded" : ""}`}>
+              <div className="notif-expand-inner">
+                <div className="per-feed-modes" style={{ paddingLeft: 16, paddingBottom: 8 }}>
+                  {NOTIFICATION_MODES.map(({ key, label, hint }) => (
+                    <div
+                      key={key}
+                      className={`option-row ${editingFeed.notify === key ? "selected" : ""}`}
+                      onClick={() => {
+                        setSaveSuccess(false);
+                        const update: Partial<FeedConfigDto> = { notify: key };
+                        if (key !== "specific_kinds") {
+                          update.notify_kinds = undefined;
+                        } else if (!editingFeed.notify_kinds) {
+                          update.notify_kinds = [];
+                        }
+                        setEditingFeed({ ...editingFeed, ...update });
+                      }}
+                    >
+                      <span className="option-indicator" />
+                      <div className="option-body">
+                        <div className="option-label">{label}</div>
+                        <div className="option-hint">{hint}</div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className={`notif-expand-wrap ${editingFeed.notify === "specific_kinds" ? "expanded" : ""}`}>
+                    <div className="notif-expand-inner">
+                      <div className="kind-chips">
+                        {KIND_CHIPS.map(({ chip, label }) => {
+                          const kinds = editingFeed.notify_kinds ?? [];
+                          const isActive = chip === "attention"
+                            ? kinds.includes("attention-negative") || kinds.includes("attention-positive")
+                            : kinds.includes(chip);
+                          return (
+                            <button
+                              className={`kind-chip ${isActive ? "active" : ""}`}
+                              key={chip}
+                              onClick={() => {
+                                setSaveSuccess(false);
+                                if (chip === "attention") {
+                                  const has = kinds.includes("attention-negative") || kinds.includes("attention-positive");
+                                  const updated = has
+                                    ? kinds.filter((k) => k !== "attention-negative" && k !== "attention-positive")
+                                    : [...kinds, "attention-negative", "attention-positive"];
+                                  setEditingFeed({ ...editingFeed, notify_kinds: updated });
+                                } else {
+                                  const updated = kinds.includes(chip)
+                                    ? kinds.filter((k) => k !== chip)
+                                    : [...kinds, chip];
+                                  setEditingFeed({ ...editingFeed, notify_kinds: updated });
+                                }
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {saveError && <div className="save-error">{saveError}</div>}
@@ -2210,7 +2321,7 @@ function SettingsApp() {
                   if (target === "notifications") {
                     void saveNotifSettings({
                       enabled: true,
-                      mode: "all",
+                      mode: "worth_knowing",
                       delivery: "grouped",
                       notify_new_activities: true,
                       notify_removed_activities: false,

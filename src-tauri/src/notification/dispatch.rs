@@ -1,7 +1,7 @@
 use tauri::AppHandle;
 
-use crate::app_settings::{AppSettingsState, DeliveryPreset, NotificationMode};
-use crate::feed::FeedSnapshot;
+use crate::app_settings::{AppSettingsState, DeliveryPreset, FeedNotifyOverride, NotificationMode};
+use crate::feed::{FeedSnapshot, StatusKind};
 
 use super::change_detection::{self, ChangeType, StatusChangeEvent};
 use super::content;
@@ -13,9 +13,9 @@ use super::content;
 ///
 /// The pipeline:
 /// 1. Detect changes between previous and new snapshot.
-/// 2. Filter by per-feed `notify` toggle.
+/// 2. Resolve per-feed notification override (Off / Global / Mode).
 /// 3. Filter by global `enabled` toggle (read live from shared state).
-/// 4. Filter by notification mode.
+/// 4. Filter by effective notification mode.
 /// 5. Batch by delivery preset.
 /// 6. Send via tauri-plugin-notification.
 pub async fn process_feed_update(
@@ -23,15 +23,15 @@ pub async fn process_feed_update(
     settings_state: &AppSettingsState,
     prev: &FeedSnapshot,
     new: &FeedSnapshot,
-    feed_notify_enabled: bool,
+    feed_override: &FeedNotifyOverride,
 ) {
     // Skip errored polls -- they don't represent real status changes.
     if new.error.is_some() {
         return;
     }
 
-    // Per-feed toggle: skip feeds with notify=false.
-    if !feed_notify_enabled {
+    // Per-feed override: Off means skip entirely.
+    if matches!(feed_override, FeedNotifyOverride::Off) {
         return;
     }
 
@@ -41,6 +41,13 @@ pub async fn process_feed_update(
     if !settings.notifications.enabled {
         return;
     }
+
+    // Resolve effective mode: per-feed override or global.
+    let effective_mode = match feed_override {
+        FeedNotifyOverride::Off => unreachable!(),
+        FeedNotifyOverride::Global => &settings.notifications.mode,
+        FeedNotifyOverride::Mode(m) => m,
+    };
 
     let all_changes = change_detection::detect_changes(prev, new);
     if all_changes.is_empty() {
@@ -53,7 +60,7 @@ pub async fn process_feed_update(
         .filter(|event| match &event.change_type {
             ChangeType::NewActivity => settings.notifications.notify_new_activities,
             ChangeType::RemovedActivity => settings.notifications.notify_removed_activities,
-            ChangeType::KindChanged => matches_mode(&settings.notifications.mode, event),
+            ChangeType::KindChanged => matches_mode(effective_mode, event),
         })
         .collect();
 
@@ -82,11 +89,19 @@ pub async fn process_feed_update(
 /// Checks whether a kind-change event passes the notification mode filter.
 pub(crate) fn matches_mode(mode: &NotificationMode, event: &StatusChangeEvent) -> bool {
     match mode {
+        NotificationMode::WorthKnowing => event.new_kind.is_some_and(|k| {
+            matches!(
+                k,
+                StatusKind::Idle | StatusKind::AttentionPositive | StatusKind::AttentionNegative
+            )
+        }),
+        NotificationMode::NeedAttention => event.new_kind.is_some_and(|k| {
+            matches!(
+                k,
+                StatusKind::AttentionPositive | StatusKind::AttentionNegative
+            )
+        }),
         NotificationMode::All => true,
-        NotificationMode::EscalationOnly => match (event.previous_kind, event.new_kind) {
-            (Some(prev), Some(new)) => new.priority() > prev.priority(),
-            _ => false,
-        },
         NotificationMode::SpecificKinds { kinds } => {
             event.new_kind.is_some_and(|k| kinds.contains(&k))
         }
@@ -133,21 +148,82 @@ mod tests {
     }
 
     #[test]
-    fn mode_escalation_only_passes_higher_priority() {
-        let escalation = kind_changed_event(StatusKind::Idle, StatusKind::AttentionNegative);
-        assert!(matches_mode(&NotificationMode::EscalationOnly, &escalation));
-
-        let de_escalation = kind_changed_event(StatusKind::AttentionNegative, StatusKind::Idle);
-        assert!(!matches_mode(
-            &NotificationMode::EscalationOnly,
-            &de_escalation
-        ));
+    fn mode_worth_knowing_passes_idle() {
+        let event = kind_changed_event(StatusKind::Running, StatusKind::Idle);
+        assert!(matches_mode(&NotificationMode::WorthKnowing, &event));
     }
 
     #[test]
-    fn mode_escalation_same_priority_does_not_pass() {
-        let same = kind_changed_event(StatusKind::Waiting, StatusKind::Waiting);
-        assert!(!matches_mode(&NotificationMode::EscalationOnly, &same));
+    fn mode_worth_knowing_passes_attention_positive() {
+        let event = kind_changed_event(StatusKind::Waiting, StatusKind::AttentionPositive);
+        assert!(matches_mode(&NotificationMode::WorthKnowing, &event));
+    }
+
+    #[test]
+    fn mode_worth_knowing_passes_attention_negative() {
+        let event = kind_changed_event(StatusKind::Idle, StatusKind::AttentionNegative);
+        assert!(matches_mode(&NotificationMode::WorthKnowing, &event));
+    }
+
+    #[test]
+    fn mode_worth_knowing_skips_running() {
+        let event = kind_changed_event(StatusKind::Idle, StatusKind::Running);
+        assert!(!matches_mode(&NotificationMode::WorthKnowing, &event));
+    }
+
+    #[test]
+    fn mode_worth_knowing_skips_waiting() {
+        let event = kind_changed_event(StatusKind::Idle, StatusKind::Waiting);
+        assert!(!matches_mode(&NotificationMode::WorthKnowing, &event));
+    }
+
+    #[test]
+    fn mode_worth_knowing_returns_false_when_new_kind_is_none() {
+        let event = StatusChangeEvent {
+            feed_name: "Feed".to_string(),
+            activity_id: "pr-1".to_string(),
+            activity_title: "PR #1".to_string(),
+            activity_url: None,
+            change_type: ChangeType::KindChanged,
+            previous_kind: Some(StatusKind::Idle),
+            new_kind: None,
+        };
+        assert!(!matches_mode(&NotificationMode::WorthKnowing, &event));
+    }
+
+    #[test]
+    fn mode_need_attention_passes_attention_kinds() {
+        let pos = kind_changed_event(StatusKind::Waiting, StatusKind::AttentionPositive);
+        assert!(matches_mode(&NotificationMode::NeedAttention, &pos));
+
+        let neg = kind_changed_event(StatusKind::Idle, StatusKind::AttentionNegative);
+        assert!(matches_mode(&NotificationMode::NeedAttention, &neg));
+    }
+
+    #[test]
+    fn mode_need_attention_skips_non_attention_kinds() {
+        let idle = kind_changed_event(StatusKind::Running, StatusKind::Idle);
+        assert!(!matches_mode(&NotificationMode::NeedAttention, &idle));
+
+        let running = kind_changed_event(StatusKind::Idle, StatusKind::Running);
+        assert!(!matches_mode(&NotificationMode::NeedAttention, &running));
+
+        let waiting = kind_changed_event(StatusKind::Idle, StatusKind::Waiting);
+        assert!(!matches_mode(&NotificationMode::NeedAttention, &waiting));
+    }
+
+    #[test]
+    fn mode_need_attention_returns_false_when_new_kind_is_none() {
+        let event = StatusChangeEvent {
+            feed_name: "Feed".to_string(),
+            activity_id: "pr-1".to_string(),
+            activity_title: "PR #1".to_string(),
+            activity_url: None,
+            change_type: ChangeType::KindChanged,
+            previous_kind: Some(StatusKind::Idle),
+            new_kind: None,
+        };
+        assert!(!matches_mode(&NotificationMode::NeedAttention, &event));
     }
 
     #[test]
