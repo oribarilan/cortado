@@ -157,8 +157,12 @@ export const Closing = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Scene fade-in
+  // Scene fade-in and fade-out
   const fadeIn = interpolate(frame, [0, 12], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const fadeOut = interpolate(frame, [300, 330], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -217,7 +221,7 @@ export const Closing = () => {
         fontFamily: FONT,
         justifyContent: "center",
         alignItems: "center",
-        opacity: fadeIn,
+        opacity: fadeIn * fadeOut,
       }}
     >
       {/* Feed types grid */}

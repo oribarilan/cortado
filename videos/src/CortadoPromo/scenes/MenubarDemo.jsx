@@ -167,15 +167,15 @@ const Cursor = ({ x, y, opacity }) => (
 
 // --- Layout constants ---
 // Viewport: 1920x1080. Menubar: 1200px wide, centered → left=360, right=1560.
-// Tray icon is at the far right of the menubar, approx x=1536.
-// Dropdown: 403px wide, centered under icon → left = 1536 - 201.5 = 1334.5.
-const DROPDOWN_LEFT = 1334.5;
+// Tray icon is the left-most item in the right-side group, approx x=1340.
+// Dropdown: 403px wide, centered under icon → left = 1340 - 201.5 = 1138.5.
+const DROPDOWN_LEFT = 1138.5;
 const DROPDOWN_TOP = 98;
 const DROPDOWN_WIDTH = 403;
 const DROPDOWN_HEIGHT = 442; // approx rendered height
 
 // The point we zoom into (center of dropdown)
-const FOCUS_X = DROPDOWN_LEFT + DROPDOWN_WIDTH / 2; // ~1536
+const FOCUS_X = DROPDOWN_LEFT + DROPDOWN_WIDTH / 2; // ~1340
 const FOCUS_Y = DROPDOWN_TOP + DROPDOWN_HEIGHT / 2; // ~319
 
 // Screen center
@@ -224,7 +224,7 @@ export const MenubarDemo = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const cursorX = interpolate(frame, [80, 100], [1100, FOCUS_X - 10], {
+  const cursorX = interpolate(frame, [80, 100], [960, FOCUS_X - 10], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.quad),
@@ -319,8 +319,23 @@ export const MenubarDemo = () => {
             </span>
           </div>
 
-          {/* Right side */}
+          {/* Right side — cortado first, then system icons */}
           <div style={{ display: "flex", alignItems: "center", gap: 15.6 }}>
+            {/* Cortado tray icon + red dot */}
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                marginRight: 5,
+              }}
+            >
+              <TrayIcon />
+              <div style={{ position: "absolute", top: -4, right: -6.5 }}>
+                <StatusDot color={COLORS.statusRed} size={8} />
+              </div>
+            </div>
+
             <span style={{ fontSize: 15.6, color: COLORS.textTertiary }}>
               Wi-Fi
             </span>
@@ -336,21 +351,6 @@ export const MenubarDemo = () => {
             >
               9:41 AM
             </span>
-
-            {/* Cortado tray icon + red dot */}
-            <div
-              style={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                marginLeft: 5,
-              }}
-            >
-              <TrayIcon />
-              <div style={{ position: "absolute", top: -4, right: -6.5 }}>
-                <StatusDot color={COLORS.statusRed} size={8} />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -472,7 +472,7 @@ export const MenubarDemo = () => {
         <Cursor x={cursorX} y={cursorY} opacity={cursorOpacity} />
       </div>
 
-      {/* Scene subtitle (outside zoom container so it stays readable) */}
+      {/* Scene subtitle — shown before zoom */}
       <div
         style={{
           position: "absolute",
@@ -480,7 +480,7 @@ export const MenubarDemo = () => {
           left: "50%",
           transform: "translate(-50%, -50%)",
           textAlign: "center",
-          opacity: interpolate(frame, [125, 145], [0, 1], {
+          opacity: interpolate(frame, [0, 10, 90, 98], [0, 1, 1, 0], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           }),
@@ -499,7 +499,7 @@ export const MenubarDemo = () => {
             border: "1px solid rgba(78, 205, 196, 0.2)",
           }}
         >
-          Everything at a glance. Nothing in the way.
+          Everything at a glance.
         </div>
       </div>
     </AbsoluteFill>
