@@ -249,7 +249,7 @@ export const MenubarDemo = () => {
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.quad),
   });
-  const phase2Y = interpolate(frame, [130, 148], [300, 520], {
+  const phase2Y = interpolate(frame, [130, 148], [300, 530], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.out(Easing.cubic),
