@@ -170,11 +170,11 @@ const Cursor = ({ x, y, opacity }) => (
 );
 
 // --- Layout constants ---
-// Viewport: 1920x1080. Menubar: 1200px wide, centered → left=360, right=1560.
-// Tray icon is the left-most item in the right-side group, approx x=1340.
-// Dropdown: 403px wide, centered under icon → left = 1340 - 201.5 = 1138.5.
-const DROPDOWN_LEFT = 1138.5;
-const DROPDOWN_TOP = 98;
+// Viewport: 1920x1080. Menubar: 1365px wide, left=278, right=1643.
+// Tray icon is the left-most item in the right-side group, approx x=1420.
+// Dropdown: 403px wide, centered under icon → left = 1420 - 201.5 = 1218.5.
+const DROPDOWN_LEFT = 1218.5;
+const DROPDOWN_TOP = 138;
 const DROPDOWN_WIDTH = 403;
 const DROPDOWN_HEIGHT = 442; // approx rendered height
 
@@ -330,13 +330,305 @@ export const MenubarDemo = () => {
           opacity: trayFadeOut,
         }}
       >
+        {/* Abstract browser window (background) */}
+        <div
+          style={{
+            position: "absolute",
+            top: 137,
+            left: 278,
+            width: 1365,
+            height: 806,
+            backgroundColor: "#1a1d27",
+            borderRadius: 14,
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 20px 80px rgba(0,0,0,0.4)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            opacity: menubarOpacity,
+          }}
+        >
+          {/* Browser chrome */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "10px 16px",
+              backgroundColor: "#14161f",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              gap: 10,
+            }}
+          >
+            {/* Traffic lights */}
+            <div style={{ display: "flex", gap: 7, marginRight: 8 }}>
+              <div
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  backgroundColor: "#e05545",
+                }}
+              />
+              <div
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  backgroundColor: "#d4a838",
+                }}
+              />
+              <div
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  backgroundColor: "#5cb87a",
+                }}
+              />
+            </div>
+            {/* Nav buttons */}
+            <div style={{ display: "flex", gap: 12, marginRight: 12 }}>
+              <span style={{ fontSize: 16, color: "#5a5d70" }}>{"\u2190"}</span>
+              <span style={{ fontSize: 16, color: "#5a5d70" }}>{"\u2192"}</span>
+            </div>
+            {/* URL bar */}
+            <div
+              style={{
+                flex: 1,
+                height: 28,
+                backgroundColor: "#0d0f16",
+                borderRadius: 6,
+                border: "1px solid rgba(255,255,255,0.06)",
+                display: "flex",
+                alignItems: "center",
+                paddingLeft: 12,
+              }}
+            >
+              <span style={{ fontSize: 12, color: "#5a5d70" }}>
+                github.com/acme/cortado-backend
+              </span>
+            </div>
+          </div>
+
+          {/* Abstract page content — blurred lines */}
+          <div
+            style={{
+              flex: 1,
+              padding: "28px 32px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+            }}
+          >
+            {/* Header area */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                }}
+              />
+              <div
+                style={{
+                  width: 200,
+                  height: 12,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                }}
+              />
+              <div
+                style={{
+                  width: 80,
+                  height: 12,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  marginLeft: "auto",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.04)",
+                marginTop: 4,
+              }}
+            />
+
+            {/* Content blocks */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                marginTop: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 340,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                }}
+              />
+              <div
+                style={{
+                  width: 480,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                }}
+              />
+              <div
+                style={{
+                  width: 260,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.04)",
+                marginTop: 8,
+              }}
+            />
+
+            {/* More content */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                marginTop: 4,
+              }}
+            >
+              <div
+                style={{
+                  width: 520,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                }}
+              />
+              <div
+                style={{
+                  width: 380,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                }}
+              />
+              <div
+                style={{
+                  width: 440,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                }}
+              />
+              <div
+                style={{
+                  width: 300,
+                  height: 10,
+                  borderRadius: 4,
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                }}
+              />
+            </div>
+
+            {/* Sidebar-like area */}
+            <div style={{ display: "flex", gap: 20, marginTop: 16 }}>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: "80%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "60%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "90%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.06)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "50%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  width: 200,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "70%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                  }}
+                />
+                <div
+                  style={{
+                    width: "85%",
+                    height: 10,
+                    borderRadius: 4,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* macOS Menubar */}
         <div
           style={{
             position: "absolute",
-            top: 60,
-            left: 360,
-            width: 1200,
+            top: 97,
+            left: 278,
+            width: 1365,
             height: 39,
             backgroundColor: COLORS.menubar,
             borderRadius: 10,
