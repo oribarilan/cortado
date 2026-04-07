@@ -476,9 +476,9 @@ export const MenubarDemo = () => {
       <div
         style={{
           position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          top: 319,
+          right: 1920 - 1138.5 + 30,
+          transform: "translateY(-50%)",
           textAlign: "center",
           opacity: interpolate(frame, [0, 10, 90, 98], [0, 1, 1, 0], {
             extrapolateLeft: "clamp",
