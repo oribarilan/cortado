@@ -17,55 +17,55 @@ const NOTIFICATIONS = [
     line1: "Alex opened PR #412",
     line2: "auth refactor",
     x: -312,
-    y: -195,
+    y: -315,
     rotate: -2.5,
     scatterX: -780,
     scatterY: -585,
-    delay: 8,
+    delay: 68,
   },
   {
     color: COLORS.statusRed,
     line1: "CI failed: deploy-prod",
     line2: "main branch",
     x: 208,
-    y: -117,
+    y: -237,
     rotate: 1.8,
     scatterX: 715,
     scatterY: -520,
-    delay: 17,
+    delay: 77,
   },
   {
     color: COLORS.statusYellow,
     line1: "2 new comments on your PR",
     line2: "fix: memory leak #380",
     x: -156,
-    y: 26,
+    y: -94,
     rotate: -1.2,
     scatterX: -650,
     scatterY: 390,
-    delay: 26,
+    delay: 86,
   },
   {
     color: COLORS.statusRed,
     line1: "OpenCode is asking a question",
     line2: "cortado-backend",
     x: 260,
-    y: 117,
+    y: -3,
     rotate: 2.5,
     scatterX: 780,
     scatterY: 520,
-    delay: 35,
+    delay: 95,
   },
   {
     color: COLORS.statusYellow,
     line1: "Review requested on PR #389",
     line2: "docs update",
     x: -234,
-    y: 221,
+    y: 101,
     rotate: -1.8,
     scatterX: -715,
     scatterY: 585,
-    delay: 44,
+    delay: 104,
   },
 ];
 
@@ -97,8 +97,8 @@ const NotificationCard = ({
   });
   const dropY = interpolate(appearProgress, [0, 1], [52, 0]);
 
-  // Scatter: fly outward and shrink (frames 78-96)
-  const scatterProgress = interpolate(frame, [78, 96], [0, 1], {
+  // Scatter: fly outward and shrink (frames 138-156)
+  const scatterProgress = interpolate(frame, [138, 156], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -150,38 +150,48 @@ export const Hook = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Logo reveal (frames 96-150)
+  // Logo reveal (frames 156-210)
   const logoProgress = spring({
-    frame: frame - 98,
+    frame: frame - 158,
     fps,
     config: { damping: 12, mass: 0.8 },
   });
   const logoScale = interpolate(logoProgress, [0, 1], [0.5, 1]);
-  const logoOpacity = interpolate(frame, [98, 112], [0, 1], {
+  const logoOpacity = interpolate(frame, [158, 172], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const nameOpacity = interpolate(frame, [110, 124], [0, 1], {
+  const nameOpacity = interpolate(frame, [170, 184], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const nameY = interpolate(frame, [110, 124], [23, 0], {
+  const nameY = interpolate(frame, [170, 184], [23, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const taglineOpacity = interpolate(frame, [122, 136], [0, 1], {
+  const taglineOpacity = interpolate(frame, [182, 196], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const taglineY = interpolate(frame, [122, 136], [16, 0], {
+  const taglineY = interpolate(frame, [182, 196], [16, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   // Scene fade-out (extended to let logo linger)
-  const sceneOpacity = interpolate(frame, [183, 195], [1, 0], {
+  const sceneOpacity = interpolate(frame, [243, 255], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Phrase — alone on screen (frames 0-45), before notifications and music
+  const phraseOpacity = interpolate(frame, [0, 10, 48, 60], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const phraseY = interpolate(frame, [0, 10], [16, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -199,6 +209,34 @@ export const Hook = () => {
       {NOTIFICATIONS.map((notif, i) => (
         <NotificationCard key={i} {...notif} />
       ))}
+
+      {/* Phrase overlay during notification chaos */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: `translate(-50%, -50%) translateY(${phraseY}px)`,
+          opacity: phraseOpacity,
+          zIndex: 10,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 42,
+            fontWeight: 500,
+            color: COLORS.accent,
+            letterSpacing: "-0.01em",
+            backgroundColor: "rgba(78, 205, 196, 0.1)",
+            padding: "16px 36px",
+            borderRadius: 14,
+            border: "1px solid rgba(78, 205, 196, 0.2)",
+          }}
+        >
+          Your attention is priceless. Stop wasting it between tabs.
+        </div>
+      </div>
 
       {/* Logo reveal */}
       <div
@@ -244,24 +282,6 @@ export const Hook = () => {
           }}
         >
           A feed for the busy builder
-        </div>
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: 400,
-            color: COLORS.accent,
-            marginTop: 32,
-            opacity: taglineOpacity,
-            transform: `translateY(${taglineY}px)`,
-            textAlign: "center",
-            lineHeight: 1.5,
-            backgroundColor: "rgba(78, 205, 196, 0.1)",
-            padding: "12px 28px",
-            borderRadius: 12,
-            border: "1px solid rgba(78, 205, 196, 0.2)",
-          }}
-        >
-          Your attention is priceless. Stop wasting it between tabs.
         </div>
       </div>
     </AbsoluteFill>

@@ -35,12 +35,12 @@ export const FONT = "'Space Grotesk', sans-serif";
 export const FONT_MONO = "'Space Mono', monospace";
 
 export const FPS = 30;
-export const DURATION_FRAMES = 945; // 31.5 seconds
+export const DURATION_FRAMES = 1005; // 33.5 seconds
 
 // Scene timings (in frames)
 export const SCENES = {
-  hook: { from: 0, duration: 195 }, // 0-6.5s (logo lingers)
-  panel: { from: 195, duration: 240 }, // 6.5-14.5s (notification + OpenCode)
-  menubar: { from: 435, duration: 240 }, // 14.5-22.5s (tray demo)
-  closing: { from: 675, duration: 270 }, // 22.5-31.5s
+  hook: { from: 0, duration: 255 }, // 0-8.5s (phrase + notifications + logo)
+  panel: { from: 255, duration: 240 }, // 8.5-16.5s (notification + OpenCode)
+  menubar: { from: 495, duration: 240 }, // 16.5-24.5s (tray demo)
+  closing: { from: 735, duration: 270 }, // 24.5-33.5s
 };

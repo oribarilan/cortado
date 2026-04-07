@@ -20,23 +20,25 @@ export const CortadoPromo = () => {
         backgroundImage: `radial-gradient(ellipse at 50% 50%, rgba(78, 205, 196, 0.03) 0%, transparent 70%)`,
       }}
     >
-      {/* Background music — fade in over 1s, fade out over 2s */}
-      <Audio
-        src={staticFile("music.mp3")}
-        volume={(f) => {
-          const fadeIn = interpolate(f, [0, FPS], [0, 0.25], {
-            extrapolateRight: "clamp",
-          });
-          const fadeOut = interpolate(
-            f,
-            [DURATION_FRAMES - 2 * FPS, DURATION_FRAMES],
-            [0.25, 0],
-            { extrapolateLeft: "clamp" },
-          );
-          return Math.min(fadeIn, fadeOut);
-        }}
-        loop
-      />
+      {/* Background music — starts after opening phrase, fade in over 1s, fade out over 2s */}
+      <Sequence from={60} durationInFrames={DURATION_FRAMES - 60}>
+        <Audio
+          src={staticFile("music.mp3")}
+          volume={(f) => {
+            const fadeIn = interpolate(f, [0, FPS], [0, 0.25], {
+              extrapolateRight: "clamp",
+            });
+            const fadeOut = interpolate(
+              f,
+              [DURATION_FRAMES - 60 - 2 * FPS, DURATION_FRAMES - 60],
+              [0.25, 0],
+              { extrapolateLeft: "clamp" },
+            );
+            return Math.min(fadeIn, fadeOut);
+          }}
+          loop
+        />
+      </Sequence>
 
       <Sequence from={SCENES.hook.from} durationInFrames={SCENES.hook.duration}>
         <Hook />
