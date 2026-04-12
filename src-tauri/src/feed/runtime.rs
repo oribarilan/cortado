@@ -153,6 +153,7 @@ impl BackgroundPoller {
                 paths,
                 self.cache.clone(),
                 self.update_tx.clone(),
+                self.notify_ctx.clone(),
             );
         }
     }

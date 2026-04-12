@@ -5,9 +5,12 @@ use std::time::Duration;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::watch;
 
+use crate::app_settings::FeedNotifyOverride;
+use crate::notification;
+
 use super::harness::feed::HarnessFeed;
-use super::runtime::{build_snapshot_for_feed, bump_update_counter};
-use super::FeedSnapshotCache;
+use super::runtime::{build_snapshot_for_feed, bump_update_counter, NotificationContext};
+use super::{Feed, FeedSnapshotCache};
 
 const DEBOUNCE_DELAY: Duration = Duration::from_millis(200);
 const FALLBACK_INTERVAL: Duration = Duration::from_secs(60);
@@ -22,9 +25,10 @@ pub fn spawn_harness_watcher(
     watch_paths: Vec<PathBuf>,
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
+    notify_ctx: Option<NotificationContext>,
 ) {
     tokio::spawn(async move {
-        harness_watch_loop(feed, watch_paths, cache, update_tx).await;
+        harness_watch_loop(feed, watch_paths, cache, update_tx, notify_ctx).await;
     });
 }
 
@@ -33,6 +37,7 @@ async fn harness_watch_loop(
     watch_paths: Vec<PathBuf>,
     cache: FeedSnapshotCache,
     update_tx: watch::Sender<u64>,
+    notify_ctx: Option<NotificationContext>,
 ) {
     let (tx, mut rx) = tokio::sync::mpsc::channel::<()>(32);
 
@@ -53,8 +58,34 @@ async fn harness_watch_loop(
             }
         }
 
-        // Re-poll the feed.
+        // Re-poll the feed and dispatch notifications before upserting.
         let snapshot = build_snapshot_for_feed(&cache, feed.as_ref()).await;
+
+        if let Some(ref ctx) = notify_ctx {
+            let prev = cache
+                .list()
+                .await
+                .into_iter()
+                .find(|s| s.name == feed.name() && s.feed_type == feed.feed_type());
+
+            if let Some(prev) = prev {
+                let feed_override = ctx
+                    .feed_notify_map
+                    .get(feed.name())
+                    .cloned()
+                    .unwrap_or(FeedNotifyOverride::Global);
+
+                notification::dispatch::process_feed_update(
+                    &ctx.app_handle,
+                    &ctx.settings_state,
+                    &prev,
+                    &snapshot,
+                    &feed_override,
+                )
+                .await;
+            }
+        }
+
         cache.upsert(snapshot).await;
         bump_update_counter(&update_tx);
     }
