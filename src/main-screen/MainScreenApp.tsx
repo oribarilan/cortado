@@ -12,6 +12,8 @@ import {
   supportsOpen,
   supportsFocus,
   supportsRestart,
+  supportsUpdate,
+  isPluginUpdate,
   formatFieldValue,
   activityKey,
   formatRelativeTime,
@@ -132,7 +134,19 @@ function EmptyState() {
   );
 }
 
-function DetailPane({ item }: { item: ListItem | null }) {
+function DetailPane({
+  item,
+  installing,
+  pluginInstalling,
+  onInstallUpdate,
+  onInstallPluginUpdate,
+}: {
+  item: ListItem | null;
+  installing: boolean;
+  pluginInstalling: boolean;
+  onInstallUpdate: () => void;
+  onInstallPluginUpdate: () => void;
+}) {
   if (!item) {
     return (
       <div className="ms-detail">
@@ -142,6 +156,7 @@ function DetailPane({ item }: { item: ListItem | null }) {
   }
 
   const { feed, activity } = item;
+  const isUpdate = supportsUpdate(feed);
   const focus = supportsFocus(activity);
   const openUrl = supportsOpen(activity);
   const canOpen = focus || openUrl;
@@ -163,7 +178,23 @@ function DetailPane({ item }: { item: ListItem | null }) {
     <div className="ms-detail">
       <div className="ms-detail-content" key={item.key}>
         <div className="ms-detail-title">{activity.title}</div>
-        {restart ? (
+        {isUpdate && !isPluginUpdate(activity) ? (
+          <button
+            className="ms-detail-open update-action"
+            onClick={onInstallUpdate}
+            disabled={installing}
+          >
+            {installing ? "Installing..." : "↗ Install update"}
+          </button>
+        ) : isUpdate && isPluginUpdate(activity) ? (
+          <button
+            className="ms-detail-open update-action"
+            onClick={onInstallPluginUpdate}
+            disabled={pluginInstalling}
+          >
+            {pluginInstalling ? "Updating..." : "↗ Update plugin"}
+          </button>
+        ) : restart ? (
           <button className="ms-detail-open" onClick={handleRestart}>
             ↗ Restart Cortado
           </button>
@@ -210,6 +241,39 @@ function MainScreenApp() {
   const [appVersion, setAppVersion] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Update install state
+  const [installing, setInstalling] = useState(false);
+  const [pluginInstalling, setPluginInstalling] = useState(false);
+
+  const installUpdate = useCallback(async () => {
+    setInstalling(true);
+    try {
+      await invoke("install_update");
+    } catch {
+      setInstalling(false);
+    }
+  }, []);
+
+  const installPluginUpdate = useCallback(async () => {
+    setPluginInstalling(true);
+    try {
+      const result = await invoke<{ success: boolean; error?: string }>("install_opencode_plugin");
+      if (result.success) {
+        setFeeds((prev) =>
+          prev.map((f) =>
+            f.feed_type === "cortado-update"
+              ? { ...f, activities: f.activities.filter((a) => !isPluginUpdate(a)) }
+              : f
+          )
+        );
+      }
+    } catch {
+      // ignore
+    } finally {
+      setPluginInstalling(false);
+    }
+  }, []);
 
   // Tick counter to keep relative timestamps fresh.
   const [, setTick] = useState(0);
@@ -319,6 +383,14 @@ function MainScreenApp() {
   // Keyboard navigation
   const openFocusedActivity = useCallback(() => {
     if (!focusedItem) return;
+    if (supportsUpdate(focusedItem.feed)) {
+      if (isPluginUpdate(focusedItem.activity)) {
+        void installPluginUpdate();
+      } else {
+        void installUpdate();
+      }
+      return;
+    }
     if (supportsRestart(focusedItem.activity)) {
       invoke("restart_app").catch(console.error);
       return;
@@ -330,7 +402,7 @@ function MainScreenApp() {
     }
     const url = supportsOpen(focusedItem.activity);
     if (url) invoke("open_activity", { url }).catch(console.error);
-  }, [focusedItem]);
+  }, [focusedItem, installUpdate, installPluginUpdate]);
 
   const refreshFeeds = useCallback(async () => {
     if (refreshing) return;
@@ -542,7 +614,13 @@ function MainScreenApp() {
         </div>
 
         {/* Detail pane */}
-        <DetailPane item={focusedItem} />
+        <DetailPane
+              item={focusedItem}
+              installing={installing}
+              pluginInstalling={pluginInstalling}
+              onInstallUpdate={() => void installUpdate()}
+              onInstallPluginUpdate={() => void installPluginUpdate()}
+            />
       </div>
       )}
 

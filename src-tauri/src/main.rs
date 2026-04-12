@@ -32,10 +32,23 @@ use crate::feed::{
 fn main() {
     // Packaged macOS apps launched from Finder inherit a minimal PATH.
     // Resolve the user's login shell PATH to find tools like az, gh, etc.
+    // We also source the shell's interactive RC file (~/.zshrc / ~/.bashrc)
+    // because many tools (e.g. opencode) add PATH entries there.
+    // NOTE: we do NOT use `-i` — packaged apps have no TTY and it fails.
     let path_before = std::env::var("PATH").unwrap_or_default();
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+
+    let rc_source = if shell.contains("zsh") {
+        r#"[ -f "$HOME/.zshrc" ] && . "$HOME/.zshrc" 2>/dev/null; "#
+    } else if shell.contains("bash") {
+        r#"[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc" 2>/dev/null; "#
+    } else {
+        ""
+    };
+    let cmd = format!(r#"{rc_source}printf '%s' "$PATH""#);
+
     if let Ok(output) = std::process::Command::new(&shell)
-        .args(["-l", "-c", "printf '%s' \"$PATH\""])
+        .args(["-l", "-c", &cmd])
         .output()
     {
         if output.status.success() {
