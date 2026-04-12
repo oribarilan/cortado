@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-13
+
 ### Fixed
 - Panel: install-update and update-plugin buttons now work in the panel (previously only worked in the tray)
 - Settings: tools installed via ~/.zshrc (e.g. OpenCode) are now detected correctly in packaged builds
