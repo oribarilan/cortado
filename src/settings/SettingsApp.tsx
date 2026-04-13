@@ -1880,7 +1880,7 @@ function SettingsApp() {
                 type="text"
                 value={editingFeed.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                placeholder="e.g. My PRs"
+                placeholder={editingCatalogType?.namePlaceholder ? `e.g. ${editingCatalogType.namePlaceholder}` : "e.g. My feed"}
               />
               {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
             </div>

@@ -87,6 +87,8 @@ export type CatalogFeedType = {
   /// Pattern for generating a default feed name from type-specific field values.
   /// Use `{fieldKey}` placeholders that reference the `key` of a field in `fields`.
   defaultNamePattern?: string;
+  /// Placeholder text for the feed name input (e.g., "my-org/repo Actions").
+  namePlaceholder?: string;
 };
 
 /// A provider that groups one or more feed types (e.g., "GitHub" has PR + Actions).
@@ -120,6 +122,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultInterval: "2m",
         popular: true,
         defaultNamePattern: "{repo} PRs",
+        namePlaceholder: "my-org/repo PRs",
         fields: [
           { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
           { key: "user", label: "Author filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", meValue: "@me" },
@@ -135,6 +138,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultInterval: "2m",
         popular: true,
         defaultNamePattern: "{repo} Actions",
+        namePlaceholder: "my-org/repo Actions",
         fields: [
           { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
           { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch (empty = all branches)", mono: true },
@@ -158,6 +162,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
         defaultInterval: "2m",
         defaultNamePattern: "{url} PRs",
+        namePlaceholder: "my-project/repo PRs",
         fields: [
           { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
           { key: "user", label: "Creator filter", placeholder: "user@org.com", hint: "Email address (display names may be ambiguous)", mono: true, kind: "user-filter", meValue: "me" },
@@ -196,6 +201,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         defaultInterval: "1m",
         popular: true,
         defaultNamePattern: "{url}",
+        namePlaceholder: "api.example.com",
         fields: [
           { key: "url", label: "URL", placeholder: "https://api.example.com/health", hint: "Endpoint to monitor", mono: true, required: true },
           { key: "method", label: "Method", placeholder: "GET", hint: "GET or HEAD (default: GET)", mono: true },
