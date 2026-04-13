@@ -5,11 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-14
+
 ### Changed
 - Settings: feed name placeholder now matches the feed type (e.g. "my-org/repo Actions" instead of "My PRs")
 
 ### Fixed
 - GitHub Actions: cancelled runs no longer show as red/attention -- they're passive since no action is needed
+- Panel: hotkey hint in the empty state now reflects the actual configured shortcut
 
 ## [0.12.0] - 2026-04-13
 
