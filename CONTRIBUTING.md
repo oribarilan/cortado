@@ -66,15 +66,18 @@ The version lives in two files and must be kept in sync:
 - `src-tauri/Cargo.toml` -- `version` under `[package]`
 - `src-tauri/tauri.conf.json` -- `version` at the top level
 
+Bumping the version in `Cargo.toml` also updates `src-tauri/Cargo.lock` (on the next build/check). Always include `Cargo.lock` in the release commit.
+
 ### Releasing
 
 To release a new version:
 
 1. Bump version in both `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`
-2. Move `## Unreleased` entries in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section
-3. Commit: `release: vX.Y.Z`
-4. Tag: `git tag vX.Y.Z`
-5. Push: `git push && git push origin vX.Y.Z`
+2. Run `just check` to update `Cargo.lock` and verify everything passes
+3. Move `## Unreleased` entries in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section
+4. Commit all changes including `Cargo.lock`: `release: vX.Y.Z`
+5. Tag: `git tag vX.Y.Z`
+6. Push: `git push && git push origin vX.Y.Z`
 
 The tag push triggers the CD workflow to build and publish the release.
 

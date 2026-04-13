@@ -293,7 +293,7 @@ fn map_run_status(status: &str, conclusion: Option<&str>) -> FieldValue {
         (_, "failure" | "timed_out" | "startup_failure") => {
             status_field("failing", StatusKind::AttentionNegative)
         }
-        (_, "cancelled") => status_field("cancelled", StatusKind::AttentionNegative),
+        (_, "cancelled") => status_field("cancelled", StatusKind::Idle),
         ("in_progress", _) => status_field("running", StatusKind::Running),
         ("queued" | "waiting" | "requested" | "pending", _) => {
             status_field("queued", StatusKind::Waiting)
@@ -690,7 +690,7 @@ mod tests {
         assert_status(
             map_run_status("completed", Some("cancelled")),
             "cancelled",
-            StatusKind::AttentionNegative,
+            StatusKind::Idle,
         );
     }
 
