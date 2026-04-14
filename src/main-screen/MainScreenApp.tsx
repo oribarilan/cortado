@@ -17,9 +17,11 @@ import {
   formatFieldValue,
   activityKey,
   formatRelativeTime,
+  formatShortcut,
 } from "../shared/utils";
 
 type AppSettings = {
+  general: { global_hotkey: string };
   panel: { show_priority_section: boolean; show_empty_feeds: boolean };
 };
 
@@ -73,7 +75,7 @@ function buildFlatList(
   return { items: [...priorityItems, ...feedItems], priorityItems, feedItems };
 }
 
-function EmptyState() {
+function EmptyState({ globalHotkey }: { globalHotkey: string }) {
   const openSettings = (feedType?: FeedType) => {
     invoke("open_settings", {
       section: "feeds",
@@ -99,7 +101,7 @@ function EmptyState() {
             or edit ~/.config/cortado/feeds.toml
           </div>
           <div className="ms-empty-hotkey-hint">
-            <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Space</kbd> to toggle this panel
+            {globalHotkey ? <><kbd>{formatShortcut(globalHotkey)}</kbd> to toggle this panel</> : null}
           </div>
         </div>
       </div>
@@ -235,6 +237,7 @@ function MainScreenApp() {
   const [focusIndex, setFocusIndex] = useState(0);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
   const [showEmptyFeeds, setShowEmptyFeeds] = useState(false);
+  const [globalHotkey, setGlobalHotkey] = useState("super+shift+space");
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
   const [isDev, setIsDev] = useState(false);
@@ -339,6 +342,7 @@ function MainScreenApp() {
           setFeeds(initialFeeds);
           setShowPrioritySection(settings.panel?.show_priority_section ?? true);
           setShowEmptyFeeds(settings.panel?.show_empty_feeds ?? false);
+          if (settings.general?.global_hotkey) setGlobalHotkey(settings.general.global_hotkey);
         }
       } catch (err) {
         console.error("failed to load feeds:", err);
@@ -360,6 +364,7 @@ function MainScreenApp() {
             if (isMounted) {
               setShowPrioritySection(s.panel?.show_priority_section ?? true);
               setShowEmptyFeeds(s.panel?.show_empty_feeds ?? false);
+              if (s.general?.global_hotkey) setGlobalHotkey(s.general.global_hotkey);
             }
           })
           .catch(() => {});
@@ -501,7 +506,7 @@ function MainScreenApp() {
     <div className="main-screen-root" ref={rootRef}>
       {isDev ? <div className="dev-badge">DEV</div> : null}
       {!loading && !hasUserFeeds ? (
-        <EmptyState />
+        <EmptyState globalHotkey={globalHotkey} />
       ) : (
       <div className="ms-split">
         {/* List pane */}

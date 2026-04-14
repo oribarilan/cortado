@@ -10,6 +10,7 @@ import {
 import { useAppearance } from "../shared/useAppearance";
 import type { FeedSnapshot } from "../shared/types";
 import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type CatalogFeedType, type CatalogProvider, type FeedTypeField } from "../shared/feedTypes";
+import { formatShortcut } from "../shared/utils";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
 
@@ -355,39 +356,6 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
 const MODIFIER_KEYS = new Set(["Shift", "Meta", "Alt", "Control"]);
 
 /** Maps a JS KeyboardEvent.code to a short display label. */
-function codeToDisplayKey(code: string): string {
-  if (code.startsWith("Key")) return code.slice(3);
-  if (code.startsWith("Digit")) return code.slice(5);
-  if (code === "Space") return "Space";
-  if (code === "Minus") return "-";
-  if (code === "Equal") return "=";
-  if (code === "BracketLeft") return "[";
-  if (code === "BracketRight") return "]";
-  if (code === "Backslash") return "\\";
-  if (code === "Semicolon") return ";";
-  if (code === "Quote") return "'";
-  if (code === "Comma") return ",";
-  if (code === "Period") return ".";
-  if (code === "Slash") return "/";
-  if (code === "Backquote") return "`";
-  return code;
-}
-
-/** Converts a Tauri shortcut string (e.g. "super+shift+Space") to macOS display symbols. */
-function formatShortcut(shortcut: string): string {
-  const parts = shortcut.split("+");
-  const symbols: string[] = [];
-  let key = "";
-  for (const part of parts) {
-    const upper = part.toUpperCase();
-    if (upper === "SUPER" || upper === "CMD" || upper === "COMMAND") symbols.push("\u2318");
-    else if (upper === "CONTROL" || upper === "CTRL") symbols.push("\u2303");
-    else if (upper === "ALT" || upper === "OPTION") symbols.push("\u2325");
-    else if (upper === "SHIFT") symbols.push("\u21E7");
-    else key = codeToDisplayKey(part);
-  }
-  return symbols.join("") + key;
-}
 
 /** Converts a JS KeyboardEvent to a Tauri shortcut string, or null if invalid. */
 function keyEventToShortcut(e: KeyboardEvent): string | null {
