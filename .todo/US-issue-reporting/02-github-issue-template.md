@@ -20,7 +20,7 @@ Users currently have no structured way to report bugs. A GitHub issue template p
 
 ## Dependencies
 
-- None
+- None (references the log path as a static string; doesn't require logging to be implemented)
 
 ## Acceptance Criteria
 
@@ -33,8 +33,9 @@ Users currently have no structured way to report bugs. A GitHub issue template p
   - Affected area: dropdown with Tray / Panel / Settings / General
   - Terminal app and version (text input, optional -- "if relevant to bug")
   - macOS version (text input)
+  - Log files (optional file upload, with hint: "Find logs at ~/Library/Logs/Cortado/")
   - Any additional context (optional textarea)
-- [ ] Template is simple -- no more than ~8 fields total
+- [ ] Template is simple -- no more than ~9 fields total
 - [ ] Template renders correctly on GitHub (verify by pushing and viewing /issues/new)
 
 ## Scope Estimate
@@ -45,4 +46,4 @@ Small
 
 Use GitHub's YAML form schema (not the older Markdown template). YAML forms render as structured fields in the browser, which makes filling them in easier and produces cleaner issues.
 
-Keep it lightweight -- don't ask for logs, screenshots, or config unless the user wants to volunteer them in the free-text "additional context" field.
+The log files field should include a description explaining where to find logs (`~/Library/Logs/Cortado/`) and that they help diagnose issues. GitHub YAML forms don't support file upload fields directly -- use a textarea with a description that tells users to drag-and-drop log files into the field.

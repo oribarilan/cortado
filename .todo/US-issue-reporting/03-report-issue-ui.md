@@ -22,13 +22,14 @@ Even with a great issue template, users need to know where to go. A visible entr
 
 ## Dependencies
 
-- 01-github-issue-template (the URL needs to exist)
+- 02-github-issue-template (the URL needs to exist)
 
 ## Acceptance Criteria
 
 - [ ] Tray: a "Report Issue" item in the tray menu (bottom section, near settings)
-- [ ] Panel: a keyboard shortcut that opens the issue page (document in shortcuts)
+- [ ] Panel: a keyboard shortcut that opens the issue page (document in footer hints)
 - [ ] Both open the GitHub new-issue URL with the bug report template pre-selected
+- [ ] Below the "Report Issue" link (tray) or in the footer area (panel), show a static line: "Logs: ~/Library/Logs/Cortado/" so users know where to find them before filing
 - [ ] URL opens in the user's default browser (not in-app)
 - [ ] Works when the app is offline (just opens the URL -- browser handles the rest)
 

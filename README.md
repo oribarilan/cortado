@@ -161,6 +161,10 @@ label = "Tags"
 
 </details>
 
+## Privacy
+
+Cortado collects **no telemetry, analytics, or usage data**. All data stays on your machine. When local logging is enabled (the default), the app writes log files to `~/Library/Logs/Cortado/` for troubleshooting -- you can disable this in Settings. If you report a bug, you may choose to attach logs to help diagnose the issue; this is entirely optional and up to you.
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, build commands, and release process.

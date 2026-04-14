@@ -2,11 +2,14 @@
 
 ## Theme
 
-Make it easy for users to report bugs. Add a GitHub issue template that collects the right context upfront, and surface a "Report Issue" action in both the tray and panel so users can file a bug with one click.
+Make it easy for users to report bugs. Add structured logging to disk so users have something to attach, a GitHub issue template that collects the right context, and a "Report Issue" action in the UI that guides users to file a bug with logs.
 
 ## Task Sequencing
 
-Tasks are sequential:
+Task 01 (log files) is independent. Tasks 02 and 03 are sequential (the template URL must exist before the UI links to it), but neither depends on 01 -- they reference the log path as a static string.
 
-1. **GitHub issue template** -- create a lightweight bug report template with environment fields
-2. **Report Issue UI** -- add a button in the tray and a hotkey in the panel that open the GitHub issue page
+Recommended order: 02 → 03, with 01 in parallel.
+
+1. **Log files** -- add a logging framework that writes to disk so users have logs to share
+2. **GitHub issue template** -- create a bug report template that asks for logs (can start before 01)
+3. **Report Issue UI** -- surface a "Report Issue" action in tray and panel (depends on 02)
