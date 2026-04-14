@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-04-14
+
+### Fixed
+- Panel: empty state hotkey hint now shows the actual configured shortcut (was hardcoded)
+
 ## [0.13.0] - 2026-04-14
 
 ### Changed
@@ -12,7 +17,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 - GitHub Actions: cancelled runs no longer show as red/attention -- they're passive since no action is needed
-- Panel: hotkey hint in the empty state now reflects the actual configured shortcut
 
 ## [0.12.0] - 2026-04-13
 
