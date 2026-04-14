@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::Duration,
+};
 
 use anyhow::{anyhow, bail, Result};
 use serde::Deserialize;
@@ -177,8 +181,12 @@ impl Feed for GithubActionsFeed {
         let runs = serde_json::from_str::<Vec<GhWorkflowRun>>(&output.stdout)
             .map_err(|error| anyhow!("failed parsing `gh run list` JSON output: {error}"))?;
 
+        // Deduplicate by workflow name: `gh run list` returns runs newest-first,
+        // so the first occurrence of each name is the latest run.
+        let mut seen = HashSet::new();
         let activities = runs
             .into_iter()
+            .filter(|run| seen.insert(run.name.clone()))
             .map(|run| map_run_to_activity(run, &self.repo, &self.config_overrides))
             .take(MAX_ACTIVITIES_PER_FEED)
             .collect();
@@ -334,9 +342,8 @@ struct GhWorkflowRun {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc, time::Duration};
-
     use async_trait::async_trait;
+    use std::{collections::HashMap, sync::Arc, time::Duration};
     use tokio::sync::Mutex;
     use toml::{Table, Value};
 
@@ -664,6 +671,89 @@ mod tests {
         assert!(activities.is_empty());
     }
 
+    #[tokio::test]
+    async fn poll_deduplicates_by_workflow_name() {
+        let fixture = r#"[
+            {
+                "name": "CI",
+                "status": "completed",
+                "conclusion": "success",
+                "headBranch": "main",
+                "event": "push",
+                "url": "https://github.com/personal/cortado/actions/runs/100",
+                "workflowName": "CI",
+                "databaseId": 100,
+                "number": 14
+            },
+            {
+                "name": "CI",
+                "status": "completed",
+                "conclusion": "failure",
+                "headBranch": "main",
+                "event": "push",
+                "url": "https://github.com/personal/cortado/actions/runs/99",
+                "workflowName": "CI",
+                "databaseId": 99,
+                "number": 13
+            },
+            {
+                "name": "CI",
+                "status": "completed",
+                "conclusion": "success",
+                "headBranch": "main",
+                "event": "push",
+                "url": "https://github.com/personal/cortado/actions/runs/98",
+                "workflowName": "CI",
+                "databaseId": 98,
+                "number": 12
+            },
+            {
+                "name": "Release",
+                "status": "completed",
+                "conclusion": "success",
+                "headBranch": "main",
+                "event": "release",
+                "url": "https://github.com/personal/cortado/actions/runs/97",
+                "workflowName": "Release",
+                "databaseId": 97,
+                "number": 5
+            }
+        ]"#;
+
+        let runner = Arc::new(StubRunner::new(vec![
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: fixture.to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let feed =
+            GithubActionsFeed::from_config_with_runner(&base_config(), runner).expect("builds");
+        let activities = feed.poll().await.expect("poll should succeed");
+
+        // 3 CI runs + 1 Release run should collapse to 2 activities
+        assert_eq!(activities.len(), 2);
+        // Latest CI run is kept (newest-first means #14 wins)
+        assert_eq!(activities[0].title, "CI #14");
+        assert_eq!(
+            activities[0].id,
+            "https://github.com/personal/cortado/actions/runs/100"
+        );
+        // Release is kept
+        assert_eq!(activities[1].title, "Release #5");
+    }
+
     // --- Status mapping ---
 
     #[test]
@@ -977,6 +1067,17 @@ mod tests {
                 "workflowName": "Deploy",
                 "databaseId": 12346,
                 "number": 15
+            },
+            {
+                "name": "CI",
+                "status": "completed",
+                "conclusion": "failure",
+                "headBranch": "main",
+                "event": "push",
+                "url": "https://github.com/personal/cortado/actions/runs/12340",
+                "workflowName": "CI",
+                "databaseId": 12340,
+                "number": 481
             }
         ]"#
         .to_string()

@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+- GitHub Actions: feeds now show one activity per workflow instead of listing every historical run
+
 ## [0.14.0] - 2026-04-14
 
 ### Fixed

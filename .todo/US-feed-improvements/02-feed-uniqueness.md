@@ -1,5 +1,5 @@
 ---
-status: pending
+status: done
 ---
 
 # GitHub Actions: deduplicate by workflow name
