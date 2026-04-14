@@ -4,13 +4,17 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::Deserialize;
 
-use crate::feed::{Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind};
+use crate::feed::{
+    changelog, Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
+};
 use crate::settings_config;
 
 const FEED_NAME: &str = "Cortado Updates";
 const FEED_TYPE: &str = "cortado-update";
 const DEFAULT_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60); // 6 hours
 const ENDPOINT: &str = "https://github.com/oribarilan/cortado/releases/latest/download/latest.json";
+const CHANGELOG_URL: &str =
+    "https://raw.githubusercontent.com/oribarilan/cortado/main/CHANGELOG.md";
 
 /// Response shape from the Tauri updater `latest.json` endpoint.
 #[derive(Deserialize)]
@@ -194,6 +198,12 @@ impl Feed for CortadoUpdateFeed {
                 field_type: FieldType::Text,
                 description: "Release notes for the available version".to_string(),
             },
+            FieldDefinition {
+                name: "changelog".to_string(),
+                label: "Changelog".to_string(),
+                field_type: FieldType::Text,
+                description: "Aggregated changelog entries as JSON".to_string(),
+            },
         ]
     }
 
@@ -278,6 +288,16 @@ impl CortadoUpdateFeed {
             }
         }
 
+        // Fetch changelog only when an update is actually available (cascade).
+        let changelog_json = self.fetch_changelog(&remote_version).await;
+        if let Some(json) = changelog_json {
+            fields.push(Field {
+                name: "changelog".to_string(),
+                label: "Changelog".to_string(),
+                value: FieldValue::Text { value: json },
+            });
+        }
+
         Ok(Some(Activity {
             id: format!("cortado-update-v{remote_version}"),
             title: format!("Cortado v{remote_version} available"),
@@ -287,6 +307,27 @@ impl CortadoUpdateFeed {
             sort_ts: None,
             action: None,
         }))
+    }
+
+    /// Fetches `CHANGELOG.md` from GitHub and extracts entries between the
+    /// current version and `to_version`. Returns the result as a JSON string,
+    /// or `None` on any failure (network, parse, empty).
+    async fn fetch_changelog(&self, to_version: &semver::Version) -> Option<String> {
+        let response = self.client.get(CHANGELOG_URL).send().await.ok()?;
+        if !response.status().is_success() {
+            eprintln!("changelog fetch returned status {}", response.status());
+            return None;
+        }
+        let body = response.text().await.ok()?;
+        let versions = changelog::extract_range(
+            &body,
+            &self.current_version.to_string(),
+            &to_version.to_string(),
+        );
+        if versions.is_empty() {
+            return None;
+        }
+        serde_json::to_string(&versions).ok()
     }
 }
 
@@ -308,7 +349,7 @@ mod tests {
         assert_eq!(feed.feed_type(), "cortado-update");
         assert_eq!(feed.interval(), Duration::from_secs(6 * 60 * 60));
         assert!(feed.retain_for().is_none());
-        assert_eq!(feed.provided_fields().len(), 3);
+        assert_eq!(feed.provided_fields().len(), 4);
     }
 
     #[test]

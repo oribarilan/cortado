@@ -15,6 +15,7 @@ use self::{
 };
 
 pub mod ado_pr;
+pub mod changelog;
 pub mod concurrent;
 pub mod config;
 pub mod config_watcher;

@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Update feed: shows what changed between your current version and the update, so you can see what you're getting before installing
+
 ### Fixed
 - GitHub Actions: feeds now show one activity per workflow instead of listing every historical run
 

@@ -6,6 +6,8 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "./shared/types";
 import { useAppearance } from "./shared/useAppearance";
+import { Changelog } from "./shared/Changelog";
+import "./shared/changelog.css";
 import {
   deriveActivityKind,
   highestStatusField,
@@ -397,7 +399,7 @@ function App() {
                                     </button>
                                   ) : null}
 
-                                  {activity.fields.filter((f) => !f.name.startsWith("focus_")).map((field) => {
+                                  {activity.fields.filter((f) => !f.name.startsWith("focus_") && f.name !== "changelog").map((field) => {
                                     const statusClass =
                                       field.value.type === "status"
                                         ? `status kind-${field.value.kind}`
@@ -410,6 +412,12 @@ function App() {
                                       </div>
                                     );
                                   })}
+                                  {(() => {
+                                    const clField = activity.fields.find((f) => f.name === "changelog");
+                                    return clField && clField.value.type === "text" ? (
+                                      <Changelog json={clField.value.value} />
+                                    ) : null;
+                                  })()}
                                   {feed.last_refreshed != null ? (
                                     <span className="last-refreshed">Updated {formatRelativeTime(feed.last_refreshed)}</span>
                                   ) : null}
