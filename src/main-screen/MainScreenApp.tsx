@@ -142,12 +142,14 @@ function DetailPane({
   item,
   installing,
   pluginInstalling,
+  updateError,
   onInstallUpdate,
   onInstallPluginUpdate,
 }: {
   item: ListItem | null;
   installing: boolean;
   pluginInstalling: boolean;
+  updateError: string | null;
   onInstallUpdate: () => void;
   onInstallPluginUpdate: () => void;
 }) {
@@ -207,6 +209,7 @@ function DetailPane({
             ↗ {focus ? focus.label : "Open Activity"}
           </button>
         ) : null}
+        {isUpdate && updateError ? <p className="ms-update-error">{updateError}</p> : null}
         {activity.fields.length > 0 ? (
           <div className="ms-detail-fields">
             {activity.fields.filter((f) => !f.name.startsWith("focus_") && f.name !== "changelog").map((field) => {
@@ -256,18 +259,22 @@ function MainScreenApp() {
   // Update install state
   const [installing, setInstalling] = useState(false);
   const [pluginInstalling, setPluginInstalling] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const installUpdate = useCallback(async () => {
     setInstalling(true);
+    setUpdateError(null);
     try {
       await invoke("install_update");
-    } catch {
+    } catch (error) {
+      setUpdateError(error instanceof Error ? error.message : String(error));
       setInstalling(false);
     }
   }, []);
 
   const installPluginUpdate = useCallback(async () => {
     setPluginInstalling(true);
+    setUpdateError(null);
     try {
       const result = await invoke<{ success: boolean; error?: string }>("install_opencode_plugin");
       if (result.success) {
@@ -278,9 +285,11 @@ function MainScreenApp() {
               : f
           )
         );
+      } else {
+        setUpdateError(result.error ?? "Plugin update failed");
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      setUpdateError(error instanceof Error ? error.message : String(error));
     } finally {
       setPluginInstalling(false);
     }
@@ -631,6 +640,7 @@ function MainScreenApp() {
               item={focusedItem}
               installing={installing}
               pluginInstalling={pluginInstalling}
+              updateError={updateError}
               onInstallUpdate={() => void installUpdate()}
               onInstallPluginUpdate={() => void installPluginUpdate()}
             />

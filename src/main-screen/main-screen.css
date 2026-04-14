@@ -299,6 +299,13 @@ body,
   text-decoration: underline;
 }
 
+.ms-update-error {
+  margin-top: var(--space-2);
+  color: var(--status-attention-negative);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+}
+
 .ms-detail-empty {
   display: flex;
   align-items: center;
