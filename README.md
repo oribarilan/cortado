@@ -31,7 +31,7 @@ Cortado is a lightweight macOS app that tracks your PRs, CI runs, and services i
 </p>
 
 - **Menubar tray + floating panel**: quick-glance from the tray icon, or open the full panel with a global hotkey (**Cmd+Shift+Space**)
-- **Multiple feed types**: GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot and OpenCode coding sessions
+- **Multiple feed types**: GitHub PRs, GitHub Actions, Azure DevOps PRs, HTTP health checks, Copilot, OpenCode, and Claude Code coding sessions
 - **Lightweight**: minimal CPU and memory footprint
 - **Auto-updates**: checks for new versions and lets you install in one click
 - **Text-based config**: everything is plain TOML under `~/.config/cortado/` (or `$XDG_CONFIG_HOME/cortado/`), editable through the built-in settings UI or by hand
@@ -50,14 +50,15 @@ Your feeds appear in the menubar tray and the main panel (toggle with **Cmd+Shif
 
 A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities**: for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.
 
-| Feed type          | What it tracks                                                        |
-| ------------------ | --------------------------------------------------------------------- |
-| `github-pr`        | Open pull requests with review status, checks, and mergeability       |
-| `github-actions`   | CI/CD workflow runs                                                   |
-| `ado-pr`           | Azure DevOps pull requests                                            |
-| `http-health`      | Endpoint availability and response time                               |
-| `copilot-session`  | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
-| `opencode-session` | Active OpenCode coding sessions                                       |
+| Feed type              | What it tracks                                                        |
+| ---------------------- | --------------------------------------------------------------------- |
+| `github-pr`            | Open pull requests with review status, checks, and mergeability       |
+| `github-actions`       | CI/CD workflow runs                                                   |
+| `ado-pr`               | Azure DevOps pull requests                                            |
+| `http-health`          | Endpoint availability and response time                               |
+| `copilot-session`      | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
+| `opencode-session`     | Active OpenCode coding sessions                                       |
+| `claude-code-session`  | Active Claude Code coding sessions                                    |
 
 ### Terminal focus
 
@@ -142,6 +143,16 @@ Tracks active OpenCode sessions. The `cortado-opencode` plugin must be installed
 [[feed]]
 name = "OpenCode"
 type = "opencode-session"
+```
+
+### `claude-code-session`
+
+Tracks active Claude Code sessions. The Cortado hook for Claude Code must be installed -- Cortado offers a one-click install button when you add this feed type.
+
+```toml
+[[feed]]
+name = "Claude Code"
+type = "claude-code-session"
 ```
 
 ### Field overrides

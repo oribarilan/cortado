@@ -93,7 +93,7 @@ Each file is a flat JSON object:
 | `question` | Agent asked the user a question | `Question` |
 | `approval` | Agent is waiting for tool/action approval | `Approval` |
 
-Not all agents support all statuses. OpenCode uses only `working` and `idle`. Copilot CLI (via the Cortado plugin) uses `working` and `question`.
+Not all agents support all statuses. OpenCode uses only `working` and `idle`. Copilot CLI (via the Cortado plugin) uses `working` and `question`. Claude Code uses `working`, `idle`, `question`, and `approval`.
 
 Any unrecognized status value is treated as `Unknown` (mapped to `Idle` in the UI).
 

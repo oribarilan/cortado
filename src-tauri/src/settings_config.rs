@@ -378,6 +378,18 @@ pub(crate) const COPILOT_PLUGIN_JSON: &str = include_str!("../../plugins/copilot
 /// The Copilot CLI plugin hooks configuration, embedded at compile time.
 pub(crate) const COPILOT_HOOKS_JSON: &str = include_str!("../../plugins/copilot/hooks.json");
 
+/// The Claude Code plugin manifest, embedded at compile time.
+pub(crate) const CLAUDE_CODE_PLUGIN_JSON: &str =
+    include_str!("../../plugins/claude-code/.claude-plugin/plugin.json");
+
+/// The Claude Code hooks configuration, embedded at compile time.
+pub(crate) const CLAUDE_CODE_HOOKS_JSON: &str =
+    include_str!("../../plugins/claude-code/hooks/hooks.json");
+
+/// The Claude Code hook script, embedded at compile time.
+pub(crate) const CLAUDE_CODE_HOOK_SCRIPT: &str =
+    include_str!("../../plugins/claude-code/scripts/cortado-hook.sh");
+
 /// Returns the path to the OpenCode global plugins directory.
 ///
 /// `~/.config/opencode/plugins/` (follows XDG conventions, same as OpenCode).
@@ -748,6 +760,278 @@ pub fn uninstall_copilot_extension() -> SetupInstallResult {
                 error: Some(format!("`copilot plugin uninstall` failed: {combined}")),
             };
         }
+    }
+
+    SetupInstallResult {
+        success: true,
+        error: None,
+    }
+}
+
+/// Returns the path to the local marketplace directory used for Claude Code
+/// plugin installation.
+///
+/// `~/.config/cortado/marketplace/`
+pub(crate) fn claude_code_marketplace_dir() -> Option<std::path::PathBuf> {
+    dirs::home_dir().map(|h| h.join(".config/cortado/marketplace"))
+}
+
+/// Checks whether the Cortado plugin is installed in Claude Code.
+///
+/// Runs `claude plugin list` and checks if "cortado" appears in the output.
+/// When installed, also checks the on-disk hook script for version staleness.
+#[tauri::command]
+pub fn check_claude_code_plugin() -> SetupCheckResult {
+    let output = match Command::new("claude")
+        .args(["plugin", "list"])
+        .env("NO_COLOR", "1")
+        .output()
+    {
+        Ok(out) => out,
+        Err(_) => {
+            return SetupCheckResult {
+                ready: false,
+                outdated: false,
+            }
+        }
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if !stdout.to_lowercase().contains("cortado") {
+        return SetupCheckResult {
+            ready: false,
+            outdated: false,
+        };
+    }
+
+    // Plugin is installed -- check if the hook script is outdated.
+    let outdated = claude_code_marketplace_dir()
+        .map(|dir| dir.join("plugins/cortado/scripts/cortado-hook.sh"))
+        .and_then(|path| std::fs::read_to_string(path).ok())
+        .map(|content| is_plugin_outdated(&content, CLAUDE_CODE_HOOK_SCRIPT))
+        .unwrap_or(false);
+
+    SetupCheckResult {
+        ready: true,
+        outdated,
+    }
+}
+
+/// Installs the Cortado plugin into Claude Code via local marketplace.
+///
+/// Writes the embedded plugin files to `~/.config/cortado/marketplace/`,
+/// then runs `claude plugin marketplace add` and `claude plugin install`.
+#[tauri::command]
+pub fn install_claude_code_plugin() -> SetupInstallResult {
+    let marketplace_dir = match claude_code_marketplace_dir() {
+        Some(dir) => dir,
+        None => {
+            return SetupInstallResult {
+                success: false,
+                error: Some("Could not determine home directory".to_string()),
+            }
+        }
+    };
+
+    // Clean up any previous marketplace directory.
+    let _ = std::fs::remove_dir_all(&marketplace_dir);
+
+    // Create directory structure:
+    //   marketplace/.claude-plugin/
+    //   marketplace/plugins/cortado/.claude-plugin/
+    //   marketplace/plugins/cortado/hooks/
+    //   marketplace/plugins/cortado/scripts/
+    let dirs_to_create = [
+        marketplace_dir.join(".claude-plugin"),
+        marketplace_dir.join("plugins/cortado/.claude-plugin"),
+        marketplace_dir.join("plugins/cortado/hooks"),
+        marketplace_dir.join("plugins/cortado/scripts"),
+    ];
+    for dir in &dirs_to_create {
+        if let Err(e) = std::fs::create_dir_all(dir) {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to create directory {}: {e}", dir.display())),
+            };
+        }
+    }
+
+    // Write marketplace.json
+    let marketplace_json = r#"{
+  "name": "cortado",
+  "owner": { "name": "Cortado" },
+  "plugins": [
+    {
+      "name": "cortado",
+      "source": "./plugins/cortado",
+      "description": "Cortado session tracking for Claude Code"
+    }
+  ]
+}"#;
+    if let Err(e) = std::fs::write(
+        marketplace_dir.join(".claude-plugin/marketplace.json"),
+        marketplace_json,
+    ) {
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!("Failed to write marketplace.json: {e}")),
+        };
+    }
+
+    // Write plugin files.
+    let plugin_base = marketplace_dir.join("plugins/cortado");
+    let files: &[(&str, &str)] = &[
+        (".claude-plugin/plugin.json", CLAUDE_CODE_PLUGIN_JSON),
+        ("hooks/hooks.json", CLAUDE_CODE_HOOKS_JSON),
+        ("scripts/cortado-hook.sh", CLAUDE_CODE_HOOK_SCRIPT),
+    ];
+    for (name, content) in files {
+        let path = plugin_base.join(name);
+        if let Err(e) = std::fs::write(&path, content) {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to write {name}: {e}")),
+            };
+        }
+    }
+
+    // Make the hook script executable.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let hook_path = plugin_base.join("scripts/cortado-hook.sh");
+        if let Err(e) = std::fs::set_permissions(&hook_path, std::fs::Permissions::from_mode(0o755))
+        {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to set hook permissions: {e}")),
+            };
+        }
+    }
+
+    // Uninstall any existing version first (ignore errors -- may not be installed).
+    let _ = Command::new("claude")
+        .args(["plugin", "uninstall", "cortado"])
+        .output();
+    let _ = Command::new("claude")
+        .args(["plugin", "marketplace", "remove", "cortado"])
+        .output();
+
+    // Add local marketplace.
+    let output = match Command::new("claude")
+        .args(["plugin", "marketplace", "add"])
+        .arg(&marketplace_dir)
+        .output()
+    {
+        Ok(out) => out,
+        Err(e) => {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!(
+                    "Failed to run `claude plugin marketplace add`: {e}"
+                )),
+            }
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!(
+                "`claude plugin marketplace add` failed: {}{}",
+                stderr.trim(),
+                if stdout.trim().is_empty() {
+                    String::new()
+                } else {
+                    format!("\n{}", stdout.trim())
+                }
+            )),
+        };
+    }
+
+    // Install the plugin from the marketplace.
+    let output = match Command::new("claude")
+        .args(["plugin", "install", "cortado@cortado", "--scope", "user"])
+        .output()
+    {
+        Ok(out) => out,
+        Err(e) => {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to run `claude plugin install`: {e}")),
+            }
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        return SetupInstallResult {
+            success: false,
+            error: Some(format!(
+                "`claude plugin install` failed: {}{}",
+                stderr.trim(),
+                if stdout.trim().is_empty() {
+                    String::new()
+                } else {
+                    format!("\n{}", stdout.trim())
+                }
+            )),
+        };
+    }
+
+    SetupInstallResult {
+        success: true,
+        error: None,
+    }
+}
+
+/// Uninstalls the Cortado plugin from Claude Code.
+///
+/// Runs `claude plugin uninstall cortado`, removes the marketplace entry,
+/// and cleans up the local marketplace directory. Safe to call even if the
+/// plugin is not installed (idempotent).
+#[tauri::command]
+pub fn uninstall_claude_code_plugin() -> SetupInstallResult {
+    // Uninstall the plugin.
+    let output = match Command::new("claude")
+        .args(["plugin", "uninstall", "cortado"])
+        .output()
+    {
+        Ok(out) => out,
+        Err(e) => {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("Failed to run `claude plugin uninstall`: {e}")),
+            }
+        }
+    };
+
+    // Treat "not installed" as success (idempotent).
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let combined = format!("{}{}", stderr.trim(), stdout.trim());
+        if !combined.to_lowercase().contains("not installed")
+            && !combined.to_lowercase().contains("not found")
+        {
+            return SetupInstallResult {
+                success: false,
+                error: Some(format!("`claude plugin uninstall` failed: {combined}")),
+            };
+        }
+    }
+
+    // Remove the marketplace entry (ignore errors).
+    let _ = Command::new("claude")
+        .args(["plugin", "marketplace", "remove", "cortado"])
+        .output();
+
+    // Clean up the local marketplace directory.
+    if let Some(dir) = claude_code_marketplace_dir() {
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     SetupInstallResult {
@@ -1318,6 +1602,37 @@ mod tests {
         assert_eq!(v["version"], 1);
         assert!(v["hooks"]["sessionStart"].is_array());
         assert!(v["hooks"]["sessionEnd"].is_array());
+    }
+
+    #[test]
+    fn embedded_claude_code_hook_script_is_valid() {
+        assert!(!CLAUDE_CODE_HOOK_SCRIPT.is_empty());
+        assert!(CLAUDE_CODE_HOOK_SCRIPT.contains("harness"));
+        assert!(CLAUDE_CODE_HOOK_SCRIPT.contains("claude-code"));
+    }
+
+    #[test]
+    fn embedded_claude_code_hook_has_version_header() {
+        assert!(
+            parse_plugin_version(CLAUDE_CODE_HOOK_SCRIPT).is_some(),
+            "Embedded Claude Code hook script must have a cortado-plugin-version header"
+        );
+    }
+
+    #[test]
+    fn embedded_claude_code_plugin_json_is_valid() {
+        let v: serde_json::Value =
+            serde_json::from_str(CLAUDE_CODE_PLUGIN_JSON).expect("plugin.json must be valid JSON");
+        assert_eq!(v["name"], "cortado");
+    }
+
+    #[test]
+    fn embedded_claude_code_hooks_json_is_valid() {
+        let v: serde_json::Value =
+            serde_json::from_str(CLAUDE_CODE_HOOKS_JSON).expect("hooks.json must be valid JSON");
+        assert!(v["hooks"]["SessionStart"].is_array());
+        assert!(v["hooks"]["SessionEnd"].is_array());
+        assert!(v["hooks"]["PermissionRequest"].is_array());
     }
 
     #[test]

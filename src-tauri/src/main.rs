@@ -80,9 +80,13 @@ fn main() {
     let has_copilot_feed = feed_configs
         .iter()
         .any(|c| c.feed_type == "copilot-session");
+    let has_claude_code_feed = feed_configs
+        .iter()
+        .any(|c| c.feed_type == "claude-code-session");
     feed_registry.register(Arc::new(CortadoUpdateFeed::new(
         has_opencode_feed,
         has_copilot_feed,
+        has_claude_code_feed,
     )));
 
     let feed_registry = Arc::new(feed_registry);
@@ -147,6 +151,9 @@ fn main() {
             settings_config::install_copilot_extension,
             settings_config::uninstall_opencode_plugin,
             settings_config::uninstall_copilot_extension,
+            settings_config::check_claude_code_plugin,
+            settings_config::install_claude_code_plugin,
+            settings_config::uninstall_claude_code_plugin,
             settings_config::test_feed,
             app_settings::get_settings,
             app_settings::save_settings,

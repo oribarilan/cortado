@@ -2185,7 +2185,12 @@ function SettingsApp() {
                         dangerouslySetInnerHTML={{ __html: ct.icon }}
                       />
                       <div className="catalog-type-info">
-                        <div className="catalog-type-name">{ct.name}</div>
+                        <div className="catalog-type-name">
+                          {ct.name}
+                          {ct.badge && (
+                            <span className="feed-type-badge">{ct.badge}</span>
+                          )}
+                        </div>
                         <div className="catalog-type-desc">{ct.description}</div>
                       </div>
                       <span className="catalog-type-arrow">{"\u203A"}</span>

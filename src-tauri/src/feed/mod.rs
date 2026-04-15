@@ -433,6 +433,10 @@ pub fn instantiate_harness_feed(config: &FeedConfig) -> Result<Arc<HarnessFeed>>
             let provider = Box::new(GenericProvider::new("opencode")?);
             HarnessFeed::from_config(config, provider).map(Arc::new)
         }
+        "claude-code-session" => {
+            let provider = Box::new(GenericProvider::new("claude-code")?);
+            HarnessFeed::from_config(config, provider).map(Arc::new)
+        }
         other => Err(anyhow::anyhow!("unknown harness feed type `{other}`")),
     }
 }

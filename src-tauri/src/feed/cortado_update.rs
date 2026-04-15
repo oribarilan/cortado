@@ -43,10 +43,17 @@ pub struct CortadoUpdateFeed {
     /// Whether to check for Copilot extension updates (true when the user has
     /// a `copilot-session` feed configured).
     check_copilot_extension: bool,
+    /// Whether to check for Claude Code plugin updates (true when the user has
+    /// a `claude-code-session` feed configured).
+    check_claude_code_plugin: bool,
 }
 
 impl CortadoUpdateFeed {
-    pub fn new(check_opencode_plugin: bool, check_copilot_extension: bool) -> Self {
+    pub fn new(
+        check_opencode_plugin: bool,
+        check_copilot_extension: bool,
+        check_claude_code_plugin: bool,
+    ) -> Self {
         let current_version = env!("CARGO_PKG_VERSION")
             .parse::<semver::Version>()
             .expect("CARGO_PKG_VERSION must be valid semver");
@@ -60,6 +67,7 @@ impl CortadoUpdateFeed {
                 .expect("failed to build HTTP client"),
             check_opencode_plugin,
             check_copilot_extension,
+            check_claude_code_plugin,
         }
     }
 
@@ -154,6 +162,66 @@ impl CortadoUpdateFeed {
             action: None,
         })
     }
+
+    /// Checks whether the on-disk Claude Code plugin is outdated compared
+    /// to the version embedded in this binary. Returns an activity if so.
+    fn check_claude_code_plugin_update(&self) -> Option<Activity> {
+        if !self.check_claude_code_plugin {
+            return None;
+        }
+
+        // The installed plugin lives at:
+        // ~/.claude/plugins/cache/cortado/cortado/*/scripts/cortado-hook.sh
+        // The wildcard is a version directory. Iterate entries to find it.
+        let home = dirs::home_dir()?;
+        let cache_dir = home.join(".claude/plugins/cache/cortado/cortado");
+        let entries = std::fs::read_dir(&cache_dir).ok()?;
+
+        for entry in entries.flatten() {
+            let hook_path = entry.path().join("scripts/cortado-hook.sh");
+            if let Ok(content) = std::fs::read_to_string(&hook_path) {
+                if settings_config::is_plugin_outdated(
+                    &content,
+                    settings_config::CLAUDE_CODE_HOOK_SCRIPT,
+                ) {
+                    let new_version = settings_config::parse_plugin_version(
+                        settings_config::CLAUDE_CODE_HOOK_SCRIPT,
+                    )
+                    .unwrap_or(0);
+
+                    return Some(Activity {
+                        id: "plugin-update-claude-code".to_string(),
+                        title: "Claude Code plugin update available".to_string(),
+                        fields: vec![
+                            Field {
+                                name: "status".to_string(),
+                                label: "Status".to_string(),
+                                value: FieldValue::Status {
+                                    value: "update available".to_string(),
+                                    kind: StatusKind::AttentionPositive,
+                                },
+                            },
+                            Field {
+                                name: "version".to_string(),
+                                label: "Version".to_string(),
+                                value: FieldValue::Text {
+                                    value: format!("v{new_version}"),
+                                },
+                            },
+                        ],
+                        retained: false,
+                        retained_at_unix_ms: None,
+                        sort_ts: None,
+                        action: None,
+                    });
+                }
+                // Found a hook script that's up to date -- no update needed.
+                return None;
+            }
+        }
+
+        None
+    }
 }
 
 #[async_trait]
@@ -228,6 +296,11 @@ impl Feed for CortadoUpdateFeed {
 
         // Copilot extension update check (local filesystem, fast).
         if let Some(activity) = self.check_copilot_extension_update() {
+            activities.push(activity);
+        }
+
+        // Claude Code plugin update check (local filesystem, fast).
+        if let Some(activity) = self.check_claude_code_plugin_update() {
             activities.push(activity);
         }
 
@@ -337,14 +410,14 @@ mod tests {
 
     #[test]
     fn new_feed_parses_current_version() {
-        let feed = CortadoUpdateFeed::new(false, false);
+        let feed = CortadoUpdateFeed::new(false, false, false);
         // Should parse without panic.
         assert!(!feed.current_version.to_string().is_empty());
     }
 
     #[test]
     fn feed_metadata() {
-        let feed = CortadoUpdateFeed::new(false, false);
+        let feed = CortadoUpdateFeed::new(false, false, false);
         assert_eq!(feed.name(), "Cortado Updates");
         assert_eq!(feed.feed_type(), "cortado-update");
         assert_eq!(feed.interval(), Duration::from_secs(6 * 60 * 60));
@@ -354,14 +427,14 @@ mod tests {
 
     #[test]
     fn plugin_check_skipped_when_disabled() {
-        let feed = CortadoUpdateFeed::new(false, false);
+        let feed = CortadoUpdateFeed::new(false, false, false);
         assert!(feed.check_plugin_update().is_none());
     }
 
     #[test]
     fn plugin_check_returns_none_when_file_missing() {
         // With check enabled but no plugin file on disk, should return None.
-        let feed = CortadoUpdateFeed::new(true, false);
+        let feed = CortadoUpdateFeed::new(true, false, false);
         // This test assumes ~/.config/opencode/plugins/cortado-opencode.ts
         // either doesn't exist or is up to date. Both result in no activity.
         let result = feed.check_plugin_update();
@@ -372,7 +445,13 @@ mod tests {
 
     #[test]
     fn copilot_check_skipped_when_disabled() {
-        let feed = CortadoUpdateFeed::new(false, false);
+        let feed = CortadoUpdateFeed::new(false, false, false);
         assert!(feed.check_copilot_extension_update().is_none());
+    }
+
+    #[test]
+    fn claude_code_check_skipped_when_disabled() {
+        let feed = CortadoUpdateFeed::new(false, false, false);
+        assert!(feed.check_claude_code_plugin_update().is_none());
     }
 }

@@ -5,7 +5,8 @@ export type FeedType =
   | "ado-pr"
   | "http-health"
   | "copilot-session"
-  | "opencode-session";
+  | "opencode-session"
+  | "claude-code-session";
 
 /// A form field for the Settings feed edit form.
 export type FeedTypeField = {
@@ -72,6 +73,8 @@ export type CatalogFeedType = {
   icon: string;
   defaultInterval: string;
   popular?: boolean;
+  /// Optional badge shown next to the feed type name (e.g., "beta").
+  badge?: string;
   /// Form fields for the Settings edit form.
   fields: FeedTypeField[];
   /// External CLI dependency, if any.
@@ -281,6 +284,37 @@ export const FEED_CATALOG: CatalogProvider[] = [
           "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
           "Shows one activity per working directory with repo, branch, and status.",
           "Opening an activity focuses the terminal -- exact tmux pane when available",
+        ],
+      },
+      {
+        feedType: "claude-code-session",
+        name: "Claude Code Sessions",
+        label: "Claude Code Session",
+        description: "Track active Claude Code coding sessions",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>`,
+        defaultInterval: "30s",
+        hideInterval: true,
+        defaultNamePattern: "Claude Code",
+        badge: "beta",
+        fields: [],
+        dependency: {
+          binary: "claude",
+          name: "Claude Code",
+          installUrl: "https://code.claude.com",
+        },
+        setup: {
+          label: "Claude Code plugin",
+          description: "Cortado needs to install its Claude Code plugin to track sessions.",
+          checkCommand: "check_claude_code_plugin",
+          installCommand: "install_claude_code_plugin",
+          installLabel: "Install Plugin",
+          uninstallCommand: "uninstall_claude_code_plugin",
+          helpText: "Installs a Claude Code plugin that reports session status to Cortado.",
+        },
+        notes: [
+          "This feed type is in early preview. Feedback is welcome!",
+          "Requires Claude Code CLI (claude) to be installed and authenticated.",
+          "Sessions are tracked via plugin hooks -- no polling needed.",
         ],
       },
     ],

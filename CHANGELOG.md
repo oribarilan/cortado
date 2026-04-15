@@ -6,6 +6,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- Claude Code (beta): track active coding sessions with status, repo, and branch info
 - Update feed: shows what changed between your current version and the update, so you can see what you're getting before installing
 
 ### Fixed

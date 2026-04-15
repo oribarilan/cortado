@@ -1601,6 +1601,22 @@ body {
   margin-bottom: 2px;
 }
 
+.feed-type-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-left: 6px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
 .catalog-type-desc {
   font-size: var(--text-xs);
   color: var(--text-tertiary);

@@ -95,6 +95,7 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | `ado-pr` | `"120s"` |
 | `copilot-session` | `"30s"` |
 | `opencode-session` | `"30s"` |
+| `claude-code-session` | `"30s"` |
 | `cortado-update` | `"6h"` (built-in, not user-configured) |
 
 Intervals use duration strings parsed by `jiff` (for example: `"30s"`, `"5m"`, `"1.5m"`, `"2h"`). Integer seconds are not supported.
@@ -161,6 +162,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
 | `copilot-session` | Active GitHub Copilot CLI sessions | status (status), repo (text), branch (text) |
 | `opencode-session` | Active OpenCode coding sessions | status (status), repo (text), branch (text) |
+| `claude-code-session` | Active Claude Code coding sessions | status (status), repo (text), branch (text) |
 
 Feed snapshots are capped to at most **20 activities** per feed after retention and ordering are applied.
 
@@ -220,6 +222,10 @@ type = "copilot-session"
 [[feed]]
 name = "OpenCode"
 type = "opencode-session"
+
+[[feed]]
+name = "Claude Code"
+type = "claude-code-session"
 ```
 
 ### Config rules
