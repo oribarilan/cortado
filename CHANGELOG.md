@@ -5,12 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-04-16
+
 ### Added
-- Claude Code (beta): track active coding sessions with status, repo, and branch info
+- Claude Code (beta): track active claude code sessions with status, repo, and branch info
 - Update feed: shows what changed between your current version and the update, so you can see what you're getting before installing
 
 ### Fixed
 - GitHub Actions: feeds now show one activity per workflow instead of listing every historical run
+- Update feed: install errors now appear in the panel detail pane instead of failing silently
 
 ## [0.14.0] - 2026-04-14
 
