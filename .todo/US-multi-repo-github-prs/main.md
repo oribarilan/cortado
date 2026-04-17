@@ -1,4 +1,4 @@
-# US-feed-configs-improvements
+# US-multi-repo-github-prs
 
 ## Goal
 
@@ -6,16 +6,16 @@ Streamline GitHub feed configuration for the common case and simplify the retain
 
 ## Definition of Done
 
-- [ ] GitHub feed creation offers a repo picker that lists repos the user contributes to, with a fallback "any repo" option for manual entry
-- [ ] User filter offers a similar picker pattern (select from org members or known collaborators) where feasible
+- [ ] GitHub feeds support multiple repos per feed (`repos = [...]` config format, backward compat with `repo`)
+- [ ] GitHub feed creation offers a repo picker that lists repos the user contributes to, with "Any repo" manual entry
 - [ ] Retain is simplified to a toggle + conditional duration input
 - [ ] All changes pass `just check`
 
 ## Task Priority
 
-1. `repo-picker.md` — Highest user impact; repo selection is the most common friction point
-2. `user-picker.md` — Same pattern as repo picker, natural follow-on
-3. `retain-simplify.md` — Independent of the above; smallest scope
+1. `retain-simplify.md` — Independent, smallest scope, quick win
+2. `multi-repo.md` — Backend model change for multi-repo feeds (required before picker UI)
+3. `repo-picker.md` — Frontend repo picker UI (depends on multi-repo backend)
 
 ## Cross-Cutting Concerns
 
@@ -24,4 +24,4 @@ Streamline GitHub feed configuration for the common case and simplify the retain
 - Error states: `gh` not installed, not authenticated, API rate limits — all need graceful handling
 - The "any repo" / manual entry fallback must always be available; the picker is a convenience, not a gate
 - The repo picker component is shared between GitHub PR and GitHub Actions feed types
-- `user-picker` is optional/stretch — may be deferred if API constraints make it impractical
+- Multi-repo is GitHub-only for now; ADO PR stays single-repo

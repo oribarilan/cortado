@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-04-17
+
+### Added
+- GitHub feeds now support multiple repositories in a single feed -- select repos from a searchable list or enter them manually
+- Settings: retain behavior is now a simple toggle ("Clear completed items immediately") with an optional duration
+
+### Improved
+- Settings: plugin install banner now reminds you to restart running coding sessions to activate the plugin
+
 ## [0.15.0] - 2026-04-16
 
 ### Added

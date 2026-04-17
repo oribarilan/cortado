@@ -320,6 +320,52 @@ pub fn check_feed_dependency(binary: String) -> DepCheckResult {
     DepCheckResult { installed }
 }
 
+/// A GitHub repository returned by `gh repo list`.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GithubRepo {
+    #[serde(alias = "nameWithOwner")]
+    pub name_with_owner: String,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// Lists GitHub repositories the authenticated user contributes to.
+///
+/// Runs `gh repo list --json nameWithOwner,description --limit 200` and returns
+/// the parsed list sorted by recency (most recently pushed first, which is the
+/// default `gh` ordering).
+#[tauri::command]
+pub async fn list_github_repos() -> Result<Vec<GithubRepo>, String> {
+    const TIMEOUT: Duration = Duration::from_secs(15);
+
+    let output = tokio::time::timeout(
+        TIMEOUT,
+        tokio::process::Command::new("gh")
+            .args([
+                "repo",
+                "list",
+                "--json",
+                "nameWithOwner,description",
+                "--limit",
+                "200",
+            ])
+            .output(),
+    )
+    .await
+    .map_err(|_| "Timed out listing GitHub repositories".to_string())?
+    .map_err(|e| format!("Failed to run `gh repo list`: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Failed to list repositories: {}", stderr.trim()));
+    }
+
+    let repos: Vec<GithubRepo> = serde_json::from_slice(&output.stdout)
+        .map_err(|e| format!("Failed to parse repository list: {e}"))?;
+
+    Ok(repos)
+}
+
 /// Resolves the authenticated GitHub user's login via `gh api user`.
 /// Used by the settings UI when the user selects "Me" for GitHub Actions feeds
 /// (where `@me` isn't supported by `gh run list`).

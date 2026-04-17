@@ -86,6 +86,8 @@ function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
     for (const f of catalog.fields) {
       if (f.kind === "user-filter" && f.meValue) {
         typeSpecific[f.key] = f.meValue;
+      } else if (f.kind === "repo-picker") {
+        typeSpecific[f.key] = [];
       }
     }
   }
@@ -321,6 +323,172 @@ function UserFilterField({
   );
 }
 
+function RepoPickerField({
+  repos,
+  onChange,
+  error,
+}: {
+  repos: string[];
+  onChange: (repos: string[]) => void;
+  error?: string;
+}) {
+  const [mode, setMode] = useState<"my-repos" | "any-repo">("my-repos");
+  const [search, setSearch] = useState("");
+  const [manualInput, setManualInput] = useState("");
+  const [ghRepos, setGhRepos] = useState<{ name_with_owner: string; description: string | null }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (mode === "my-repos" && !loaded && !loading && !loadError) {
+      setLoading(true);
+      invoke<{ name_with_owner: string; description: string | null }[]>("list_github_repos")
+        .then((result) => {
+          setGhRepos(result);
+          setLoaded(true);
+        })
+        .catch((e) => {
+          setLoadError(e instanceof Error ? e.message : String(e));
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [mode, loaded, loading, loadError]);
+
+  const toggleRepo = useCallback((repo: string) => {
+    if (repos.includes(repo)) {
+      onChange(repos.filter((r) => r !== repo));
+    } else {
+      onChange([...repos, repo]);
+    }
+  }, [repos, onChange]);
+
+  const addManualRepo = useCallback(() => {
+    const trimmed = manualInput.trim();
+    if (trimmed && !repos.includes(trimmed)) {
+      onChange([...repos, trimmed]);
+    }
+    setManualInput("");
+  }, [manualInput, repos, onChange]);
+
+  const removeRepo = useCallback((repo: string) => {
+    onChange(repos.filter((r) => r !== repo));
+  }, [repos, onChange]);
+
+  const filteredRepos = useMemo(() =>
+    ghRepos.filter((r) =>
+      r.name_with_owner.toLowerCase().includes(search.toLowerCase()) ||
+      (r.description && r.description.toLowerCase().includes(search.toLowerCase()))
+    ),
+    [ghRepos, search]
+  );
+
+  return (
+    <div className="repo-picker">
+      <div className="segmented-control">
+        <button
+          className={`segmented-option ${mode === "my-repos" ? "active" : ""}`}
+          onClick={() => { setLoadError(null); setMode("my-repos"); }}
+          type="button"
+        >
+          My repos
+        </button>
+        <button
+          className={`segmented-option ${mode === "any-repo" ? "active" : ""}`}
+          onClick={() => setMode("any-repo")}
+          type="button"
+        >
+          Any repo
+        </button>
+      </div>
+
+      {mode === "my-repos" && (
+        <>
+          {loading && (
+            <div className="repo-picker-status">
+              Loading repos...
+              <button className="link-btn" onClick={() => { setLoading(false); setMode("any-repo"); }} type="button">Cancel</button>
+            </div>
+          )}
+          {loadError && (
+            <div className="repo-picker-status error">
+              {loadError}
+              <button className="link-btn" onClick={() => setMode("any-repo")} type="button">Enter manually</button>
+            </div>
+          )}
+          {loaded && (
+            <>
+              <input
+                className="form-input mono"
+                placeholder="Search repos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="repo-list">
+                {filteredRepos.length === 0 && (
+                  <div className="repo-list-empty">No repos match "{search}"</div>
+                )}
+                {filteredRepos.map((r) => {
+                  const isSelected = repos.includes(r.name_with_owner);
+                  return (
+                    <div
+                      key={r.name_with_owner}
+                      className={`repo-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => toggleRepo(r.name_with_owner)}
+                    >
+                      {isSelected && <span className="repo-check">&#10003;</span>}
+                      <div className="repo-info">
+                        <span className="repo-name">{r.name_with_owner}</span>
+                        {r.description && <span className="repo-desc">{r.description}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {mode === "any-repo" && (
+        <div className="manual-repo-input">
+          <input
+            className="form-input mono"
+            style={{ flex: 1 }}
+            placeholder="owner/repo"
+            value={manualInput}
+            onChange={(e) => setManualInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addManualRepo();
+              }
+            }}
+          />
+          <button className="btn-secondary" onClick={addManualRepo} type="button">Add</button>
+        </div>
+      )}
+
+      {repos.length > 0 && (
+        <div className="repo-chips">
+          {repos.map((r) => (
+            <span key={r} className="repo-chip">
+              {r}
+              <button className="repo-chip-remove" onClick={() => removeRepo(r)} type="button">&times;</button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {repos.length > 0 && (
+        <div className="repo-count">Watching {repos.length} repo{repos.length !== 1 ? "s" : ""}</div>
+      )}
+
+      {error && <div className="field-error">{error}</div>}
+    </div>
+  );
+}
+
 function validateFeed(feed: FeedConfigDto): Record<string, string> {
   const errors: Record<string, string> = {};
 
@@ -336,9 +504,16 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
   const typeFields = catalogType?.fields ?? [];
   for (const field of typeFields) {
     if (!field.required) continue;
-    const val = String(feed.type_specific[field.key] ?? "").trim();
-    if (!val) {
-      errors[field.key] = `${field.label} is required`;
+    if (field.kind === "repo-picker") {
+      const arr = feed.type_specific[field.key];
+      if (!Array.isArray(arr) || arr.length === 0) {
+        errors[field.key] = "At least one repository is required";
+      }
+    } else {
+      const val = String(feed.type_specific[field.key] ?? "").trim();
+      if (!val) {
+        errors[field.key] = `${field.label} is required`;
+      }
     }
   }
 
@@ -740,7 +915,13 @@ function SettingsApp() {
 
   const startEdit = useCallback((index: number) => {
     setEditingIndex(index);
-    setEditingFeed(structuredClone(feeds[index]));
+    const clone = structuredClone(feeds[index]);
+    // Normalize legacy single `repo` to `repos` array for GitHub feeds
+    if (clone.type_specific.repo && !clone.type_specific.repos) {
+      clone.type_specific.repos = [clone.type_specific.repo as string];
+      delete clone.type_specific.repo;
+    }
+    setEditingFeed(clone);
     setIsNewFeed(false);
     nameManuallyEdited.current = true;
     setSaveError(null);
@@ -1822,6 +2003,9 @@ function SettingsApp() {
               <div className="setup-banner-ok">
                 <span className="setup-banner-icon">✓</span>
                 <span>{setupInfo.label} installed</span>
+                {setupInfo.postInstallHint && (
+                  <span className="setup-post-install-hint"> -- {setupInfo.postInstallHint}</span>
+                )}
                 <span className="setup-help-group">
                   <span className="setup-help-tip" title={setupInfo.helpText}>(?)</span>
                   <button
@@ -1860,7 +2044,35 @@ function SettingsApp() {
                   {field.required && <span className="required-mark">*</span>}
                 </label>
                 {field.hint && <div className="form-hint">{field.hint}</div>}
-                {field.kind === "user-filter" ? (
+                {field.kind === "repo-picker" ? (
+                  <RepoPickerField
+                    repos={Array.isArray(editingFeed.type_specific[field.key]) ? editingFeed.type_specific[field.key] as string[] : []}
+                    onChange={(repos) => {
+                      setSaveSuccess(false);
+                      setFieldErrors((prev) => {
+                        if (!prev[field.key]) return prev;
+                        const next = { ...prev };
+                        delete next[field.key];
+                        return next;
+                      });
+                      const newTypeSpecific = { ...editingFeed.type_specific, [field.key]: repos };
+                      // Remove legacy `repo` key if present
+                      delete newTypeSpecific.repo;
+                      const updatedFeed = { ...editingFeed, type_specific: newTypeSpecific };
+                      if (!nameManuallyEdited.current) {
+                        if (repos.length === 1) {
+                          const defaultName = generateDefaultName(editingFeed.type, newTypeSpecific);
+                          if (defaultName) updatedFeed.name = defaultName;
+                        } else if (repos.length > 1) {
+                          const catalog = findFeedType(editingFeed.type);
+                          if (catalog) updatedFeed.name = catalog.label;
+                        }
+                      }
+                      setEditingFeed(updatedFeed);
+                    }}
+                    error={fieldErrors[field.key]}
+                  />
+                ) : field.kind === "user-filter" ? (
                   <UserFilterField
                     field={field}
                     value={String(editingFeed.type_specific[field.key] ?? "")}
@@ -1887,7 +2099,7 @@ function SettingsApp() {
                   )}
                 </div>
                 )}
-                {fieldErrors[field.key] && <div className="field-error">{fieldErrors[field.key]}</div>}
+                {field.kind !== "repo-picker" && fieldErrors[field.key] && <div className="field-error">{fieldErrors[field.key]}</div>}
               </div>
             ))}
 
@@ -1913,21 +2125,43 @@ function SettingsApp() {
                 {fieldErrors.interval && <div className="field-error">{fieldErrors.interval}</div>}
               </div>
               )}
-              <div className="form-group">
-                <label className="form-label">Retain</label>
-                <div className="form-hint">Keep completed items for</div>
-                <DurationInput
-                  value={editingFeed.retain}
-                  onChange={(val) => {
+              </div>
+
+              <div className="setting-row">
+                <div className="setting-info">
+                  <div className="setting-label">Clear completed items immediately</div>
+                  <div className="setting-hint">Remove completed items as soon as they disappear from the source</div>
+                </div>
+                <button
+                  className={`toggle ${editingFeed.retain === undefined ? "on" : ""}`}
+                  onClick={() => {
                     setSaveSuccess(false);
-                    setEditingFeed({ ...editingFeed, retain: val });
+                    if (editingFeed.retain === undefined) {
+                      setEditingFeed({ ...editingFeed, retain: "2h" });
+                    } else {
+                      setEditingFeed({ ...editingFeed, retain: undefined });
+                    }
                   }}
-                  placeholder="-"
+                  aria-pressed={editingFeed.retain === undefined}
+                  aria-label="Clear completed items immediately"
                 />
               </div>
-            </div>
 
-            <div className="setting-row">
+              {editingFeed.retain !== undefined && (
+                <div className="form-group" style={{ paddingLeft: 16 }}>
+                  <label className="form-label">Keep completed items for</label>
+                  <DurationInput
+                    value={editingFeed.retain}
+                    onChange={(val) => {
+                      setSaveSuccess(false);
+                      setEditingFeed({ ...editingFeed, retain: val || undefined });
+                    }}
+                    placeholder="2"
+                  />
+                </div>
+              )}
+
+              <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Notifications</div>
                 <div className="setting-hint">Send system notifications for status changes in this feed</div>

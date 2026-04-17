@@ -21,17 +21,17 @@ The retain field is currently an optional duration input (number + unit). Most u
 ### Current UX
 
 - Optional `DurationInput` labeled "Retain" with hint "Keep completed items for"
-- Empty = no retain (items cleared immediately? or kept forever? — ambiguous)
+- Empty = items cleared immediately (verified: `retain = None` in backend means no retention)
 - If set, items are kept for the specified duration after completion
 
 ### Proposed UX
 
 **"Clear completed items immediately"** toggle, ON by default.
 
-- **Toggle ON** (default): Completed items are removed immediately. No duration input shown. Config: `retain` is absent or `"0"`.
+- **Toggle ON** (default): Completed items are removed immediately. No duration input shown. Config: `retain` is absent.
 - **Toggle OFF**: A duration input appears below the toggle. User sets how long to keep completed items. Config: `retain = "2h"` etc.
 
-This makes the default behavior explicit and the progressive disclosure natural.
+This makes the default behavior explicit and the progressive disclosure natural. Toggle ON = common case = simpler state.
 
 ### Config mapping
 
@@ -41,10 +41,6 @@ This makes the default behavior explicit and the progressive disclosure natural.
 | OFF | user-specified | `retain = "2h"` |
 
 No backend changes needed — the existing `retain: Option<Duration>` handles both cases. The change is purely frontend UX.
-
-### Default behavior clarification
-
-Need to verify: what does the backend do today when `retain` is absent? If it means "keep forever", then the toggle label should be inverted. Check `feed/mod.rs` for how `retain_for()` is used.
 
 ## Acceptance Criteria
 
@@ -61,7 +57,3 @@ Need to verify: what does the backend do today when `retain` is absent? If it me
 
 - **Ad-hoc**: Add new feed → verify toggle is ON, no duration input → toggle OFF → verify duration input appears → set "2h" → save → reopen → verify toggle is OFF with "2h" populated
 - **Ad-hoc**: Edit existing feed with `retain = "2h"` → verify toggle is OFF with "2h" shown → toggle ON → save → verify `retain` is removed from config
-
-## Notes
-
-- Need to verify what `retain = None` means in the backend before finalizing the toggle semantics. The label may need adjustment based on this.

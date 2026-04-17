@@ -24,7 +24,7 @@ const MAX_ACTIVITIES_PER_FEED: usize = 20;
 /// Feed that polls GitHub Actions workflow runs via `gh run list`.
 pub struct GithubActionsFeed {
     name: String,
-    repo: String,
+    repos: Vec<String>,
     interval: Duration,
     retain_for: Option<Duration>,
     config_overrides: HashMap<String, FieldOverride>,
@@ -46,24 +46,69 @@ impl GithubActionsFeed {
         config: &FeedConfig,
         process_runner: Arc<dyn ProcessRunner>,
     ) -> Result<Self> {
-        let repo = config
-            .type_specific
-            .get("repo")
-            .and_then(Value::as_str)
-            .ok_or_else(|| {
+        let repos = if let Some(repos_val) = config.type_specific.get("repos") {
+            let arr = repos_val.as_array().ok_or_else(|| {
                 anyhow!(
-                    "feed `{}` (type github-actions) is missing required `repo` string",
+                    "feed `{}` (type github-actions): `repos` must be an array of strings",
                     config.name
                 )
-            })?
-            .trim()
-            .to_string();
-
-        if repo.is_empty() {
+            })?;
+            if arr.is_empty() {
+                bail!(
+                    "feed `{}` (type github-actions): `repos` must contain at least one repository",
+                    config.name
+                );
+            }
+            if config.type_specific.contains_key("repo") {
+                bail!(
+                    "feed `{}` (type github-actions): specify either `repo` or `repos`, not both",
+                    config.name
+                );
+            }
+            arr.iter()
+                .map(|v| {
+                    v.as_str()
+                        .ok_or_else(|| {
+                            anyhow!(
+                                "feed `{}` (type github-actions): each entry in `repos` must be a string",
+                                config.name
+                            )
+                        })
+                        .map(|s| s.trim().to_string())
+                })
+                .collect::<Result<Vec<String>>>()?
+        } else if let Some(repo_val) = config.type_specific.get("repo") {
+            let repo = repo_val
+                .as_str()
+                .ok_or_else(|| {
+                    anyhow!(
+                        "feed `{}` (type github-actions) is missing required `repo` string",
+                        config.name
+                    )
+                })?
+                .trim()
+                .to_string();
+            if repo.is_empty() {
+                bail!(
+                    "feed `{}` (type github-actions) requires non-empty `repo`",
+                    config.name
+                );
+            }
+            vec![repo]
+        } else {
             bail!(
-                "feed `{}` (type github-actions) requires non-empty `repo`",
+                "feed `{}` (type github-actions) is missing required `repo` or `repos` field",
                 config.name
             );
+        };
+
+        for repo in &repos {
+            if repo.is_empty() {
+                bail!(
+                    "feed `{}` (type github-actions): repo entries must not be empty strings",
+                    config.name
+                );
+            }
         }
 
         let branch = optional_string(config, "branch");
@@ -73,7 +118,7 @@ impl GithubActionsFeed {
 
         Ok(Self {
             name: config.name.clone(),
-            repo,
+            repos,
             interval: config
                 .interval
                 .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
@@ -128,70 +173,72 @@ impl Feed for GithubActionsFeed {
     async fn poll(&self) -> Result<Vec<Activity>> {
         ensure_gh_available(self.process_runner.as_ref()).await?;
 
-        let mut args = vec![
-            "run".to_string(),
-            "list".to_string(),
-            "--repo".to_string(),
-            self.repo.clone(),
-            "--limit".to_string(),
-            "20".to_string(),
-            "--json".to_string(),
-            "name,status,conclusion,headBranch,event,url,updatedAt,workflowName,databaseId,number"
-                .to_string(),
-        ];
+        let mut seen = HashSet::new();
+        let mut all_activities = Vec::new();
 
-        if let Some(branch) = &self.branch {
-            args.push("--branch".to_string());
-            args.push(branch.clone());
-        }
-        if let Some(workflow) = &self.workflow {
-            args.push("--workflow".to_string());
-            args.push(workflow.clone());
-        }
-        if let Some(event) = &self.event {
-            args.push("--event".to_string());
-            args.push(event.clone());
-        }
-        if let Some(actor) = &self.actor {
-            args.push("--actor".to_string());
-            args.push(actor.clone());
-        }
+        for repo in &self.repos {
+            let mut args = vec![
+                "run".to_string(),
+                "list".to_string(),
+                "--repo".to_string(),
+                repo.clone(),
+                "--limit".to_string(),
+                "20".to_string(),
+                "--json".to_string(),
+                "name,status,conclusion,headBranch,event,url,updatedAt,workflowName,databaseId,number"
+                    .to_string(),
+            ];
 
-        let invocation =
-            CommandInvocation::new("gh", args.iter().map(String::as_str), GH_COMMAND_TIMEOUT);
-
-        let command_display = invocation.display();
-        let output = self
-            .process_runner
-            .run(invocation)
-            .await
-            .map_err(|error| anyhow!("failed invoking `{command_display}`: {error}"))?;
-
-        if !output.succeeded() {
-            if looks_like_gh_auth_error(&output.stdout, &output.stderr) {
-                bail!("{}", crate::feed::github_common::GH_UNAUTHENTICATED_MESSAGE);
+            if let Some(branch) = &self.branch {
+                args.push("--branch".to_string());
+                args.push(branch.clone());
+            }
+            if let Some(workflow) = &self.workflow {
+                args.push("--workflow".to_string());
+                args.push(workflow.clone());
+            }
+            if let Some(event) = &self.event {
+                args.push("--event".to_string());
+                args.push(event.clone());
+            }
+            if let Some(actor) = &self.actor {
+                args.push("--actor".to_string());
+                args.push(actor.clone());
             }
 
-            bail!(
-                "`{command_display}` failed with {}",
-                non_zero_exit_context(output.exit_code, &output.stdout, &output.stderr)
+            let invocation =
+                CommandInvocation::new("gh", args.iter().map(String::as_str), GH_COMMAND_TIMEOUT);
+
+            let command_display = invocation.display();
+            let output = self
+                .process_runner
+                .run(invocation)
+                .await
+                .map_err(|error| anyhow!("failed invoking `{command_display}`: {error}"))?;
+
+            if !output.succeeded() {
+                if looks_like_gh_auth_error(&output.stdout, &output.stderr) {
+                    bail!("{}", crate::feed::github_common::GH_UNAUTHENTICATED_MESSAGE);
+                }
+
+                bail!(
+                    "`{command_display}` failed with {}",
+                    non_zero_exit_context(output.exit_code, &output.stdout, &output.stderr)
+                );
+            }
+
+            let runs = serde_json::from_str::<Vec<GhWorkflowRun>>(&output.stdout)
+                .map_err(|error| anyhow!("failed parsing `gh run list` JSON output: {error}"))?;
+
+            all_activities.extend(
+                runs.into_iter()
+                    .filter(|run| seen.insert(format!("{}:{}", repo, run.name)))
+                    .map(|run| map_run_to_activity(run, repo, &self.config_overrides)),
             );
         }
 
-        let runs = serde_json::from_str::<Vec<GhWorkflowRun>>(&output.stdout)
-            .map_err(|error| anyhow!("failed parsing `gh run list` JSON output: {error}"))?;
-
-        // Deduplicate by workflow name: `gh run list` returns runs newest-first,
-        // so the first occurrence of each name is the latest run.
-        let mut seen = HashSet::new();
-        let activities = runs
-            .into_iter()
-            .filter(|run| seen.insert(run.name.clone()))
-            .map(|run| map_run_to_activity(run, &self.repo, &self.config_overrides))
-            .take(MAX_ACTIVITIES_PER_FEED)
-            .collect();
-
-        Ok(activities)
+        all_activities.truncate(MAX_ACTIVITIES_PER_FEED);
+        Ok(all_activities)
     }
 }
 
@@ -407,7 +454,9 @@ mod tests {
             Err(e) => e,
         };
 
-        assert!(error.to_string().contains("missing required `repo`"));
+        assert!(error
+            .to_string()
+            .contains("missing required `repo` or `repos`"));
         assert!(error.to_string().contains("github-actions"));
     }
 
@@ -1013,6 +1062,149 @@ mod tests {
 
         let activity = super::map_run_to_activity(run, "personal/cortado", &HashMap::new());
         assert_eq!(activity.id, "personal/cortado/actions/runs/unknown");
+    }
+
+    #[test]
+    fn from_config_accepts_repos_array() {
+        let mut type_specific = Table::new();
+        type_specific.insert(
+            "repos".to_string(),
+            Value::Array(vec![
+                Value::String("org/repo-a".to_string()),
+                Value::String("org/repo-b".to_string()),
+            ]),
+        );
+
+        let config = FeedConfig {
+            name: "Multi Actions".to_string(),
+            feed_type: "github-actions".to_string(),
+            interval: Some(Duration::from_secs(60)),
+            retain: None,
+            notify: FeedNotifyOverride::Global,
+            type_specific,
+            field_overrides: HashMap::new(),
+        };
+
+        let feed = GithubActionsFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        )
+        .expect("should build with repos array");
+
+        assert_eq!(feed.repos, vec!["org/repo-a", "org/repo-b"]);
+    }
+
+    #[test]
+    fn from_config_rejects_both_repo_and_repos() {
+        let mut type_specific = Table::new();
+        type_specific.insert("repo".to_string(), Value::String("org/repo-a".to_string()));
+        type_specific.insert(
+            "repos".to_string(),
+            Value::Array(vec![Value::String("org/repo-b".to_string())]),
+        );
+
+        let config = FeedConfig {
+            name: "Both".to_string(),
+            feed_type: "github-actions".to_string(),
+            interval: Some(Duration::from_secs(60)),
+            retain: None,
+            notify: FeedNotifyOverride::Global,
+            type_specific,
+            field_overrides: HashMap::new(),
+        };
+
+        let err = match GithubActionsFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        ) {
+            Ok(_) => panic!("should reject both"),
+            Err(e) => e,
+        };
+
+        assert!(err.to_string().contains("not both"));
+    }
+
+    #[test]
+    fn from_config_rejects_empty_repos_array() {
+        let mut type_specific = Table::new();
+        type_specific.insert("repos".to_string(), Value::Array(vec![]));
+
+        let config = FeedConfig {
+            name: "Empty".to_string(),
+            feed_type: "github-actions".to_string(),
+            interval: Some(Duration::from_secs(60)),
+            retain: None,
+            notify: FeedNotifyOverride::Global,
+            type_specific,
+            field_overrides: HashMap::new(),
+        };
+
+        let err = match GithubActionsFeed::from_config_with_runner(
+            &config,
+            Arc::new(StubRunner::new(Vec::new())),
+        ) {
+            Ok(_) => panic!("should reject empty"),
+            Err(e) => e,
+        };
+
+        assert!(err.to_string().contains("at least one"));
+    }
+
+    #[tokio::test]
+    async fn poll_multi_repo_merges_activities() {
+        let runner = Arc::new(StubRunner::new(vec![
+            // Preflight
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "gh version 2.60.0".to_string(),
+                stderr: String::new(),
+            }),
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: "github.com\n  Logged in".to_string(),
+                stderr: String::new(),
+            }),
+            // First repo
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: r#"[{"name": "CI", "status": "completed", "conclusion": "success", "url": "https://github.com/org/a/actions/runs/1", "workflowName": "CI", "number": 10}]"#.to_string(),
+                stderr: String::new(),
+            }),
+            // Second repo - also has a "CI" workflow, should NOT be deduped
+            Ok(CommandOutput {
+                exit_code: Some(0),
+                stdout: r#"[{"name": "CI", "status": "completed", "conclusion": "failure", "url": "https://github.com/org/b/actions/runs/2", "workflowName": "CI", "number": 5}]"#.to_string(),
+                stderr: String::new(),
+            }),
+        ]));
+
+        let mut type_specific = Table::new();
+        type_specific.insert(
+            "repos".to_string(),
+            Value::Array(vec![
+                Value::String("org/a".to_string()),
+                Value::String("org/b".to_string()),
+            ]),
+        );
+
+        let config = FeedConfig {
+            name: "Multi Actions".to_string(),
+            feed_type: "github-actions".to_string(),
+            interval: Some(Duration::from_secs(60)),
+            retain: None,
+            notify: FeedNotifyOverride::Global,
+            type_specific,
+            field_overrides: HashMap::new(),
+        };
+
+        let feed = GithubActionsFeed::from_config_with_runner(&config, runner.clone())
+            .expect("should build");
+
+        let activities = feed.poll().await.expect("poll should succeed");
+        // Both "CI" workflows kept because they're from different repos
+        assert_eq!(activities.len(), 2);
+        assert_eq!(activities[0].title, "CI #10");
+        assert_eq!(activities[1].title, "CI #5");
     }
 
     // --- Helpers ---

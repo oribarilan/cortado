@@ -20,7 +20,7 @@ export type FeedTypeField = {
   /// When set to "user-filter", renders a segmented control with "All" / "Me" / "User"
   /// options instead of a plain text input. The "Me" option stores `meValue` in config;
   /// "All" stores an empty string; "User" shows a text input for a specific identity.
-  kind?: "user-filter";
+  kind?: "user-filter" | "repo-picker";
   /// The config value stored when the user selects "Me" (e.g., "@me" for GitHub, "me" for ADO).
   /// Ignored when `resolveMeCommand` is set.
   meValue?: string;
@@ -60,6 +60,8 @@ export type FeedTypeSetup = {
   uninstallCommand: string;
   /** Brief explanation shown in a help tooltip */
   helpText: string;
+  /** Hint shown after successful install (e.g., "Restart running sessions") */
+  postInstallHint?: string;
 };
 
 /// A single feed type within a catalog provider.
@@ -124,10 +126,10 @@ export const FEED_CATALOG: CatalogProvider[] = [
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
         defaultInterval: "2m",
         popular: true,
-        defaultNamePattern: "{repo} PRs",
+        defaultNamePattern: "{repos} PRs",
         namePlaceholder: "my-org/repo PRs",
         fields: [
-          { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
+          { key: "repos", label: "Repositories", placeholder: "owner/repo", hint: "GitHub repositories to watch", mono: true, required: true, kind: "repo-picker" },
           { key: "user", label: "Author filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", meValue: "@me" },
         ],
         dependency: GH_DEP,
@@ -140,10 +142,10 @@ export const FEED_CATALOG: CatalogProvider[] = [
         icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>`,
         defaultInterval: "2m",
         popular: true,
-        defaultNamePattern: "{repo} Actions",
+        defaultNamePattern: "{repos} Actions",
         namePlaceholder: "my-org/repo Actions",
         fields: [
-          { key: "repo", label: "Repository", placeholder: "owner/repo", hint: "GitHub owner and repo name", mono: true, required: true },
+          { key: "repos", label: "Repositories", placeholder: "owner/repo", hint: "GitHub repositories to watch", mono: true, required: true, kind: "repo-picker" },
           { key: "branch", label: "Branch filter", placeholder: "main", hint: "Only runs on this branch (empty = all branches)", mono: true },
           { key: "workflow", label: "Workflow filter", placeholder: "ci.yml", hint: "Workflow filename (empty = all workflows)", mono: true },
           { key: "user", label: "Actor filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", resolveMeCommand: "resolve_github_username" },
@@ -248,6 +250,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
           installLabel: "Install Plugin",
           uninstallCommand: "uninstall_copilot_extension",
           helpText: "Installs a small hook-based plugin into Copilot CLI that reports session status to Cortado. Safe to uninstall at any time -- Copilot CLI continues to work normally without it.",
+          postInstallHint: "Restart any running Copilot CLI sessions to activate the plugin.",
         },
         notes: [
           "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
@@ -279,6 +282,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
           installLabel: "Install Plugin",
           uninstallCommand: "uninstall_opencode_plugin",
           helpText: "Installs a small plugin into OpenCode that reports session status to Cortado. Safe to uninstall at any time -- OpenCode continues to work normally without it.",
+          postInstallHint: "Restart any running OpenCode sessions to activate the plugin.",
         },
         notes: [
           "Sessions are detected via file changes in ~/.config/cortado/harness/ with near-instant updates.",
@@ -310,6 +314,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
           installLabel: "Install Plugin",
           uninstallCommand: "uninstall_claude_code_plugin",
           helpText: "Installs a Claude Code plugin that reports session status to Cortado.",
+          postInstallHint: "Restart any running Claude Code sessions to activate the plugin.",
         },
         notes: [
           "This feed type is in early preview. Feedback is welcome!",
@@ -345,7 +350,13 @@ export function generateDefaultName(
   let result = catalog.defaultNamePattern;
   result = result.replace(/\{(\w+)\}/g, (match, key: string) => {
     const val = typeSpecific[key];
-    if (!val || typeof val !== "string") return match;
+    if (!val) return match;
+    // Handle array values (e.g., repos): use first element for single-item, skip for multi
+    if (Array.isArray(val)) {
+      if (val.length === 1 && typeof val[0] === "string") return val[0];
+      return match;
+    }
+    if (typeof val !== "string") return match;
     // For URL fields, extract a readable name
     if (key === "url") {
       try {
