@@ -70,6 +70,103 @@ export function buildSession(opts: {
   };
 }
 
+// ── Session tracking ────────────────────────────────────────────────
+
+/** Tracks session state for a single OpenCode process, filtering out
+ * sub-agent session events so they don't corrupt the parent session's
+ * status or ID in the interchange file. */
+export class SessionTracker {
+  private _sessionId: string;
+  private _status: InterchangeStatus = "idle";
+  private _parentSessionId: string | null = null;
+
+  constructor(initialSessionId: string) {
+    this._sessionId = initialSessionId;
+  }
+
+  get sessionId(): string {
+    return this._sessionId;
+  }
+
+  get status(): InterchangeStatus {
+    return this._status;
+  }
+
+  /** Returns whether state changed and an optional summary string. */
+  handleEvent(event: { type: string; properties?: any }): { changed: boolean; summary?: string } {
+    const eventType = event.type as string;
+    const props = event.properties;
+
+    switch (eventType) {
+      case "session.status": {
+        const { sessionID, status } = props;
+        if (!this._isParentSession(sessionID)) return { changed: false };
+
+        let summary: string | undefined;
+        const prevStatus = this._status;
+
+        switch (status.type) {
+          case "busy":
+            this._status = "working";
+            break;
+          case "idle":
+            this._status = "idle";
+            break;
+          case "retry":
+            this._status = "working";
+            summary = `Retry #${status.attempt}: ${status.message}`;
+            break;
+        }
+
+        return { changed: this._status !== prevStatus || summary !== undefined, summary };
+      }
+
+      case "question.asked": {
+        if (!this._isParentSession(props?.sessionID)) return { changed: false };
+        this._status = "question";
+        return { changed: true };
+      }
+
+      case "question.replied":
+      case "question.rejected": {
+        if (!this._isParentSession(props?.sessionID)) return { changed: false };
+        this._status = "working";
+        return { changed: true };
+      }
+
+      case "permission.asked": {
+        if (!this._isParentSession(props?.sessionID)) return { changed: false };
+        this._status = "approval";
+        return { changed: true };
+      }
+
+      case "permission.replied": {
+        if (!this._isParentSession(props?.sessionID)) return { changed: false };
+        this._status = "working";
+        return { changed: true };
+      }
+
+      default:
+        return { changed: false };
+    }
+  }
+
+  /** First session.status event pins the parent session ID.
+   * Subsequent events from different session IDs are sub-agents. */
+  private _isParentSession(sessionID: string | undefined): boolean {
+    if (!sessionID) return true; // no sessionID means unscoped event, allow it
+
+    if (this._parentSessionId === null) {
+      // First event with a sessionID -- this is the parent session.
+      this._parentSessionId = sessionID;
+      this._sessionId = sessionID;
+      return true;
+    }
+
+    return sessionID === this._parentSessionId;
+  }
+}
+
 // ── Plugin ──────────────────────────────────────────────────────────
 
 const CortadoPlugin: Plugin = async ({ directory, worktree, $ }) => {
@@ -77,9 +174,7 @@ const CortadoPlugin: Plugin = async ({ directory, worktree, $ }) => {
 
   const cwd = worktree || directory;
   const gitMeta = await resolveGitMeta($, cwd);
-
-  let currentSessionId: string = String(process.pid);
-  let currentStatus: InterchangeStatus = "idle";
+  const tracker = new SessionTracker(String(process.pid));
 
   writeState();
 
@@ -91,9 +186,9 @@ const CortadoPlugin: Plugin = async ({ directory, worktree, $ }) => {
   function writeState(summary?: string) {
     writeSessionFile(
       buildSession({
-        id: currentSessionId,
+        id: tracker.sessionId,
         cwd,
-        status: currentStatus,
+        status: tracker.status,
         repository: gitMeta.repository,
         branch: gitMeta.branch,
         summary,
@@ -103,61 +198,9 @@ const CortadoPlugin: Plugin = async ({ directory, worktree, $ }) => {
 
   return {
     event: async ({ event }) => {
-      // Cast to string so we can match event types that may not be in
-      // the SDK type union yet (question.* and permission.* events).
-      const eventType = event.type as string;
-
-      switch (eventType) {
-        case "session.status": {
-          const { sessionID, status } = (event as any).properties;
-
-          if (sessionID) {
-            currentSessionId = sessionID;
-          }
-
-          let summary: string | undefined;
-
-          switch (status.type) {
-            case "busy":
-              currentStatus = "working";
-              break;
-            case "idle":
-              currentStatus = "idle";
-              break;
-            case "retry":
-              currentStatus = "working";
-              summary = `Retry #${status.attempt}: ${status.message}`;
-              break;
-          }
-
-          writeState(summary);
-          break;
-        }
-
-        // Agent is waiting for the user to answer a question.
-        case "question.asked":
-          currentStatus = "question";
-          writeState();
-          break;
-
-        // User answered or dismissed -- agent resumes work.
-        case "question.replied":
-        case "question.rejected":
-          currentStatus = "working";
-          writeState();
-          break;
-
-        // Agent needs the user to approve a tool/action.
-        case "permission.asked":
-          currentStatus = "approval";
-          writeState();
-          break;
-
-        // User approved/rejected -- agent resumes work.
-        case "permission.replied":
-          currentStatus = "working";
-          writeState();
-          break;
+      const result = tracker.handleEvent(event as any);
+      if (result.changed) {
+        writeState(result.summary);
       }
     },
   };
