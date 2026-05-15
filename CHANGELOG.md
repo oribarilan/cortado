@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-05-15
+
+### Fixed
+- OpenCode sessions no longer briefly show as idle while the agent is still working on a task
+
 ## [0.16.0] - 2026-04-17
 
 ### Added
