@@ -118,7 +118,7 @@ fn compose_status_icon(status: StatusKind, is_dark: bool) -> Vec<u8> {
 
 /// Recolors all non-transparent pixels and scales their alpha.
 fn tint_icon(pixels: &mut [u8], r: u8, g: u8, b: u8, opacity_scale: f32) {
-    for chunk in pixels.chunks_exact_mut(4) {
+    for chunk in pixels.as_chunks_mut::<4>().0 {
         if chunk[3] > 0 {
             chunk[0] = r;
             chunk[1] = g;
