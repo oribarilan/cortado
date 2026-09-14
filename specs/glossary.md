@@ -11,6 +11,7 @@ Canonical definitions for project terminology. When introducing a new term, defi
 | **Field** | A typed, structured piece of data on an activity. Fields have a name, label, value, and field type. Example: `review: awaiting` (a status field). |
 | **Retained Activity** | An activity no longer returned by a feed's latest poll, kept visible for a configured retention duration. |
 | **Harness** | A terminal-based AI coding agent (e.g., GitHub Copilot CLI, OpenCode). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. All harness feeds use `GenericProvider` backed by the interchange format (`~/.config/cortado/harness/`, see `specs/harness-interchange.md`). Agent-specific logic lives in plugins that write interchange files (OpenCode plugin, Copilot CLI plugin). Adding a new agent = one line of Rust (`GenericProvider::new("name")`) + a plugin that writes state files. |
+| **Nominal Usage** | A comparison value derived from usage units at a published conversion rate. For `copilot-usage`, this is AI credits multiplied by GitHub's current $0.01 USD per-credit rate. It is not evidence of billed spend, invoice charges, an enforced budget, or an employer's internal cost. |
 
 ## Status Model
 

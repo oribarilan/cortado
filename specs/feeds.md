@@ -55,6 +55,115 @@ src/App.tsx                           # Frontend update button rendering
 src/shared/utils.ts                   # supportsUpdate() helper
 ```
 
+## Copilot usage feed
+
+An experimental GitHub feed that tracks one account's Copilot AI credit consumption. It is intended for ordinary users and does not require organization or enterprise billing-admin access.
+
+### Feed type: `copilot-usage`
+
+**Data source**: the undocumented `GET https://api.github.com/copilot_internal/user` endpoint used by first-party GitHub clients.
+
+**Support boundary**: `github.com` accounts only. GHE.com and GitHub Enterprise Server are not supported initially.
+
+**Default interval**: `120s`.
+
+**Authentication**:
+
+1. The required `account` config value names a GitHub login already authenticated in `gh`.
+2. Cortado resolves that account with `gh auth token --hostname github.com --user <account>`.
+3. The token is passed only through the quota request's child-process environment. It must never appear in command display strings, debug output, errors, config, or logs.
+4. Cortado must not call `gh auth switch` or otherwise change the globally active account.
+5. The quota response's `login` must match `account` case-insensitively. A mismatch is a poll error.
+
+The endpoint is undocumented and may change without notice. Settings and documentation must label the feed experimental.
+
+**Config**:
+
+```toml
+[[feed]]
+name = "Copilot usage"
+type = "copilot-usage"
+account = "octocat"
+reference_amount_usd = 2000
+attention_at_percent = 80
+# details_url = "https://example.com/copilot-consumption"
+interval = "120s"
+```
+
+| Key | Required | Default | Contract |
+|-----|----------|---------|----------|
+| `account` | Yes | | Non-empty GitHub login authenticated for `github.com` in `gh` |
+| `reference_amount_usd` | Yes | | Finite number greater than zero; comparison value only |
+| `attention_at_percent` | No | `80` | Finite number from 1 through 100 |
+| `details_url` | No | `https://github.com/settings/copilot` | HTTPS Activity action URL without embedded credentials |
+
+The Settings form must note: "Links open with your browser's active GitHub session, which may differ from the GitHub account selected above."
+
+### Usage calculation and status
+
+The feed reads `quota_snapshots.premium_interactions`. It must require:
+
+- top-level `token_based_billing = true`
+- a finite, non-negative `credits_used`
+- a response `login` matching the configured account
+
+Nominal usage and utilization are calculated as:
+
+```text
+nominal_usage_usd = credits_used * 0.01
+utilization_percent = nominal_usage_usd / reference_amount_usd * 100
+```
+
+The $0.01 conversion is GitHub's published value for one AI credit at the time of implementation. Recheck the published rate when maintaining this feed. Nominal Usage is not billed spend, invoice charges, an enforced budget, or an employer's internal cost.
+
+Status mapping:
+
+- `utilization_percent < attention_at_percent` -> `"<percent>% used"` (`Idle`)
+- `utilization_percent >= attention_at_percent` -> `"<percent>% used"` (`AttentionNegative`)
+
+Utilization above 100% is valid and remains `AttentionNegative`. Notifications follow the normal Status Kind transition model, so the initial threshold crossing notifies according to user settings; later numeric increases within `AttentionNegative` do not.
+
+### Activity contract
+
+The feed always returns one Activity after a successful poll.
+
+**Activity title**: the verified GitHub login.
+
+**Activity action**: open `details_url`, or GitHub Copilot settings when no override is configured. The browser may be signed into a different GitHub account; Cortado does not attempt to switch browser sessions.
+
+**Provided fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `usage` | status | Utilization percentage and threshold-derived Status Kind |
+| `nominal_usage` | text | AI credits converted at $0.01 per credit, formatted as USD |
+| `reference_amount` | text | Configured USD comparison amount |
+| `credits_used` | number | Individual AI credits reported directly by GitHub |
+| `reset` | text | `quota_reset_date_utc`, falling back to `quota_reset_date` or `unknown` |
+
+Use `credits_used` directly. Do not derive total consumption from `entitlement - quota_remaining`; authenticated research found those values can diverge.
+
+### Failure behavior
+
+Failures are feed-level poll errors and preserve previously cached Activities through the normal runtime behavior.
+
+- Missing `gh`: use the canonical GitHub CLI dependency error.
+- Selected account unavailable: identify the account and tell the user to authenticate it with `gh auth login --hostname github.com`.
+- HTTP/API or malformed JSON failure: provide concise request/parsing context without including raw successful responses or credentials.
+- Login mismatch: identify the expected and returned logins.
+- `token_based_billing` false or absent: report that legacy request units cannot be converted to nominal USD.
+- Missing, negative, invalid, or unrepresentably large `credits_used`: report that GitHub did not return usable AI credit consumption.
+
+Parse only the allowlisted fields needed by this contract. The raw endpoint response includes unrelated account, organization, analytics, and service metadata that must not be retained or logged.
+
+### Implementation
+
+```text
+src-tauri/src/feed/copilot_usage.rs  # Feed implementation and response parsing
+src-tauri/src/feed/process.rs        # Secret-safe per-command environment support
+src/shared/feedTypes.ts              # Experimental Settings catalog entry
+```
+
 ## Harness feeds
 
 A **harness** is a terminal-based AI coding agent -- GitHub Copilot CLI, Claude Code, or similar. Harness feeds track active coding sessions as activities, showing their status, context, and providing one-click terminal focus.

@@ -48,12 +48,13 @@ Feed names must be unique within the config file. The name is the feed's identit
 
 ### GitHub authentication
 
-The `github-pr` feed (and future GitHub feed types) depends on the [`gh` CLI](https://cli.github.com/) for authentication and API access. Cortado shells out to `gh` commands (for example, `gh pr list` and `gh api`) instead of managing tokens directly. This means:
+GitHub feed types depend on the [`gh` CLI](https://cli.github.com/) for authentication and API access. Cortado shells out to `gh` commands (for example, `gh pr list` and `gh api`) instead of managing tokens directly. This means:
 
 - No auth config in `feeds.toml`.
 - `gh` must be installed and authenticated (`gh auth login`).
 - If `gh` is not available, GitHub feeds fail with this message: "GitHub feed requires `gh` CLI. Install it from https://cli.github.com/ and run `gh auth login`."
 - If `gh` is available but not authenticated, GitHub feeds fail with this message: "GitHub feed requires `gh` authentication. Run `gh auth login` and retry."
+- `copilot-usage` selects credentials by its required `account` login. That account must already be authenticated for `github.com` in `gh`; Cortado never changes the active gh account.
 
 ### External CLI dependency contract
 
@@ -67,6 +68,8 @@ Feeds that rely on external CLIs must use a consistent dependency/error model:
 Current dependency requirements:
 
 - `github-pr`: requires `gh` installed and authenticated.
+- `github-actions`: requires `gh` installed and authenticated.
+- `copilot-usage`: requires `gh` and its configured `account` authenticated for `github.com`.
 - `ado-pr`: requires `az` CLI, `azure-devops` extension, and authenticated access via `az login`.
 
 #### `ado-pr` dependency checks (contract)
@@ -92,6 +95,8 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | Feed type | Default interval |
 |-----------|-----------------|
 | `github-pr` | `"120s"` |
+| `github-actions` | `"120s"` |
+| `copilot-usage` | `"120s"` |
 | `ado-pr` | `"120s"` |
 | `copilot-session` | `"30s"` |
 | `opencode-session` | `"30s"` |
@@ -158,6 +163,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 |-----------|-----------|------------|
 | `github-pr` | Open PRs per user/repo | review (status), checks (status), mergeable (status), draft (status), labels (text) |
 | `github-actions` | CI workflow runs per repo | status (status), branch (text), workflow (text), event (text) |
+| `copilot-usage` (experimental) | One account-level Copilot AI credit usage summary | usage (status), nominal_usage (text), reference_amount (text), credits_used (number), reset (text) |
 | `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
 | `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
 | `copilot-session` | Active GitHub Copilot CLI sessions | status (status), repo (text), branch (text) |
@@ -207,6 +213,14 @@ workflow = "ci.yml"        # Optional: only this workflow file
 interval = "120s"
 
 [[feed]]
+name = "Copilot usage"
+type = "copilot-usage"
+account = "octocat"
+reference_amount_usd = 2000
+attention_at_percent = 80  # Optional, default: 80
+details_url = "https://example.com/copilot-usage" # Optional HTTPS action override
+
+[[feed]]
 name = "api health"
 type = "http-health"
 url = "https://api.example.com/health"
@@ -235,6 +249,10 @@ type = "claude-code-session"
 - PR feed types support optional `user` author filter values:
   - `github-pr`: default `@me` when omitted; accepts GitHub login or `@me`
   - `ado-pr`: default `me` when omitted; accepts creator identity (prefer email/UPN) or `me`
+- `copilot-usage.account` selects an authenticated gh login; it is not an author/actor filter and must not reuse the `user` key.
+- `copilot-usage.reference_amount_usd` is a positive user-supplied comparison value, not a billing budget.
+- `copilot-usage.attention_at_percent` accepts values from 1 through 100 and defaults to 80.
+- `copilot-usage.details_url` is optional and must be HTTPS without embedded credentials.
 - `interval` is a duration string (for example `"30s"`, `"5m"`, `"1.5m"`).
 - `retain` is an optional duration string. When omitted, activities are not retained after they disappear from poll results.
 - `[feed.fields.<name>]` allows overriding visibility, label, etc.

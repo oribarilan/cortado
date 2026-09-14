@@ -54,6 +54,7 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | ---------------------- | --------------------------------------------------------------------- |
 | `github-pr`            | Open pull requests with review status, checks, and mergeability       |
 | `github-actions`       | CI/CD workflow runs                                                   |
+| `copilot-usage`        | Experimental account-level Copilot AI credit usage                    |
 | `ado-pr`               | Azure DevOps pull requests                                            |
 | `http-health`          | Endpoint availability and response time                               |
 | `copilot-session`      | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
@@ -100,6 +101,23 @@ type = "github-actions"
 repo = "oribarilan/cortado"
 interval = "120s"
 ```
+
+### `copilot-usage`
+
+Tracks nominal Copilot AI credit usage for a specific `github.com` account. This experimental feed requires the account to be authenticated in `gh`. Nominal usage uses GitHub's published $0.01 USD per-credit rate; it is not billed spend or an enforced budget.
+
+```toml
+[[feed]]
+name = "Copilot usage"
+type = "copilot-usage"
+account = "octocat"
+reference_amount_usd = 2000
+attention_at_percent = 80
+# details_url = "https://example.com/copilot-consumption" # optional HTTPS override
+interval = "120s"
+```
+
+Opening the Activity uses `https://github.com/settings/copilot` unless `details_url` is set. The browser's active GitHub account may differ from the account selected through `gh`.
 
 ### `ado-pr`
 

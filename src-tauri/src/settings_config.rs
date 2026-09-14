@@ -1231,6 +1231,56 @@ mod tests {
     }
 
     #[test]
+    fn copilot_usage_dto_preserves_numeric_config_values() {
+        let feed = FeedConfigDto {
+            name: "octocat Copilot usage".into(),
+            feed_type: "copilot-usage".into(),
+            interval: Some("2m".into()),
+            retain: None,
+            notify: None,
+            notify_kinds: None,
+            type_specific: [
+                ("account".into(), serde_json::json!("octocat")),
+                ("reference_amount_usd".into(), serde_json::json!(2000)),
+                ("attention_at_percent".into(), serde_json::json!(80)),
+                (
+                    "details_url".into(),
+                    serde_json::json!("https://example.com/usage"),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+            fields: HashMap::new(),
+        };
+
+        let toml_str = dto_to_toml_document(&[feed]);
+        assert!(toml_str.contains("reference_amount_usd = 2000"));
+        assert!(toml_str.contains("attention_at_percent = 80"));
+        assert!(!toml_str.contains("reference_amount_usd = \"2000\""));
+
+        let config = dto_to_feed_config(&FeedConfigDto {
+            name: "octocat Copilot usage".into(),
+            feed_type: "copilot-usage".into(),
+            interval: Some("2m".into()),
+            retain: None,
+            notify: None,
+            notify_kinds: None,
+            type_specific: [
+                ("account".into(), serde_json::json!("octocat")),
+                ("reference_amount_usd".into(), serde_json::json!(2000)),
+            ]
+            .into_iter()
+            .collect(),
+            fields: HashMap::new(),
+        })
+        .expect("numeric feed config should parse");
+        assert_eq!(
+            config.type_specific.get("reference_amount_usd"),
+            Some(&toml::Value::Integer(2000))
+        );
+    }
+
+    #[test]
     fn toml_quote_escapes_special_chars() {
         assert_eq!(toml_quote("hello"), "\"hello\"");
         assert_eq!(toml_quote("he\"llo"), "\"he\\\"llo\"");

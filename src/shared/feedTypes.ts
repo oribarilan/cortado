@@ -2,6 +2,7 @@
 export type FeedType =
   | "github-pr"
   | "github-actions"
+  | "copilot-usage"
   | "ado-pr"
   | "http-health"
   | "copilot-session"
@@ -17,6 +18,14 @@ export type FeedTypeField = {
   mono?: boolean;
   required?: boolean;
   sensitive?: boolean;
+  /** Native input type used by the generic Settings field renderer. */
+  inputType?: "text" | "number" | "url";
+  /** Optional numeric input boundaries and increment. */
+  min?: number;
+  max?: number;
+  step?: number;
+  /** Initial type-specific value assigned when a feed is created. */
+  defaultValue?: string | number;
   /// When set to "user-filter", renders a segmented control with "All" / "Me" / "User"
   /// options instead of a plain text input. The "Me" option stores `meValue` in config;
   /// "All" stores an empty string; "User" shows a text input for a specific identity.
@@ -151,6 +160,51 @@ export const FEED_CATALOG: CatalogProvider[] = [
           { key: "user", label: "Actor filter", placeholder: "octocat", hint: "GitHub username", mono: true, kind: "user-filter", resolveMeCommand: "resolve_github_username" },
         ],
         dependency: GH_DEP,
+      },
+      {
+        feedType: "copilot-usage",
+        name: "Copilot Usage",
+        label: "GitHub Copilot Usage",
+        description: "Track an account's nominal AI credit usage",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a8 8 0 1 1 16 0"/><path d="m12 15 4-5"/><path d="M7 19h10"/></svg>`,
+        defaultInterval: "2m",
+        badge: "experimental",
+        defaultNamePattern: "{account} Copilot usage",
+        namePlaceholder: "octocat Copilot usage",
+        fields: [
+          { key: "account", label: "GitHub account", placeholder: "octocat", hint: "GitHub login already authenticated in gh", mono: true, required: true },
+          { key: "reference_amount_usd", label: "Monthly reference amount", placeholder: "2000", hint: "USD comparison amount used to calculate nominal utilization", required: true, inputType: "number", min: 0.01, step: 0.01 },
+          { key: "attention_at_percent", label: "Needs attention at", placeholder: "80", hint: "Percentage of the reference amount (default: 80)", inputType: "number", min: 1, max: 100, step: 0.1, defaultValue: 80 },
+          { key: "details_url", label: "Consumption page", placeholder: "https://github.com/settings/copilot", hint: "Optional HTTPS action override; defaults to GitHub Copilot settings", mono: true, inputType: "url" },
+        ],
+        dependency: GH_DEP,
+        validations: [
+          { field: "reference_amount_usd", check: (v) => {
+            const value = Number(v);
+            return Number.isFinite(value) && value > 0 ? null : "Must be a number greater than zero";
+          }},
+          { field: "attention_at_percent", check: (v) => {
+            if (!v) return null;
+            const value = Number(v);
+            return Number.isFinite(value) && value >= 1 && value <= 100 ? null : "Must be between 1 and 100";
+          }},
+          { field: "details_url", check: (v) => {
+            if (!v) return null;
+            try {
+              const url = new URL(v);
+              return url.protocol === "https:" && !url.username && !url.password
+                ? null
+                : "Must be an https:// URL without embedded credentials";
+            } catch {
+              return "Must be a valid https:// URL";
+            }
+          }},
+        ],
+        notes: [
+          "This feed is experimental because it relies on an undocumented GitHub endpoint.",
+          "Nominal usage converts AI credits at GitHub's published rate; it is not billed spend or an enforced budget.",
+          "Links open with your browser's active GitHub session, which may differ from the GitHub account selected above.",
+        ],
       },
     ],
   },

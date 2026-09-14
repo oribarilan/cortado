@@ -10,11 +10,31 @@ use async_trait::async_trait;
 use tokio::process::Command;
 
 /// Command invocation details for external process execution.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct CommandInvocation {
     pub program: String,
     pub args: Vec<String>,
     pub timeout: Duration,
+    environment: Vec<(String, String)>,
+    removed_environment: Vec<String>,
+}
+
+impl fmt::Debug for CommandInvocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let environment_keys: Vec<&str> = self
+            .environment
+            .iter()
+            .map(|(key, _)| key.as_str())
+            .collect();
+
+        f.debug_struct("CommandInvocation")
+            .field("program", &self.program)
+            .field("args", &self.args)
+            .field("timeout", &self.timeout)
+            .field("environment_keys", &environment_keys)
+            .field("removed_environment", &self.removed_environment)
+            .finish()
+    }
 }
 
 impl CommandInvocation {
@@ -28,7 +48,28 @@ impl CommandInvocation {
             program: program.into(),
             args: args.into_iter().map(Into::into).collect(),
             timeout,
+            environment: Vec::new(),
+            removed_environment: Vec::new(),
         }
+    }
+
+    /// Adds an environment value without exposing it through display or debug output.
+    pub fn with_environment(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        let key = key.into();
+        self.removed_environment.retain(|removed| removed != &key);
+        self.environment.retain(|(existing, _)| existing != &key);
+        self.environment.push((key, value.into()));
+        self
+    }
+
+    /// Removes an inherited environment value from the child process.
+    pub fn without_environment(mut self, key: impl Into<String>) -> Self {
+        let key = key.into();
+        self.environment.retain(|(existing, _)| existing != &key);
+        if !self.removed_environment.contains(&key) {
+            self.removed_environment.push(key);
+        }
+        self
     }
 
     /// Returns a human-readable representation of the command.
@@ -113,6 +154,12 @@ impl ProcessRunner for TokioProcessRunner {
 
         let mut command = Command::new(&invocation.program);
         command.args(&invocation.args);
+        for key in &invocation.removed_environment {
+            command.env_remove(key);
+        }
+        for (key, value) in &invocation.environment {
+            command.env(key, value);
+        }
         command.stdin(Stdio::null());
         command.stdout(Stdio::piped());
         command.stderr(Stdio::piped());
@@ -190,6 +237,37 @@ mod tests {
         // "-c" contains only safe chars so it's unquoted; "echo hello world" has spaces so it's quoted
         assert!(display.starts_with("sh -c "));
         assert!(display.contains("echo hello world"));
+    }
+
+    #[test]
+    fn command_invocation_hides_environment_values() {
+        let inv = CommandInvocation::new("gh", ["api", "/user"], Duration::from_secs(5))
+            .with_environment("GH_TOKEN", "secret-token-value")
+            .without_environment("GITHUB_TOKEN");
+
+        assert_eq!(inv.display(), "gh api /user");
+        let debug = format!("{inv:?}");
+        assert!(debug.contains("GH_TOKEN"));
+        assert!(debug.contains("GITHUB_TOKEN"));
+        assert!(!debug.contains("secret-token-value"));
+    }
+
+    #[test]
+    fn latest_environment_operation_wins() {
+        let removed = CommandInvocation::new("gh", ["api"], Duration::from_secs(5))
+            .with_environment("GH_TOKEN", "secret")
+            .without_environment("GH_TOKEN");
+        assert!(removed.environment.is_empty());
+        assert_eq!(removed.removed_environment, vec!["GH_TOKEN"]);
+
+        let provided = CommandInvocation::new("gh", ["api"], Duration::from_secs(5))
+            .without_environment("GH_TOKEN")
+            .with_environment("GH_TOKEN", "replacement");
+        assert!(provided.removed_environment.is_empty());
+        assert_eq!(
+            provided.environment,
+            vec![("GH_TOKEN".to_string(), "replacement".to_string())]
+        );
     }
 
     #[test]

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use self::{
     ado_pr::AdoPrFeed,
     config::FeedConfig,
+    copilot_usage::CopilotUsageFeed,
     github_actions::GithubActionsFeed,
     github_pr::GithubPrFeed,
     harness::{feed::HarnessFeed, generic::GenericProvider},
@@ -20,6 +21,7 @@ pub mod concurrent;
 pub mod config;
 pub mod config_watcher;
 pub mod connectivity;
+pub mod copilot_usage;
 pub mod cortado_update;
 pub mod dependency;
 pub mod field_overrides;
@@ -232,7 +234,7 @@ pub struct FeedSnapshot {
 pub fn is_network_feed_type(feed_type: &str) -> bool {
     matches!(
         feed_type,
-        "github-pr" | "github-actions" | "ado-pr" | "http-health"
+        "github-pr" | "github-actions" | "copilot-usage" | "ado-pr" | "http-health"
     )
 }
 
@@ -418,6 +420,9 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
         }
         "github-actions" => {
             GithubActionsFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
+        "copilot-usage" => {
+            CopilotUsageFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
         unknown => Err(anyhow::anyhow!("unknown feed type `{unknown}`")),
     }
@@ -894,6 +899,7 @@ mod tests {
     fn network_feed_types_are_identified() {
         assert!(is_network_feed_type("github-pr"));
         assert!(is_network_feed_type("github-actions"));
+        assert!(is_network_feed_type("copilot-usage"));
         assert!(is_network_feed_type("ado-pr"));
         assert!(is_network_feed_type("http-health"));
         assert!(!is_network_feed_type("copilot-session"));

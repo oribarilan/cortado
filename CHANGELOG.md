@@ -5,6 +5,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-14
+
+### Added
+- Copilot Usage (experimental): track an account's AI credit usage and get alerted at a configurable nominal USD threshold
+
 ## [0.16.1] - 2026-05-15
 
 ### Fixed

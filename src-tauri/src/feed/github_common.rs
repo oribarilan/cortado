@@ -1,4 +1,4 @@
-//! Shared helpers for GitHub-backed feeds (`github-pr`, `github-actions`).
+//! Shared helpers for GitHub-backed feeds.
 //!
 //! Houses the `gh` CLI preflight check and error-message helpers so that
 //! every GitHub feed reuses the same binary/auth validation logic.

@@ -84,7 +84,9 @@ function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
   const catalog = findFeedType(feedType);
   if (catalog) {
     for (const f of catalog.fields) {
-      if (f.kind === "user-filter" && f.meValue) {
+      if (f.defaultValue !== undefined) {
+        typeSpecific[f.key] = f.defaultValue;
+      } else if (f.kind === "user-filter" && f.meValue) {
         typeSpecific[f.key] = f.meValue;
       } else if (f.kind === "repo-picker") {
         typeSpecific[f.key] = [];
@@ -1090,8 +1092,9 @@ function SettingsApp() {
     }
   }, [feeds, showToast, scheduleAnim]);
 
-  const updateField = useCallback((key: string, value: string) => {
+  const updateField = useCallback((key: string, value: unknown) => {
     if (!editingFeed) return;
+    const stringValue = String(value ?? "");
     setSaveSuccess(false);
     setFieldErrors((prev) => {
       if (!prev[key]) return prev;
@@ -1102,28 +1105,30 @@ function SettingsApp() {
 
     if (key === "name") {
       // Track whether the user manually edited the name
-      if (value === "") {
+      if (stringValue === "") {
         nameManuallyEdited.current = false;
         // Regenerate default name when field is cleared
         const defaultName = generateDefaultName(editingFeed.type, editingFeed.type_specific);
         setEditingFeed({ ...editingFeed, name: defaultName ?? "" });
       } else {
         nameManuallyEdited.current = true;
-        setEditingFeed({ ...editingFeed, name: value });
+        setEditingFeed({ ...editingFeed, name: stringValue });
       }
     } else if (key === "type") {
       const newTypeSpecific: Record<string, unknown> = {};
-      const newCatalog = findFeedType(value);
+      const newCatalog = findFeedType(stringValue);
       if (newCatalog) {
         for (const f of newCatalog.fields) {
-          if (f.kind === "user-filter" && f.meValue) {
+          if (f.defaultValue !== undefined) {
+            newTypeSpecific[f.key] = f.defaultValue;
+          } else if (f.kind === "user-filter" && f.meValue) {
             newTypeSpecific[f.key] = f.meValue;
           }
         }
       }
-      setEditingFeed({ ...editingFeed, type: value, type_specific: newTypeSpecific });
+      setEditingFeed({ ...editingFeed, type: stringValue, type_specific: newTypeSpecific });
       setTestResult(null);
-      const dep = findFeedType(value)?.dependency;
+      const dep = findFeedType(stringValue)?.dependency;
       if (dep) {
         invoke<{ installed: boolean }>("check_feed_dependency", { binary: dep.binary })
           .then((r) => setDepInstalled(r.installed))
@@ -1132,9 +1137,9 @@ function SettingsApp() {
         setDepInstalled(null);
       }
     } else if (key === "interval") {
-      setEditingFeed({ ...editingFeed, interval: value || undefined });
+      setEditingFeed({ ...editingFeed, interval: stringValue || undefined });
     } else if (key === "retain") {
-      setEditingFeed({ ...editingFeed, retain: value || undefined });
+      setEditingFeed({ ...editingFeed, retain: stringValue || undefined });
     } else {
       const newTypeSpecific = { ...editingFeed.type_specific, [key]: value };
       const updatedFeed = { ...editingFeed, type_specific: newTypeSpecific };
@@ -2083,9 +2088,15 @@ function SettingsApp() {
                 <div className={field.sensitive ? "input-with-toggle" : ""}>
                   <input
                     className={`form-input ${field.mono ? "mono" : ""} ${fieldErrors[field.key] ? "error" : ""}`}
-                    type={field.sensitive && !revealedTokens.has(field.key) ? "password" : "text"}
+                    type={field.sensitive && !revealedTokens.has(field.key) ? "password" : field.inputType ?? "text"}
+                    min={field.min}
+                    max={field.max}
+                    step={field.step}
                     value={String(editingFeed.type_specific[field.key] ?? "")}
-                    onChange={(e) => updateField(field.key, e.target.value)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      updateField(field.key, field.inputType === "number" && raw !== "" ? Number(raw) : raw);
+                    }}
                     placeholder={field.placeholder}
                   />
                   {field.sensitive && (
@@ -2353,7 +2364,7 @@ function SettingsApp() {
             )}
 
             {/* Feed type notes (generic, driven by catalog) */}
-            {editingCatalogType?.notes && editingCatalogType.notes.length > 0 && !depInfo && (
+            {editingCatalogType?.notes && editingCatalogType.notes.length > 0 && (
               <div className="dep-footer">
                 {editingCatalogType.notes[0]}
                 {editingCatalogType.notes.length > 1 && (
