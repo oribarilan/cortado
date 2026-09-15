@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Azure DevOps Pipelines: monitor the latest runs for up to 20 YAML pipelines in one feed
+
+### Changed
+- Azure DevOps feeds now accept hosted Azure DevOps URLs only
+
 ## [0.17.0] - 2026-09-14
 
 ### Added

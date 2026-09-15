@@ -1,9 +1,13 @@
+import { validateHostedAdoOrganization, validateHostedAdoRepository } from "./adoUrl";
+import { parseIntegerList } from "./feedFieldConfig";
+
 /// Canonical feed type identifier.
 export type FeedType =
   | "github-pr"
   | "github-actions"
   | "copilot-usage"
   | "ado-pr"
+  | "ado-pipelines"
   | "http-health"
   | "copilot-session"
   | "opencode-session"
@@ -25,11 +29,15 @@ export type FeedTypeField = {
   max?: number;
   step?: number;
   /** Initial type-specific value assigned when a feed is created. */
-  defaultValue?: string | number;
+  defaultValue?: string | number | number[];
   /// When set to "user-filter", renders a segmented control with "All" / "Me" / "User"
   /// options instead of a plain text input. The "Me" option stores `meValue` in config;
   /// "All" stores an empty string; "User" shows a text input for a specific identity.
-  kind?: "user-filter" | "repo-picker";
+  kind?: "user-filter" | "repo-picker" | "integer-list";
+  /** At least one field in a named group must have a value. */
+  oneOfGroup?: string;
+  /** A populated field clears and cannot be combined with this field. */
+  exclusiveWith?: string;
   /// The config value stored when the user selects "Me" (e.g., "@me" for GitHub, "me" for ADO).
   /// Ignored when `resolveMeCommand` is set.
   meValue?: string;
@@ -48,10 +56,17 @@ export type FeedTypeDep = {
 };
 
 /// A custom validation rule for a type-specific field.
-export type FeedTypeValidation = {
-  field: string;
-  check: (value: string) => string | null;
-};
+export type FeedTypeValidation =
+  | {
+      field: string;
+      raw?: false;
+      check: (value: string) => string | null;
+    }
+  | {
+      field: string;
+      raw: true;
+      check: (value: unknown) => string | null;
+    };
 
 /// A setup prerequisite that must be satisfied before a feed can be saved.
 export type FeedTypeSetup = {
@@ -111,6 +126,17 @@ export type CatalogProvider = {
   name: string;
   icon: string;
   types: CatalogFeedType[];
+};
+
+const ADO_DEP: FeedTypeDep = {
+  binary: "az",
+  name: "Azure CLI",
+  installUrl: "https://learn.microsoft.com/en-us/cli/azure/install-azure-cli",
+  authCommand: "az login",
+  extraSteps: [
+    "Add the extension: az extension add --name azure-devops",
+    "Sign in: az login",
+  ],
 };
 
 const GH_DEP: FeedTypeDep = {
@@ -226,22 +252,43 @@ export const FEED_CATALOG: CatalogProvider[] = [
           { key: "url", label: "Repository URL", placeholder: "https://dev.azure.com/org/project/_git/repo", hint: "Full URL to the Azure DevOps Git repository", mono: true, required: true },
           { key: "user", label: "Creator filter", placeholder: "user@org.com", hint: "Email address (display names may be ambiguous)", mono: true, kind: "user-filter", meValue: "me" },
         ],
-        dependency: {
-          binary: "az",
-          name: "Azure CLI",
-          installUrl: "https://learn.microsoft.com/en-us/cli/azure/install-azure-cli",
-          authCommand: "az login",
-          extraSteps: [
-            "Add the extension: az extension add --name azure-devops",
-            "Sign in: az login",
-          ],
-        },
+        dependency: ADO_DEP,
         validations: [
-          { field: "url", check: (v) => {
-            if (v && !v.startsWith("https://")) return "Must be an https:// URL";
-            if (v && !v.includes("/_git/")) return "URL must contain /_git/ (e.g., https://dev.azure.com/org/project/_git/repo)";
-            return null;
+          { field: "url", check: validateHostedAdoRepository },
+        ],
+      },
+      {
+        feedType: "ado-pipelines",
+        name: "Pipelines",
+        label: "Azure DevOps Pipelines",
+        description: "Monitor the latest run for a group of YAML pipelines",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="6" rx="2"/><rect x="3" y="15" width="18" height="6" rx="2"/><path d="M7 9v6"/><path d="M17 9v6"/></svg>`,
+        defaultInterval: "2m",
+        defaultNamePattern: "{project} pipelines",
+        namePlaceholder: "Platform pipelines",
+        fields: [
+          { key: "organization", label: "Organization URL", placeholder: "https://dev.azure.com/acme", hint: "Azure DevOps organization URL", mono: true, required: true, inputType: "url" },
+          { key: "project", label: "Project", placeholder: "Platform", hint: "Project name or ID", mono: true, required: true },
+          { key: "pipeline_ids", label: "Pipeline IDs", placeholder: "42, 73, 108", hint: "Up to 20 numeric YAML pipeline IDs; choose IDs or one folder", mono: true, kind: "integer-list", oneOfGroup: "pipeline-selector", exclusiveWith: "folder" },
+          { key: "folder", label: "Exact folder", placeholder: "\\Team\\CI", hint: "Exact ADO folder only; subfolders are not included", mono: true, oneOfGroup: "pipeline-selector", exclusiveWith: "pipeline_ids" },
+        ],
+        dependency: ADO_DEP,
+        validations: [
+          { field: "organization", check: validateHostedAdoOrganization },
+          { field: "project", check: (v) =>
+            /[\u0000-\u001f\u007f]/.test(v) ? "Contains unsupported characters" : null },
+          { field: "pipeline_ids", raw: true, check: (v) => parseIntegerList(v).error },
+          { field: "folder", check: (v) => {
+            if (!v) return null;
+            if (!v.startsWith("\\") || v.includes("/")) {
+              return "Must be an exact folder path beginning with \\\\";
+            }
+            return /[\u0000-\u001f\u007f]/.test(v) ? "Contains unsupported characters" : null;
           }},
+        ],
+        notes: [
+          "Only YAML pipelines are included. Classic build and release pipelines are not supported.",
+          "Folder matching is exact. Narrow folders with more than 20 YAML pipelines.",
         ],
       },
     ],

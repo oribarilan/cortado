@@ -1,10 +1,34 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { supportsFocus, formatRelativeTime } from "./utils";
+import { supportsFocus, supportsOpen, formatRelativeTime } from "./utils";
 import type { Activity } from "./types";
 
 function makeActivity(fields: Activity["fields"] = []): Activity {
   return { id: "session-123", title: "Test Session", fields, retained: false };
 }
+
+describe("supportsOpen", () => {
+  it("uses a URL field for stable non-URL activity IDs", () => {
+    const activity = makeActivity([
+      {
+        name: "link",
+        label: "Link",
+        value: { type: "url", value: "https://dev.azure.com/acme/project/_build/results?buildId=42" },
+      },
+    ]);
+    activity.id = "ado-pipeline:stable";
+    expect(supportsOpen(activity)).toBe(
+      "https://dev.azure.com/acme/project/_build/results?buildId=42",
+    );
+  });
+
+  it("prefers a URL activity ID", () => {
+    const activity = makeActivity([
+      { name: "link", label: "Link", value: { type: "url", value: "https://example.com/field" } },
+    ]);
+    activity.id = "https://example.com/id";
+    expect(supportsOpen(activity)).toBe("https://example.com/id");
+  });
+});
 
 describe("supportsFocus", () => {
   it("returns focus info when activity has a focus_app text field", () => {

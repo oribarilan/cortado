@@ -1,30 +1,27 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, bail, Result};
+use percent_encoding::percent_decode_str;
 use serde::Deserialize;
 use toml::Value;
 
 use crate::feed::{
+    ado_common::{
+        ensure_az_ready, looks_like_az_auth_error, looks_like_missing_extension,
+        non_zero_exit_context, validate_hosted_ado_organization, AZ_EXTENSION_MISSING_MESSAGE,
+        AZ_UNAUTHENTICATED_MESSAGE,
+    },
     concurrent,
     config::{FeedConfig, FieldOverride},
-    dependency::{classify_dependency_result, DependencyCheck},
     field_overrides::{apply_activity_overrides, apply_definition_overrides},
     process::{CommandInvocation, ProcessRunner, TokioProcessRunner},
     Activity, Feed, Field, FieldDefinition, FieldType, FieldValue, StatusKind,
 };
 
 const DEFAULT_INTERVAL_SECONDS: u64 = 120;
-const AZ_PREFLIGHT_TIMEOUT: Duration = Duration::from_secs(15);
 const AZ_POLL_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_ACTIVITIES_PER_FEED: usize = 20;
 const MAX_POLICY_CONCURRENCY: usize = 5;
-
-const AZ_MISSING_MESSAGE: &str =
-    "Azure DevOps feed requires `az` CLI. Install it from https://aka.ms/install-azure-cli and run `az login`.";
-const AZ_EXTENSION_MISSING_MESSAGE: &str =
-    "Azure DevOps feed requires `azure-devops` extension. Run `az extension add --name azure-devops`.";
-const AZ_UNAUTHENTICATED_MESSAGE: &str =
-    "Azure DevOps feed requires `az` authentication. Run `az login` and retry.";
 const AZ_CREATOR_IDENTITY_MESSAGE: &str =
     "Azure DevOps feed `user` was not resolved to a unique identity. Use a more specific creator value (prefer email/UPN).";
 
@@ -34,6 +31,7 @@ pub struct AdoPrFeed {
     org_url: String,
     project: String,
     repo: String,
+    repo_url: String,
     user: Option<String>,
     interval: Duration,
     retain_for: Option<Duration>,
@@ -55,6 +53,13 @@ impl AdoPrFeed {
         let url = required_non_empty_type_specific_string(config, "url")?;
         let (org_url, project, repo) = parse_ado_repo_url(&url)
             .map_err(|err| anyhow!("feed `{}` (type ado-pr): {err}", config.name))?;
+        // CLI names are decoded; browser paths must be encoded exactly once.
+        let mut repo_url = reqwest::Url::parse(&org_url)?;
+        repo_url
+            .path_segments_mut()
+            .map_err(|_| anyhow!("organization URL cannot be used as a base URL"))?
+            .pop_if_empty()
+            .extend([project.as_str(), "_git", repo.as_str()]);
         let user = config
             .type_specific
             .get("user")
@@ -68,6 +73,7 @@ impl AdoPrFeed {
             org_url,
             project,
             repo,
+            repo_url: repo_url.to_string(),
             user,
             interval: config
                 .interval
@@ -76,74 +82,6 @@ impl AdoPrFeed {
             config_overrides: config.field_overrides.clone(),
             process_runner,
         })
-    }
-
-    async fn ensure_az_ready(&self) -> Result<()> {
-        let version_invocation = CommandInvocation::new("az", ["--version"], AZ_PREFLIGHT_TIMEOUT);
-        let version_display = version_invocation.display();
-        let version_check = classify_dependency_result(
-            &version_display,
-            self.process_runner.run(version_invocation).await,
-        );
-
-        match version_check {
-            DependencyCheck::MissingBinary => bail!(AZ_MISSING_MESSAGE),
-            DependencyCheck::InvocationError(error) => bail!("{error}"),
-            DependencyCheck::Healthy(_) => {}
-        }
-
-        let extension_invocation = CommandInvocation::new(
-            "az",
-            [
-                "extension",
-                "show",
-                "--name",
-                "azure-devops",
-                "--output",
-                "none",
-            ],
-            AZ_PREFLIGHT_TIMEOUT,
-        );
-        let extension_display = extension_invocation.display();
-        let extension_check = classify_dependency_result(
-            &extension_display,
-            self.process_runner.run(extension_invocation).await,
-        );
-
-        match extension_check {
-            DependencyCheck::MissingBinary => bail!(AZ_MISSING_MESSAGE),
-            DependencyCheck::Healthy(_) => {}
-            DependencyCheck::InvocationError(error) => {
-                if looks_like_missing_extension(&error.stdout, &error.stderr) {
-                    bail!(AZ_EXTENSION_MISSING_MESSAGE);
-                }
-
-                bail!("{error}");
-            }
-        }
-
-        let auth_invocation = CommandInvocation::new(
-            "az",
-            ["account", "show", "--output", "json"],
-            AZ_PREFLIGHT_TIMEOUT,
-        );
-        let auth_display = auth_invocation.display();
-        let auth_check = classify_dependency_result(
-            &auth_display,
-            self.process_runner.run(auth_invocation).await,
-        );
-
-        match auth_check {
-            DependencyCheck::MissingBinary => bail!(AZ_MISSING_MESSAGE),
-            DependencyCheck::Healthy(_) => Ok(()),
-            DependencyCheck::InvocationError(error) => {
-                if looks_like_az_auth_error(&error.stdout, &error.stderr) {
-                    bail!(AZ_UNAUTHENTICATED_MESSAGE);
-                }
-
-                bail!("{error}");
-            }
-        }
     }
 }
 
@@ -199,7 +137,7 @@ impl Feed for AdoPrFeed {
     }
 
     async fn poll(&self) -> Result<Vec<Activity>> {
-        self.ensure_az_ready().await?;
+        ensure_az_ready(self.process_runner.as_ref()).await?;
 
         let mut args = vec![
             "repos".to_string(),
@@ -290,14 +228,7 @@ impl Feed for AdoPrFeed {
                     Ok(policies) => map_checks_rollup(&policies),
                     Err(_) => status_field("unknown", StatusKind::Idle),
                 };
-                map_pr_to_activity(
-                    pr,
-                    &self.org_url,
-                    &self.project,
-                    &self.repo,
-                    &self.config_overrides,
-                    checks,
-                )
+                map_pr_to_activity(pr, &self.repo_url, &self.config_overrides, checks)
             })
             .collect();
 
@@ -305,56 +236,59 @@ impl Feed for AdoPrFeed {
     }
 }
 
-/// Parses an Azure DevOps repository URL into (org_url, project, repo).
-///
-/// Accepts URLs like:
-///   `https://dev.azure.com/{org}/{project}/_git/{repo}`
-///   `https://{host}/{collection}/{project}/_git/{repo}`
-///   `https://{host}.visualstudio.com/{project}/_git/{repo}`
-fn parse_ado_repo_url(url: &str) -> Result<(String, String, String)> {
-    if !url.starts_with("https://") {
-        bail!("`url` must be an https:// URL");
+/// Parses a hosted Azure DevOps repository URL into (organization, project, repository).
+fn parse_ado_repo_url(raw: &str) -> Result<(String, String, String)> {
+    let url = reqwest::Url::parse(raw.trim())
+        .map_err(|_| anyhow!("`url` must be a valid hosted Azure DevOps repository URL"))?;
+    if url.scheme() != "https"
+        || url.host_str().is_none()
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+        || url.port_or_known_default() != Some(443)
+    {
+        bail!("`url` must be an HTTPS hosted Azure DevOps repository URL without credentials, query, or fragment");
     }
 
-    // Find `_git` segment to split project and repo.
-    let Some(git_idx) = url.find("/_git/") else {
-        bail!("`url` must contain `/_git/` (e.g., https://dev.azure.com/org/project/_git/repo)");
-    };
-
-    let after_git = &url[git_idx + "/_git/".len()..];
-    let repo = after_git
-        .split(&['?', '#'][..])
-        .next()
-        .unwrap_or(after_git)
-        .trim_end_matches('/');
-    if repo.is_empty() {
-        bail!("`url` is missing the repository name after `/_git/`");
+    let host = url.host_str().unwrap_or_default().to_ascii_lowercase();
+    let mut segments: Vec<&str> = url
+        .path_segments()
+        .ok_or_else(|| anyhow!("`url` must contain a project and `/_git/` repository path"))?
+        .collect();
+    if segments.last() == Some(&"") {
+        segments.pop();
     }
 
-    let before_git = &url[..git_idx];
+    let (organization_candidate, repository_segments): (String, &[&str]) =
+        if host == "dev.azure.com" {
+            if segments.is_empty() {
+                bail!("`url` is missing the organization segment");
+            }
+            (
+                format!("https://dev.azure.com/{}", segments[0]),
+                &segments[1..],
+            )
+        } else {
+            (format!("https://{host}"), &segments)
+        };
+    let organization = validate_hosted_ado_organization(&organization_candidate)?;
 
-    // Split off the last path segment as the project.
-    let Some(slash_idx) = before_git.rfind('/') else {
-        bail!("`url` is missing the project segment before `/_git/`");
-    };
-
-    let project = &before_git[slash_idx + 1..];
-    if project.is_empty() {
-        bail!("`url` is missing the project name before `/_git/`");
+    if repository_segments.len() != 3
+        || repository_segments[0].is_empty()
+        || repository_segments[1] != "_git"
+        || repository_segments[2].is_empty()
+    {
+        bail!("`url` must contain exactly one project and `/_git/` repository path");
     }
 
-    let org_url = &before_git[..slash_idx];
-
-    // Sanity: org_url should still start with https:// and have a host.
-    if org_url.len() <= "https://".len() {
-        bail!("`url` is missing the organization segment");
-    }
-
-    Ok((
-        org_url.trim_end_matches('/').to_string(),
-        project.to_string(),
-        repo.to_string(),
-    ))
+    let project = percent_decode_str(repository_segments[0])
+        .decode_utf8()
+        .map_err(|_| anyhow!("`url` project name is not valid UTF-8"))?;
+    let repo = percent_decode_str(repository_segments[2])
+        .decode_utf8()
+        .map_err(|_| anyhow!("`url` repository name is not valid UTF-8"))?;
+    Ok((organization, project.into_owned(), repo.into_owned()))
 }
 
 fn required_non_empty_type_specific_string(config: &FeedConfig, key: &str) -> Result<String> {
@@ -383,9 +317,7 @@ fn required_non_empty_type_specific_string(config: &FeedConfig, key: &str) -> Re
 
 fn map_pr_to_activity(
     pr: AdoPullRequest,
-    org_url: &str,
-    project: &str,
-    repo: &str,
+    repo_url: &str,
     config_overrides: &HashMap<String, FieldOverride>,
     checks: FieldValue,
 ) -> Activity {
@@ -425,7 +357,7 @@ fn map_pr_to_activity(
         .map_or_else(|| "unknown".to_string(), |id| id.to_string());
 
     Activity {
-        id: format!("{org_url}/{project}/_git/{repo}/pullrequest/{id}"),
+        id: format!("{repo_url}/pullrequest/{id}"),
         title: format!(
             "#{} {}",
             id,
@@ -630,46 +562,12 @@ fn map_checks_rollup(policies: &[AdoPolicyEvaluation]) -> FieldValue {
     status_field("succeeded", StatusKind::Idle)
 }
 
-fn looks_like_missing_extension(stdout: &str, stderr: &str) -> bool {
-    let combined = format!("{stdout}\n{stderr}").to_ascii_lowercase();
-    combined.contains("azure-devops") && combined.contains("extension") && combined.contains("not")
-}
-
-fn looks_like_az_auth_error(stdout: &str, stderr: &str) -> bool {
-    let combined = format!("{stdout}\n{stderr}").to_ascii_lowercase();
-    combined.contains("az login")
-        || combined.contains("please run 'az login'")
-        || combined.contains("not logged in")
-        || combined.contains("aadsts")
-        || combined.contains("tf400813")
-        || combined.contains("unauthorized")
-}
-
 fn looks_like_creator_identity_error(stdout: &str, stderr: &str) -> bool {
     let combined = format!("{stdout}\n{stderr}").to_ascii_lowercase();
     (combined.contains("multiple identities") || combined.contains("identity"))
         && (combined.contains("creator")
             || combined.contains("reviewer")
             || combined.contains("cannot resolve"))
-}
-
-fn non_zero_exit_context(exit_code: Option<i32>, stdout: &str, stderr: &str) -> String {
-    let status = match exit_code {
-        Some(code) => format!("exit code {code}"),
-        None => "unknown exit status".to_string(),
-    };
-
-    let stderr = stderr.trim();
-    if !stderr.is_empty() {
-        return format!("{status}: {stderr}");
-    }
-
-    let stdout = stdout.trim();
-    if !stdout.is_empty() {
-        return format!("{status}: {stdout}");
-    }
-
-    status
 }
 
 #[derive(Debug, Deserialize)]
@@ -731,6 +629,7 @@ mod tests {
 
     use crate::app_settings::FeedNotifyOverride;
     use crate::feed::{
+        ado_common::AZ_MISSING_MESSAGE,
         config::FeedConfig,
         process::{CommandError, CommandInvocation, CommandOutput, ProcessRunner},
         Feed, FieldValue, StatusKind,
@@ -739,8 +638,8 @@ mod tests {
     use super::{
         map_checks_rollup, map_merge_status, map_review, parse_ado_repo_url,
         AdoPolicyConfiguration, AdoPolicyEvaluation, AdoPolicyType, AdoPrFeed,
-        AZ_CREATOR_IDENTITY_MESSAGE, AZ_EXTENSION_MISSING_MESSAGE, AZ_MISSING_MESSAGE,
-        AZ_UNAUTHENTICATED_MESSAGE, BUILD_POLICY_TYPE_ID, STATUS_POLICY_TYPE_ID,
+        AZ_CREATOR_IDENTITY_MESSAGE, AZ_EXTENSION_MISSING_MESSAGE, AZ_UNAUTHENTICATED_MESSAGE,
+        BUILD_POLICY_TYPE_ID, STATUS_POLICY_TYPE_ID,
     };
 
     #[derive(Clone)]
@@ -851,6 +750,76 @@ mod tests {
             assert!(inv.args.contains(&"false".to_string()));
             assert!(inv.args.contains(&"--output".to_string()));
             assert!(inv.args.contains(&"json".to_string()));
+        }
+    }
+
+    #[tokio::test]
+    async fn poll_decodes_cli_names_once_and_encodes_browser_urls() {
+        for (url, project, repo, expected_url) in [
+            (
+                "https://dev.azure.com/my-org/My Project/_git/Répo+Tools",
+                "My Project",
+                "Répo+Tools",
+                "https://dev.azure.com/my-org/My%20Project/_git/R%C3%A9po+Tools/pullrequest/42",
+            ),
+            (
+                "https://dev.azure.com/my-org/My%20Project/_git/R%C3%A9po%2BTools",
+                "My Project",
+                "Répo+Tools",
+                "https://dev.azure.com/my-org/My%20Project/_git/R%C3%A9po+Tools/pullrequest/42",
+            ),
+            (
+                "https://my-org.visualstudio.com/My%20Project/_git/R%C3%A9po%2BTools",
+                "My Project",
+                "Répo+Tools",
+                "https://my-org.visualstudio.com/My%20Project/_git/R%C3%A9po+Tools/pullrequest/42",
+            ),
+            (
+                "https://dev.azure.com/my-org/Percent%2520/_git/API%2BTools",
+                "Percent%20",
+                "API+Tools",
+                "https://dev.azure.com/my-org/Percent%2520/_git/API+Tools/pullrequest/42",
+            ),
+        ] {
+            let responses = [
+                "azure-cli",
+                "",
+                "{}",
+                r#"[{"pullRequestId":42,"title":"Test"}]"#,
+                "[]",
+            ]
+            .into_iter()
+            .map(|stdout| {
+                Ok(CommandOutput {
+                    exit_code: Some(0),
+                    stdout: stdout.to_string(),
+                    stderr: String::new(),
+                })
+            })
+            .collect();
+            let runner = Arc::new(StubRunner::new(responses));
+            let mut config = base_config();
+            config
+                .type_specific
+                .insert("url".to_string(), Value::String(url.to_string()));
+            let feed = AdoPrFeed::from_config_with_runner(&config, runner.clone()).unwrap();
+            let activities = feed.poll().await.unwrap();
+            let invocations = runner.invocations().await;
+            assert!(
+                invocations[3]
+                    .args
+                    .windows(2)
+                    .any(|pair| pair == ["--project", project]),
+                "{url}"
+            );
+            assert!(
+                invocations[3]
+                    .args
+                    .windows(2)
+                    .any(|pair| pair == ["--repository", repo]),
+                "{url}"
+            );
+            assert_eq!(activities[0].id, expected_url, "{url}");
         }
     }
 
@@ -1027,6 +996,26 @@ mod tests {
         assert_eq!(feed.user, None);
     }
 
+    #[tokio::test]
+    async fn untrusted_repository_urls_are_rejected_before_cli_use() {
+        let runner = Arc::new(StubRunner::new(Vec::new()));
+        for url in [
+            "https://dev.azure.com.attacker.example/org/project/_git/repo",
+            "https://user:secret@dev.azure.com/org/project/_git/repo",
+            "https://dev.azure.com/org/project/_git/repo?version=main",
+            "https://dev.azure.com/org/project/_git/repo#path=/src",
+            "https://dev.azure.com/org/project/_git/repo?",
+            "https://dev.azure.com/org/project/_git/repo#",
+        ] {
+            let mut config = base_config();
+            config
+                .type_specific
+                .insert("url".to_string(), Value::String(url.to_string()));
+            assert!(AdoPrFeed::from_config_with_runner(&config, runner.clone()).is_err());
+        }
+        assert!(runner.invocations().await.is_empty());
+    }
+
     #[test]
     fn mapping_merge_status_unknown_and_review_rejected_are_deterministic() {
         let FieldValue::Status { value, kind } = map_merge_status(Some("mystery")) else {
@@ -1049,9 +1038,9 @@ mod tests {
 
     #[test]
     fn parse_ado_repo_url_extracts_components() {
-        // Standard dev.azure.com URL
+        // Standard dev.azure.com URL with an allowed default port.
         let (org, proj, repo) =
-            parse_ado_repo_url("https://dev.azure.com/my-org/my-project/_git/my-repo").unwrap();
+            parse_ado_repo_url("https://dev.azure.com:443/my-org/my-project/_git/my-repo").unwrap();
         assert_eq!(org, "https://dev.azure.com/my-org");
         assert_eq!(proj, "my-project");
         assert_eq!(repo, "my-repo");
@@ -1071,26 +1060,28 @@ mod tests {
         assert_eq!(proj, "proj");
         assert_eq!(repo, "repo");
 
-        // URL with query parameters
-        let (org, proj, repo) =
-            parse_ado_repo_url("https://dev.azure.com/org/proj/_git/repo?version=GBmain").unwrap();
-        assert_eq!(org, "https://dev.azure.com/org");
-        assert_eq!(proj, "proj");
-        assert_eq!(repo, "repo");
+        // The CLI accepts names, not percent-encoded URL path segments.
+        let (_, proj, repo) =
+            parse_ado_repo_url("https://dev.azure.com/org/My%20Project/_git/Repo%20Name").unwrap();
+        assert_eq!(proj, "My Project");
+        assert_eq!(repo, "Repo Name");
 
-        // URL with fragment
-        let (_, _, repo) =
-            parse_ado_repo_url("https://dev.azure.com/org/proj/_git/repo#path=/src").unwrap();
-        assert_eq!(repo, "repo");
-
-        // Missing https
-        assert!(parse_ado_repo_url("http://dev.azure.com/o/p/_git/r").is_err());
-
-        // Missing _git
-        assert!(parse_ado_repo_url("https://dev.azure.com/o/p/r").is_err());
-
-        // Missing repo after _git
-        assert!(parse_ado_repo_url("https://dev.azure.com/o/p/_git/").is_err());
+        for invalid in [
+            "https://dev.azure.com/org/proj/_git/repo?version=GBmain",
+            "https://dev.azure.com/org/proj/_git/repo#path=/src",
+            "https://user:secret@dev.azure.com/org/proj/_git/repo",
+            "https://dev.azure.com.attacker.example/org/proj/_git/repo",
+            "https://attacker.example/org/proj/_git/repo",
+            "https://dev.azure.com:444/org/proj/_git/repo",
+            "http://dev.azure.com/o/p/_git/r",
+            "https://dev.azure.com/o/p/r",
+            "https://dev.azure.com/o/p/_git/",
+        ] {
+            assert!(
+                parse_ado_repo_url(invalid).is_err(),
+                "{invalid} should fail"
+            );
+        }
     }
 
     fn base_config() -> FeedConfig {

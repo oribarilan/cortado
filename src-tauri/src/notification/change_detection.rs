@@ -112,7 +112,14 @@ fn extract_activity_url(activity: &crate::feed::Activity) -> Option<String> {
         return Some(activity.id.clone());
     }
 
-    None
+    activity.fields.iter().find_map(|field| match &field.value {
+        crate::feed::FieldValue::Url { value }
+            if value.starts_with("https://") || value.starts_with("http://") =>
+        {
+            Some(value.clone())
+        }
+        _ => None,
+    })
 }
 
 #[cfg(test)]
@@ -331,6 +338,59 @@ mod tests {
             events[0].activity_url.as_deref(),
             Some("https://github.com/org/repo/pull/42")
         );
+    }
+
+    #[test]
+    fn extracts_url_field_for_stable_non_url_activity_id() {
+        let a = Activity {
+            id: "ado-pipeline:stable".to_string(),
+            title: "API".to_string(),
+            fields: vec![
+                status_field("status", "running", StatusKind::Running),
+                Field {
+                    name: "link".to_string(),
+                    label: "Link".to_string(),
+                    value: FieldValue::Url {
+                        value: "https://dev.azure.com/acme/project/_build/results?buildId=42"
+                            .to_string(),
+                    },
+                },
+            ],
+            retained: false,
+            retained_at_unix_ms: None,
+            sort_ts: None,
+            action: None,
+        };
+        let events = detect_changes(&snapshot("Feed", vec![]), &snapshot("Feed", vec![a]));
+        assert_eq!(
+            events[0].activity_url.as_deref(),
+            Some("https://dev.azure.com/acme/project/_build/results?buildId=42")
+        );
+    }
+
+    #[test]
+    fn changing_run_details_without_a_kind_change_does_not_notify() {
+        let make = |run: &str| {
+            activity(
+                "ado-pipeline:stable",
+                "API",
+                vec![
+                    status_field("status", "passing", StatusKind::Idle),
+                    Field {
+                        name: "run".to_string(),
+                        label: "Run".to_string(),
+                        value: FieldValue::Text {
+                            value: run.to_string(),
+                        },
+                    },
+                ],
+            )
+        };
+        let events = detect_changes(
+            &snapshot("Feed", vec![make("41")]),
+            &snapshot("Feed", vec![make("42")]),
+        );
+        assert!(events.is_empty());
     }
 
     #[test]

@@ -13,6 +13,13 @@ Canonical definitions for project terminology. When introducing a new term, defi
 | **Harness** | A terminal-based AI coding agent (e.g., GitHub Copilot CLI, OpenCode). The `HarnessProvider` trait abstracts session discovery; `HarnessFeed` is the generic Feed impl. All harness feeds use `GenericProvider` backed by the interchange format (`~/.config/cortado/harness/`, see `specs/harness-interchange.md`). Agent-specific logic lives in plugins that write interchange files (OpenCode plugin, Copilot CLI plugin). Adding a new agent = one line of Rust (`GenericProvider::new("name")`) + a plugin that writes state files. |
 | **Nominal Usage** | A comparison value derived from usage units at a published conversion rate. For `copilot-usage`, this is AI credits multiplied by GitHub's current $0.01 USD per-credit rate. It is not evidence of billed spend, invoice charges, an enforced budget, or an employer's internal cost. |
 
+## Pipelines
+
+| Term | Definition |
+|------|-----------|
+| **Pipeline** | A reusable CI/CD definition. An `ado-pipelines` Activity tracks one Azure DevOps YAML pipeline, identified by its numeric ID within a project. |
+| **Pipeline Run** | One execution of a pipeline. An `ado-pipelines` Activity shows its latest run; a new run updates the existing Activity. |
+
 ## Status Model
 
 See `specs/status.md` for the full status model spec.

@@ -71,6 +71,9 @@ Current dependency requirements:
 - `github-actions`: requires `gh` installed and authenticated.
 - `copilot-usage`: requires `gh` and its configured `account` authenticated for `github.com`.
 - `ado-pr`: requires `az` CLI, `azure-devops` extension, and authenticated access via `az login`.
+- `ado-pipelines`: uses the same dependency checks and canonical errors as `ado-pr`.
+
+Both ADO feed types support hosted Azure DevOps only. Validate organization roots before any CLI call: `https://dev.azure.com/<organization>` or `https://<organization>.visualstudio.com`, with an optional trailing slash. Reject custom Server hosts, unexpected path segments, non-default ports, embedded credentials, queries, and fragments. `ado-pr` validates the organization extracted from its repository URL using the same rule; repository URLs must not contain embedded credentials, queries, or fragments either. This boundary prevents sending Azure CLI credentials to an arbitrary destination.
 
 #### `ado-pr` dependency checks (contract)
 
@@ -98,6 +101,7 @@ Each feed type defines a default poll interval used when `interval` is omitted f
 | `github-actions` | `"120s"` |
 | `copilot-usage` | `"120s"` |
 | `ado-pr` | `"120s"` |
+| `ado-pipelines` | `"120s"` |
 | `copilot-session` | `"30s"` |
 | `opencode-session` | `"30s"` |
 | `claude-code-session` | `"30s"` |
@@ -165,6 +169,7 @@ Errors are surfaced per-feed in the UI, never silently swallowed.
 | `github-actions` | CI workflow runs per repo | status (status), branch (text), workflow (text), event (text) |
 | `copilot-usage` (experimental) | One account-level Copilot AI credit usage summary | usage (status), nominal_usage (text), reference_amount (text), credits_used (number), reset (text) |
 | `ado-pr` | Active Azure DevOps PRs per org/project/repo | review (status), checks (status), mergeable (status), draft (status) |
+| `ado-pipelines` | Selected Azure DevOps YAML pipelines within a project | status (status), branch (text), run (text), event (text), link (url) |
 | `http-health` | Single activity per URL | status (status), response_time (number), status_code (number) |
 | `copilot-session` | Active GitHub Copilot CLI sessions | status (status), repo (text), branch (text) |
 | `opencode-session` | Active OpenCode coding sessions | status (status), repo (text), branch (text) |
@@ -292,6 +297,59 @@ Checks rollup from `az repos pr policy list --id <PR_ID>` (CI policies only -- B
 - unknown/unexpected states are ignored in rollup; if all non-`notApplicable` policies are unknown, the result is `<state> (unknown)` (idle)
 - per-PR policy-call failures produce `unknown` (idle) without failing the whole feed poll
 - policy calls use bounded concurrency (max 5 in flight) with the same per-call timeout as the main poll (30s)
+
+### `ado-pipelines` contract
+
+One feed tracks a collection of YAML pipelines in one Azure DevOps project. Classic build and Classic release pipelines are not supported.
+
+```toml
+[[feed]]
+name = "Team CI"
+type = "ado-pipelines"
+organization = "https://dev.azure.com/acme"
+project = "Platform"
+pipeline_ids = [42, 73, 108]
+# Or replace pipeline_ids with an exact folder:
+# folder = '\Team\CI'
+interval = "120s"
+```
+
+Config and selection:
+
+- `organization` is a required hosted Azure DevOps organization root following the shared ADO URL rules above. `project` is a required project name or ID. No repository is required.
+- Exactly one of `pipeline_ids` or `folder` must be supplied. `pipeline_ids` is a nonempty list of unique positive 32-bit integers, with at most 20 entries. Names are display labels, not selectors.
+- `folder` selects only pipelines in that exact folder, not subfolders. Folder membership is refreshed on every poll. Classic pipelines are excluded before counting matching pipelines.
+- More than 20 matching YAML pipelines is a feed error asking the user to narrow the selection, not a silently truncated success. A folder with no matching YAML pipelines returns an empty list.
+- Explicit IDs that are missing, inaccessible, or not YAML pipelines produce a feed error. Never silently omit a configured ID.
+- Default poll interval: `120s`. Standard field overrides, notifications, and retention apply.
+
+Polling uses the project-scoped Build Definitions API through `az devops invoke`, with API version `7.1`, YAML process filtering, and `includeLatestBuilds=true`. Query all selected IDs together, or query by folder and enforce exact matching against returned paths. Follow continuation tokens, reject malformed responses or non-progressing pagination, and use bounded command timeouts. Do not fetch full definitions, pipeline variables, logs, or one endpoint per pipeline.
+
+Activity identity is stable across runs and pipeline renames, scoped by organization, project, and pipeline ID. The title is the pipeline name. Fields describe `latestBuild`, not the last successful or last completed run:
+
+| Field | Type | Label | Description |
+|-------|------|-------|-------------|
+| `status` | status | Status | Latest run status |
+| `branch` | text | Branch | Latest run source branch |
+| `run` | text | Run | Latest run number/name |
+| `event` | text | Event | Latest run trigger reason |
+| `link` | url | Link | Latest run's browser URL; pipeline overview when never run |
+
+Status mapping uses lifecycle status until the run is completed, then its result:
+
+- No latest run: `not run` (idle).
+- `notStarted` or `postponed`: `queued` (waiting).
+- `inProgress`: `running` (running).
+- `cancelling`: `cancelling` (running).
+- Completed with `succeeded`: `passing` (idle).
+- Completed with `failed`: `failing` (attention-negative).
+- Completed with `partiallySucceeded`: `partially succeeded` (attention-negative).
+- Completed with `canceled`: `cancelled` (attention-negative), following the written CI status convention.
+- Missing or unrecognized states/results: `unknown` (idle), never inferred as success.
+
+Use the latest run's queue time for within-kind recency ordering when available. A new run updates the same Activity; old runs are not retained as separate Activities. Retention applies when a pipeline leaves the selection. Notifications follow existing Status Kind transitions, so consecutive runs with the same observed kind do not notify merely because the run number changed. Older concurrent runs and stage/approval-level details are outside this feed's scope.
+
+Settings must create and edit either selector and preserve `pipeline_ids` as a TOML integer array. Use a small list input with validation; pipeline discovery/pickers and recursive folders are out of scope.
 
 ### `github-actions` field mapping contract
 
