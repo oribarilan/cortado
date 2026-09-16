@@ -49,6 +49,7 @@ type GeneralSettings = {
   theme: string;
   text_size: string;
   show_menubar: boolean;
+  start_in_background: boolean;
   global_hotkey: string;
 };
 
@@ -583,6 +584,18 @@ function SettingsApp() {
 
   // General settings state
   const [showMenubar, setShowMenubar] = useState(true);
+  const [startInBackground, setStartInBackground] = useState(false);
+  const [generalSaveError, setGeneralSaveError] = useState<string | null>(null);
+  const [generalSaving, setGeneralSaving] = useState(false);
+  const [resettingGeneral, setResettingGeneral] = useState(false);
+  const [generalSavedKey, setGeneralSavedKey] = useState<string | null>(null);
+  const generalSavedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showGeneralSaved = useCallback((key: string) => {
+    if (generalSavedTimer.current) clearTimeout(generalSavedTimer.current);
+    setGeneralSavedKey(key);
+    generalSavedTimer.current = setTimeout(() => setGeneralSavedKey(null), 1500);
+  }, []);
+  useEffect(() => () => { if (generalSavedTimer.current) clearTimeout(generalSavedTimer.current); }, []);
   const [showPrioritySection, setShowPrioritySection] = useState(true);
   const [showEmptyFeeds, setShowEmptyFeeds] = useState(false);
   const [theme, setTheme] = useState("system");
@@ -697,6 +710,7 @@ function SettingsApp() {
       .then((s) => {
         setNotifSettings(s.notifications);
         setShowMenubar(s.general?.show_menubar ?? true);
+        setStartInBackground(s.general?.start_in_background ?? false);
         initialMenubar.current = s.general?.show_menubar ?? true;
         setShowPrioritySection(s.panel?.show_priority_section ?? true);
         setShowEmptyFeeds(s.panel?.show_empty_feeds ?? false);
@@ -757,7 +771,9 @@ function SettingsApp() {
       .catch(() => {});
   }, [loadFeeds]);
 
-  const toggleAutostart = useCallback(async () => {
+  const toggleAutostart = useCallback(async (showFeedback = true) => {
+    setGeneralSaveError(null);
+    setGeneralSavedKey(null);
     try {
       if (autostart) {
         await disable();
@@ -766,10 +782,21 @@ function SettingsApp() {
         await enable();
         setAutostart(true);
       }
+      if (showFeedback) showGeneralSaved("autostart");
+      return true;
     } catch (err) {
-      console.error("autostart toggle failed:", err);
+      setGeneralSaveError(err instanceof Error ? err.message : String(err));
+      return false;
     }
-  }, [autostart]);
+  }, [autostart, showGeneralSaved]);
+
+  const generalSettings: GeneralSettings = useMemo(() => ({
+    show_menubar: showMenubar,
+    start_in_background: startInBackground,
+    theme,
+    text_size: textSize,
+    global_hotkey: globalHotkey,
+  }), [showMenubar, startInBackground, theme, textSize, globalHotkey]);
 
   const saveNotifSettings = useCallback(async (updated: NotificationSettings) => {
     setNotifSettings(updated);
@@ -777,7 +804,7 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
+          general: generalSettings,
           panel: { show_priority_section: showPrioritySection, show_empty_feeds: showEmptyFeeds },
           notifications: updated,
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
@@ -787,41 +814,45 @@ function SettingsApp() {
     } catch (err) {
       setNotifSaveError(err instanceof Error ? err.message : String(err));
     }
-  }, [showPrioritySection, showEmptyFeeds, showMenubar, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [showPrioritySection, showEmptyFeeds, generalSettings, tmuxEnabled, accessibilityEnabled, showToast]);
 
-  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; showPrioritySection?: boolean; showEmptyFeeds?: boolean; theme?: string; textSize?: string }) => {
-    const newMenubar = updates.showMenubar ?? showMenubar;
+  const saveGeneralSetting = useCallback(async (updates: { showMenubar?: boolean; startInBackground?: boolean; showPrioritySection?: boolean; showEmptyFeeds?: boolean; theme?: string; textSize?: string }, savedKey: string | null = "general") => {
+    const newMenubar = updates.showMenubar ?? generalSettings.show_menubar;
+    const newBackground = updates.startInBackground ?? generalSettings.start_in_background;
     const newPriority = updates.showPrioritySection ?? showPrioritySection;
     const newShowEmpty = updates.showEmptyFeeds ?? showEmptyFeeds;
-    const newTheme = updates.theme ?? theme;
-    const newTextSize = updates.textSize ?? textSize;
-
-    if (updates.showMenubar !== undefined) setShowMenubar(newMenubar);
-    if (updates.showPrioritySection !== undefined) setShowPrioritySection(newPriority);
-    if (updates.showEmptyFeeds !== undefined) setShowEmptyFeeds(newShowEmpty);
-    if (updates.theme !== undefined) setTheme(newTheme);
-    if (updates.textSize !== undefined) setTextSize(newTextSize);
+    const newTheme = updates.theme ?? generalSettings.theme;
+    const newTextSize = updates.textSize ?? generalSettings.text_size;
+    setGeneralSaving(true);
+    setGeneralSaveError(null);
+    setGeneralSavedKey(null);
 
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_menubar: newMenubar, theme: newTheme, text_size: newTextSize, global_hotkey: globalHotkey },
+          general: { ...generalSettings, show_menubar: newMenubar, start_in_background: newBackground, theme: newTheme, text_size: newTextSize },
           panel: { show_priority_section: newPriority, show_empty_feeds: newShowEmpty },
           notifications: notifSettings,
           focus: { tmux_enabled: tmuxEnabled, accessibility_enabled: accessibilityEnabled },
         },
       });
+      if (updates.showMenubar !== undefined) setShowMenubar(newMenubar);
+      if (updates.startInBackground !== undefined) setStartInBackground(newBackground);
+      if (updates.showPrioritySection !== undefined) setShowPrioritySection(newPriority);
+      if (updates.showEmptyFeeds !== undefined) setShowEmptyFeeds(newShowEmpty);
+      if (updates.theme !== undefined) setTheme(newTheme);
+      if (updates.textSize !== undefined) setTextSize(newTextSize);
       const menubarChanged = updates.showMenubar !== undefined && initialMenubar.current !== null && updates.showMenubar !== initialMenubar.current;
-      if (menubarChanged) {
-        setRestartNeeded(true);
-        showToast("✓ Saved (Restart Required)");
-      } else {
-        showToast("✓ Saved (Changes Applied)");
-      }
+      if (menubarChanged) setRestartNeeded(true);
+      if (savedKey) showGeneralSaved(savedKey);
+      return true;
     } catch (err) {
-      console.error("failed saving general setting:", err);
+      setGeneralSaveError(err instanceof Error ? err.message : String(err));
+      return false;
+    } finally {
+      setGeneralSaving(false);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, showEmptyFeeds, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [notifSettings, generalSettings, showPrioritySection, showEmptyFeeds, tmuxEnabled, accessibilityEnabled, showGeneralSaved]);
 
   const saveFocusSetting = useCallback(async (updates: { tmuxEnabled?: boolean; accessibilityEnabled?: boolean }) => {
     const newTmux = updates.tmuxEnabled ?? tmuxEnabled;
@@ -833,7 +864,7 @@ function SettingsApp() {
     try {
       await invoke("save_settings", {
         settings: {
-          general: { show_menubar: showMenubar, theme, text_size: textSize, global_hotkey: globalHotkey },
+          general: generalSettings,
           panel: { show_priority_section: showPrioritySection, show_empty_feeds: showEmptyFeeds },
           notifications: notifSettings,
           focus: { tmux_enabled: newTmux, accessibility_enabled: newAccessibility },
@@ -843,18 +874,21 @@ function SettingsApp() {
     } catch (err) {
       console.error("failed saving focus setting:", err);
     }
-  }, [notifSettings, showMenubar, showPrioritySection, showEmptyFeeds, theme, textSize, globalHotkey, tmuxEnabled, accessibilityEnabled, showToast]);
+  }, [notifSettings, generalSettings, showPrioritySection, showEmptyFeeds, tmuxEnabled, accessibilityEnabled, showToast]);
 
-  const saveHotkey = useCallback(async (hotkey: string) => {
+  const saveHotkey = useCallback(async (hotkey: string, showFeedback = true) => {
     setHotkeyError(null);
+    setGeneralSavedKey(null);
     try {
       await invoke("set_global_hotkey", { hotkey });
       setGlobalHotkey(hotkey);
-      showToast("✓ Saved (Changes Applied)");
+      if (showFeedback) showGeneralSaved("keyboard");
+      return true;
     } catch (err) {
       setHotkeyError(err instanceof Error ? err.message : String(err));
+      return false;
     }
-  }, [showToast]);
+  }, [showGeneralSaved]);
 
   // Recording mode: capture next key combo
   useEffect(() => {
@@ -1300,7 +1334,8 @@ function SettingsApp() {
   }, [cancelEdit, selectFeedType, startAdd]);
 
   return (
-    <div className="settings-root">
+    // Full-settings saves must finish before another control can replace the payload.
+    <div className="settings-root" inert={generalSaving || resettingGeneral} aria-busy={generalSaving || resettingGeneral}>
       <nav className="settings-sidebar">
         <div
           className={`settings-nav ${section === "general" ? "active" : ""}`}
@@ -1343,7 +1378,10 @@ function SettingsApp() {
           <>
             <h2 className="settings-title">General</h2>
 
-            <div className="section-header">Appearance</div>
+            <div className="section-header">
+              Appearance
+              <span className={`inline-saved ${generalSavedKey === "appearance" ? "visible" : ""}`} role="status">Saved</span>
+            </div>
 
             <div className="setting-row">
               <div className="setting-info">
@@ -1354,7 +1392,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${theme === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ theme: opt }); }}
+                    onClick={() => { void saveGeneralSetting({ theme: opt }, "appearance"); }}
                   >
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </button>
@@ -1371,7 +1409,7 @@ function SettingsApp() {
                   <button
                     key={opt}
                     className={`segmented-option ${textSize === opt ? "active" : ""}`}
-                    onClick={() => { void saveGeneralSetting({ textSize: opt }); }}
+                    onClick={() => { void saveGeneralSetting({ textSize: opt }, "appearance"); }}
                   >
                     {opt.toUpperCase()}
                   </button>
@@ -1386,29 +1424,55 @@ function SettingsApp() {
                 <div className="setting-label">Start on system startup</div>
                 <div className="setting-hint">Launch Cortado when you log in</div>
               </div>
-              <button
-                className={`toggle ${autostart ? "on" : ""}`}
-                onClick={() => { void toggleAutostart(); }}
-                disabled={autostartLoading}
-                aria-pressed={autostart}
-                aria-label="Start on system startup"
-              />
+              <div className="control-with-status">
+                <button
+                  className={`toggle ${autostart ? "on" : ""}`}
+                  onClick={() => { void toggleAutostart(); }}
+                  disabled={autostartLoading}
+                  aria-pressed={autostart}
+                  aria-label="Start on system startup"
+                />
+                <span className={`inline-saved ${generalSavedKey === "autostart" ? "visible" : ""}`} role="status">Saved</span>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <div className="setting-label">Start in background</div>
+                <div className="setting-hint">Keep the panel closed when Cortado launches. Takes effect on next launch.</div>
+              </div>
+              <div className="control-with-status">
+                <button
+                  className={`toggle ${startInBackground ? "on" : ""}`}
+                  onClick={() => { void saveGeneralSetting({ startInBackground: !startInBackground }, "background"); }}
+                  disabled={notifLoading}
+                  aria-pressed={startInBackground}
+                  aria-label="Start in background"
+                />
+                <span className={`inline-saved ${generalSavedKey === "background" ? "visible" : ""}`} role="status">Saved</span>
+              </div>
             </div>
 
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Show tray icon</div>
-                <div className="setting-hint">Show tray icon and tray menu. When off, use the global shortcut or Spotlight to access Cortado.</div>
+                <div className="setting-hint">Show tray icon and tray menu. When off, use the global shortcut or Spotlight to access Cortado. Requires restart.</div>
               </div>
-              <button
-                className={`toggle ${showMenubar ? "on" : ""}`}
-                onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }); }}
-                aria-pressed={showMenubar}
-                aria-label="Show tray icon"
-              />
+              <div className="control-with-status">
+                <button
+                  className={`toggle ${showMenubar ? "on" : ""}`}
+                  onClick={() => { void saveGeneralSetting({ showMenubar: !showMenubar }, "menubar"); }}
+                  aria-pressed={showMenubar}
+                  aria-label="Show tray icon"
+                />
+                <span className={`inline-saved ${generalSavedKey === "menubar" ? "visible" : ""}`} role="status">Saved</span>
+              </div>
             </div>
 
-            <div className="section-header">Panel</div>
+            <div className="section-header">
+              Panel
+              <span className={`inline-saved ${generalSavedKey === "panel" ? "visible" : ""}`} role="status">Saved</span>
+            </div>
 
             <div className="setting-row">
               <div className="setting-info">
@@ -1417,7 +1481,7 @@ function SettingsApp() {
               </div>
               <button
                 className={`toggle ${showPrioritySection ? "on" : ""}`}
-                onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }); }}
+                onClick={() => { void saveGeneralSetting({ showPrioritySection: !showPrioritySection }, "panel"); }}
                 aria-pressed={showPrioritySection}
                 aria-label="Show Needs Attention section"
               />
@@ -1430,19 +1494,22 @@ function SettingsApp() {
               </div>
               <button
                 className={`toggle ${showEmptyFeeds ? "on" : ""}`}
-                onClick={() => { void saveGeneralSetting({ showEmptyFeeds: !showEmptyFeeds }); }}
+                onClick={() => { void saveGeneralSetting({ showEmptyFeeds: !showEmptyFeeds }, "panel"); }}
                 aria-pressed={showEmptyFeeds}
                 aria-label="Show empty feeds"
               />
             </div>
 
-            <div className="section-header">Keyboard</div>
+            <div className="section-header">
+              Keyboard
+              <span className={`inline-saved ${generalSavedKey === "keyboard" ? "visible" : ""}`} role="status">Saved</span>
+            </div>
 
             <div className="setting-row">
               <div className="setting-info">
                 <div className="setting-label">Global shortcut</div>
                 <div className="setting-hint">Toggle the panel from anywhere, even when Cortado is in the background</div>
-                {hotkeyError && <div className="hotkey-error">{hotkeyError}</div>}
+                {hotkeyError && <div className="save-error" role="alert">{hotkeyError}</div>}
               </div>
               <div className="hotkey-recorder">
                 <div className={`hotkey-display ${hotkeyRecording ? "recording" : ""} ${!globalHotkey && !hotkeyRecording ? "empty" : ""}`}>
@@ -1473,8 +1540,11 @@ function SettingsApp() {
               </div>
             </div>
 
+            {generalSaveError && <div className="save-error" role="alert">{generalSaveError}</div>}
+
             <div className="btn-row">
               <div style={{ flex: 1 }} />
+              <span className={`inline-saved ${generalSavedKey === "general" ? "visible" : ""}`} role="status">Saved</span>
               <button
                 className="btn-danger-sm"
                 onClick={() => setResetConfirm("general")}
@@ -2562,7 +2632,7 @@ function SettingsApp() {
               <button className="btn-secondary" onClick={closeModal}>Cancel</button>
               <button
                 className="btn-danger-sm"
-                onClick={() => {
+                onClick={async () => {
                   const target = resetConfirm;
                   closeModal();
                   if (target === "notifications") {
@@ -2574,9 +2644,16 @@ function SettingsApp() {
                       notify_removed_activities: false,
                     });
                   } else {
-                    void saveGeneralSetting({ showMenubar: true, showPrioritySection: true, showEmptyFeeds: false, theme: "system", textSize: "m" });
-                    void saveHotkey("super+shift+space");
-                    if (autostart) void toggleAutostart();
+                    setResettingGeneral(true);
+                    try {
+                      // Save the full settings before the hotkey command reads and updates them.
+                      if (!await saveGeneralSetting({ showMenubar: true, startInBackground: false, showPrioritySection: true, showEmptyFeeds: false, theme: "system", textSize: "m" }, null)) return;
+                      if (!await saveHotkey("super+shift+space", false)) return;
+                      if (autostart && !await toggleAutostart(false)) return;
+                      showGeneralSaved("general");
+                    } finally {
+                      setResettingGeneral(false);
+                    }
                   }
                 }}
               >

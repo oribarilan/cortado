@@ -5,6 +5,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Optional background startup keeps the panel closed when Cortado launches; disabled by default
+
+### Fixed
+- Reopening Cortado now opens the panel instead of hiding it when already visible
+- General settings show inline save confirmation and errors, with reset confirmation only after all changes succeed
+
 ## [0.18.0] - 2026-09-16
 
 ### Added

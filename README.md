@@ -46,6 +46,15 @@ Launch Cortado and open **Settings** (click the gear icon or press **Cmd+,**). A
 
 Your feeds appear in the menubar tray and the main panel (toggle with **Cmd+Shift+Space**).
 
+Prefer the tray? Enable **Start in background** in **Settings > General > Behavior** to keep the panel closed when Cortado launches. It's off by default and applies from the next launch. The shortcut and reopening Cortado still open the panel. To configure it by hand, add this to `~/.config/cortado/settings.toml`:
+
+```toml
+[general]
+start_in_background = true
+```
+
+This is separate from **Start on system startup**, which controls launching at login.
+
 ## Feeds
 
 A **feed** is a configured data source that discovers and tracks related items. Each feed polls its source on an interval and surfaces individual **activities**: for example, a `github-pr` feed for a repo will show each open PR as a separate activity with review status, checks, and more.

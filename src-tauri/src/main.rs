@@ -250,9 +250,9 @@ fn main() {
         })
         .build(context)
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
+        .run(|app_handle, event| {
             if let tauri::RunEvent::Reopen { .. } = event {
-                main_screen::toggle_main_screen_panel(_app_handle);
+                main_screen::show_main_screen_panel(app_handle);
             }
         });
 }
