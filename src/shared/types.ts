@@ -30,7 +30,8 @@ export type Field = {
   value: FieldValue;
 };
 
-export type FeedAction = "restart_app";
+/** An activity action independent of its displayed fields. */
+export type FeedAction = "restart_app" | { open_url: string };
 
 export type Activity = {
   id: string;

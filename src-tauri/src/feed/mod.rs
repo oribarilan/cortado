@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 use self::{
+    ado_pipelines::AdoPipelinesFeed,
     ado_pr::AdoPrFeed,
     config::FeedConfig,
     copilot_usage::CopilotUsageFeed,
@@ -15,6 +16,8 @@ use self::{
     http_health::HttpHealthFeed,
 };
 
+pub(crate) mod ado_common;
+pub mod ado_pipelines;
 pub mod ado_pr;
 pub mod changelog;
 pub mod concurrent;
@@ -52,6 +55,7 @@ pub enum FieldType {
     Text,
     Status,
     Number,
+    Url,
 }
 
 /// Semantic status indicating who needs to act next.
@@ -141,6 +145,7 @@ pub enum FieldValue {
     Text { value: String },
     Status { value: String, kind: StatusKind },
     Number { value: f64 },
+    Url { value: String },
 }
 
 impl FieldValue {
@@ -150,13 +155,16 @@ impl FieldValue {
             FieldValue::Text { .. } => "text",
             FieldValue::Status { .. } => "status",
             FieldValue::Number { .. } => "number",
+            FieldValue::Url { .. } => "url",
         }
     }
 
     /// Returns the display-friendly value string.
     pub fn display_value(&self) -> String {
         match self {
-            FieldValue::Text { value } | FieldValue::Status { value, .. } => value.clone(),
+            FieldValue::Text { value }
+            | FieldValue::Status { value, .. }
+            | FieldValue::Url { value } => value.clone(),
             FieldValue::Number { value } => {
                 if value.fract() == 0.0 {
                     format!("{}", *value as i64)
@@ -204,11 +212,13 @@ pub struct Activity {
     pub action: Option<FeedAction>,
 }
 
-/// Action that the frontend can invoke on a synthetic feed.
+/// Action that the frontend can invoke on an activity, independent of field visibility.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FeedAction {
     RestartApp,
+    /// Opens the activity's current web URL without changing its identity.
+    OpenUrl(String),
 }
 
 /// Poll result for one feed, including optional feed-level error.
@@ -234,7 +244,12 @@ pub struct FeedSnapshot {
 pub fn is_network_feed_type(feed_type: &str) -> bool {
     matches!(
         feed_type,
-        "github-pr" | "github-actions" | "copilot-usage" | "ado-pr" | "http-health"
+        "github-pr"
+            | "github-actions"
+            | "copilot-usage"
+            | "ado-pr"
+            | "ado-pipelines"
+            | "http-health"
     )
 }
 
@@ -415,6 +430,9 @@ pub(crate) fn instantiate_feed(config: &FeedConfig) -> Result<Arc<dyn Feed>> {
             GithubPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
         "ado-pr" => AdoPrFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>),
+        "ado-pipelines" => {
+            AdoPipelinesFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
+        }
         "http-health" => {
             HttpHealthFeed::from_config(config).map(|feed| Arc::new(feed) as Arc<dyn Feed>)
         }
@@ -489,6 +507,14 @@ mod tests {
             sort_ts: None,
             action: None,
         }
+    }
+
+    #[test]
+    fn restart_action_keeps_its_string_payload() {
+        assert_eq!(
+            serde_json::to_value(FeedAction::RestartApp).unwrap(),
+            serde_json::json!("restart_app")
+        );
     }
 
     #[test]
@@ -574,6 +600,13 @@ mod tests {
             "status"
         );
         assert_eq!(FieldValue::Number { value: 1.0 }.field_type(), "number");
+        assert_eq!(
+            FieldValue::Url {
+                value: "https://example.com".to_string()
+            }
+            .field_type(),
+            "url"
+        );
     }
 
     #[test]
@@ -582,6 +615,14 @@ mod tests {
             value: "hello world".to_string(),
         };
         assert_eq!(fv.display_value(), "hello world");
+    }
+
+    #[test]
+    fn display_value_url_returns_display_text() {
+        let fv = FieldValue::Url {
+            value: "https://example.com".to_string(),
+        };
+        assert_eq!(fv.display_value(), "https://example.com");
     }
 
     #[test]
@@ -901,6 +942,7 @@ mod tests {
         assert!(is_network_feed_type("github-actions"));
         assert!(is_network_feed_type("copilot-usage"));
         assert!(is_network_feed_type("ado-pr"));
+        assert!(is_network_feed_type("ado-pipelines"));
         assert!(is_network_feed_type("http-health"));
         assert!(!is_network_feed_type("copilot-session"));
         assert!(!is_network_feed_type("opencode-session"));

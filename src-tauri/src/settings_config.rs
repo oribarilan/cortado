@@ -1231,6 +1231,76 @@ mod tests {
     }
 
     #[test]
+    fn ado_pipeline_ids_round_trip_as_integer_array() {
+        let feed = FeedConfigDto {
+            name: "Team CI".into(),
+            feed_type: "ado-pipelines".into(),
+            interval: Some("2m".into()),
+            retain: None,
+            notify: None,
+            notify_kinds: None,
+            type_specific: [
+                (
+                    "organization".into(),
+                    serde_json::json!("https://dev.azure.com/acme"),
+                ),
+                ("project".into(), serde_json::json!("Platform")),
+                ("pipeline_ids".into(), serde_json::json!([42, 73, 108])),
+            ]
+            .into_iter()
+            .collect(),
+            fields: HashMap::new(),
+        };
+
+        let toml_str = dto_to_toml_document(std::slice::from_ref(&feed));
+        assert!(toml_str.contains("pipeline_ids = [42, 73, 108]"));
+        let config = dto_to_feed_config(&feed).expect("pipeline config should parse");
+        assert_eq!(
+            config.type_specific.get("pipeline_ids"),
+            Some(&toml::Value::Array(vec![
+                toml::Value::Integer(42),
+                toml::Value::Integer(73),
+                toml::Value::Integer(108),
+            ]))
+        );
+        let dto = feed_config_to_dto(&config);
+        assert_eq!(
+            dto.type_specific.get("pipeline_ids"),
+            Some(&serde_json::json!([42, 73, 108]))
+        );
+    }
+
+    #[test]
+    fn ado_folder_only_dto_builds_without_an_empty_id_selector() {
+        let feed = FeedConfigDto {
+            name: "Folder CI".into(),
+            feed_type: "ado-pipelines".into(),
+            interval: Some("2m".into()),
+            retain: None,
+            notify: None,
+            notify_kinds: None,
+            type_specific: [
+                (
+                    "organization".into(),
+                    serde_json::json!("https://dev.azure.com/acme"),
+                ),
+                ("project".into(), serde_json::json!("Platform")),
+                ("folder".into(), serde_json::json!("\\Team\\CI")),
+            ]
+            .into_iter()
+            .collect(),
+            fields: HashMap::new(),
+        };
+
+        let toml_str = dto_to_toml_document(std::slice::from_ref(&feed));
+        assert!(toml_str.contains("folder = \"\\\\Team\\\\CI\""));
+        assert!(!toml_str.contains("pipeline_ids"));
+        let config = dto_to_feed_config(&feed).expect("folder config should parse");
+        let feed = crate::feed::create_feed(&config).expect("folder-only feed should build");
+        assert_eq!(feed.feed_type(), "ado-pipelines");
+    }
+
+    #[test]
     fn copilot_usage_dto_preserves_numeric_config_values() {
         let feed = FeedConfigDto {
             name: "octocat Copilot usage".into(),

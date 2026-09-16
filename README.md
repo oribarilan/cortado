@@ -56,6 +56,7 @@ A **feed** is a configured data source that discovers and tracks related items. 
 | `github-actions`       | CI/CD workflow runs                                                   |
 | `copilot-usage`        | Experimental account-level Copilot AI credit usage                    |
 | `ado-pr`               | Azure DevOps pull requests                                            |
+| `ado-pipelines`        | Latest runs for selected Azure DevOps YAML pipelines                  |
 | `http-health`          | Endpoint availability and response time                               |
 | `copilot-session`      | Active GitHub Copilot coding agent sessions (requires Cortado plugin) |
 | `opencode-session`     | Active OpenCode coding sessions                                       |
@@ -121,7 +122,7 @@ Opening the Activity uses `https://github.com/settings/copilot` unless `details_
 
 ### `ado-pr`
 
-Requires `az` CLI with `azure-devops` extension and `az login`.
+Requires `az` CLI with `azure-devops` extension and `az login`. Hosted Azure DevOps URLs are supported; Azure DevOps Server URLs are rejected.
 
 ```toml
 [[feed]]
@@ -131,6 +132,24 @@ org = "https://dev.azure.com/my-org"
 project = "my-project"
 repo = "my-repo"
 user = "me"
+```
+
+### `ado-pipelines`
+
+Tracks up to 20 YAML pipelines in one hosted Azure DevOps project. Select pipelines by numeric ID or use an exact folder. Subfolders, Classic pipelines, and Azure DevOps Server are not included. Requires `az`, the `azure-devops` extension, and `az login`.
+
+Each pipeline keeps one Activity as its latest run changes. Selections over 20 report an error instead of hiding pipelines.
+
+```toml
+[[feed]]
+name = "Team CI"
+type = "ado-pipelines"
+organization = "https://dev.azure.com/acme"
+project = "Platform"
+pipeline_ids = [42, 73, 108]
+# Or use one exact folder instead:
+# folder = '\Team\CI'
+interval = "120s"
 ```
 
 ### `http-health`

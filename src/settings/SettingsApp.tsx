@@ -10,6 +10,7 @@ import {
 import { useAppearance } from "../shared/useAppearance";
 import type { FeedSnapshot } from "../shared/types";
 import { FEED_CATALOG, findFeedType, generateDefaultName, type FeedType, type CatalogFeedType, type CatalogProvider, type FeedTypeField } from "../shared/feedTypes";
+import { normalizeTypeSpecific, updateTypeSpecific, validateFieldRelationships } from "../shared/feedFieldConfig";
 import { formatShortcut } from "../shared/utils";
 
 type StatusKindKey = "attention-negative" | "attention-positive" | "waiting" | "running" | "idle";
@@ -88,7 +89,7 @@ function emptyFeed(feedType: FeedType, interval?: string): FeedConfigDto {
         typeSpecific[f.key] = f.defaultValue;
       } else if (f.kind === "user-filter" && f.meValue) {
         typeSpecific[f.key] = f.meValue;
-      } else if (f.kind === "repo-picker") {
+      } else if (f.kind === "repo-picker" || f.kind === "integer-list") {
         typeSpecific[f.key] = [];
       }
     }
@@ -491,6 +492,16 @@ function RepoPickerField({
   );
 }
 
+function normalizeFeed(feed: FeedConfigDto): FeedConfigDto {
+  return {
+    ...feed,
+    type_specific: normalizeTypeSpecific(
+      findFeedType(feed.type)?.fields ?? [],
+      feed.type_specific,
+    ),
+  };
+}
+
 function validateFeed(feed: FeedConfigDto): Record<string, string> {
   const errors: Record<string, string> = {};
 
@@ -519,10 +530,14 @@ function validateFeed(feed: FeedConfigDto): Record<string, string> {
     }
   }
 
+  Object.assign(errors, validateFieldRelationships(typeFields, feed.type_specific));
+
   for (const rule of catalogType?.validations ?? []) {
     if (errors[rule.field]) continue;
-    const val = String(feed.type_specific[rule.field] ?? "").trim();
-    const msg = rule.check(val);
+    const rawValue = feed.type_specific[rule.field];
+    const msg = rule.raw
+      ? rule.check(rawValue)
+      : rule.check(String(rawValue ?? "").trim());
     if (msg) errors[rule.field] = msg;
   }
 
@@ -649,7 +664,7 @@ function SettingsApp() {
   const [editingFeed, setEditingFeed] = useState<FeedConfigDto | null>(null);
   const [isNewFeed, setIsNewFeed] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState<FeedConfigDto | false>(false);
   const [revealedTokens, setRevealedTokens] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1040,21 +1055,24 @@ function SettingsApp() {
     setSaveError(null);
     setSaveSuccess(false);
 
-    const errors = validateFeed(editingFeed);
+    const normalizedFeed = normalizeFeed(editingFeed);
+    const errors = validateFeed(normalizedFeed);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
     const updatedFeeds = [...feeds];
     if (isNewFeed) {
-      updatedFeeds.push(editingFeed);
+      updatedFeeds.push(normalizedFeed);
     } else {
-      updatedFeeds[editingIndex] = editingFeed;
+      updatedFeeds[editingIndex] = normalizedFeed;
     }
 
     try {
       await invoke("save_feeds_config", { feeds: updatedFeeds });
       setFeeds(updatedFeeds);
-      setSaveSuccess(true);
+      // Saving must not restore an editor that was changed or discarded while awaiting I/O.
+      setEditingFeed((current) => current === editingFeed ? normalizedFeed : current);
+      setSaveSuccess(normalizedFeed);
       setSaveError(null);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
@@ -1095,11 +1113,13 @@ function SettingsApp() {
   const updateField = useCallback((key: string, value: unknown) => {
     if (!editingFeed) return;
     const stringValue = String(value ?? "");
+    const catalogField = findFeedType(editingFeed.type)?.fields.find((candidate) => candidate.key === key);
     setSaveSuccess(false);
     setFieldErrors((prev) => {
-      if (!prev[key]) return prev;
+      if (!prev[key] && (!catalogField?.exclusiveWith || !prev[catalogField.exclusiveWith])) return prev;
       const next = { ...prev };
       delete next[key];
+      if (catalogField?.exclusiveWith) delete next[catalogField.exclusiveWith];
       return next;
     });
 
@@ -1123,6 +1143,8 @@ function SettingsApp() {
             newTypeSpecific[f.key] = f.defaultValue;
           } else if (f.kind === "user-filter" && f.meValue) {
             newTypeSpecific[f.key] = f.meValue;
+          } else if (f.kind === "repo-picker" || f.kind === "integer-list") {
+            newTypeSpecific[f.key] = [];
           }
         }
       }
@@ -1141,7 +1163,12 @@ function SettingsApp() {
     } else if (key === "retain") {
       setEditingFeed({ ...editingFeed, retain: stringValue || undefined });
     } else {
-      const newTypeSpecific = { ...editingFeed.type_specific, [key]: value };
+      const newTypeSpecific = updateTypeSpecific(
+        findFeedType(editingFeed.type)?.fields ?? [],
+        editingFeed.type_specific,
+        key,
+        value,
+      );
       const updatedFeed = { ...editingFeed, type_specific: newTypeSpecific };
       // Auto-populate name if user hasn't manually edited it
       if (!nameManuallyEdited.current) {
@@ -1172,7 +1199,7 @@ function SettingsApp() {
     setTestResult(null);
     setTestPreviewOpen(false);
     try {
-      const result = await invoke<TestFeedResult>("test_feed", { feedDto: editingFeed });
+      const result = await invoke<TestFeedResult>("test_feed", { feedDto: normalizeFeed(editingFeed) });
       setTestResult(result);
     } catch (err) {
       setTestResult({
@@ -2092,7 +2119,9 @@ function SettingsApp() {
                     min={field.min}
                     max={field.max}
                     step={field.step}
-                    value={String(editingFeed.type_specific[field.key] ?? "")}
+                    value={field.kind === "integer-list" && Array.isArray(editingFeed.type_specific[field.key])
+                      ? (editingFeed.type_specific[field.key] as number[]).join(", ")
+                      : String(editingFeed.type_specific[field.key] ?? "")}
                     onChange={(e) => {
                       const raw = e.target.value;
                       updateField(field.key, field.inputType === "number" && raw !== "" ? Number(raw) : raw);
@@ -2280,7 +2309,7 @@ function SettingsApp() {
             </div>
 
             {saveError && <div className="save-error">{saveError}</div>}
-            {saveSuccess && (
+            {saveSuccess && saveSuccess === editingFeed && (
               <div className="save-success">
                 Saved (Restart Required)
               </div>
