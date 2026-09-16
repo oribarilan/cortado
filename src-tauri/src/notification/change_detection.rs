@@ -1,4 +1,4 @@
-use crate::feed::{FeedSnapshot, StatusKind};
+use crate::feed::{FeedAction, FeedSnapshot, StatusKind};
 
 /// Type of status change detected between poll snapshots.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -106,8 +106,14 @@ pub fn detect_changes(prev: &FeedSnapshot, new: &FeedSnapshot) -> Vec<StatusChan
     events
 }
 
-/// Extracts an openable URL from an activity (ID or url field).
+/// Extracts an openable URL from an activity (explicit action, ID, or URL field).
 fn extract_activity_url(activity: &crate::feed::Activity) -> Option<String> {
+    if let Some(FeedAction::OpenUrl(url)) = &activity.action {
+        if url.starts_with("https://") || url.starts_with("http://") {
+            return Some(url.clone());
+        }
+    }
+
     if activity.id.starts_with("https://") || activity.id.starts_with("http://") {
         return Some(activity.id.clone());
     }
@@ -391,6 +397,26 @@ mod tests {
             &snapshot("Feed", vec![make("42")]),
         );
         assert!(events.is_empty());
+    }
+
+    #[test]
+    fn extracts_only_web_urls_from_explicit_actions() {
+        for (url, expected) in [
+            ("https://example.com/run", Some("https://example.com/run")),
+            ("http://example.com/run", Some("http://example.com/run")),
+            ("file:///tmp/run", None),
+            ("javascript:alert(1)", None),
+            ("", None),
+        ] {
+            let mut a = activity("stable-id", "Pipeline", vec![]);
+            a.action = Some(FeedAction::OpenUrl(url.to_string()));
+            assert_eq!(extract_activity_url(&a).as_deref(), expected);
+            a.id = "https://example.com/overview".to_string();
+            assert_eq!(
+                extract_activity_url(&a).as_deref(),
+                expected.or(Some("https://example.com/overview"))
+            );
+        }
     }
 
     #[test]

@@ -16,6 +16,9 @@ use crate::{
 
 use super::{map_run_status, AdoPipelinesFeed, MAX_PIPELINES};
 
+#[path = "ado_pipelines_regressions.rs"]
+mod regressions;
+
 #[derive(Clone)]
 struct StubRunner {
     responses: Arc<Mutex<Vec<std::result::Result<CommandOutput, CommandError>>>>,

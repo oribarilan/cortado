@@ -212,11 +212,13 @@ pub struct Activity {
     pub action: Option<FeedAction>,
 }
 
-/// Action that the frontend can invoke on a synthetic feed.
+/// Action that the frontend can invoke on an activity, independent of field visibility.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FeedAction {
     RestartApp,
+    /// Opens the activity's current web URL without changing its identity.
+    OpenUrl(String),
 }
 
 /// Poll result for one feed, including optional feed-level error.
@@ -505,6 +507,14 @@ mod tests {
             sort_ts: None,
             action: None,
         }
+    }
+
+    #[test]
+    fn restart_action_keeps_its_string_payload() {
+        assert_eq!(
+            serde_json::to_value(FeedAction::RestartApp).unwrap(),
+            serde_json::json!("restart_app")
+        );
     }
 
     #[test]

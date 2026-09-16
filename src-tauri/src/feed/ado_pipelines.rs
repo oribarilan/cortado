@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, bail, Result};
 
 use self::model::{
     base_field_definitions, build_browser_url, field, map_run_status, parse_iso_to_unix_ms,
@@ -20,7 +20,7 @@ use crate::feed::{
     config::{FeedConfig, FieldOverride},
     field_overrides::{apply_activity_overrides, apply_definition_overrides},
     process::{CommandInvocation, ProcessRunner, TokioProcessRunner},
-    Activity, Feed, FieldDefinition, FieldValue, StatusKind,
+    Activity, Feed, FeedAction, FieldDefinition, FieldValue, StatusKind,
 };
 
 mod model;
@@ -62,9 +62,12 @@ impl AdoPipelinesFeed {
         process_runner: Arc<dyn ProcessRunner>,
     ) -> Result<Self> {
         let prefix = || format!("feed `{}` (type ado-pipelines)", config.name);
-        let organization =
-            validate_organization(required_string(config, "organization")?).with_context(prefix)?;
-        let project = validate_project(required_string(config, "project")?).with_context(prefix)?;
+        // Registry and Settings errors use Display, which omits anyhow's cause chain.
+        let config_error = |error: anyhow::Error| anyhow!("{}: {error}", prefix());
+        let organization = validate_organization(required_string(config, "organization")?)
+            .map_err(config_error)?;
+        let project =
+            validate_project(required_string(config, "project")?).map_err(config_error)?;
 
         let selector = match (
             config.type_specific.get("pipeline_ids"),
@@ -85,7 +88,7 @@ impl AdoPipelinesFeed {
                 let folder = value
                     .as_str()
                     .ok_or_else(|| anyhow!("{}: `folder` must be a string", prefix()))?;
-                PipelineSelector::Folder(validate_folder(folder).with_context(prefix)?)
+                PipelineSelector::Folder(validate_folder(folder).map_err(config_error)?)
             }
         };
 
@@ -336,7 +339,13 @@ impl AdoPipelinesFeed {
                 field("branch", "Branch", FieldValue::Text { value: branch }),
                 field("run", "Run", FieldValue::Text { value: run }),
                 field("event", "Event", FieldValue::Text { value: event }),
-                field("link", "Link", FieldValue::Url { value: link }),
+                field(
+                    "link",
+                    "Link",
+                    FieldValue::Url {
+                        value: link.clone(),
+                    },
+                ),
             ],
             &HashMap::new(),
             &self.config_overrides,
@@ -349,7 +358,7 @@ impl AdoPipelinesFeed {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts,
-            action: None,
+            action: Some(FeedAction::OpenUrl(link)),
         })
     }
 }

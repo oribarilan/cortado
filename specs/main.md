@@ -335,6 +335,8 @@ Activity identity is stable across runs and pipeline renames, scoped by organiza
 | `event` | text | Event | Latest run trigger reason |
 | `link` | url | Link | Latest run's browser URL; pipeline overview when never run |
 
+The Activity's Open action and notification URL remain available when the `link` field is hidden. Field visibility changes only the displayed row, not the open target.
+
 Status mapping uses lifecycle status until the run is completed, then its result:
 
 - No latest run: `not run` (idle).

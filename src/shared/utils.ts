@@ -54,7 +54,13 @@ export function highestStatusField(activity: Activity): Field | null {
   return best;
 }
 
+/** Resolves a web URL from an explicit action, then a URL ID or field. */
 export function supportsOpen(activity: Activity): string | null {
+  const actionUrl = typeof activity.action === "object" ? activity.action?.open_url : undefined;
+  if (actionUrl?.startsWith("https://") || actionUrl?.startsWith("http://")) {
+    return actionUrl;
+  }
+
   if (activity.id.startsWith("https://") || activity.id.startsWith("http://")) {
     return activity.id;
   }

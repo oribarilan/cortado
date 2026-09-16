@@ -664,7 +664,7 @@ function SettingsApp() {
   const [editingFeed, setEditingFeed] = useState<FeedConfigDto | null>(null);
   const [isNewFeed, setIsNewFeed] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState<FeedConfigDto | false>(false);
   const [revealedTokens, setRevealedTokens] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -1070,8 +1070,9 @@ function SettingsApp() {
     try {
       await invoke("save_feeds_config", { feeds: updatedFeeds });
       setFeeds(updatedFeeds);
-      setEditingFeed(normalizedFeed);
-      setSaveSuccess(true);
+      // Saving must not restore an editor that was changed or discarded while awaiting I/O.
+      setEditingFeed((current) => current === editingFeed ? normalizedFeed : current);
+      setSaveSuccess(normalizedFeed);
       setSaveError(null);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : String(err));
@@ -2308,7 +2309,7 @@ function SettingsApp() {
             </div>
 
             {saveError && <div className="save-error">{saveError}</div>}
-            {saveSuccess && (
+            {saveSuccess && saveSuccess === editingFeed && (
               <div className="save-success">
                 Saved (Restart Required)
               </div>
