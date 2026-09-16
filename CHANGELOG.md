@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-16
+
 ### Added
 - Azure DevOps Pipelines: monitor the latest runs for up to 20 YAML pipelines in one feed
 
