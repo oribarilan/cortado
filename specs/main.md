@@ -143,6 +143,8 @@ Most settings take effect immediately via the in-memory `AppSettingsState` RwLoc
 | Feed config (`feeds.toml`) | Feeds are built from the registry at startup and not hot-reloaded. |
 | `show_menubar` | The tray icon is created once at startup; there is no dynamic show/hide API. |
 
+`general.start_in_background` controls the next launch only. Saving it in Settings does not change current panel visibility or prompt an immediate restart.
+
 All other settings (theme, text size, hotkey, panel options, notifications, focus/agents) apply immediately without restart.
 
 ### Error handling
@@ -523,6 +525,7 @@ Clicking a notification is handled by the OS. Future: open the activity's URL.
 theme = "system"                         # "system", "light", or "dark"
 text_size = "m"                          # "s", "m", "l", or "xl"
 show_menubar = true
+start_in_background = false              # Keep the panel closed on startup
 global_hotkey = "super+shift+space"      # Tauri shortcut string, or omit to disable
 
 [panel]
@@ -583,6 +586,7 @@ The panel is a floating, keyboard-centric window opened via a global hotkey. It 
 
 ### Activation
 
+- **App launch**: Opens the panel by default. With `general.start_in_background = true`, initializes the panel but leaves it hidden. This applies to every fresh launch, including login startup and app restarts. Polling and configured tray/hotkey access are unchanged.
 - **Global hotkey**: Configurable shortcut (default: ⌘+Shift+Space) toggles the panel (press again to hide). The shortcut can be changed or cleared in Settings > General > Keyboard.
 - **App reopen**: Launching Cortado while it's already running (via Spotlight, Finder, or `open -a`) also opens the panel.
 
@@ -631,3 +635,5 @@ The menubar (tray icon + menubar panel) is optional via the `general.show_menuba
 - `general.show_menubar = false`: No tray icon. The app is accessed via the global hotkey or by re-launching from Spotlight/Finder.
 
 The setting takes effect on next app launch. Settings are always accessible from the panel footer or via ⌘, from the panel.
+
+`general.start_in_background` (default: `false`) is independent of `show_menubar` and launch at login. Enable **Start in background** under Settings > General > Behavior to keep the panel closed on startup. Manual activation, including reopening the running app from Spotlight/Finder, still opens the panel. Resetting General settings disables this option.

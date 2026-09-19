@@ -28,17 +28,26 @@ fn hide_all_panels(app_handle: &AppHandle) {
 /// Tauri command: one-time NSPanel setup for the main screen window.
 /// Called from the frontend on first mount.
 #[tauri::command]
-pub fn init_main_screen_panel(app_handle: AppHandle) {
-    MAIN_SCREEN_INIT.call_once(|| {
-        main_screen::swizzle_to_main_screen_panel(&app_handle);
-        main_screen::update_main_screen_appearance(&app_handle);
-        main_screen::setup_main_screen_panel_listeners(&app_handle);
+pub async fn init_main_screen_panel(
+    app_handle: AppHandle,
+    state: tauri::State<'_, AppSettingsState>,
+) -> Result<(), String> {
+    let start_in_background = state.read().await.general.start_in_background;
+    let handle = app_handle.clone();
+    app_handle
+        .run_on_main_thread(move || {
+            MAIN_SCREEN_INIT.call_once(|| {
+                main_screen::swizzle_to_main_screen_panel(&handle);
+                main_screen::update_main_screen_appearance(&handle);
+                main_screen::setup_main_screen_panel_listeners(&handle);
 
-        // Auto-open the panel on first launch so users see the app immediately.
-        // This must happen here (not in setup()) because the NSPanel doesn't
-        // exist until swizzle completes.
-        main_screen::show_main_screen_panel(&app_handle);
-    });
+                // The NSPanel must be initialized even when startup keeps it hidden.
+                if !start_in_background {
+                    main_screen::show_main_screen_panel(&handle);
+                }
+            });
+        })
+        .map_err(|err| err.to_string())
 }
 
 /// Tauri command: hides the main screen panel (used by Esc handler).

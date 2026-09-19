@@ -52,6 +52,8 @@ pub struct GeneralSettings {
     pub text_size: String,
     #[serde(default = "default_true")]
     pub show_menubar: bool,
+    /// Keep the panel hidden on startup without changing manual activation.
+    pub start_in_background: bool,
     /// Global hotkey to toggle the panel. Empty string = disabled.
     /// Format: Tauri shortcut string, e.g. `"super+shift+space"`.
     #[serde(default = "default_global_hotkey")]
@@ -64,6 +66,7 @@ impl Default for GeneralSettings {
             theme: default_theme(),
             text_size: default_text_size(),
             show_menubar: true,
+            start_in_background: false,
             global_hotkey: default_global_hotkey(),
         }
     }
@@ -371,6 +374,7 @@ mod tests {
         }
 
         let settings = load_settings_from_path(&path).expect("should return defaults");
+        assert!(!settings.general.start_in_background);
         assert!(settings.notifications.enabled);
         assert_eq!(settings.notifications.mode, NotificationMode::WorthKnowing);
         assert_eq!(settings.notifications.delivery, DeliveryPreset::Grouped);
@@ -496,6 +500,7 @@ mod tests {
                 theme: "dark".to_string(),
                 text_size: "l".to_string(),
                 show_menubar: false,
+                start_in_background: true,
                 global_hotkey: "super+alt+KeyK".to_string(),
             },
             panel: PanelSettings {
@@ -514,10 +519,46 @@ mod tests {
         assert_eq!(loaded.general.theme, "dark");
         assert_eq!(loaded.general.text_size, "l");
         assert!(!loaded.general.show_menubar);
+        assert!(loaded.general.start_in_background);
         assert_eq!(loaded.general.global_hotkey.as_str(), "super+alt+KeyK");
         assert!(!loaded.panel.show_priority_section);
 
         let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn missing_start_in_background_keeps_existing_startup_behavior() {
+        for raw in ["", "[general]\ntheme = \"dark\"\nshow_menubar = false\n"] {
+            let settings: AppSettings = toml::from_str(raw).expect("legacy settings");
+            assert!(!settings.general.start_in_background);
+        }
+    }
+
+    #[test]
+    fn start_in_background_round_trips_both_values() {
+        for enabled in [false, true] {
+            let raw = format!("[general]\nstart_in_background = {enabled}\n");
+            let settings: AppSettings = toml::from_str(&raw).expect("boolean setting");
+            assert_eq!(settings.general.start_in_background, enabled);
+            assert!(settings.general.show_menubar);
+            assert_eq!(settings.general.global_hotkey, default_global_hotkey());
+
+            let encoded = serde_json::to_value(&settings).expect("encode command payload");
+            assert_eq!(encoded["general"]["start_in_background"], enabled);
+            let decoded: AppSettings = serde_json::from_value(encoded).expect("decode payload");
+            let path = temp_settings_path("background");
+            save_settings_to_path(&decoded, &path).expect("save");
+            assert_eq!(load_settings_from_path(&path).expect("reload"), settings);
+            fs::remove_file(path).expect("cleanup");
+        }
+    }
+
+    #[test]
+    fn start_in_background_rejects_non_boolean_values() {
+        for value in ["\"true\"", "1", "[]"] {
+            let raw = format!("[general]\nstart_in_background = {value}\n");
+            assert!(toml::from_str::<AppSettings>(&raw).is_err());
+        }
     }
 
     #[test]
