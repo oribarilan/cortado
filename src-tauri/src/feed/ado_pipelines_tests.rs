@@ -18,6 +18,8 @@ use super::{map_run_status, AdoPipelinesFeed, MAX_PIPELINES};
 
 #[path = "ado_pipelines_regressions.rs"]
 mod regressions;
+#[path = "ado_pipelines_visibility_tests.rs"]
+mod visibility;
 
 #[derive(Clone)]
 struct StubRunner {

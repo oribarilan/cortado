@@ -1,4 +1,4 @@
-use std::{collections::HashSet, str::FromStr};
+use std::{collections::HashSet, str::FromStr, time::Duration};
 
 use anyhow::{anyhow, bail, Result};
 use serde::Deserialize;
@@ -83,6 +83,47 @@ pub(super) fn parse_pipeline_ids(
             Ok(id)
         })
         .collect()
+}
+
+/// Parses the display window; an empty Settings value restores the default.
+pub(super) fn parse_show_passing_for(config: &FeedConfig) -> Result<Duration> {
+    let raw = match config.type_specific.get("show_passing_for") {
+        Some(value) => value
+            .as_str()
+            .ok_or_else(|| anyhow!("`show_passing_for` must be a duration string"))?,
+        None => "1h",
+    };
+    let raw = if raw.trim().is_empty() {
+        "1h"
+    } else {
+        raw.trim()
+    };
+    let duration = raw.parse::<jiff::SignedDuration>().map_err(|_| {
+        anyhow!("`show_passing_for` must be a nonnegative duration such as `1h` or `0s`")
+    })?;
+    if duration.is_negative() {
+        bail!("`show_passing_for` must not be negative");
+    }
+    let duration = duration.unsigned_abs();
+    if u64::try_from(duration.as_millis()).is_err() {
+        bail!("`show_passing_for` is too large");
+    }
+    Ok(duration)
+}
+
+/// Returns a completed success's UI deadline, or zero for immediate hiding.
+pub(super) fn passing_visible_until(build: &AdoBuild, window: Duration) -> Option<u64> {
+    if !build.status.as_deref()?.eq_ignore_ascii_case("completed")
+        || !build.result.as_deref()?.eq_ignore_ascii_case("succeeded")
+    {
+        return None;
+    }
+    if window.is_zero() {
+        return Some(0);
+    }
+    // Missing finish time must not make a recent success disappear.
+    parse_iso_to_unix_ms(build.finish_time.as_deref())?
+        .checked_add(u64::try_from(window.as_millis()).ok()?)
 }
 
 pub(super) fn base_field_definitions() -> Vec<FieldDefinition> {
@@ -215,4 +256,5 @@ pub(super) struct AdoBuild {
     pub(super) source_branch: Option<String>,
     pub(super) reason: Option<String>,
     pub(super) queue_time: Option<String>,
+    pub(super) finish_time: Option<String>,
 }

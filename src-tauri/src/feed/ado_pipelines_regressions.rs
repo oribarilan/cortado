@@ -83,6 +83,11 @@ async fn validation_causes_reach_registry_and_settings_test() {
         ),
         ("project", "", "`project` must not be empty"),
         (
+            "show_passing_for",
+            "-1h",
+            "`show_passing_for` must not be negative",
+        ),
+        (
             "folder",
             "Team",
             "`folder` must be an exact Azure DevOps folder path",

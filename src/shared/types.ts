@@ -38,6 +38,8 @@ export type Activity = {
   title: string;
   fields: Field[];
   retained: boolean;
+  /** UI-only deadline in Unix milliseconds; zero hides immediately. */
+  visible_until?: number | null;
   action?: FeedAction | null;
 };
 

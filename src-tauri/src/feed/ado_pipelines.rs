@@ -8,8 +8,9 @@ use anyhow::{anyhow, bail, Result};
 
 use self::model::{
     base_field_definitions, build_browser_url, field, map_run_status, parse_iso_to_unix_ms,
-    parse_pipeline_ids, required_string, status_field, validate_folder, validate_organization,
-    validate_project, AdoPipelineDefinition, DefinitionsResponse,
+    parse_pipeline_ids, parse_show_passing_for, passing_visible_until, required_string,
+    status_field, validate_folder, validate_organization, validate_project, AdoPipelineDefinition,
+    DefinitionsResponse,
 };
 
 use crate::feed::{
@@ -46,6 +47,7 @@ pub struct AdoPipelinesFeed {
     selector: PipelineSelector,
     interval: Duration,
     retain_for: Option<Duration>,
+    show_passing_for: Duration,
     config_overrides: HashMap<String, FieldOverride>,
     process_runner: Arc<dyn ProcessRunner>,
 }
@@ -101,6 +103,7 @@ impl AdoPipelinesFeed {
                 .interval
                 .unwrap_or(Duration::from_secs(DEFAULT_INTERVAL_SECONDS)),
             retain_for: config.retain,
+            show_passing_for: parse_show_passing_for(config).map_err(config_error)?,
             config_overrides: config.field_overrides.clone(),
             process_runner,
         })
@@ -304,6 +307,9 @@ impl AdoPipelinesFeed {
     fn definition_to_activity(&self, definition: AdoPipelineDefinition) -> Result<Activity> {
         let overview_url =
             build_browser_url(&self.organization, &self.project, definition.id, None)?;
+        let visible_until = definition.latest_build.as_ref().map_or(Some(0), |build| {
+            passing_visible_until(build, self.show_passing_for)
+        });
         let (status, branch, run, event, link, sort_ts) = match definition.latest_build {
             Some(build) => {
                 let build_id = build.id.ok_or_else(|| {
@@ -358,6 +364,7 @@ impl AdoPipelinesFeed {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts,
+            visible_until,
             action: Some(FeedAction::OpenUrl(link)),
         })
     }

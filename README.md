@@ -149,6 +149,10 @@ Tracks up to 20 YAML pipelines in one hosted Azure DevOps project. Select pipeli
 
 Each pipeline keeps one Activity as its latest run changes. Selections over 20 report an error instead of hiding pipelines.
 
+Passing pipelines hide one hour after completion by default. Change **Show passing for** in the feed's Settings, or set `show_passing_for` below. Use `"0s"` to hide successes immediately; clearing the Settings field restores `"1h"`. Problems and queued/running pipelines stay visible regardless of age. Never-run pipelines are hidden; unknown results stay visible. Passing runs without a usable completion time stay visible unless the window is `"0s"`.
+
+Use **All pipelines** on the feed header in the tray or panel to reveal hidden pipelines. Hiding does not stop tracking, trigger removal notifications, or prevent recovery notifications. Visibility refreshes every 30 seconds and when the window opens. Like other feed settings, changing the passing window requires a restart.
+
 ```toml
 [[feed]]
 name = "Team CI"
@@ -158,6 +162,7 @@ project = "Platform"
 pipeline_ids = [42, 73, 108]
 # Or use one exact folder instead:
 # folder = '\Team\CI'
+show_passing_for = "1h" # Optional; "0s" hides passing runs immediately
 interval = "120s"
 ```
 

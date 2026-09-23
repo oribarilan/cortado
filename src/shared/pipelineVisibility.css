@@ -1,0 +1,43 @@
+.pipeline-visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+  padding-left: var(--space-3);
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pipeline-hidden-count {
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.pipeline-visibility-toggle {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pipeline-visibility-toggle:hover {
+  background: var(--hover);
+}
+
+.pipeline-visibility-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+.pipeline-visibility-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

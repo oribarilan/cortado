@@ -229,13 +229,22 @@ pub fn get_feeds_config() -> Result<Vec<FeedConfigDto>, String> {
     Ok(configs.iter().map(feed_config_to_dto).collect())
 }
 
+fn validated_feeds_toml(feeds: &[FeedConfigDto]) -> Result<String, String> {
+    let toml_str = dto_to_toml_document(feeds);
+    let parsed = config::parse_feeds_config_str(&toml_str).map_err(|e| e.to_string())?;
+    for config in &parsed {
+        if config.feed_type == "ado-pipelines" {
+            // Use the same duration/selector validation as startup, without any CLI calls.
+            feed::ado_pipelines::AdoPipelinesFeed::from_config(config)
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(toml_str)
+}
+
 #[tauri::command]
 pub fn save_feeds_config(feeds: Vec<FeedConfigDto>) -> Result<(), String> {
-    let toml_str = dto_to_toml_document(&feeds);
-
-    // Validate by parsing the generated TOML through the existing parser
-    let _parsed = config::parse_feeds_config_str(&toml_str).map_err(|e| e.to_string())?;
-
+    let toml_str = validated_feeds_toml(&feeds)?;
     let config_path = config::feeds_config_path().map_err(|e| e.to_string())?;
 
     // Create parent directory if needed
@@ -1246,6 +1255,7 @@ mod tests {
                 ),
                 ("project".into(), serde_json::json!("Platform")),
                 ("pipeline_ids".into(), serde_json::json!([42, 73, 108])),
+                ("show_passing_for".into(), serde_json::json!("0s")),
             ]
             .into_iter()
             .collect(),
@@ -1254,6 +1264,7 @@ mod tests {
 
         let toml_str = dto_to_toml_document(std::slice::from_ref(&feed));
         assert!(toml_str.contains("pipeline_ids = [42, 73, 108]"));
+        assert!(toml_str.contains("show_passing_for = \"0s\""));
         let config = dto_to_feed_config(&feed).expect("pipeline config should parse");
         assert_eq!(
             config.type_specific.get("pipeline_ids"),
@@ -1268,6 +1279,46 @@ mod tests {
             dto.type_specific.get("pipeline_ids"),
             Some(&serde_json::json!([42, 73, 108]))
         );
+        assert_eq!(
+            dto.type_specific.get("show_passing_for"),
+            Some(&serde_json::json!("0s"))
+        );
+        crate::feed::create_feed(&config).expect("zero passing window should build");
+    }
+
+    #[test]
+    fn settings_save_validates_passing_window_before_writing() {
+        let mut dto: FeedConfigDto = serde_json::from_value(serde_json::json!({
+            "name": "Team CI", "type": "ado-pipelines", "type_specific": {
+                "organization": "https://dev.azure.com/acme", "project": "Platform",
+                "pipeline_ids": [42],
+            },
+        }))
+        .unwrap();
+        for value in [
+            serde_json::json!("-1h"),
+            serde_json::json!("later"),
+            serde_json::json!(0),
+        ] {
+            dto.type_specific.insert("show_passing_for".into(), value);
+            let error = validated_feeds_toml(&[dto.clone()]).unwrap_err();
+            assert!(
+                error.contains("Team CI") && error.contains("show_passing_for"),
+                "{error}"
+            );
+        }
+        for value in ["0s", "30m", "1.5h", ""] {
+            dto.type_specific
+                .insert("show_passing_for".into(), serde_json::json!(value));
+            let document = validated_feeds_toml(&[dto.clone()]).unwrap();
+            let configs = config::parse_feeds_config_str(&document).unwrap();
+            assert_eq!(
+                configs[0].type_specific["show_passing_for"].as_str(),
+                Some(value)
+            );
+        }
+        dto.type_specific.remove("show_passing_for");
+        assert!(validated_feeds_toml(&[dto]).is_ok());
     }
 
     #[test]
@@ -1455,6 +1506,7 @@ mod tests {
         use crate::feed::{Activity, Field, FieldValue, StatusKind};
 
         let a = Activity {
+            visible_until: None,
             id: "test".to_string(),
             title: "Test PR".to_string(),
             fields: vec![
@@ -1490,6 +1542,7 @@ mod tests {
         use crate::feed::{Activity, Field, FieldValue};
 
         let a = Activity {
+            visible_until: None,
             id: "test".to_string(),
             title: "Test".to_string(),
             fields: vec![Field {

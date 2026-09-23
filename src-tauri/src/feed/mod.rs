@@ -207,6 +207,10 @@ pub struct Activity {
     /// Used as tiebreaker within the same status kind. Not serialized to frontend.
     #[serde(skip)]
     pub sort_ts: Option<u64>,
+    /// UI-only visibility deadline in Unix milliseconds; zero hides immediately.
+    /// The activity remains tracked for retention, rollup, and notifications.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visible_until: Option<u64>,
     /// Optional action the frontend can invoke (e.g., restart).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub action: Option<FeedAction>,
@@ -505,6 +509,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            visible_until: None,
             action: None,
         }
     }
@@ -554,6 +559,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            visible_until: None,
             action: None,
         };
 
@@ -857,6 +863,7 @@ mod tests {
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            visible_until: None,
             action: None,
         };
         assert_eq!(StatusKind::rollup_for_activity(&activity), StatusKind::Idle);
