@@ -147,6 +147,7 @@ mod tests {
 
     fn activity(id: &str, title: &str, fields: Vec<Field>) -> Activity {
         Activity {
+            visible_until: None,
             id: id.to_string(),
             title: title.to_string(),
             fields,
@@ -349,6 +350,7 @@ mod tests {
     #[test]
     fn extracts_url_field_for_stable_non_url_activity_id() {
         let a = Activity {
+            visible_until: None,
             id: "ado-pipeline:stable".to_string(),
             title: "API".to_string(),
             fields: vec![
@@ -422,6 +424,7 @@ mod tests {
     #[test]
     fn no_url_when_id_and_fields_are_not_urls() {
         let a = Activity {
+            visible_until: None,
             id: "test:check".to_string(),
             title: "Test".to_string(),
             fields: vec![Field {

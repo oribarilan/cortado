@@ -91,6 +91,7 @@ impl CortadoUpdateFeed {
                 .unwrap_or(0);
 
         Some(Activity {
+            visible_until: None,
             id: "plugin-update-opencode".to_string(),
             title: "OpenCode plugin update available".to_string(),
             fields: vec![
@@ -137,6 +138,7 @@ impl CortadoUpdateFeed {
                 .unwrap_or(0);
 
         Some(Activity {
+            visible_until: None,
             id: "plugin-update-copilot".to_string(),
             title: "Copilot CLI extension update available".to_string(),
             fields: vec![
@@ -190,6 +192,7 @@ impl CortadoUpdateFeed {
                     .unwrap_or(0);
 
                     return Some(Activity {
+                        visible_until: None,
                         id: "plugin-update-claude-code".to_string(),
                         title: "Claude Code plugin update available".to_string(),
                         fields: vec![
@@ -372,6 +375,7 @@ impl CortadoUpdateFeed {
         }
 
         Ok(Some(Activity {
+            visible_until: None,
             id: format!("cortado-update-v{remote_version}"),
             title: format!("Cortado v{remote_version} available"),
             fields,

@@ -271,6 +271,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
           { key: "project", label: "Project", placeholder: "Platform", hint: "Project name or ID", mono: true, required: true },
           { key: "pipeline_ids", label: "Pipeline IDs", placeholder: "42, 73, 108", hint: "Up to 20 numeric YAML pipeline IDs; choose IDs or one folder", mono: true, kind: "integer-list", oneOfGroup: "pipeline-selector", exclusiveWith: "folder" },
           { key: "folder", label: "Exact folder", placeholder: "\\Team\\CI", hint: "Exact ADO folder only; subfolders are not included", mono: true, oneOfGroup: "pipeline-selector", exclusiveWith: "pipeline_ids" },
+          { key: "show_passing_for", label: "Show passing for", placeholder: "1h", hint: "Time since completion (e.g. 30m, 1h). Use 0s to hide immediately; clear to reset to 1h. Problems and active runs stay visible.", mono: true, defaultValue: "1h" },
         ],
         dependency: ADO_DEP,
         validations: [
@@ -289,6 +290,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         notes: [
           "Only YAML pipelines are included. Classic build and release pipelines are not supported.",
           "Folder matching is exact. Narrow folders with more than 20 YAML pipelines.",
+          "All pipelines in the tray or panel reveals hidden pipelines. Visibility does not change tracking or notifications.",
         ],
       },
     ],

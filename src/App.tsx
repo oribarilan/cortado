@@ -6,6 +6,9 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "./shared/types";
 import { useAppearance } from "./shared/useAppearance";
+import { usePipelineVisibility } from "./shared/usePipelineVisibility";
+import { shouldShowFeed } from "./shared/pipelineVisibility";
+import { PipelineVisibilityToggle } from "./shared/PipelineVisibilityToggle";
 import { Changelog } from "./shared/Changelog";
 import "./shared/changelog.css";
 import {
@@ -35,12 +38,13 @@ function App() {
   const panelContentRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
 
-  // Tick counter to keep relative timestamps fresh.
-  const [, setTick] = useState(0);
+  const { displayFeeds, toggleAllPipelines, refreshVisibility } = usePipelineVisibility(feeds);
+
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(timer);
-  }, []);
+    setExpandedActivityKey((current) => current && displayFeeds.some((feed) =>
+      feed.activities.some((activity) => activityKey(feed, activity) === current),
+    ) ? current : null);
+  }, [displayFeeds]);
 
   useEffect(() => {
     const root = panelRootRef.current;
@@ -57,12 +61,7 @@ function App() {
     };
   }, []);
 
-  const sortedFeeds = feeds.filter((feed) => {
-    if (feed.activities.length > 0 || feed.error) return true;
-    if (feed.hide_when_empty) return false;
-    if (!seeded) return true;
-    return showEmptyFeeds;
-  });
+  const sortedFeeds = displayFeeds.filter((feed) => shouldShowFeed(feed, seeded, showEmptyFeeds));
 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState<[number, number] | null>(null);
@@ -217,6 +216,7 @@ function App() {
       unlistenFns.push(unlisten);
 
       const unlistenPanelWillShow = await listen("menubar_panel_will_show", () => {
+        refreshVisibility();
         setSuppressCollapseAnimation(true);
         setExpandedActivityKey(null);
 
@@ -258,7 +258,7 @@ function App() {
         void unlisten();
       }
     };
-  }, []);
+  }, [refreshVisibility]);
 
   return (
     <div
@@ -299,6 +299,7 @@ function App() {
                 <section className={`feed-block ${feed.is_disconnected ? "disconnected" : ""}`} key={`${feed.name}::${feed.feed_type}`}>
                   <header className="feed-header">
                     <span className="feed-name">{feed.name}</span>
+                    <PipelineVisibilityToggle feed={feed} onToggle={toggleAllPipelines} />
                     {feed.is_disconnected ? (
                       <span className="disconnected-label">disconnected</span>
                     ) : !hasError ? (
@@ -312,11 +313,11 @@ function App() {
                     <p className={`feed-error ${isConfigWarning ? "config" : "poll"}`}>{feed.error}</p>
                   ) : null}
 
-                  {!hasError && feed.activities.length === 0 && seeded ? (
-                    <p className="feed-empty">No activities</p>
+                  {!hasError && feed.activities.length === 0 && (seeded || feed.hiddenPipelineCount > 0 || feed.last_refreshed != null) ? (
+                    <p className="feed-empty">{feed.hiddenPipelineCount > 0 ? "No pipelines to show. Use All pipelines to see hidden results." : "No activities"}</p>
                   ) : null}
 
-                  {!hasError && feed.activities.length === 0 && !seeded ? (
+                  {!hasError && feed.activities.length === 0 && !seeded && feed.hiddenPipelineCount === 0 && feed.last_refreshed == null ? (
                     <div className="loading-state">
                       <div className="skel-row stagger-0"><div className="skel-dot" /><div className="skel-title" style={{ width: "65%" }} /></div>
                       <div className="skel-row stagger-1"><div className="skel-dot" /><div className="skel-title" style={{ width: "80%" }} /></div>

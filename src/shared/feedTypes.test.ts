@@ -110,6 +110,19 @@ describe("ado-pipelines catalog", () => {
     });
   });
 
+  it("provides a passing window that preserves duration strings on edit", () => {
+    const field = catalog?.fields.find((candidate) => candidate.key === "show_passing_for");
+    expect(field?.defaultValue).toBe("1h");
+    expect(field?.hint).toContain("0s");
+    expect(field?.hint).toContain("reset to 1h");
+    for (const value of ["0s", "30m", "1.5h", ""]) {
+      const updated = updateTypeSpecific(catalog?.fields ?? [], { pipeline_ids: [42] }, "show_passing_for", value);
+      expect(normalizeTypeSpecific(catalog?.fields ?? [], updated)).toEqual({
+        pipeline_ids: [42], show_passing_for: value,
+      });
+    }
+  });
+
   it("generates a project-scoped default name", () => {
     expect(generateDefaultName("ado-pipelines", { project: "Platform" })).toBe(
       "Platform pipelines",

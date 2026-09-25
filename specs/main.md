@@ -313,6 +313,7 @@ project = "Platform"
 pipeline_ids = [42, 73, 108]
 # Or replace pipeline_ids with an exact folder:
 # folder = '\Team\CI'
+show_passing_for = "1h" # Optional; "0s" hides passing runs immediately
 interval = "120s"
 ```
 
@@ -324,6 +325,16 @@ Config and selection:
 - More than 20 matching YAML pipelines is a feed error asking the user to narrow the selection, not a silently truncated success. A folder with no matching YAML pipelines returns an empty list.
 - Explicit IDs that are missing, inaccessible, or not YAML pipelines produce a feed error. Never silently omit a configured ID.
 - Default poll interval: `120s`. Standard field overrides, notifications, and retention apply.
+- `show_passing_for` is an optional nonnegative duration string, defaulting to `"1h"`. It controls how long passing pipelines remain visible after the latest run's finish time. `"0s"` hides them immediately. Integers and negative durations are rejected. Clearing the Settings field restores the default.
+
+Visibility in the Tray and Panel:
+
+- Failing, partially succeeded, cancelled, queued, running, cancelling, and unknown latest runs remain visible regardless of age.
+- Passing pipelines hide at finish time plus `show_passing_for`. Missing or invalid finish times keep them visible unless the window is zero. Queue time is not a substitute for finish time.
+- Pipelines that have never run are hidden.
+- Each feed has an **All pipelines** toggle to reveal its full snapshot, including never-run pipelines. This view choice is local to each window and is not saved to config. Feed headers remain accessible when pipelines are hidden, with a hidden count and an explanatory empty state. Feed errors remain visible.
+- Visibility updates on the existing 30-second UI refresh cadence and when the window opens, without additional ADO calls.
+- Filtering is presentation-only. Polling, snapshot limits, ordering, rollup, retention, and notification change detection still use the full snapshot. Hiding a pipeline does not remove it or retain it; recovery notifications still follow normal Status Kind transitions. Actual removal from the selection follows normal retention, with the same visibility rules applied to the retained activity.
 
 Polling uses the project-scoped Build Definitions API through `az devops invoke`, with API version `7.1`, YAML process filtering, and `includeLatestBuilds=true`. Query all selected IDs together, or query by folder and enforce exact matching against returned paths. Follow continuation tokens, reject malformed responses or non-progressing pagination, and use bounded command timeouts. Do not fetch full definitions, pipeline variables, logs, or one endpoint per pipeline.
 
@@ -353,7 +364,7 @@ Status mapping uses lifecycle status until the run is completed, then its result
 
 Use the latest run's queue time for within-kind recency ordering when available. A new run updates the same Activity; old runs are not retained as separate Activities. Retention applies when a pipeline leaves the selection. Notifications follow existing Status Kind transitions, so consecutive runs with the same observed kind do not notify merely because the run number changed. Older concurrent runs and stage/approval-level details are outside this feed's scope.
 
-Settings must create and edit either selector and preserve `pipeline_ids` as a TOML integer array. Use a small list input with validation; pipeline discovery/pickers and recursive folders are out of scope.
+Settings must create and edit either selector and preserve `pipeline_ids` as a TOML integer array. Validate ADO pipeline configuration, including `show_passing_for`, before saving; display validation errors without writing invalid config. Use a small list input with validation; pipeline discovery/pickers and recursive folders are out of scope.
 
 ### `github-actions` field mapping contract
 

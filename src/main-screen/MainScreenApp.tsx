@@ -5,6 +5,9 @@ import { getVersion } from "@tauri-apps/api/app";
 
 import type { Activity, FeedSnapshot } from "../shared/types";
 import { useAppearance } from "../shared/useAppearance";
+import { usePipelineVisibility } from "../shared/usePipelineVisibility";
+import { shouldShowFeed } from "../shared/pipelineVisibility";
+import { PipelineVisibilityToggle } from "../shared/PipelineVisibilityToggle";
 import { POPULAR_FEED_TYPES, type FeedType } from "../shared/feedTypes";
 import { Changelog } from "../shared/Changelog";
 import "../shared/changelog.css";
@@ -295,22 +298,12 @@ function MainScreenApp() {
     }
   }, []);
 
-  // Tick counter to keep relative timestamps fresh.
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(timer);
-  }, []);
+  const { displayFeeds, toggleAllPipelines, refreshVisibility } = usePipelineVisibility(feeds);
 
-  // Filter out empty feeds when the setting is off
-  const visibleFeeds = useMemo(() => {
-    return feeds.filter((feed) => {
-      if (feed.activities.length > 0 || feed.error) return true;
-      if (feed.hide_when_empty) return false;
-      if (!seeded) return true;
-      return showEmptyFeeds;
-    });
-  }, [feeds, showEmptyFeeds, seeded]);
+  const visibleFeeds = useMemo(
+    () => displayFeeds.filter((feed) => shouldShowFeed(feed, seeded, showEmptyFeeds)),
+    [displayFeeds, showEmptyFeeds, seeded],
+  );
 
   const { items: flatList, priorityItems, feedItems } = useMemo(
     () => buildFlatList(visibleFeeds, showPrioritySection),
@@ -318,6 +311,11 @@ function MainScreenApp() {
   );
 
   const focusedItem = flatList[focusIndex] ?? null;
+
+  // Expiring or hiding rows must not leave keyboard navigation past the end.
+  useEffect(() => {
+    setFocusIndex((index) => Math.min(index, Math.max(0, flatList.length - 1)));
+  }, [flatList.length]);
 
   // Track keyboard vs mouse input for focus ring visibility
   useEffect(() => {
@@ -374,6 +372,8 @@ function MainScreenApp() {
       unlistenFns.push(unlisten);
 
       const unlistenShow = await listen("main_screen_panel_will_show", () => {
+        refreshVisibility();
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
         setFocusIndex(0);
         if (listRef.current) listRef.current.scrollTop = 0;
         invoke<AppSettings>("get_settings")
@@ -400,7 +400,7 @@ function MainScreenApp() {
       isMounted = false;
       for (const fn of unlistenFns) void fn();
     };
-  }, []);
+  }, [refreshVisibility]);
 
   // Keyboard navigation
   const openFocusedActivity = useCallback(() => {
@@ -461,6 +461,7 @@ function MainScreenApp() {
       if (e.key === "ArrowDown" || (e.key === "j" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
+        if (e.target instanceof HTMLElement) e.target.blur();
         setFocusIndex((i) => (i + 1) % flatList.length);
         return;
       }
@@ -468,11 +469,14 @@ function MainScreenApp() {
       if (e.key === "ArrowUp" || (e.key === "k" && !e.metaKey && !e.ctrlKey && !e.altKey)) {
         e.preventDefault();
         if (flatList.length === 0) return;
+        if (e.target instanceof HTMLElement) e.target.blur();
         setFocusIndex((i) => (i - 1 + flatList.length) % flatList.length);
         return;
       }
 
       if (e.key === "Enter") {
+        // Let focused controls (including All pipelines) handle native activation.
+        if (e.target instanceof HTMLElement && e.target.closest("button, a, input, select, textarea")) return;
         e.preventDefault();
         if (flatList.length === 0) return;
         openFocusedActivity();
@@ -536,7 +540,9 @@ function MainScreenApp() {
               <div className="ms-skel-row stagger-3"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "72%" }} /></div>
               <div className="ms-skel-row stagger-4"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "58%" }} /></div>
             </div>
-          ) : !seeded && flatList.length === 0 ? (
+          ) : !seeded && flatList.length === 0 && feeds.every((feed) =>
+            feed.activities.length === 0 && feed.last_refreshed == null && !feed.error,
+          ) ? (
             <div className="ms-loading-state">
               <div className="ms-skel-row stagger-0"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "65%" }} /></div>
               <div className="ms-skel-row stagger-1"><div className="ms-skel-dot" /><div className="ms-skel-title" style={{ width: "80%" }} /></div>
@@ -585,7 +591,8 @@ function MainScreenApp() {
               {feedSections.map(({ feed, items }) => (
                 <section className={`ms-feed-section ${feed.is_disconnected ? "disconnected" : ""}`} key={`${feed.name}::${feed.feed_type}`}>
                   <header className="ms-feed-header">
-                    {feed.name}
+                    <span className="ms-feed-name">{feed.name}</span>
+                    <PipelineVisibilityToggle feed={feed} onToggle={toggleAllPipelines} />
                     {feed.is_disconnected ? (
                       <span className="disconnected-label">disconnected</span>
                     ) : null}
@@ -596,7 +603,9 @@ function MainScreenApp() {
                       {feed.error ? (
                         <div className="ms-feed-error">{feed.error}</div>
                       ) : items.length === 0 ? (
-                        <div className="ms-feed-empty">No activities</div>
+                        <div className="ms-feed-empty">{feed.hiddenPipelineCount > 0 && feed.activities.length === 0
+                          ? "No pipelines to show. Use All pipelines to see hidden results."
+                          : "No activities"}</div>
                       ) : (
                         items.map(({ activity, kind, key, index }) => {
                           const isFocused = index === focusIndex;

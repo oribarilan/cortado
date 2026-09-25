@@ -8,6 +8,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 - Optional background startup keeps the panel closed when Cortado launches; disabled by default
 
+### Changed
+- Azure DevOps Pipelines: hide older passing runs after a configurable window; reveal hidden results with All pipelines
+
 ### Fixed
 - Reopening Cortado now opens the panel instead of hiding it when already visible
 - General settings show inline save confirmation and errors, with reset confirmation only after all changes succeed

@@ -80,6 +80,7 @@ async fn inject_config_snapshot(
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            visible_until: None,
             action: None,
         };
 
@@ -113,6 +114,7 @@ async fn inject_config_snapshot(
             retained: false,
             retained_at_unix_ms: None,
             sort_ts: None,
+            visible_until: None,
             action: Some(FeedAction::RestartApp),
         };
 

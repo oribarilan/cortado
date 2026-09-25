@@ -90,6 +90,8 @@ body,
 }
 
 .ms-feed-header {
+  display: flex;
+  align-items: center;
   padding: var(--space-2) var(--pad-x);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
@@ -97,6 +99,13 @@ body,
   letter-spacing: 0.07em;
   color: var(--text-tertiary);
   cursor: default;
+}
+
+.ms-feed-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ms-feed-error {
