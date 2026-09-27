@@ -5,6 +5,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-27
+
 ### Added
 - Optional background startup keeps the panel closed when Cortado launches; disabled by default
 
