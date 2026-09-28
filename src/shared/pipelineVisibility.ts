@@ -26,13 +26,13 @@ export function pipelineFeedView(
   };
 }
 
-/** Keeps filtered pipeline feeds reachable even when empty feeds are hidden. */
+/** Keeps hidden pipelines and expanded feeds reachable when empty feeds are hidden. */
 export function shouldShowFeed(
   feed: PipelineFeedView,
   seeded: boolean,
   showEmptyFeeds: boolean,
 ): boolean {
-  if (feed.activities.length > 0 || feed.hiddenPipelineCount > 0 || feed.error) return true;
+  if (feed.activities.length > 0 || feed.hiddenPipelineCount > 0 || feed.showingAllPipelines || feed.error) return true;
   if (feed.hide_when_empty) return false;
   return !seeded || showEmptyFeeds;
 }

@@ -290,7 +290,7 @@ export const FEED_CATALOG: CatalogProvider[] = [
         notes: [
           "Only YAML pipelines are included. Classic build and release pipelines are not supported.",
           "Folder matching is exact. Narrow folders with more than 20 YAML pipelines.",
-          "All pipelines in the tray or panel reveals hidden pipelines. Visibility does not change tracking or notifications.",
+          "Select the hidden count in the tray or panel to reveal all pipelines, then Show less to restore filtering. Visibility does not change tracking or notifications.",
         ],
       },
     ],
