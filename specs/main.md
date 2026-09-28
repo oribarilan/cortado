@@ -332,7 +332,8 @@ Visibility in the Tray and Panel:
 - Failing, partially succeeded, cancelled, queued, running, cancelling, and unknown latest runs remain visible regardless of age.
 - Passing pipelines hide at finish time plus `show_passing_for`. Missing or invalid finish times keep them visible unless the window is zero. Queue time is not a substitute for finish time.
 - Pipelines that have never run are hidden.
-- Each feed has an **All pipelines** toggle to reveal its full snapshot, including never-run pipelines. This view choice is local to each window and is not saved to config. Feed headers remain accessible when pipelines are hidden, with a hidden count and an explanatory empty state. Feed errors remain visible.
+- When pipelines are hidden, the feed header shows a clickable **N hidden ▾** count to reveal its full snapshot, including never-run pipelines. It changes to **Show less ▴** to restore normal filtering. The control is absent when nothing is hidden in the normal view; while expanded, the feed header and Show less remain available even if live updates leave nothing to hide or an empty snapshot. Both states support mouse and keyboard activation, visible focus, and an accessible expanded state.
+- This view choice is local to each window and is not saved to config. Feed headers remain accessible when pipelines are hidden, with an explanatory empty state pointing to the hidden count. Feed errors remain visible.
 - Visibility updates on the existing 30-second UI refresh cadence and when the window opens, without additional ADO calls.
 - Filtering is presentation-only. Polling, snapshot limits, ordering, rollup, retention, and notification change detection still use the full snapshot. Hiding a pipeline does not remove it or retain it; recovery notifications still follow normal Status Kind transitions. Actual removal from the selection follows normal retention, with the same visibility rules applied to the retained activity.
 

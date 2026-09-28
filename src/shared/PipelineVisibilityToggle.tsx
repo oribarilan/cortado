@@ -9,24 +9,23 @@ export function PipelineVisibilityToggle({
   feed: PipelineFeedView;
   onToggle: (name: string) => void;
 }) {
-  if (feed.feed_type !== "ado-pipelines") return null;
+  if (feed.feed_type !== "ado-pipelines" || (!feed.showingAllPipelines && feed.hiddenPipelineCount === 0)) return null;
+
+  const label = feed.showingAllPipelines ? "Show less" : `${feed.hiddenPipelineCount} hidden`;
   return (
-    <span className="pipeline-visibility">
-      {feed.hiddenPipelineCount > 0 ? (
-        <span className="pipeline-hidden-count">{feed.hiddenPipelineCount} hidden</span>
-      ) : null}
-      <button
-        type="button"
-        className="pipeline-visibility-toggle"
-        aria-label={`All pipelines for ${feed.name}`}
-        aria-pressed={feed.showingAllPipelines}
-        title={feed.showingAllPipelines
-          ? "Hide older passing and never-run pipelines"
-          : "Show every tracked pipeline"}
-        onClick={() => onToggle(feed.name)}
-      >
-        All pipelines
-      </button>
-    </span>
+    <button
+      type="button"
+      className="pipeline-visibility-toggle"
+      aria-label={feed.showingAllPipelines
+        ? `Show less for ${feed.name}`
+        : `${label} ${feed.hiddenPipelineCount === 1 ? "pipeline" : "pipelines"} for ${feed.name}; show all`}
+      aria-expanded={feed.showingAllPipelines}
+      title={feed.showingAllPipelines
+        ? "Hide older passing and never-run pipelines"
+        : "Show every tracked pipeline"}
+      onClick={() => onToggle(feed.name)}
+    >
+      {label} <span aria-hidden="true">{feed.showingAllPipelines ? "▴" : "▾"}</span>
+    </button>
   );
 }

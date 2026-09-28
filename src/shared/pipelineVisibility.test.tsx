@@ -56,7 +56,7 @@ describe("pipeline visibility", () => {
     expect(pipelineFeedView(original, false, NOW).hiddenPipelineCount).toBe(2);
   });
 
-  it("All pipelines reveals the original order and can be switched off again", () => {
+  it("reveals the original order and restores filtering when collapsed", () => {
     const original = feed([
       activity("failing", "attention-negative"),
       activity("old success", "idle", NOW - 1),
@@ -117,6 +117,13 @@ describe("pipeline visibility", () => {
     expect(shouldShowFeed({ ...empty, hide_when_empty: true }, false, true)).toBe(false);
   });
 
+  it("keeps an expanded empty feed reachable until the user restores filtering", () => {
+    const expanded = pipelineFeedView(feed([]), true, NOW);
+    expect(shouldShowFeed(expanded, true, false)).toBe(true);
+    const collapsed = pipelineFeedView(feed([]), false, NOW);
+    expect(shouldShowFeed(collapsed, true, false)).toBe(false);
+  });
+
   it("applies the same rules to retained activities without changing retention", () => {
     const retained = { ...activity("old success", "idle", 0), retained: true };
     const original = feed([retained]);
@@ -126,25 +133,51 @@ describe("pipeline visibility", () => {
   });
 });
 
-describe("All pipelines control", () => {
-  it("renders an accessible, unpressed toggle and hidden count even when all are hidden", () => {
-    const view = pipelineFeedView(feed([activity("passing", "idle", 0)]), false, NOW);
+describe("pipeline visibility disclosure", () => {
+  it("makes the hidden count the only button even when every pipeline is hidden", () => {
+    const view = pipelineFeedView(feed([
+      activity("passing", "idle", 0), activity("not run", "idle", 0),
+    ]), false, NOW);
     const html = renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />);
-    expect(html).toContain('aria-label="All pipelines for Team CI"');
-    expect(html).toContain('aria-pressed="false"');
-    expect(html).toContain("1 hidden");
-    expect(html).toContain("All pipelines</button>");
-  });
-
-  it("shows the pressed state and no hidden count in All pipelines", () => {
-    const view = pipelineFeedView(feed([activity("not run", "idle", 0)]), true, NOW);
-    const html = renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />);
-    expect(html).toContain('aria-pressed="true"');
+    expect(html.match(/<button\b/g)).toHaveLength(1);
+    expect(html).toContain('aria-label="2 hidden pipelines for Team CI; show all"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('>2 hidden <span aria-hidden="true">▾</span></button>');
+    expect(html).not.toContain("All pipelines");
     expect(html).not.toContain("pipeline-hidden-count");
   });
 
+  it("uses a singular accessible name for one hidden pipeline", () => {
+    const view = pipelineFeedView(feed([activity("passing", "idle", 0)]), false, NOW);
+    const html = renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />);
+    expect(html).toContain('aria-label="1 hidden pipeline for Team CI; show all"');
+    expect(html).toContain('>1 hidden <span aria-hidden="true">▾</span></button>');
+  });
+
+  it.each([
+    [activity("not run", "idle", 0)],
+    [activity("running", "running")],
+    [],
+  ])("keeps Show less available when expanded, including after live updates (%#)", (...activities) => {
+    const view = pipelineFeedView(feed(activities), true, NOW);
+    const html = renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />);
+    expect(html).toContain('aria-label="Show less for Team CI"');
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('>Show less <span aria-hidden="true">▴</span></button>');
+    expect(html).not.toContain("aria-pressed");
+  });
+
+  it.each([[], [activity("running", "running")], [activity("passing", "idle", NOW + 1)]])(
+    "does not render a control when the normal view hides nothing (%#)", (...activities) => {
+      const view = pipelineFeedView(feed(activities), false, NOW);
+      expect(renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />)).toBe("");
+    },
+  );
+
   it("does not render a control for other feed types", () => {
-    const view = pipelineFeedView(feed([], { feed_type: "github-actions" }), false, NOW);
-    expect(renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />)).toBe("");
+    for (const showAll of [false, true]) {
+      const view = pipelineFeedView(feed([activity("item", "idle", 0)], { feed_type: "github-actions" }), showAll, NOW);
+      expect(renderToStaticMarkup(<PipelineVisibilityToggle feed={view} onToggle={() => {}} />)).toBe("");
+    }
   });
 });

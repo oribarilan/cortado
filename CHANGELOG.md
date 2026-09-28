@@ -5,6 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+- Azure DevOps Pipelines: click the hidden count to reveal all pipelines, then Show less to restore filtering
+
 ## [0.19.0] - 2026-09-27
 
 ### Added

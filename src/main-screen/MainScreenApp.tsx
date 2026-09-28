@@ -475,7 +475,7 @@ function MainScreenApp() {
       }
 
       if (e.key === "Enter") {
-        // Let focused controls (including All pipelines) handle native activation.
+        // Let focused controls handle native activation.
         if (e.target instanceof HTMLElement && e.target.closest("button, a, input, select, textarea")) return;
         e.preventDefault();
         if (flatList.length === 0) return;
@@ -604,7 +604,7 @@ function MainScreenApp() {
                         <div className="ms-feed-error">{feed.error}</div>
                       ) : items.length === 0 ? (
                         <div className="ms-feed-empty">{feed.hiddenPipelineCount > 0 && feed.activities.length === 0
-                          ? "No pipelines to show. Use All pipelines to see hidden results."
+                          ? "No pipelines to show. Select the hidden count above to reveal them."
                           : "No activities"}</div>
                       ) : (
                         items.map(({ activity, kind, key, index }) => {

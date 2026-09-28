@@ -314,7 +314,7 @@ function App() {
                   ) : null}
 
                   {!hasError && feed.activities.length === 0 && (seeded || feed.hiddenPipelineCount > 0 || feed.last_refreshed != null) ? (
-                    <p className="feed-empty">{feed.hiddenPipelineCount > 0 ? "No pipelines to show. Use All pipelines to see hidden results." : "No activities"}</p>
+                    <p className="feed-empty">{feed.hiddenPipelineCount > 0 ? "No pipelines to show. Select the hidden count above to reveal them." : "No activities"}</p>
                   ) : null}
 
                   {!hasError && feed.activities.length === 0 && !seeded && feed.hiddenPipelineCount === 0 && feed.last_refreshed == null ? (
